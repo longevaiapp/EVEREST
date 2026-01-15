@@ -1,0 +1,339 @@
+.navbar {
+  background: rgba(255, 255, 255, 0.08);
+  backdrop-filter: blur(30px) saturate(180%);
+  -webkit-backdrop-filter: blur(30px) saturate(180%);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.18);
+  color: white;
+  box-shadow: 
+    0 4px 30px rgba(0, 0, 0, 0.2),
+    0 2px 8px rgba(255, 255, 255, 0.05) inset;
+  position: sticky;
+  top: 0;
+  z-index: 100;
+}
+
+.navbar-content {
+  max-width: 1600px;
+  margin: 0 auto;
+  padding: 1rem 2rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.navbar-brand {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  font-size: 1.25rem;
+  font-weight: 600;
+  text-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
+}
+
+.navbar-logo {
+  height: 40px;
+  width: auto;
+  object-fit: contain;
+  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.2));
+}
+
+.navbar-user {
+  display: flex;
+  align-items: center;
+  gap: 1.5rem;
+}
+
+.navbar-notifications {
+  position: relative;
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 12px;
+  padding: 0.5rem 0.75rem;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.navbar-notifications:hover {
+  background: rgba(255, 255, 255, 0.15);
+  transform: scale(1.05);
+}
+
+.navbar-notifications.has-unread {
+  animation: pulse-notification 2s infinite;
+}
+
+@keyframes pulse-notification {
+  0%, 100% {
+    box-shadow: 0 0 0 0 rgba(244, 67, 54, 0.4);
+  }
+  50% {
+    box-shadow: 0 0 0 8px rgba(244, 67, 54, 0);
+  }
+}
+
+.notification-bell {
+  font-size: 1.5rem;
+}
+
+.notification-badge {
+  position: absolute;
+  top: -8px;
+  right: -8px;
+  background: #f44336;
+  color: white;
+  border-radius: 50%;
+  min-width: 20px;
+  height: 20px;
+  padding: 0 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.75rem;
+  font-weight: 600;
+  box-shadow: 0 2px 8px rgba(244, 67, 54, 0.4);
+}
+
+.notifications-wrapper {
+  position: relative;
+}
+
+.notifications-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 999;
+}
+
+.notifications-dropdown {
+  position: absolute;
+  top: calc(100% + 10px);
+  right: 0;
+  width: 400px;
+  max-height: 500px;
+  background: rgba(255, 255, 255, 0.15);
+  backdrop-filter: blur(30px);
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  border-radius: 15px;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+  z-index: 1000;
+  overflow: hidden;
+  animation: slideDown 0.3s ease;
+}
+
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.notifications-header {
+  padding: 1.25rem 1.5rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.15);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.notifications-header h3 {
+  margin: 0;
+  font-size: 1.1rem;
+  color: #fff;
+}
+
+.unread-count {
+  font-size: 0.8rem;
+  color: rgba(255, 255, 255, 0.8);
+  background: rgba(244, 67, 54, 0.3);
+  padding: 0.25rem 0.75rem;
+  border-radius: 12px;
+  border: 1px solid rgba(244, 67, 54, 0.5);
+}
+
+.notifications-list {
+  max-height: 400px;
+  overflow-y: auto;
+}
+
+.notifications-list::-webkit-scrollbar {
+  width: 6px;
+}
+
+.notifications-list::-webkit-scrollbar-track {
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.notifications-list::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 3px;
+}
+
+.notification-item {
+  display: flex;
+  gap: 1rem;
+  padding: 1rem 1.5rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  position: relative;
+}
+
+.notification-item:hover {
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.notification-item.unread {
+  background: rgba(33, 150, 243, 0.15);
+}
+
+.notification-item.unread:hover {
+  background: rgba(33, 150, 243, 0.25);
+}
+
+.notification-item.priority-alta {
+  border-left: 3px solid #f44336;
+}
+
+.notification-item.priority-media {
+  border-left: 3px solid #ff9800;
+}
+
+.notification-item.priority-baja {
+  border-left: 3px solid #4caf50;
+}
+
+.notification-icon {
+  font-size: 1.75rem;
+  flex-shrink: 0;
+}
+
+.notification-content {
+  flex: 1;
+  min-width: 0;
+}
+
+.notification-title {
+  font-weight: 600;
+  color: #fff;
+  margin-bottom: 0.25rem;
+  font-size: 0.9rem;
+}
+
+.notification-message {
+  color: rgba(255, 255, 255, 0.85);
+  font-size: 0.85rem;
+  line-height: 1.4;
+  margin-bottom: 0.25rem;
+}
+
+.notification-time {
+  color: rgba(255, 255, 255, 0.6);
+  font-size: 0.75rem;
+}
+
+.unread-dot {
+  position: absolute;
+  top: 50%;
+  right: 1rem;
+  transform: translateY(-50%);
+  width: 8px;
+  height: 8px;
+  background: #2196f3;
+  border-radius: 50%;
+  box-shadow: 0 0 10px rgba(33, 150, 243, 0.6);
+}
+
+.no-notifications {
+  padding: 3rem 1.5rem;
+  text-align: center;
+  color: rgba(255, 255, 255, 0.6);
+}
+
+.no-notifications p {
+  margin: 0;
+  font-style: italic;
+}
+
+.user-profile {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.user-avatar-nav {
+  font-size: 2rem;
+  width: 48px;
+  height: 48px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(255,255,255,0.15);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255,255,255,0.3);
+  border-radius: 50%;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+}
+
+.user-info-nav {
+  display: flex;
+  flex-direction: column;
+}
+
+.user-name-nav {
+  font-weight: 600;
+  font-size: 0.875rem;
+  text-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+}
+
+.user-role-nav {
+  font-size: 0.75rem;
+  opacity: 0.9;
+  text-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
+}
+
+.btn-logout {
+  padding: 0.5rem 1.25rem;
+  background: rgba(239, 68, 68, 0.2);
+  backdrop-filter: blur(10px);
+  color: white;
+  border: 1px solid rgba(239, 68, 68, 0.3);
+  border-radius: 8px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  font-size: 0.875rem;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+.btn-logout:hover {
+  background: rgba(239, 68, 68, 0.35);
+  border-color: rgba(239, 68, 68, 0.5);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 16px rgba(239, 68, 68, 0.4);
+}
+
+@media (max-width: 768px) {
+  .navbar-content {
+    padding: 1rem;
+  }
+
+  .user-info-nav {
+    display: none;
+  }
+
+  .navbar-brand span {
+    display: none;
+  }
+
+  .notifications-dropdown {
+    width: calc(100vw - 2rem);
+    right: -1rem;
+  }
+}
