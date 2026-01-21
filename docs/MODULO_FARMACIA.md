@@ -3,7 +3,7 @@
 ## Documentación Técnica Completa
 
 **Fecha:** Enero 21, 2026  
-**Versión:** 2.0 (Revisión exhaustiva Senior Dev)  
+**Versión:** 2.1 (Segunda revisión exhaustiva Senior Dev)  
 **Archivo fuente:** `src/components/dashboards/FarmaciaDashboard.jsx` (767 líneas)
 
 ---
@@ -637,36 +637,98 @@ Muestra productos donde `stock <= minimo`.
 **Tarjeta de alerta:**
 - Icono ⚠️
 - Nombre del medicamento
-- Stock actual vs mínimo
-- Categoría
-- Botón "Reabastecer" (sin lógica)
+- Stock actual vs mínimo ("Stock actual: **X** unidades (Mínimo: Y)")
+- Categoría (badge)
+- Botón "Reabastecer" (⚠️ `className="btn-small"` sin onClick - NO FUNCIONA)
+
+**Estado vacío:** Si no hay productos con stock bajo, muestra:
+> "✅ Todos los productos tienen stock suficiente"
 
 ### Vista Dispensados - Datos Mock
 
 > ⚠️ Esta vista usa datos **hardcodeados**, no conectados al sistema.
 
-**Tabla de entregas (ejemplo):**
+**Columnas de la tabla:**
+
+| Columna | Descripción | Ejemplo |
+|---------|-------------|----------|
+| Hora | Hora de entrega | 14:30 |
+| Paciente | Avatar + nombre | 🐕 Max |
+| Medicamentos | Lista de meds entregados | Amoxicilina 500mg, Carprofeno 75mg |
+| Cantidad | Número de productos | 2 productos |
+| Propietario | Nombre del dueño | Juan Pérez |
+| Total | Monto cobrado | $60.00 |
+| Estado | Badge de estado | ✅ Entregado |
+
+**Datos hardcodeados en la tabla (5 registros):**
+
 ```typescript
-const historialEjemplo = [
-  { hora: '14:30', paciente: 'Max', meds: 'Amoxicilina 500mg, Carprofeno 75mg', propietario: 'Juan Pérez', total: '$60.00' },
-  { hora: '13:15', paciente: 'Luna', meds: 'Vacuna Triple Felina', propietario: 'María Sánchez', total: '$45.00' },
-  // ... más datos hardcodeados
+const historialHardcoded = [
+  { hora: '14:30', paciente: 'Max', especie: 'Perro', meds: 'Amoxicilina 500mg, Carprofeno 75mg', cantidad: 2, propietario: 'Juan Pérez', total: 60.00 },
+  { hora: '13:15', paciente: 'Luna', especie: 'Gato', meds: 'Vacuna Triple Felina', cantidad: 1, propietario: 'María Sánchez', total: 45.00 },
+  { hora: '11:45', paciente: 'Bobby', especie: 'Perro', meds: 'Metronidazol 250mg, Omeprazol 20mg', cantidad: 2, propietario: 'Carlos Ruiz', total: 38.00 },
+  { hora: '10:20', paciente: 'Michi', especie: 'Gato', meds: 'Enrofloxacina 150mg', cantidad: 1, propietario: 'Laura Gómez', total: 30.00 },
+  { hora: '09:00', paciente: 'Rocky', especie: 'Perro', meds: 'Tramadol 50mg, Meloxicam 15mg', cantidad: 2, propietario: 'Pedro Martínez', total: 72.00 }
 ];
 ```
 
-**Summary Cards:**
-- Total Entregas Hoy: `18` (mock)
-- Ingresos del Día: `$1,245.00` (mock)
-- Productos Dispensados: `42` (mock)
+**Summary Cards (datos mock):**
+
+| Card | Valor | Fuente |
+|------|-------|--------|
+| Total Entregas Hoy | 18 | `completedToday` (hardcoded) |
+| Ingresos del Día | $1,245.00 | Hardcoded en JSX |
+| Productos Dispensados | 42 | Hardcoded en JSX |
 
 ### Vista Reportes - Datos Mock
 
 4 tarjetas de reportes con datos **hardcodeados**:
 
-1. **Medicamentos Más Dispensados** (Top 5)
-2. **Ingresos por Categoría** (5 categorías)
-3. **Resumen Mensual** (Total entregas, ingresos, promedio, reabastecimientos)
-4. **Alertas y Notificaciones** (Stock bajo, pedidos pendientes, meta alcanzada)
+#### 1. Medicamentos Más Dispensados (Top 5)
+
+```typescript
+const topMedicamentos = [
+  { rank: 1, nombre: 'Amoxicilina 500mg', cantidad: 45 },
+  { rank: 2, nombre: 'Carprofeno 75mg', cantidad: 32 },
+  { rank: 3, nombre: 'Vacuna Séxtuple', cantidad: 28 },
+  { rank: 4, nombre: 'Prednisona 5mg', cantidad: 25 },
+  { rank: 5, nombre: 'Metronidazol 250mg', cantidad: 22 }
+];
+```
+
+#### 2. Ingresos por Categoría
+
+```typescript
+const ingresosPorCategoria = [
+  { categoria: 'Antibióticos', monto: 1250.00 },
+  { categoria: 'Antiinflamatorios', monto: 890.00 },
+  { categoria: 'Vacunas', monto: 780.00 },
+  { categoria: 'Analgésicos', monto: 640.00 },
+  { categoria: 'Otros', monto: 420.00 }
+];
+// Total implícito: $3,980.00
+```
+
+#### 3. Resumen Mensual
+
+```typescript
+const resumenMensual = {
+  totalEntregas: 385,
+  ingresosTotales: 24680.00,
+  promedioDiario: 822.67,    // 24680 / 30 días
+  reabastecimientos: 12
+};
+```
+
+#### 4. Alertas y Notificaciones
+
+| Tipo | Icono | Texto | Dato Dinámico |
+|------|-------|-------|---------------|
+| Warning | ⚠️ | Stock Bajo | `getLowStockCount()` productos |
+| Info | ℹ️ | Pedidos Pendientes | `myTasks.length` órdenes |
+| Success | ✅ | Meta Alcanzada | Hardcoded (siempre aparece) |
+
+> ⚠️ **NOTA:** La alerta "Meta Alcanzada" siempre aparece, no hay lógica para validar si realmente se cumplió.
 
 ---
 
@@ -741,6 +803,21 @@ const filteredInventory = inventory.filter(item =>
 ```
 
 > ⚠️ **NOTA:** `pharmacyPatients` está declarado pero **NO se utiliza** en ninguna parte de la UI.
+
+> ⚠️ **NOTA:** `pendingOrders` está declarado pero **NO se utiliza** en ninguna parte de la UI (se usa `urgentOrders` y `myTasks` en su lugar).
+
+### Estructura de Task (Tarea de Farmacia)
+
+```typescript
+interface FarmaciaTask {
+  id: string;              // ID único de la tarea
+  pacienteId: string;      // FK → Paciente
+  titulo: string;          // Título de la tarea
+  descripcion: string;     // Medicamentos prescritos (lista)
+  prioridad: 'ALTA' | 'MEDIA' | 'BAJA';
+  timestamp: string;       // ISO date de creación
+}
+```
 
 ---
 
@@ -941,14 +1018,17 @@ const barColor = isLowStock ? '#f44336' : '#4caf50';
 | Líneas de código | 767 |
 | Entidades documentadas | 5 |
 | Funciones implementadas | 3 |
-| Funciones planificadas | 9 |
+| Funciones planificadas (no impl) | 9 |
 | Modales | 2 |
 | Secciones UI | 5 |
 | Funciones del contexto | 3 (1 sin usar) |
 | Variables de estado | 6 |
-| Datos computados | 6 (1 sin usar) |
+| Datos computados | 6 (2 sin usar) |
 | Productos en mock | 10 |
 | Productos con stock bajo | 3 |
+| Registros en historial mock | 5 |
+| Categorías en inventario | 6 |
+| Botones sin lógica | 4 |
 
 ---
 
@@ -963,5 +1043,5 @@ const barColor = isLowStock ? '#f44336' : '#4caf50';
 ---
 
 **Documento generado para el Proyecto EVEREST - VET-OS**  
-**Revisión Senior Dev - Versión 2.0 COMPLETA**  
+**Revisión Senior Dev - Versión 2.1 FINAL**  
 **Última actualización:** Enero 21, 2026
