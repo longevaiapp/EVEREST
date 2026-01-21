@@ -3,7 +3,7 @@
 ## Documentación Técnica Completa
 
 **Fecha:** Enero 21, 2026  
-**Versión:** 2.1 (Segunda revisión exhaustiva Senior Dev)  
+**Versión:** 2.2 (Tercera revisión exhaustiva Senior Dev)  
 **Archivo fuente:** `src/components/dashboards/FarmaciaDashboard.jsx` (767 líneas)
 
 ---
@@ -564,6 +564,20 @@ handleMarkAsExpired(medicationId: string, quantity: number): void
 - "Cerrar" → Cierra modal
 - "Preparar Medicamentos" → Llama a `handlePrepare()` y cierra modal
 
+**Técnica de código:**
+El modal usa un **IIFE (Immediately Invoked Function Expression)** para declarar variables dentro del JSX:
+
+```jsx
+{(() => {
+  const patient = systemState.pacientes.find(p => p.id === selectedOrder.pacienteId);
+  return patient ? (
+    // Contenido del modal...
+  ) : null;
+})()}
+```
+
+Esto permite buscar el paciente y renderizar condicionalmente sin salir del JSX.
+
 ---
 
 ### Modal: Agregar Medicamento (`showNewMedicationModal`)
@@ -606,6 +620,25 @@ const categorias = [
 | Inventario | `inventario` | Catálogo con búsqueda y filtros | Stock bajo (urgent) |
 | Dispensados | `dispensados` | Historial de entregas (datos mock) | - |
 | Reportes | `reportes` | Estadísticas y reportes (datos mock) | - |
+
+### Header Dinámico
+
+```jsx
+<div className="dashboard-header">
+  <div>
+    <h1>
+      {activeSection === 'dashboard' && 'Dashboard Farmacia'}
+      {activeSection === 'recetas' && 'Recetas Pendientes'}
+      {activeSection === 'inventario' && 'Inventario de Medicamentos'}
+      {activeSection === 'dispensados' && 'Medicamentos Dispensados'}
+      {activeSection === 'reportes' && 'Reportes y Estadísticas'}
+    </h1>
+    <p>{currentUser.nombre} - Gestión de Medicamentos</p>
+  </div>
+</div>
+```
+
+**Nota:** El subtítulo siempre muestra el nombre del usuario actual seguido de "- Gestión de Medicamentos".
 
 ### Vista Dashboard - Estadísticas
 
@@ -1005,9 +1038,15 @@ const inventory = [
 ```typescript
 // Porcentaje de la barra de stock visual
 const stockPercentage = (item.stock / (item.minimo * 3)) * 100;
+// Se limita al 100% para evitar overflow visual
+const limitedPercentage = Math.min(stockPercentage, 100);
 // Color: Rojo si stock <= minimo, Verde si > minimo
 const barColor = isLowStock ? '#f44336' : '#4caf50';
 ```
+
+**Fórmula visual:**
+- Stock 0% del mínimo × 3 = Barra vacía
+- Stock = mínimo × 3 = Barra 100% (límite visual)
 
 ---
 
@@ -1043,5 +1082,5 @@ const barColor = isLowStock ? '#f44336' : '#4caf50';
 ---
 
 **Documento generado para el Proyecto EVEREST - VET-OS**  
-**Revisión Senior Dev - Versión 2.1 FINAL**  
+**Revisión Senior Dev - Versión 2.2 FINAL (Tercera Revisión)**  
 **Última actualización:** Enero 21, 2026
