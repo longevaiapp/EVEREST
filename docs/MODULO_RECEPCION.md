@@ -768,16 +768,33 @@ const clientFormURL = `${window.location.origin}/registro-cliente`
 ### Funciones del Contexto Utilizadas
 
 ```typescript
-// Desde AppContext
+// Desde AppContext (useApp hook)
 const {
+  currentUser,           // Usuario logueado actual
   systemState,           // Estado global del sistema
+  assignToDoctor,        // Asignar paciente a médico
   updatePatientState,    // Cambiar estado de paciente
-  registerPayment,       // Registrar pago al alta
-  scheduleFollowUp,      // Agendar cita de seguimiento
+  updatePatientData,     // Actualizar datos del paciente
+  registerTriage,        // Registrar datos del triage
+  completeTask,          // Marcar tarea como completada
   dischargePatient,      // Procesar alta final
-  currentUser            // Usuario logueado actual
-} = useAppContext();
+  scheduleFollowUp,      // Agendar cita de seguimiento
+  registerPayment        // Registrar pago al alta
+} = useApp();
 ```
+
+**Detalle de cada función:**
+
+| Función | Parámetros | Descripción |
+|---------|------------|-------------|
+| `assignToDoctor` | `(patientId, doctorName)` | Asigna paciente a médico, cambia estado a EN_CONSULTA |
+| `updatePatientState` | `(patientId, newState, updatedBy)` | Cambia estado del paciente en el sistema |
+| `updatePatientData` | `(patientId, data)` | Actualiza cualquier campo del paciente |
+| `registerTriage` | `(patientId, triageData)` | Registra triage y cambia estado a EN_ESPERA |
+| `completeTask` | `(rol, taskId)` | Elimina tarea de la lista de pendientes |
+| `dischargePatient` | `(patientId)` | Cambia estado a ALTA y registra en historial |
+| `scheduleFollowUp` | `(patientId, appointmentData)` | Crea nueva cita de seguimiento |
+| `registerPayment` | `(patientId, paymentData)` | Registra cobro y marca como pagado |
 
 ---
 
@@ -792,6 +809,8 @@ const {
 | `Payment` | ✅ | ✅ | ❌ | ❌ |
 | `User` | ❌ | ✅ | ❌ | ❌ |
 | `Notification` | ✅ | ✅ | ❌ | ❌ |
+| `Task` | ✅ | ✅ | ✅ | ✅ |
+| `History` | ✅ | ✅ | ❌ | ❌ |
 
 **Resumen:** Recepción es **dueño** de `Owner`, `Pet`, `Visit`, `Appointment`, y `Payment`.
 
@@ -815,6 +834,7 @@ const [showClientPets, setShowClientPets] = useState(false);
 const [showTriageModal, setShowTriageModal] = useState(false);
 const [showDischargeModal, setShowDischargeModal] = useState(false);
 const [showExpedienteModal, setShowExpedienteModal] = useState(false);
+const [showNewPatientModal, setShowNewPatientModal] = useState(false);
 const [showNewAppointmentModal, setShowNewAppointmentModal] = useState(false);
 const [showCalendarModal, setShowCalendarModal] = useState(false);
 
@@ -824,6 +844,237 @@ const [triageData, setTriageData] = useState({...});
 const [dischargeData, setDischargeData] = useState({...});
 const [newPatientData, setNewPatientData] = useState({...});
 const [newAppointmentData, setNewAppointmentData] = useState({...});
+```
+
+---
+
+## Datos Computados (Derivados del Estado)
+
+```typescript
+// Tareas pendientes de recepción
+const myTasks = systemState.tareasPendientes.RECEPCION || [];
+
+// Pacientes recién llegados (pendientes de triage)
+const newArrivals = systemState.pacientes.filter(p => p.estado === 'RECIEN_LLEGADO');
+
+// Pacientes en sala de espera
+const waitingPatients = systemState.pacientes.filter(p => p.estado === 'EN_ESPERA');
+
+// Todos los pacientes
+const allPatients = systemState.pacientes;
+
+// Pacientes filtrados por búsqueda
+const filteredPatients = searchQuery
+  ? allPatients.filter(p => 
+      p.nombre.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      p.numeroFicha.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      p.propietario.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      p.telefono.includes(searchQuery)
+    )
+  : allPatients;
+
+// Citas del día actual
+const todayAppointments = systemState.citas.filter(c => {
+  const citaDate = new Date(c.fecha).toDateString();
+  const today = new Date().toDateString();
+  return citaDate === today;
+});
+
+// Calendario de medicina preventiva (pacientes con vacunas próximas)
+const preventiveCalendar = allPatients.filter(p => {
+  if (!p.vacunas || p.vacunas.length === 0) return false;
+  // Filtrar por vacunas con proximaDosis en los próximos 30 días
+  return true;
+});
+```
+
+---
+
+## Componente Externo: RegistroCliente
+
+**Archivo:** `src/components/RegistroCliente.jsx` (951 líneas)  
+**Ruta:** `/registro-cliente`  
+**Propósito:** Formulario de auto-registro para clientes vía QR
+
+### Flujo del Cliente Externo
+
+```
+1. Cliente escanea QR en recepción
+   ↓
+2. Abre formulario en su celular
+   ↓
+3. Selecciona: "Soy nuevo" o "Ya soy cliente"
+   ↓
+4a. Si nuevo → Wizard de 5 pasos
+4b. Si existente → Busca por teléfono
+   ↓
+5. Completa datos y envía
+   ↓
+6. Aparece en cola de recepción como PENDIENTE_CHECKIN
+```
+
+### Estructura del Formulario del Cliente (5 pasos)
+
+#### Paso 1: Datos del Propietario
+```typescript
+propietario: {
+  nombre: string;        // Nombre completo *
+  telefono: string;      // Teléfono *
+  email: string;         // Email
+  direccion: string;     // Dirección
+  ciudad: string;        // Ciudad
+  codigoPostal: string;  // Código postal
+}
+```
+
+#### Paso 2: Datos del Paciente
+```typescript
+paciente: {
+  nombre: string;        // Nombre *
+  especie: string;       // Especie *
+  raza: string;          // Raza
+  sexo: string;          // Sexo *
+  edad: string;          // Edad
+  unidadEdad: string;    // 'años' | 'meses'
+  peso: string;          // Peso
+  color: string;         // Color
+  esterilizado: string;  // 'Si' | 'No'
+  microchip: string;     // Número de microchip
+}
+```
+
+#### Paso 3: Historial Médico
+```typescript
+historial: {
+  vacunasAlDia: string;          // 'Si' | 'No'
+  ultimaVacuna: string;          // Fecha
+  desparasitacionInterna: string;
+  fechaDesparasitacionInt: string;
+  desparasitacionExterna: string;
+  fechaDesparasitacionExt: string;
+  enfermedadesPrevias: string;   // 'Si' | 'No'
+  detalleEnfermedades: string;
+  cirugiasPrevias: string;       // 'Si' | 'No'
+  detalleCirugias: string;
+  alergias: string;              // 'Si' | 'No'
+  detalleAlergias: string;
+  medicamentosActuales: string;  // 'Si' | 'No'
+  detalleMedicamentos: string;
+}
+```
+
+#### Paso 4: Motivo de Consulta
+```typescript
+consulta: {
+  motivoConsulta: string;       // Descripción *
+  sintomas: string[];           // Array de síntomas seleccionados
+  duracionSintomas: string;     // Hace cuánto tiempo
+  comportamiento: string;       // Cambios de comportamiento
+  apetito: string;              // Normal | Aumentado | Disminuido
+  agua: string;                 // Consumo de agua
+  orina: string;                // Frecuencia/color
+  heces: string;                // Consistencia
+  otrosDetalles: string;
+}
+
+// Opciones de síntomas predefinidas:
+const sintomasOpciones = [
+  'Vómito', 'Diarrea', 'Pérdida de apetito', 'Letargia',
+  'Tos', 'Estornudos', 'Secreción nasal', 'Secreción ocular',
+  'Cojera', 'Rascado excesivo', 'Pérdida de pelo', 'Bultos/masas',
+  'Dificultad para respirar', 'Dificultad para orinar', 'Sangrado',
+  'Convulsiones', 'Fiebre', 'Otro'
+];
+```
+
+#### Paso 5: Consentimiento
+```typescript
+consentimiento: {
+  autorizaTratamiento: boolean;   // Autorización de tratamiento *
+  autorizaEmergencia: boolean;    // Autorización de emergencia *
+  aceptaTerminos: boolean;        // Acepta términos *
+  firma: string;                  // Firma digital (opcional)
+}
+```
+
+### Funciones del Contexto para RegistroCliente
+
+```typescript
+// Agregar paciente a cola de check-in
+agregarPacienteACola(pacienteData): void
+// Crea paciente con estado PENDIENTE_CHECKIN
+// Envía notificación a RECEPCION
+
+// Confirmar check-in desde recepción
+confirmarCheckin(pacienteId): void
+// Cambia estado a REGISTRADO
+// Elimina de pacientesPendientesCheckin
+```
+
+---
+
+## Sistema de Notificaciones
+
+Recepción **recibe** notificaciones de:
+
+| Tipo | Origen | Descripción |
+|------|--------|-------------|
+| `NUEVO_REGISTRO` | RegistroCliente | Cliente completó formulario QR |
+| `PACIENTE_LISTO_ALTA` | Farmacia | Medicamentos entregados |
+| `NUEVA_TAREA` | Sistema | Nueva tarea asignada |
+
+Recepción **crea** notificaciones para:
+
+| Tipo | Destino | Descripción |
+|------|---------|-------------|
+| `NUEVA_TAREA` | MEDICO | Paciente asignado para atención |
+
+---
+
+## Sistema de Tareas
+
+### Estructura de Tarea
+```typescript
+interface Task {
+  id: number;              // ID único (timestamp)
+  pacienteId: number;      // FK → Pet
+  titulo: string;          // Título de la tarea
+  descripcion: string;     // Descripción detallada
+  prioridad: Priority;     // ALTA | MEDIA | BAJA
+  timestamp: string;       // Fecha de creación ISO
+}
+```
+
+### Tareas que Recepción VE
+- Completar admisión de paciente
+- Procesar alta del paciente
+- Confirmación de cobro pendiente
+
+### Tareas que Recepción CREA
+- Asignación de paciente a médico
+
+---
+
+## Sistema de Historial
+
+Cada acción importante se registra en el historial del paciente:
+
+```typescript
+interface HistoryEntry {
+  accion: string;          // Descripción de la acción
+  detalles?: object;       // Datos adicionales
+  usuario: string;         // Quién realizó la acción
+  timestamp: string;       // Cuándo se realizó (ISO)
+}
+
+// Acciones registradas por Recepción:
+- "Estado cambiado a: RECIEN_LLEGADO"
+- "Triage completado"
+- "Estado cambiado a: EN_ESPERA"
+- "Pago registrado"
+- "Paciente dado de alta"
+- "Cita de seguimiento programada"
+- "Check-in confirmado por recepción"
 ```
 
 ---
@@ -847,9 +1098,18 @@ const priorityColors = {
 
 ### Colores de Estado
 ```typescript
-function getStatusColor(status) {
-  // Implementación para mapear estado a color
-}
+const statusColors = {
+  'RECIEN_LLEGADO': '#9e9e9e',    // Gris
+  'EN_ESPERA': '#ff9800',         // Naranja
+  'EN_CONSULTA': '#2196f3',       // Azul
+  'EN_ESTUDIOS': '#9c27b0',       // Púrpura
+  'EN_FARMACIA': '#673ab7',       // Violeta
+  'CIRUGIA_PROGRAMADA': '#e91e63', // Rosa
+  'EN_CIRUGIA': '#f44336',        // Rojo
+  'HOSPITALIZADO': '#ff5722',     // Naranja oscuro
+  'LISTO_PARA_ALTA': '#4caf50',   // Verde
+  'ALTA': '#757575'               // Gris oscuro
+};
 ```
 
 ### Generación de Número de Ficha
@@ -869,10 +1129,45 @@ const clientFormURL = `${window.location.origin}/registro-cliente`;
 ## Dependencias Externas
 
 ```javascript
+import { useState } from 'react';
+import { useApp } from '../../context/AppContext';
 import { QRCodeSVG } from 'qrcode.react';  // Para generar códigos QR
+import './RecepcionDashboard.css';
 ```
 
 ---
 
+## Archivos Relacionados
+
+| Archivo | Propósito |
+|---------|-----------|
+| `src/components/dashboards/RecepcionDashboard.jsx` | Componente principal (2,141 líneas) |
+| `src/components/dashboards/RecepcionDashboard.css` | Estilos del dashboard |
+| `src/components/RegistroCliente.jsx` | Formulario externo QR (951 líneas) |
+| `src/components/RegistroCliente.css` | Estilos del formulario |
+| `src/context/AppContext.jsx` | Estado global y funciones (520 líneas) |
+| `src/data/mockUsers.js` | Datos iniciales del sistema (249 líneas) |
+
+---
+
+## Resumen de Estadísticas
+
+| Métrica | Valor |
+|---------|-------|
+| Líneas de código (Dashboard) | 2,141 |
+| Líneas de código (RegistroCliente) | 951 |
+| Total de entidades | 8 |
+| Campos en Pet | 45+ |
+| Funciones principales | 14 |
+| Modales | 6 |
+| Secciones UI | 8 |
+| Pasos en Wizard Nueva Mascota | 7 |
+| Pasos en Wizard Cliente QR | 5 |
+| Estados del paciente | 10 |
+| Funciones del contexto usadas | 10 |
+
+---
+
 **Documento generado para el Proyecto EVEREST - VET-OS**  
-**Revisión Senior Dev - Versión 2.0 Completa**
+**Revisión Senior Dev - Versión 2.1 COMPLETA**  
+**Última actualización:** Enero 21, 2026
