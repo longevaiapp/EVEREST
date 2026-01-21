@@ -3,7 +3,7 @@
 ## Documentación Técnica Completa
 
 **Fecha:** Enero 21, 2026  
-**Versión:** 2.0 (Revisión exhaustiva Senior Dev)  
+**Versión:** 2.1 (Tercera revisión exhaustiva Senior Dev)  
 **Archivo fuente:** `src/components/dashboards/MedicoDashboard.jsx` (1,407 líneas)
 
 ---
@@ -21,6 +21,8 @@
 9. [Permisos de Base de Datos](#permisos-de-base-de-datos)
 10. [Variables de Estado](#variables-de-estado)
 11. [Datos Predefinidos](#datos-predefinidos)
+12. [Estructura de Datos del Paciente](#estructura-de-datos-del-paciente)
+13. [Validaciones de Formularios](#validaciones-de-formularios)
 
 ---
 
@@ -485,10 +487,10 @@ handleSubmitMonitoring(): void
 3. Abre modal `showMonitoringModal`
 
 **Flujo para guardar:**
-1. Valida campos requeridos (temperatura, frecuenciaCardiaca, frecuenciaRespiratoria)
+1. Valida campos requeridos: `temperatura`, `frecuenciaCardiaca`, `frecuenciaRespiratoria` (los 3 son obligatorios)
 2. Llama a `addMonitoring(patientId, monitoringData)`
 3. Incluye: temperatura, FC, FR, PA, nivelConciencia, escalaDolor, observaciones, registradoPor
-4. Cierra modal
+4. Cierra modal y limpia formulario
 
 ---
 
@@ -774,11 +776,13 @@ const inSurgery = systemState.pacientes.filter(p => p.estado === 'EN_CIRUGIA');
 // Hospitalizados
 const hospitalized = systemState.pacientes.filter(p => p.estado === 'HOSPITALIZADO');
 
-// Listos para alta
+// Listos para alta (no se muestra en UI, pero está disponible)
 const readyForDischarge = systemState.pacientes.filter(p => p.estado === 'LISTO_PARA_ALTA');
 
 // Todos los pacientes
 const allPatients = systemState.pacientes;
+
+// Nota: readyForDischarge está calculado pero no se utiliza activamente en la UI del médico
 
 // Búsqueda filtrada
 const filteredPatients = searchQuery
@@ -986,6 +990,46 @@ const dashboardStats = [
 ];
 ```
 
+### Sección: Cirugías del Día
+
+Combina `scheduledSurgeries` + `inSurgery` en una grilla de tarjetas:
+
+**Tarjeta de Cirugía Programada:**
+```typescript
+{
+  patient.nombre,
+  status: 'Programada',
+  tipo: patient.cirugiaProgramada?.tipo,
+  hora: patient.cirugiaProgramada?.hora,
+  prioridad: patient.cirugiaProgramada?.prioridad,
+  observaciones: patient.cirugiaProgramada?.observaciones
+}
+// Acciones: "Iniciar Cirugía", "Ver Expediente"
+```
+
+**Tarjeta de Cirugía En Progreso:**
+```typescript
+{
+  patient.nombre,
+  status: 'En Progreso',
+  tipo: patient.cirugiaProgramada?.tipo,
+  inicio: new Date(patient.fechaInicioCirugia).toLocaleTimeString()
+}
+// Acciones: "Completar y Generar Reporte"
+```
+
+### Sección: Historial de Consultas Hoy
+
+**Nota:** Actualmente muestra datos estáticos de ejemplo (hardcoded):
+```typescript
+// Ejemplo hardcoded en el componente
+const historialEjemplo = [
+  { time: '09:30', nombre: 'Max', raza: 'Labrador', accion: 'Consulta general completada', propietario: 'Juan Pérez' },
+  { time: '10:45', nombre: 'Miau', raza: 'Siamés', accion: 'Vacunación Triple Felina', propietario: 'Laura Gómez' }
+];
+// TODO: Conectar con historial real del sistema
+```
+
 ---
 
 ## Estructura de Hospitalización con Monitoreos
@@ -1025,6 +1069,105 @@ interface MonitoringEntry {
 
 ---
 
+## Estructura de Datos del Paciente
+
+### Campos Específicos para Médico
+
+```typescript
+interface PatientMedicoData {
+  // Datos base (de Recepción)
+  id: string;
+  nombre: string;
+  especie: 'Perro' | 'Gato';
+  raza: string;
+  edad: string;
+  sexo: string;
+  peso: string;
+  numeroFicha: string;
+  propietario: string;
+  telefono: string;
+  motivo: string;
+  estado: PatientState;
+  
+  // Datos de cirugía (si aplica)
+  cirugiaProgramada?: {
+    tipo: string;              // Tipo de cirugía
+    fecha: string;             // Fecha programada (YYYY-MM-DD)
+    hora: string;              // Hora programada (HH:mm)
+    prequirurgicos: string[];  // Estudios pre-quirúrgicos solicitados
+    observaciones: string;     // Notas del cirujano
+    prioridad: 'ALTA' | 'MEDIA' | 'BAJA';
+    programadoPor: string;     // Nombre del médico que programó
+  };
+  
+  // Timestamp de cirugía en curso
+  fechaInicioCirugia?: string;  // ISO date cuando se inicia la cirugía
+  
+  // Datos de hospitalización (si aplica)
+  hospitalizacion?: {
+    motivo: string;
+    frecuenciaMonitoreo: string;  // "2h", "4h", etc.
+    cuidadosEspeciales: string;
+    inicioHospitalizacion: string;
+    monitoreos: MonitoringEntry[];
+  };
+}
+```
+
+### Información del Usuario (currentUser)
+
+```typescript
+interface MedicoUser {
+  id: string;
+  nombre: string;        // Se muestra en header como "Dr. {nombre}"
+  rol: 'MEDICO';
+  especialidad: string;  // Se muestra en header bajo el nombre
+}
+```
+
+---
+
+## Validaciones de Formularios
+
+### Modal: Consulta Médica
+| Campo | Validación |
+|-------|------------|
+| `diagnosticNotes` | Ninguna (opcional) |
+| `selectedStudies` | Al menos 1 para solicitar estudios |
+| `medications` | No vacío para generar receta |
+
+### Modal: Programar Cirugía
+| Campo | Validación |
+|-------|------------|
+| `tipo` | **Requerido** - Select no vacío |
+| `fecha` | **Requerido** - Date válida |
+| `hora` | **Requerido** - Time válido |
+| `prioridad` | Default: 'ALTA' |
+| `prequirurgicos` | Opcional (array) |
+| `observaciones` | Opcional |
+
+### Modal: Reporte Quirúrgico
+| Campo | Validación |
+|-------|------------|
+| `procedimiento` | **Requerido** - textarea no vacío |
+| `anestesia` | **Requerido** - textarea no vacío |
+| `complicaciones` | Opcional |
+| `pronostico` | Opcional (select) |
+| `cuidadosPostOperatorios` | Opcional |
+
+### Modal: Monitoreo EFG
+| Campo | Validación |
+|-------|------------|
+| `temperatura` | **Requerido** - number |
+| `frecuenciaCardiaca` | **Requerido** - number |
+| `frecuenciaRespiratoria` | **Requerido** - number |
+| `presionArterial` | Opcional - text (formato "120/80") |
+| `nivelConciencia` | Default: 'Alerta' |
+| `escalaDolor` | Default: '0' (rango 0-10) |
+| `observaciones` | Opcional |
+
+---
+
 ## Resumen de Estadísticas
 
 | Métrica | Valor |
@@ -1039,9 +1182,38 @@ interface MonitoringEntry {
 | Tipos de cirugía | 8 |
 | Pre-quirúrgicos | 5 |
 | Estados que maneja | 7 |
+| Datos computados | 9 |
+
+---
+
+---
+
+## Notas de Implementación Pendientes
+
+### TODOs Identificados en el Código
+
+1. **Historial de Consultas Hoy:** Actualmente usa datos hardcoded. Debe conectarse con:
+   - `systemState.historial` filtrado por fecha actual
+   - O crear nueva propiedad en el contexto
+
+2. **Botón "Ver Resultados" en Estudios:** Actualmente solo muestra `alert('Resultados de estudios')`. Debe:
+   - Abrir modal con resultados reales de laboratorio
+   - Integrar con respuesta de `LaboratorioDashboard`
+
+3. **Expediente Clínico:** Los datos de historial, vacunas y alergias son estáticos. Debe:
+   - Conectar con `patient.historial` real
+   - Crear estructura de vacunas en el paciente
+   - Manejar alergias en datos del paciente
+
+### Datos que Faltan en el Mock
+
+- `patient.historial` - Array de consultas previas
+- `patient.vacunas` - Array de vacunaciones
+- `patient.alergias` - Array de alergias conocidas
+- `patient.observacionesEspeciales` - String con notas
 
 ---
 
 **Documento generado para el Proyecto EVEREST - VET-OS**  
-**Revisión Senior Dev - Versión 2.0 COMPLETA**  
+**Revisión Senior Dev - Versión 2.1 FINAL**  
 **Última actualización:** Enero 21, 2026
