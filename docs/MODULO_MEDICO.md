@@ -3,7 +3,7 @@
 ## Documentación Técnica Completa
 
 **Fecha:** Enero 21, 2026  
-**Versión:** 1.0  
+**Versión:** 2.0 (Revisión exhaustiva Senior Dev)  
 **Archivo fuente:** `src/components/dashboards/MedicoDashboard.jsx` (1,407 líneas)
 
 ---
@@ -14,9 +14,13 @@
 2. [Entidades que Maneja](#entidades-que-maneja)
 3. [Estados del Sistema](#estados-del-sistema)
 4. [Funciones Principales](#funciones-principales)
-5. [Formularios](#formularios)
-6. [Interacciones con Otros Módulos](#interacciones-con-otros-módulos)
-7. [Permisos de Base de Datos](#permisos-de-base-de-datos)
+5. [Formularios y Modales](#formularios-y-modales)
+6. [Secciones de la UI](#secciones-de-la-ui)
+7. [Funciones del Contexto](#funciones-del-contexto)
+8. [Interacciones con Otros Módulos](#interacciones-con-otros-módulos)
+9. [Permisos de Base de Datos](#permisos-de-base-de-datos)
+10. [Variables de Estado](#variables-de-estado)
+11. [Datos Predefinidos](#datos-predefinidos)
 
 ---
 
@@ -25,12 +29,13 @@
 **Médico** es el **centro clínico** del sistema veterinario. Es responsable de:
 
 - ✅ Atender consultas médicas
-- ✅ Registrar síntomas, exámenes físicos y diagnósticos
+- ✅ Registrar anamnesis, exámenes físicos y diagnósticos
 - ✅ Solicitar estudios de laboratorio
-- ✅ Generar prescripciones/recetas
-- ✅ Programar y realizar cirugías
-- ✅ Gestionar hospitalizaciones
+- ✅ Generar prescripciones/recetas y enviar a farmacia
+- ✅ Programar, iniciar y completar cirugías
+- ✅ Gestionar hospitalizaciones con monitoreo EFG
 - ✅ Documentar notas médicas y evolución
+- ✅ Ver expedientes clínicos completos
 
 ---
 
@@ -353,254 +358,437 @@ type MedicalNoteType =
 
 ## Funciones Principales
 
-### 1. Tomar Paciente de Cola
+### 1. Iniciar Consulta
 
 ```typescript
-handleTakePatient(visitId: string): void
+handleStartConsultation(patient: Pet): void
 ```
 
 **Flujo:**
-1. Cambia status de Visit a `EN_CONSULTA`
-2. Crea registro de Consultation
-3. Quita paciente de cola de espera de Recepción
+1. Selecciona paciente para atención
+2. Abre modal de consulta médica (`showDiagnostic`)
+3. Permite registrar anamnesis, diagnóstico, solicitar estudios o prescribir
 
 ---
 
-### 2. Guardar Consulta
+### 2. Solicitar Estudios de Laboratorio
 
 ```typescript
-handleSaveConsultation(consultationData: ConsultationInput): void
+handleRequestStudies(): void
 ```
 
 **Flujo:**
-1. Valida datos requeridos
-2. Guarda/actualiza registro de Consultation
-3. Actualiza peso en Pet si se registró
+1. Valida que al menos un estudio esté seleccionado
+2. Llama a `requestStudies(patientId, selectedStudies)`
+3. Registra en historial: "Examen físico realizado. Estudios solicitados."
+4. Cambia estado del paciente a `EN_ESTUDIOS`
+5. Cierra modal y limpia selección
 
 ---
 
-### 3. Registrar Signos Vitales
+### 3. Prescribir Medicamentos
 
 ```typescript
-handleRecordVitalSigns(consultationId: string, vitalSigns: VitalSigns): void
+handlePrescribe(): void
 ```
 
 **Flujo:**
-1. Actualiza vitalSigns en Consultation
-2. Si hay hospitalización activa, agrega a vitalSignsHistory
+1. Valida que haya medicamentos ingresados
+2. Parsea medicamentos separados por coma
+3. Llama a `prescribeMedication(patientId, medsList)`
+4. Si hay notas diagnósticas, registra en historial
+5. Cambia estado del paciente a `EN_FARMACIA`
+6. Muestra alerta: "Receta generada y enviada a farmacia"
 
 ---
 
-### 4. Solicitar Estudios de Laboratorio
+### 4. Completar Consulta
 
 ```typescript
-handleRequestLab(consultationId: string, labRequest: LabRequestInput): void
+handleCompleteConsultation(): void
 ```
 
 **Flujo:**
-1. Crea registro de LabRequest con status `PENDIENTE`
-2. Cambia status de Visit a `EN_ESTUDIOS`
-3. Envía notificación a Laboratorio
+1. Actualiza estado a `LISTO_PARA_ALTA`
+2. Registra en historial: "Consulta completada"
+3. Cierra modal de consulta
 
 ---
 
-### 5. Crear Prescripción
+### 5. Programar Cirugía
 
 ```typescript
-handleCreatePrescription(consultationId: string, prescription: PrescriptionInput): void
+handleScheduleSurgery(patient: Pet): void
+handleConfirmSurgery(): void
+```
+
+**Flujo para programar:**
+1. Selecciona paciente
+2. Inicializa formulario de cirugía
+3. Abre modal `showSurgeryModal`
+
+**Flujo para confirmar:**
+1. Valida campos requeridos (tipo, fecha, hora)
+2. Llama a `scheduleSurgery(patientId, surgeryData)`
+3. Incluye: tipo, fecha, hora, prequirúrgicos, observaciones, prioridad, programadoPor
+4. Cambia estado a `CIRUGIA_PROGRAMADA`
+5. Cierra modal
+
+---
+
+### 6. Iniciar Cirugía
+
+```typescript
+handleStartSurgery(patient: Pet): void
 ```
 
 **Flujo:**
-1. Crea registro de Prescription con status `PENDIENTE`
-2. Cambia status de Visit a `EN_FARMACIA`
-3. Envía notificación a Farmacia
+1. Muestra confirmación
+2. Llama a `startSurgery(patientId)`
+3. Cambia estado a `EN_CIRUGIA`
+4. Registra `fechaInicioCirugia`
 
 ---
 
-### 6. Programar Cirugía
+### 7. Completar Cirugía y Generar Reporte
 
 ```typescript
-handleScheduleSurgery(consultationId: string, surgery: SurgeryInput): void
+handleCompleteSurgery(patient: Pet): void
+handleSubmitSurgeryReport(): void
+```
+
+**Flujo para completar:**
+1. Selecciona paciente
+2. Inicializa formulario de reporte quirúrgico
+3. Abre modal `showSurgeryReportModal`
+
+**Flujo para enviar reporte:**
+1. Valida campos requeridos (procedimiento, anestesia)
+2. Llama a `completeSurgery(patientId, reportData)`
+3. Incluye: procedimiento, anestesia, complicaciones, pronóstico, cuidadosPostOperatorios, cirujano, fechaRealizacion
+4. Pregunta si requiere hospitalización:
+   - Si sí: llama a `hospitalize()` con motivo "Post-operatorio"
+   - Si no: cambia a `LISTO_PARA_ALTA`
+
+---
+
+### 8. Abrir Monitoreo (Hospitalización)
+
+```typescript
+handleOpenMonitoring(patient: Pet): void
+handleSubmitMonitoring(): void
+```
+
+**Flujo para abrir:**
+1. Selecciona paciente hospitalizado
+2. Inicializa formulario de monitoreo EFG
+3. Abre modal `showMonitoringModal`
+
+**Flujo para guardar:**
+1. Valida campos requeridos (temperatura, frecuenciaCardiaca, frecuenciaRespiratoria)
+2. Llama a `addMonitoring(patientId, monitoringData)`
+3. Incluye: temperatura, FC, FR, PA, nivelConciencia, escalaDolor, observaciones, registradoPor
+4. Cierra modal
+
+---
+
+### 9. Ver Expediente
+
+```typescript
+handleViewExpediente(patient: Pet): void
 ```
 
 **Flujo:**
-1. Valida consentimiento firmado
-2. Crea registro de Surgery con status `PROGRAMADA`
-3. Cambia status de Visit a `CIRUGIA_PROGRAMADA`
-4. Envía notificación a Recepción
+1. Selecciona paciente
+2. Abre modal `showExpediente`
+3. Muestra:
+   - Datos del paciente (nombre, raza, edad, peso, ficha)
+   - Datos del propietario
+   - Historial de consultas
+   - Vacunas aplicadas
+   - Alergias y observaciones
 
 ---
 
-### 7. Iniciar Cirugía
+### 10. Toggle Estudio
 
 ```typescript
-handleStartSurgery(surgeryId: string): void
+toggleStudy(study: string): void
 ```
 
 **Flujo:**
-1. Verifica ayuno confirmado
-2. Cambia status de Surgery a `EN_CURSO`
-3. Registra startTime
-4. Cambia status de Visit a `EN_CIRUGIA`
+1. Si estudio está seleccionado, lo quita
+2. Si no está seleccionado, lo agrega
+3. Actualiza `selectedStudies`
 
 ---
 
-### 8. Completar Cirugía
+### 11. Completar Tarea
 
 ```typescript
-handleCompleteSurgery(surgeryId: string, postOpData: PostOpInput): void
+completeTask('MEDICO', taskId): void
 ```
 
 **Flujo:**
-1. Registra endTime y postOpNotes
-2. Cambia status de Surgery a `COMPLETADA`
-3. Si requiere hospitalización, llama a handleAdmitPatient
-4. Si no, cambia Visit a `LISTO_PARA_ALTA`
+1. Elimina tarea de `tareasPendientes.MEDICO`
+2. Tarea desaparece de la lista
 
 ---
 
-### 9. Internar Paciente
+### 12. Dar de Alta desde Hospitalización
 
 ```typescript
-handleAdmitPatient(consultationId: string, hospitalizationData: HospitalizationInput): void
+// Inline en el componente
+onClick={() => {
+  if (confirm(`¿Dar de alta a ${patient.nombre}?`)) {
+    updatePatientState(patient.id, 'LISTO_PARA_ALTA', currentUser?.nombre);
+  }
+}}
 ```
 
 **Flujo:**
-1. Crea registro de Hospitalization con status `ACTIVA`
-2. Cambia status de Visit a `HOSPITALIZADO`
-3. Inicializa arrays de observations, vitalSignsHistory, medicationSchedule
+1. Confirma acción
+2. Cambia estado a `LISTO_PARA_ALTA`
+3. Paciente sale de hospitalizados
 
 ---
 
-### 10. Agregar Nota Médica
+## Formularios y Modales
 
+### Modal: Consulta Médica (`showDiagnostic`)
+
+| Campo | Tipo | Requerido | Descripción |
+|-------|------|-----------|-------------|
+| `diagnosticNotes` | textarea | ❌ | Anamnesis, examen físico, diagnóstico presuntivo |
+| `selectedStudies` | checkbox[] | ❌ | Estudios a solicitar (multiselección) |
+| `medications` | textarea | ❌ | Medicamentos separados por comas |
+
+**Opciones de Estudios:**
 ```typescript
-handleAddMedicalNote(petId: string, note: MedicalNoteInput): void
+const studiesOptions = [
+  'Hematológicos',
+  'Coproparasitoscópicos',
+  'Uroanálisis',
+  'Radiográficos',
+  'Ecográficos',
+  'Electrocardiográficos'
+];
 ```
 
-**Flujo:**
-1. Crea registro de MedicalNote
-2. Si es interconsulta, notifica a especialista
-
----
-
-### 11. Ver Historial Clínico
-
+**Medicamentos Comunes (chips):**
 ```typescript
-handleViewMedicalHistory(petId: string): MedicalHistory
+const commonMedications = [
+  'Amoxicilina 500mg',
+  'Carprofeno 75mg',
+  'Metronidazol 250mg',
+  'Prednisona 5mg',
+  'Tramadol 50mg'
+];
 ```
 
-**Retorna:**
-- Todas las Consultations del paciente
-- Todos los LabRequests y resultados
-- Todas las Prescriptions
-- Todas las Surgeries
-- Todas las Hospitalizations
-- Todas las MedicalNotes
+**Acciones del Modal:**
+- "Solicitar Estudios Seleccionados" → `handleRequestStudies()`
+- "Generar Receta y Enviar a Farmacia" → `handlePrescribe()`
+- "Finalizar Consulta" → `handleCompleteConsultation()`
+- "Cancelar" → Cierra modal
 
 ---
 
-### 12. Marcar Listo para Alta
+### Modal: Programar Cirugía (`showSurgeryModal`)
 
 ```typescript
-handleReadyForDischarge(visitId: string, recommendations?: string): void
+interface SurgeryForm {
+  tipo: string;               // Tipo de cirugía (select) *
+  fecha: string;              // Fecha (date) *
+  hora: string;               // Hora (time) *
+  prequirurgicos: string[];   // Estudios pre-quirúrgicos (checkboxes)
+  observaciones: string;      // Notas adicionales (textarea)
+  prioridad: Priority;        // ALTA | MEDIA | BAJA
+}
 ```
 
-**Flujo:**
-1. Verifica que no haya pendientes (labs, recetas, etc.)
-2. Cambia status de Visit a `LISTO_PARA_ALTA`
-3. Envía notificación a Recepción
+**Tipos de Cirugía:**
+- Esterilización
+- Castración
+- Limpieza Dental
+- Extracción Dental
+- Remoción de Tumor
+- Reparación de Fractura
+- Cesárea
+- Otra (especificar)
+
+**Pre-quirúrgicos Disponibles:**
+- Hemograma Completo
+- Perfil Renal
+- Perfil Hepático
+- Radiografía de Tórax
+- Electrocardiograma
 
 ---
 
-### 13-17. Funciones Adicionales
+### Modal: Reporte Quirúrgico (`showSurgeryReportModal`)
 
 ```typescript
-// 13. Cancelar cirugía
-handleCancelSurgery(surgeryId: string, reason: string): void
-
-// 14. Agregar observación a hospitalizado
-handleAddHospitalizationObservation(hospitalizationId: string, observation: string): void
-
-// 15. Administrar medicamento a hospitalizado
-handleAdministerMedication(hospitalizationId: string, medicationItemId: string): void
-
-// 16. Dar alta de hospitalización
-handleDischargeHospitalization(hospitalizationId: string, notes?: string): void
-
-// 17. Solicitar interconsulta
-handleRequestInterconsult(petId: string, specialty: string, reason: string): void
+interface SurgeryReport {
+  procedimiento: string;           // Descripción del procedimiento *
+  anestesia: string;               // Tipo y dosis de anestesia *
+  complicaciones: string;          // Complicaciones si hubo
+  pronostico: string;              // Excelente | Bueno | Reservado | Grave
+  cuidadosPostOperatorios: string; // Instrucciones post-op
+}
 ```
 
----
-
-## Formularios
-
-### Formulario: Consulta Médica
-
-| Campo | Tipo | Requerido |
-|-------|------|-----------|
-| `symptoms` | textarea | ✅ |
-| `physicalExam` | textarea | ✅ |
-| `vitalSigns.temperature` | number | ❌ |
-| `vitalSigns.heartRate` | number | ❌ |
-| `vitalSigns.respiratoryRate` | number | ❌ |
-| `vitalSigns.weight` | number | ❌ |
-| `diagnosis` | textarea | ✅ |
-| `treatment` | textarea | ✅ |
-| `notes` | textarea | ❌ |
-| `followUpRequired` | checkbox | ❌ |
-| `followUpDate` | date | ❌ |
+**Opciones de Pronóstico:**
+- Excelente
+- Bueno
+- Reservado
+- Grave
 
 ---
 
-### Formulario: Solicitud de Laboratorio
+### Modal: Monitoreo EFG (`showMonitoringModal`)
 
-| Campo | Tipo | Requerido | Opciones |
-|-------|------|-----------|----------|
-| `type` | select | ✅ | Ver LabType |
-| `urgency` | select | ✅ | NORMAL, URGENTE |
-| `notes` | textarea | ❌ | - |
+```typescript
+interface MonitoringForm {
+  temperatura: string;           // °C (number) *
+  frecuenciaCardiaca: string;    // lpm (number) *
+  frecuenciaRespiratoria: string; // rpm (number) *
+  presionArterial: string;       // mmHg (text, ej: "120/80")
+  nivelConciencia: NivelConciencia; // Select
+  escalaDolor: string;           // 0-10 (select)
+  observaciones: string;         // Textarea
+}
 
----
+type NivelConciencia = 
+  | 'Alerta'
+  | 'Somnoliento'
+  | 'Desorientado'
+  | 'Estuporoso'
+  | 'Inconsciente';
+```
 
-### Formulario: Prescripción
-
-| Campo | Tipo | Requerido |
-|-------|------|-----------|
-| `medications` | array | ✅ |
-| `medications[].name` | text | ✅ |
-| `medications[].dosage` | text | ✅ |
-| `medications[].frequency` | text | ✅ |
-| `medications[].duration` | text | ✅ |
-| `medications[].quantity` | number | ✅ |
-| `medications[].instructions` | textarea | ❌ |
-| `generalInstructions` | textarea | ❌ |
-
----
-
-### Formulario: Cirugía
-
-| Campo | Tipo | Requerido |
-|-------|------|-----------|
-| `type` | text | ✅ |
-| `scheduledDate` | date | ✅ |
-| `scheduledTime` | time | ✅ |
-| `estimatedDuration` | number | ❌ |
-| `preOpNotes` | textarea | ❌ |
-| `sedationAuthorized` | checkbox | ✅ |
-| `consentForm.signedBy` | text | ✅ |
-| `consentForm.relationship` | text | ❌ |
+**Escala de Dolor:** 0 a 10 (select numérico)
 
 ---
 
-### Formulario: Hospitalización
+### Modal: Expediente Clínico (`showExpediente`)
 
-| Campo | Tipo | Requerido |
-|-------|------|-----------|
-| `reason` | textarea | ✅ |
-| `location` | text | ❌ |
-| `initialObservation` | textarea | ❌ |
+**Secciones mostradas:**
+1. **Header del Paciente:**
+   - Avatar (emoji según especie)
+   - Nombre, raza, edad, peso, ficha
+   - Propietario con teléfono clickeable
+
+2. **Historial de Consultas:**
+   - Fecha/hora
+   - Diagnóstico
+   - Medicamentos
+   - Médico tratante
+
+3. **Vacunas:**
+   - Nombre de vacuna
+   - Última aplicación
+   - Próxima dosis
+   - Estado (✅ completa / ⚠️ pendiente)
+
+4. **Alergias y Observaciones:**
+   - Alergias conocidas
+   - Observaciones especiales
+
+**Acciones:**
+- "Cerrar"
+- "Imprimir Expediente" → `window.print()`
+
+---
+
+## Secciones de la UI
+
+| Sección | Key | Descripción | Badge |
+|---------|-----|-------------|-------|
+| Dashboard | `dashboard` | Estadísticas + cirugías del día + tareas + historial | - |
+| Mis Consultas | `consultas` | Pacientes en estado EN_CONSULTA | Cantidad |
+| En Estudios | `estudios` | Pacientes en estado EN_ESTUDIOS | Cantidad (warning) |
+| Hospitalizados | `hospitalizados` | Pacientes en estado HOSPITALIZADO | Cantidad (urgent) |
+| Todos los Pacientes | `todos` | Tabla con búsqueda y filtros | - |
+
+---
+
+## Funciones del Contexto
+
+```typescript
+// Desde AppContext (useApp hook)
+const {
+  currentUser,           // Usuario logueado actual
+  systemState,           // Estado global del sistema
+  updatePatientState,    // Cambiar estado de paciente
+  completeTask,          // Marcar tarea como completada
+  requestStudies,        // Solicitar estudios de laboratorio
+  prescribeMedication,   // Prescribir y enviar a farmacia
+  addToHistory,          // Agregar entrada al historial
+  scheduleSurgery,       // Programar cirugía
+  startSurgery,          // Iniciar cirugía
+  completeSurgery,       // Completar cirugía con reporte
+  hospitalize,           // Internar paciente
+  addMonitoring          // Registrar monitoreo EFG
+} = useApp();
+```
+
+**Detalle de cada función:**
+
+| Función | Parámetros | Descripción |
+|---------|------------|-------------|
+| `updatePatientState` | `(patientId, newState, updatedBy)` | Cambia estado del paciente |
+| `completeTask` | `(rol, taskId)` | Elimina tarea de pendientes |
+| `requestStudies` | `(patientId, studies[])` | Envía solicitud a laboratorio, cambia a EN_ESTUDIOS |
+| `prescribeMedication` | `(patientId, medications[])` | Envía receta a farmacia, cambia a EN_FARMACIA |
+| `addToHistory` | `(patientId, entry)` | Agrega entrada al historial del paciente |
+| `scheduleSurgery` | `(patientId, surgeryData)` | Programa cirugía, cambia a CIRUGIA_PROGRAMADA |
+| `startSurgery` | `(patientId)` | Inicia cirugía, registra timestamp, cambia a EN_CIRUGIA |
+| `completeSurgery` | `(patientId, reportData)` | Guarda reporte quirúrgico |
+| `hospitalize` | `(patientId, hospitalizationData)` | Interna paciente, cambia a HOSPITALIZADO |
+| `addMonitoring` | `(patientId, monitoringData)` | Agrega registro EFG a hospitalización |
+
+---
+
+## Datos Computados (Derivados del Estado)
+
+```typescript
+// Tareas pendientes del médico
+const myTasks = systemState.tareasPendientes.MEDICO || [];
+
+// Pacientes en consulta activa
+const myPatients = systemState.pacientes.filter(p => p.estado === 'EN_CONSULTA');
+
+// Pacientes esperando atención
+const waitingPatients = systemState.pacientes.filter(p => p.estado === 'EN_ESPERA');
+
+// Pacientes en laboratorio
+const inStudies = systemState.pacientes.filter(p => p.estado === 'EN_ESTUDIOS');
+
+// Cirugías programadas
+const scheduledSurgeries = systemState.pacientes.filter(p => p.estado === 'CIRUGIA_PROGRAMADA');
+
+// En quirófano actualmente
+const inSurgery = systemState.pacientes.filter(p => p.estado === 'EN_CIRUGIA');
+
+// Hospitalizados
+const hospitalized = systemState.pacientes.filter(p => p.estado === 'HOSPITALIZADO');
+
+// Listos para alta
+const readyForDischarge = systemState.pacientes.filter(p => p.estado === 'LISTO_PARA_ALTA');
+
+// Todos los pacientes
+const allPatients = systemState.pacientes;
+
+// Búsqueda filtrada
+const filteredPatients = searchQuery
+  ? allPatients.filter(p => 
+      p.nombre.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      p.numeroFicha.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      p.propietario.toLowerCase().includes(searchQuery.toLowerCase())
+    )
+  : allPatients;
+```
 
 ---
 
@@ -610,20 +798,28 @@ handleRequestInterconsult(petId: string, specialty: string, reason: string): voi
 
 | Origen | Dato | Propósito |
 |--------|------|-----------|
-| **Recepción** | Visit con triage | Cola de pacientes |
-| **Recepción** | Datos de Owner y Pet | Info del paciente |
-| **Recepción** | Motivo de visita | Contexto inicial |
+| **Recepción** | Visit con triage | Cola de pacientes en EN_ESPERA |
+| **Recepción** | Datos de Owner y Pet | Info completa del paciente |
+| **Recepción** | Motivo y prioridad | Contexto del triage |
 | **Laboratorio** | Resultados de estudios | Completar diagnóstico |
-| **Farmacia** | Confirmación despacho | Saber que se entregó |
+| **Farmacia** | Confirmación despacho | Saber que se entregó medicamento |
 
 ### Datos que ENVÍA a otros módulos
 
 | Destino | Dato | Propósito |
 |---------|------|-----------|
-| **Laboratorio** | LabRequest | Solicitar estudios |
-| **Farmacia** | Prescription | Despachar medicamentos |
-| **Recepción** | Status `LISTO_PARA_ALTA` | Procesar salida |
-| **Recepción** | Recomendaciones de alta | Entregar al dueño |
+| **Laboratorio** | Solicitud de estudios | Via `requestStudies()` |
+| **Farmacia** | Prescripción | Via `prescribeMedication()` |
+| **Recepción** | Estado `LISTO_PARA_ALTA` | Procesar alta y cobro |
+| **Sistema** | Historial médico | Via `addToHistory()` |
+
+### Notificaciones Generadas
+
+| Función | Notificación | Destino |
+|---------|--------------|---------|
+| `requestStudies()` | "Nuevos estudios solicitados" | LABORATORIO |
+| `prescribeMedication()` | "Nueva receta para preparar" | FARMACIA |
+| `scheduleSurgery()` | "Cirugía programada" | MEDICO (recordatorio) |
 
 ---
 
@@ -632,65 +828,220 @@ handleRequestInterconsult(petId: string, specialty: string, reason: string): voi
 | Tabla | Create | Read | Update | Delete |
 |-------|--------|------|--------|--------|
 | `Consultation` | ✅ | ✅ | ✅ | ❌ |
-| `LabRequest` | ✅ | ✅ | ✅ | ❌ |
-| `Prescription` | ✅ | ✅ | ✅ | ❌ |
+| `LabRequest` | ✅ | ✅ | ❌ | ❌ |
+| `Prescription` | ✅ | ✅ | ❌ | ❌ |
 | `Surgery` | ✅ | ✅ | ✅ | ❌ |
 | `Hospitalization` | ✅ | ✅ | ✅ | ❌ |
+| `Monitoring` | ✅ | ✅ | ❌ | ❌ |
 | `MedicalNote` | ✅ | ✅ | ✅ | ❌ |
 | `Owner` | ❌ | ✅ | ❌ | ❌ |
 | `Pet` | ❌ | ✅ | ✅* | ❌ |
 | `Visit` | ❌ | ✅ | ✅* | ❌ |
-| `User` | ❌ | ✅ | ❌ | ❌ |
+| `Task` | ❌ | ✅ | ✅ | ✅ |
+| `History` | ✅ | ✅ | ❌ | ❌ |
 | `Notification` | ✅ | ✅ | ❌ | ❌ |
 
-*Pet: Solo puede actualizar `weight`  
-*Visit: Solo puede actualizar `status`
+*Pet: Solo puede actualizar `peso`, `consultaMedica`  
+*Visit: Solo puede actualizar `estado`
 
-**Resumen:** Médico es **dueño** de `Consultation`, `LabRequest`, `Prescription`, `Surgery`, `Hospitalization`, y `MedicalNote`.
-
----
-
-## Vistas/Secciones del Dashboard
-
-1. **Dashboard** - Resumen del día (consultas, cirugías, hospitalizados)
-2. **Cola de Consultas** - Pacientes en espera
-3. **En Atención** - Consulta activa con formulario
-4. **Estudios** - LabRequests y resultados
-5. **Cirugías** - Programación y estado de cirugías
-6. **Hospitalizados** - Pacientes internados con monitoreo
-7. **Historial** - Búsqueda de expedientes
+**Resumen:** Médico es **dueño** de `Consultation`, `LabRequest`, `Prescription`, `Surgery`, `Hospitalization`, `Monitoring`, y `MedicalNote`.
 
 ---
 
-## Notas de Implementación
+## Variables de Estado del Componente
 
-### Medicamentos Comunes (Sugerencias)
+```typescript
+// Paciente y modales
+const [selectedPatient, setSelectedPatient] = useState(null);
+const [showDiagnostic, setShowDiagnostic] = useState(false);
+const [showExpediente, setShowExpediente] = useState(false);
+const [showSurgeryModal, setShowSurgeryModal] = useState(false);
+const [showSurgeryReportModal, setShowSurgeryReportModal] = useState(false);
+const [showMonitoringModal, setShowMonitoringModal] = useState(false);
+
+// Navegación y búsqueda
+const [activeSection, setActiveSection] = useState('dashboard');
+const [searchQuery, setSearchQuery] = useState('');
+
+// Datos de formularios
+const [selectedStudies, setSelectedStudies] = useState([]);
+const [medications, setMedications] = useState('');
+const [diagnosticNotes, setDiagnosticNotes] = useState('');
+
+// Formulario de cirugía
+const [surgeryForm, setSurgeryForm] = useState({
+  tipo: '',
+  fecha: '',
+  hora: '',
+  prequirurgicos: [],
+  observaciones: '',
+  prioridad: 'ALTA'
+});
+
+// Reporte quirúrgico
+const [surgeryReport, setSurgeryReport] = useState({
+  procedimiento: '',
+  anestesia: '',
+  complicaciones: '',
+  pronostico: '',
+  cuidadosPostOperatorios: ''
+});
+
+// Formulario de monitoreo EFG
+const [monitoringForm, setMonitoringForm] = useState({
+  temperatura: '',
+  frecuenciaCardiaca: '',
+  frecuenciaRespiratoria: '',
+  presionArterial: '',
+  nivelConciencia: 'Alerta',
+  escalaDolor: '0',
+  observaciones: ''
+});
+```
+
+---
+
+## Datos Predefinidos
+
+### Opciones de Estudios
+```typescript
+const studiesOptions = [
+  'Hematológicos',
+  'Coproparasitoscópicos',
+  'Uroanálisis',
+  'Radiográficos',
+  'Ecográficos',
+  'Electrocardiográficos'
+];
+```
+
+### Medicamentos Comunes
 ```typescript
 const commonMedications = [
   'Amoxicilina 500mg',
   'Carprofeno 75mg',
   'Metronidazol 250mg',
   'Prednisona 5mg',
-  'Tramadol 50mg',
-  'Doxiciclina 100mg',
-  'Meloxicam 15mg',
-  'Enrofloxacina 150mg'
+  'Tramadol 50mg'
 ];
 ```
 
-### Tipos de Cirugía Comunes
+### Tipos de Cirugía
 ```typescript
-const commonSurgeries = [
-  'Esterilización',
-  'Castración',
-  'Limpieza dental',
-  'Extracción de tumor',
-  'Cirugía ortopédica',
-  'Cesárea',
-  'Gastropexia'
+const surgeryTypes = [
+  'esterilizacion',       // Esterilización
+  'castracion',           // Castración
+  'limpieza_dental',      // Limpieza Dental
+  'extraccion_dental',    // Extracción Dental
+  'tumor',                // Remoción de Tumor
+  'fractura',             // Reparación de Fractura
+  'cesarea',              // Cesárea
+  'otra'                  // Otra (especificar)
+];
+```
+
+### Pre-quirúrgicos
+```typescript
+const preOperativeStudies = [
+  'Hemograma Completo',
+  'Perfil Renal',
+  'Perfil Hepático',
+  'Radiografía de Tórax',
+  'Electrocardiograma'
+];
+```
+
+### Niveles de Conciencia (EFG)
+```typescript
+const consciousnessLevels = [
+  'Alerta',
+  'Somnoliento',
+  'Desorientado',
+  'Estuporoso',
+  'Inconsciente'
+];
+```
+
+### Opciones de Pronóstico
+```typescript
+const prognosisOptions = [
+  'Excelente',
+  'Bueno',
+  'Reservado',
+  'Grave'
 ];
 ```
 
 ---
 
-**Documento generado para el Proyecto EVEREST - VET-OS**
+## Vista de Dashboard - Estadísticas
+
+```typescript
+// Cards de estadísticas mostradas
+const dashboardStats = [
+  { icon: '🏥', value: myPatients.length, label: 'Pacientes en Consulta', color: '#2196f3' },
+  { icon: '📋', value: myTasks.length, label: 'Tareas Pendientes', color: '#ff9800' },
+  { icon: '🔪', value: scheduledSurgeries.length, label: 'Cirugías Programadas', color: '#9c27b0' },
+  { icon: '🏨', value: hospitalized.length, label: 'Hospitalizados', color: '#4caf50' }
+];
+```
+
+---
+
+## Estructura de Hospitalización con Monitoreos
+
+```typescript
+interface Hospitalization {
+  motivo: string;
+  frecuenciaMonitoreo: string;  // "2h", "4h", etc.
+  cuidadosEspeciales: string;
+  inicioHospitalizacion: string; // ISO date
+  monitoreos: MonitoringEntry[];
+}
+
+interface MonitoringEntry {
+  timestamp: string;           // ISO date
+  temperatura: number;
+  frecuenciaCardiaca: number;
+  frecuenciaRespiratoria: number;
+  presionArterial?: string;
+  nivelConciencia: string;
+  escalaDolor: string;
+  observaciones?: string;
+  registradoPor: string;
+}
+```
+
+---
+
+## Archivos Relacionados
+
+| Archivo | Propósito |
+|---------|-----------|
+| `src/components/dashboards/MedicoDashboard.jsx` | Componente principal (1,407 líneas) |
+| `src/components/dashboards/MedicoDashboard.css` | Estilos del dashboard |
+| `src/context/AppContext.jsx` | Estado global y funciones (520 líneas) |
+| `src/data/mockUsers.js` | Datos iniciales del sistema |
+
+---
+
+## Resumen de Estadísticas
+
+| Métrica | Valor |
+|---------|-------|
+| Líneas de código | 1,407 |
+| Entidades manejadas | 7 |
+| Funciones principales | 12 |
+| Modales | 5 |
+| Secciones UI | 5 |
+| Funciones del contexto | 11 |
+| Opciones de estudios | 6 |
+| Tipos de cirugía | 8 |
+| Pre-quirúrgicos | 5 |
+| Estados que maneja | 7 |
+
+---
+
+**Documento generado para el Proyecto EVEREST - VET-OS**  
+**Revisión Senior Dev - Versión 2.0 COMPLETA**  
+**Última actualización:** Enero 21, 2026
