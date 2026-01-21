@@ -3,7 +3,7 @@
 ## Documentación Técnica Completa
 
 **Fecha:** Enero 21, 2026  
-**Versión:** 1.0  
+**Versión:** 2.0 (Revisión exhaustiva Senior Dev)  
 **Archivo fuente:** `src/components/dashboards/FarmaciaDashboard.jsx` (767 líneas)
 
 ---
@@ -14,9 +14,15 @@
 2. [Entidades que Maneja](#entidades-que-maneja)
 3. [Estados del Sistema](#estados-del-sistema)
 4. [Funciones Principales](#funciones-principales)
-5. [Formularios](#formularios)
-6. [Interacciones con Otros Módulos](#interacciones-con-otros-módulos)
-7. [Permisos de Base de Datos](#permisos-de-base-de-datos)
+5. [Formularios y Modales](#formularios-y-modales)
+6. [Secciones de la UI](#secciones-de-la-ui)
+7. [Funciones del Contexto](#funciones-del-contexto)
+8. [Variables de Estado](#variables-de-estado)
+9. [Datos Computados](#datos-computados)
+10. [Interacciones con Otros Módulos](#interacciones-con-otros-módulos)
+11. [Permisos de Base de Datos](#permisos-de-base-de-datos)
+12. [Inventario Mock](#inventario-mock)
+13. [Notas de Implementación](#notas-de-implementación)
 
 ---
 
@@ -299,105 +305,110 @@ type PurchaseOrderStatus =
 
 ---
 
-## Funciones Principales
+## Funciones Principales (Implementadas en el Código)
 
-### 1. Ver Recetas Pendientes
+### 1. Preparar y Entregar Medicamentos
 
 ```typescript
-handleGetPendingPrescriptions(): Prescription[]
+handlePrepare(taskId: string, patientId: string): void
 ```
 
 **Flujo:**
-1. Consulta Prescriptions con status `PENDIENTE`
-2. Ordena por fecha de creación (más antiguas primero)
-3. Incluye datos del paciente y prescriptor
+1. Activa estado de preparación: `preparingMeds[taskId] = true`
+2. Simula tiempo de preparación (1500ms setTimeout)
+3. Llama a `completeTask('FARMACIA', taskId)` para eliminar tarea
+4. Llama a `deliverMedication(patientId)` para:
+   - Cambiar estado del paciente a `LISTO_PARA_ALTA`
+   - Enviar notificación a Recepción
+5. Desactiva estado de preparación
+6. Muestra alerta: "Medicamentos preparados y entregados"
+
+**Código real:**
+```javascript
+const handlePrepare = (taskId, patientId) => {
+  setPreparingMeds({ ...preparingMeds, [taskId]: true });
+  
+  setTimeout(() => {
+    completeTask('FARMACIA', taskId);
+    deliverMedication(patientId);
+    setPreparingMeds({ ...preparingMeds, [taskId]: false });
+    alert('Medicamentos preparados y entregados');
+  }, 1500);
+};
+```
 
 ---
 
-### 2. Despachar Receta Completa
+### 2. Ver Detalles de Orden
 
 ```typescript
-handleDispensePrescription(prescriptionId: string, dispenseData: DispenseInput): void
+handleViewOrderDetails(task: Task): void
 ```
 
 **Flujo:**
-1. Valida que hay stock suficiente para todos los items
-2. Crea registro de Dispense con status `COMPLETO`
-3. Por cada item:
-   - Crea StockMovement tipo `SALIDA`
-   - Actualiza currentStock en Medication
-4. Cambia status de Prescription a `DESPACHADA`
-5. Cambia status de Visit a `LISTO_PARA_ALTA`
-6. Notifica a Recepción
+1. Guarda la tarea seleccionada en `selectedOrder`
+2. Abre modal `showOrderDetailsModal`
+3. Muestra información completa del paciente y receta
 
 ---
 
-### 3. Despachar Parcialmente
+### 3. Contar Stock Bajo
 
 ```typescript
-handlePartialDispense(prescriptionId: string, items: PartialDispenseItem[], reason: string): void
+getLowStockCount(): number
 ```
 
 **Flujo:**
-1. Crea registro de Dispense con status `PARCIAL`
-2. Solo procesa items con stock disponible
-3. Registra razón para items no despachados
-4. Cambia status de Prescription a `PARCIAL`
-5. Notifica al médico sobre faltantes
+1. Filtra inventario donde `stock <= minimo`
+2. Retorna cantidad de productos con stock bajo
 
----
-
-### 4. Rechazar/Devolver Receta
-
-```typescript
-handleRejectPrescription(prescriptionId: string, reason: string): void
+**Código real:**
+```javascript
+const getLowStockCount = () => {
+  return inventory.filter(item => item.stock <= item.minimo).length;
+};
 ```
 
-**Flujo:**
-1. Cambia status de Prescription a `CANCELADA` (nota: médico debe re-evaluar)
-2. Notifica al médico con la razón
-3. No crea registro de Dispense
-
 ---
 
-### 5. Buscar Medicamento
+### 4. Búsqueda de Inventario
 
 ```typescript
-handleSearchMedication(query: string): Medication[]
+// Filtro reactivo (no es función, es computed)
+const filteredInventory = inventory.filter(item =>
+  item.nombre.toLowerCase().includes(searchQuery.toLowerCase()) ||
+  item.categoria.toLowerCase().includes(searchQuery.toLowerCase())
+);
 ```
 
 **Busca por:**
-- Nombre comercial
-- Nombre genérico
+- Nombre del medicamento
 - Categoría
 
 ---
 
-### 6. Ver Stock de Medicamento
+## Funciones Planificadas (No Implementadas)
 
-```typescript
-handleCheckStock(medicationId: string): StockInfo
-```
+> ⚠️ Las siguientes funciones están en la documentación original pero **NO están implementadas** en el código actual:
 
-**Retorna:**
-- Stock actual
-- Stock mínimo/máximo
-- Última reposición
-- Fecha de vencimiento
-- Ubicación
+| Función | Descripción | Estado |
+|---------|-------------|--------|
+| `handleDispensePrescription` | Despachar receta completa | ❌ No implementada |
+| `handlePartialDispense` | Despacho parcial | ❌ No implementada |
+| `handleRejectPrescription` | Rechazar receta | ❌ No implementada |
+| `handleAddStock` | Agregar stock | ❌ Solo UI, sin lógica |
+| `handleAdjustInventory` | Ajustar inventario | ❌ Solo UI, sin lógica |
+| `handleCreateMedication` | Crear medicamento | ❌ Solo alert, sin lógica |
+| `handleUpdateMedication` | Actualizar medicamento | ❌ No implementada |
+| `handleResolveAlert` | Resolver alerta | ❌ No implementada |
+| `handleMarkAsExpired` | Marcar como vencido | ❌ No implementada |
 
----
+### Botones con UI pero sin Lógica
 
-### 7. Agregar Stock (Entrada)
-
-```typescript
-handleAddStock(medicationId: string, quantity: number, details: StockEntryDetails): void
-```
-
-**Flujo:**
-1. Valida datos de entrada
-2. Crea StockMovement tipo `ENTRADA`
-3. Actualiza currentStock en Medication
+En la vista de Inventario, hay 3 botones que no tienen lógica implementada:
+- 📝 "Ajustar Stock" - Solo icono, sin onClick
+- 📊 "Ver Historial" - Solo icono, sin onClick
+- ➕ "Reabastecer" - Solo icono, sin onClick
 4. Actualiza lastRestocked
 5. Actualiza expirationDate si es más próxima
 6. Resuelve alertas de STOCK_BAJO o AGOTADO si aplica
@@ -532,67 +543,204 @@ handleMarkAsExpired(medicationId: string, quantity: number): void
 
 ---
 
-## Formularios
+## Formularios y Modales
 
-### Formulario: Despacho de Receta
+### Modal: Detalles de Orden (`showOrderDetailsModal`)
 
-| Campo | Tipo | Requerido | Notas |
-|-------|------|-----------|-------|
-| `prescriptionId` | hidden | ✅ | ID de la receta |
-| `items[].dispensedQty` | number | ✅ | Cantidad a despachar |
-| `items[].reason` | text | ❌ | Solo si es parcial |
-| `deliveredTo` | text | ✅ | Nombre de quien recibe |
-| `notes` | textarea | ❌ | Notas adicionales |
-| `signature` | signature | ❌ | Firma digital |
+**Información mostrada:**
 
----
+| Sección | Campo | Descripción |
+|---------|-------|-------------|
+| Paciente | `nombre` | Nombre de la mascota |
+| | `raza` | Raza del paciente |
+| | `propietario` | Nombre del dueño |
+| | `telefono` | Teléfono clickeable |
+| | `numeroFicha` | Número de ficha |
+| Receta | `descripcion` | Medicamentos prescritos |
+| | `prioridad` | ALTA, MEDIA, BAJA (badge) |
+| | `timestamp` | Fecha y hora de la receta |
 
-### Formulario: Nuevo Medicamento
-
-| Campo | Tipo | Requerido | Validación |
-|-------|------|-----------|------------|
-| `name` | text | ✅ | Mínimo 2 caracteres |
-| `genericName` | text | ❌ | - |
-| `category` | select | ✅ | Ver MedicationCategory |
-| `presentation` | text | ✅ | - |
-| `concentration` | text | ❌ | - |
-| `unit` | text | ✅ | - |
-| `currentStock` | number | ✅ | ≥ 0 |
-| `minStock` | number | ✅ | ≥ 0 |
-| `maxStock` | number | ❌ | > minStock |
-| `location` | text | ❌ | - |
-| `requiresRefrigeration` | checkbox | ❌ | Default: false |
-| `isControlled` | checkbox | ❌ | Default: false |
-| `costPrice` | number | ❌ | ≥ 0 |
-| `salePrice` | number | ✅ | > 0 |
-| `expirationDate` | date | ✅ | Fecha futura |
-| `supplier` | text | ❌ | - |
+**Acciones:**
+- "Cerrar" → Cierra modal
+- "Preparar Medicamentos" → Llama a `handlePrepare()` y cierra modal
 
 ---
 
-### Formulario: Entrada de Stock
+### Modal: Agregar Medicamento (`showNewMedicationModal`)
 
-| Campo | Tipo | Requerido | Validación |
-|-------|------|-----------|------------|
-| `medicationId` | select | ✅ | Medicamento existente |
-| `quantity` | number | ✅ | > 0 |
-| `batchNumber` | text | ❌ | - |
-| `expirationDate` | date | ✅ | Fecha futura |
-| `costPrice` | number | ❌ | ≥ 0 |
-| `supplier` | text | ❌ | - |
-| `invoiceNumber` | text | ❌ | - |
-| `notes` | textarea | ❌ | - |
+| Campo | Tipo | Requerido | Opciones |
+|-------|------|-----------|----------|
+| Nombre del Medicamento | text | ✅ | Placeholder: "Ej: Amoxicilina 500mg" |
+| Categoría | select | ✅ | Ver opciones abajo |
+| Stock Inicial | number | ✅ | Placeholder: "0" |
+| Stock Mínimo | number | ✅ | Placeholder: "0" |
+| Precio Unitario | number | ✅ | step="0.01", Placeholder: "0.00" |
+
+**Categorías disponibles:**
+```typescript
+const categorias = [
+  'antibioticos',        // Antibióticos
+  'antiinflamatorios',   // Antiinflamatorios
+  'analgesicos',         // Analgésicos
+  'vacunas',             // Vacunas
+  'corticosteroides',    // Corticosteroides
+  'protectores',         // Protectores Gástricos
+  'otros'                // Otros
+];
+```
+
+**Acciones:**
+- "Cancelar" → Cierra modal
+- "Agregar al Inventario" → Solo muestra alert (⚠️ NO guarda datos)
+
+> ⚠️ **NOTA:** Este modal NO tiene lógica de guardado implementada. Solo muestra `alert('Medicamento agregado al inventario')` sin persistir datos.
 
 ---
 
-### Formulario: Ajuste de Inventario
+## Secciones de la UI
 
-| Campo | Tipo | Requerido | Validación |
-|-------|------|-----------|------------|
-| `medicationId` | select | ✅ | Medicamento existente |
-| `adjustmentType` | select | ✅ | Ver MovementType |
-| `quantity` | number | ✅ | Según tipo |
-| `reason` | textarea | ✅ | Mínimo 10 caracteres |
+| Sección | Key | Descripción | Badge |
+|---------|-----|-------------|-------|
+| Dashboard | `dashboard` | Estadísticas + órdenes urgentes + alertas stock | - |
+| Recetas Pendientes | `recetas` | Lista de todas las tareas de farmacia | Cantidad |
+| Inventario | `inventario` | Catálogo con búsqueda y filtros | Stock bajo (urgent) |
+| Dispensados | `dispensados` | Historial de entregas (datos mock) | - |
+| Reportes | `reportes` | Estadísticas y reportes (datos mock) | - |
+
+### Vista Dashboard - Estadísticas
+
+```typescript
+const dashboardStats = [
+  { icon: '💊', value: myTasks.length, label: 'Pedidos Pendientes', color: '#9c27b0' },
+  { icon: '📦', value: inventory.length, label: 'Productos en Inventario', color: '#2196f3' },
+  { icon: '⚠️', value: getLowStockCount(), label: 'Stock Bajo', color: '#f44336' },
+  { icon: '✅', value: completedToday, label: 'Entregados Hoy', color: '#4caf50' }  // Mock: 18
+];
+```
+
+### Vista Dashboard - Órdenes Urgentes
+
+Filtra y muestra solo tareas con `prioridad === 'ALTA'`.
+
+**Tarjeta de orden urgente:**
+- Badge "URGENTE" rojo
+- Hora de la receta
+- Avatar del paciente (🐕/🐈)
+- Nombre, propietario, ficha
+- Medicamentos prescritos
+- Botones: "Ver Detalles", "Preparar"
+
+### Vista Dashboard - Alertas de Stock
+
+Muestra productos donde `stock <= minimo`.
+
+**Tarjeta de alerta:**
+- Icono ⚠️
+- Nombre del medicamento
+- Stock actual vs mínimo
+- Categoría
+- Botón "Reabastecer" (sin lógica)
+
+### Vista Dispensados - Datos Mock
+
+> ⚠️ Esta vista usa datos **hardcodeados**, no conectados al sistema.
+
+**Tabla de entregas (ejemplo):**
+```typescript
+const historialEjemplo = [
+  { hora: '14:30', paciente: 'Max', meds: 'Amoxicilina 500mg, Carprofeno 75mg', propietario: 'Juan Pérez', total: '$60.00' },
+  { hora: '13:15', paciente: 'Luna', meds: 'Vacuna Triple Felina', propietario: 'María Sánchez', total: '$45.00' },
+  // ... más datos hardcodeados
+];
+```
+
+**Summary Cards:**
+- Total Entregas Hoy: `18` (mock)
+- Ingresos del Día: `$1,245.00` (mock)
+- Productos Dispensados: `42` (mock)
+
+### Vista Reportes - Datos Mock
+
+4 tarjetas de reportes con datos **hardcodeados**:
+
+1. **Medicamentos Más Dispensados** (Top 5)
+2. **Ingresos por Categoría** (5 categorías)
+3. **Resumen Mensual** (Total entregas, ingresos, promedio, reabastecimientos)
+4. **Alertas y Notificaciones** (Stock bajo, pedidos pendientes, meta alcanzada)
+
+---
+
+## Funciones del Contexto
+
+```typescript
+// Desde AppContext (useApp hook)
+const {
+  currentUser,           // Usuario logueado actual
+  systemState,           // Estado global del sistema
+  completeTask,          // Marcar tarea como completada
+  deliverMedication,     // Entregar medicamentos y cambiar estado
+  addToHistory           // Agregar entrada al historial (IMPORTADO PERO NO USADO)
+} = useApp();
+```
+
+**Detalle de cada función:**
+
+| Función | Parámetros | Descripción |
+|---------|------------|-------------|
+| `completeTask` | `(rol, taskId)` | Elimina tarea de `tareasPendientes.FARMACIA` |
+| `deliverMedication` | `(patientId)` | Cambia estado a `LISTO_PARA_ALTA`, notifica Recepción |
+| `addToHistory` | `(patientId, entry)` | ⚠️ Importado pero NO utilizado en el componente |
+
+---
+
+## Variables de Estado del Componente
+
+```typescript
+// Orden/tarea seleccionada
+const [selectedOrder, setSelectedOrder] = useState(null);
+
+// Estado de preparación por tarea { [taskId]: boolean }
+const [preparingMeds, setPreparingMeds] = useState({});
+
+// Navegación
+const [activeSection, setActiveSection] = useState('dashboard');
+
+// Búsqueda de inventario
+const [searchQuery, setSearchQuery] = useState('');
+
+// Modales
+const [showNewMedicationModal, setShowNewMedicationModal] = useState(false);
+const [showOrderDetailsModal, setShowOrderDetailsModal] = useState(false);
+```
+
+---
+
+## Datos Computados (Derivados del Estado)
+
+```typescript
+// Tareas pendientes de farmacia
+const myTasks = systemState.tareasPendientes.FARMACIA || [];
+
+// Pacientes en farmacia (⚠️ DECLARADO PERO NO USADO EN UI)
+const pharmacyPatients = systemState.pacientes.filter(p => p.estado === 'EN_FARMACIA');
+
+// Órdenes pendientes (prioridad ALTA o MEDIA)
+const pendingOrders = myTasks.filter(t => t.prioridad === 'ALTA' || t.prioridad === 'MEDIA');
+
+// Órdenes urgentes (solo ALTA)
+const urgentOrders = myTasks.filter(t => t.prioridad === 'ALTA');
+
+// Entregados hoy (MOCK - hardcoded)
+const completedToday = 18;
+
+// Inventario filtrado por búsqueda
+const filteredInventory = inventory.filter(item =>
+  item.nombre.toLowerCase().includes(searchQuery.toLowerCase()) ||
+  item.categoria.toLowerCase().includes(searchQuery.toLowerCase())
+);
+```
+
+> ⚠️ **NOTA:** `pharmacyPatients` está declarado pero **NO se utiliza** en ninguna parte de la UI.
 
 ---
 
@@ -694,22 +842,126 @@ const alertColors = {
 };
 ```
 
-### Inventario Mock Inicial
+---
+
+## Inventario Mock
+
+### Estructura de Item de Inventario
+
 ```typescript
-const initialInventory = [
-  { name: 'Amoxicilina 500mg', stock: 150, minStock: 50, category: 'ANTIBIOTICO', price: 25.00 },
-  { name: 'Carprofeno 75mg', stock: 80, minStock: 30, category: 'ANTIINFLAMATORIO', price: 35.00 },
-  { name: 'Metronidazol 250mg', stock: 45, minStock: 40, category: 'ANTIBIOTICO', price: 20.00 },
-  { name: 'Prednisona 5mg', stock: 120, minStock: 50, category: 'ANTIINFLAMATORIO', price: 15.00 },
-  { name: 'Tramadol 50mg', stock: 25, minStock: 30, category: 'ANALGESICO', price: 40.00 },
-  { name: 'Doxiciclina 100mg', stock: 90, minStock: 40, category: 'ANTIBIOTICO', price: 28.00 },
-  { name: 'Meloxicam 15mg', stock: 15, minStock: 25, category: 'ANTIINFLAMATORIO', price: 32.00 },
-  { name: 'Omeprazol 20mg', stock: 110, minStock: 50, category: 'OTRO', price: 18.00 },
-  { name: 'Enrofloxacina 150mg', stock: 65, minStock: 30, category: 'ANTIBIOTICO', price: 30.00 },
-  { name: 'Vacuna Séxtuple', stock: 30, minStock: 20, category: 'VACUNA', price: 45.00 },
+interface InventoryItem {
+  id: number;           // ID único
+  nombre: string;       // Nombre del medicamento
+  stock: number;        // Stock actual
+  minimo: number;       // Stock mínimo (para alertas)
+  categoria: string;    // Categoría del medicamento
+  precio: number;       // Precio unitario
+}
+```
+
+### Datos Hardcodeados (10 productos)
+
+```typescript
+const inventory = [
+  { id: 1, nombre: 'Amoxicilina 500mg', stock: 150, minimo: 50, categoria: 'Antibióticos', precio: 25.00 },
+  { id: 2, nombre: 'Carprofeno 75mg', stock: 80, minimo: 30, categoria: 'Antiinflamatorios', precio: 35.00 },
+  { id: 3, nombre: 'Metronidazol 250mg', stock: 45, minimo: 40, categoria: 'Antibióticos', precio: 20.00 },
+  { id: 4, nombre: 'Prednisona 5mg', stock: 120, minimo: 50, categoria: 'Corticosteroides', precio: 15.00 },
+  { id: 5, nombre: 'Tramadol 50mg', stock: 25, minimo: 30, categoria: 'Analgésicos', precio: 40.00 },
+  { id: 6, nombre: 'Doxiciclina 100mg', stock: 90, minimo: 40, categoria: 'Antibióticos', precio: 28.00 },
+  { id: 7, nombre: 'Meloxicam 15mg', stock: 15, minimo: 25, categoria: 'Antiinflamatorios', precio: 32.00 },
+  { id: 8, nombre: 'Omeprazol 20mg', stock: 110, minimo: 50, categoria: 'Protectores Gástricos', precio: 18.00 },
+  { id: 9, nombre: 'Enrofloxacina 150mg', stock: 65, minimo: 30, categoria: 'Antibióticos', precio: 30.00 },
+  { id: 10, nombre: 'Vacuna Séxtuple', stock: 30, minimo: 20, categoria: 'Vacunas', precio: 45.00 },
 ];
+```
+
+### Productos con Stock Bajo (Inicial)
+
+| Producto | Stock | Mínimo | Estado |
+|----------|-------|--------|--------|
+| Metronidazol 250mg | 45 | 40 | ⚠️ Cerca del mínimo |
+| Tramadol 50mg | 25 | 30 | 🔴 Por debajo |
+| Meloxicam 15mg | 15 | 25 | 🔴 Por debajo |
+
+### Categorías en el Mock
+
+- Antibióticos (4 productos)
+- Antiinflamatorios (2 productos)
+- Corticosteroides (1 producto)
+- Analgésicos (1 producto)
+- Protectores Gástricos (1 producto)
+- Vacunas (1 producto)
+
+---
+
+## Notas de Implementación Pendientes
+
+### TODOs Identificados en el Código
+
+1. **Vista Dispensados:** Datos completamente hardcodeados. Necesita:
+   - Conectar con historial real de despachos
+   - Implementar cálculo dinámico de ingresos
+   - Contador real de productos dispensados
+
+2. **Vista Reportes:** Todos los datos son mock. Necesita:
+   - Conectar con datos reales del sistema
+   - Implementar agregaciones por categoría
+   - Calcular métricas mensuales
+
+3. **Modal Agregar Medicamento:** Solo tiene UI. Necesita:
+   - Función para agregar al inventario
+   - Validaciones de formulario
+   - Persistencia de datos
+
+4. **Botones de Inventario:** 3 botones sin lógica:
+   - Ajustar Stock (📝)
+   - Ver Historial (📊)
+   - Reabastecer (➕)
+
+5. **`pharmacyPatients`:** Variable declarada pero no utilizada.
+
+6. **`addToHistory`:** Importado del contexto pero no utilizado.
+
+### Cálculo de Barra de Stock
+
+```typescript
+// Porcentaje de la barra de stock visual
+const stockPercentage = (item.stock / (item.minimo * 3)) * 100;
+// Color: Rojo si stock <= minimo, Verde si > minimo
+const barColor = isLowStock ? '#f44336' : '#4caf50';
 ```
 
 ---
 
-**Documento generado para el Proyecto EVEREST - VET-OS**
+## Resumen de Estadísticas
+
+| Métrica | Valor |
+|---------|-------|
+| Líneas de código | 767 |
+| Entidades documentadas | 5 |
+| Funciones implementadas | 3 |
+| Funciones planificadas | 9 |
+| Modales | 2 |
+| Secciones UI | 5 |
+| Funciones del contexto | 3 (1 sin usar) |
+| Variables de estado | 6 |
+| Datos computados | 6 (1 sin usar) |
+| Productos en mock | 10 |
+| Productos con stock bajo | 3 |
+
+---
+
+## Archivos Relacionados
+
+| Archivo | Propósito |
+|---------|----------|
+| `src/components/dashboards/FarmaciaDashboard.jsx` | Componente principal (767 líneas) |
+| `src/components/dashboards/FarmaciaDashboard.css` | Estilos del dashboard |
+| `src/context/AppContext.jsx` | Estado global y funciones |
+
+---
+
+**Documento generado para el Proyecto EVEREST - VET-OS**  
+**Revisión Senior Dev - Versión 2.0 COMPLETA**  
+**Última actualización:** Enero 21, 2026
