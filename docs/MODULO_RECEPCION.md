@@ -3,7 +3,7 @@
 ## Documentación Técnica Completa
 
 **Fecha:** Enero 21, 2026  
-**Versión:** 2.0 (Revisión exhaustiva Senior Dev)  
+**Versión:** 2.1 (Segunda Revisión exhaustiva Senior Dev)  
 **Archivo fuente:** `src/components/dashboards/RecepcionDashboard.jsx` (2,141 líneas)
 
 ---
@@ -364,7 +364,22 @@ handleSearchClient(e: FormEvent): void
 
 ---
 
-### 2. Check-in de Paciente Existente
+### 2. Asignar a Doctor
+
+```typescript
+handleAssignDoctor(patientId: string): void
+```
+
+**Flujo:**
+1. Recibe ID del paciente
+2. Llama a `assignToDoctor(patientId, currentUser.nombre)` del contexto
+3. Muestra alert de confirmación
+
+**⚠️ NOTA:** Esta función asigna al usuario actual como doctor, lo cual puede no ser correcto si el usuario es recepcionista.
+
+---
+
+### 3. Check-in de Paciente Existente
 
 ```typescript
 handleCheckInExistingPet(pet: Pet): void
@@ -379,7 +394,7 @@ handleCheckInExistingPet(pet: Pet): void
 
 ---
 
-### 3. Iniciar Triage
+### 4. Iniciar Triage
 
 ```typescript
 handleStartTriage(patient: Pet): void
@@ -725,7 +740,16 @@ const clientFormURL = `${window.location.origin}/registro-cliente`
 | Expediente | `showExpedienteModal` | Ver historial clínico completo |
 | Nueva Cita | `showNewAppointmentModal` | Agendar cita futura |
 | Calendario Preventivo | `showCalendarModal` | Ver pacientes con vacunas pendientes |
-| Detalles Paciente | `selectedPatient` (sin modal específico) | Ver información básica |
+| Detalles Paciente | `selectedPatient && !showTriageModal && !showDischargeModal && !showExpedienteModal` | Ver información básica |
+
+**⚠️ Nota sobre Modal de Detalles:**
+El modal de detalles del paciente se muestra SOLO cuando:
+- `selectedPatient` tiene valor
+- `showTriageModal` es false
+- `showDischargeModal` es false  
+- `showExpedienteModal` es false
+
+Esto significa que si se abre cualquier otro modal, el de detalles básicos NO aparece.
 
 ---
 
@@ -834,7 +858,7 @@ const [showClientPets, setShowClientPets] = useState(false);
 const [showTriageModal, setShowTriageModal] = useState(false);
 const [showDischargeModal, setShowDischargeModal] = useState(false);
 const [showExpedienteModal, setShowExpedienteModal] = useState(false);
-const [showNewPatientModal, setShowNewPatientModal] = useState(false);
+const [showNewPatientModal, setShowNewPatientModal] = useState(false);  // ⚠️ DECLARADO PERO NO USADO
 const [showNewAppointmentModal, setShowNewAppointmentModal] = useState(false);
 const [showCalendarModal, setShowCalendarModal] = useState(false);
 
@@ -1079,6 +1103,37 @@ interface HistoryEntry {
 
 ---
 
+## ⚠️ Gaps de Implementación (TODOs)
+
+### Funciones con Lógica Incompleta
+
+| Función/Elemento | Problema | Línea |
+|------------------|----------|-------|
+| `handleSubmitNewPatient` | Solo muestra alert y resetea datos, NO agrega paciente al contexto | ~267 |
+| Botón "Guardar Mascota" del Wizard | Solo muestra alert, resetea wizard y cambia sección | 1285-1290 |
+| Botón "Agregar nueva mascota" en check-in | Solo muestra alert, sin lógica real | 620-625 |
+| `handleConfirmAppointment` | Solo muestra alert, NO actualiza estado de cita | 180-183 |
+| `showNewPatientModal` | Estado declarado pero NUNCA usado (wizard usa inline) | línea 23 |
+| Calendario Preventivo en Modal | Duplica contenido de sección `preventiva` | 2068-2139 |
+| Botón "📞 Llamar para Agendar" | No tiene función onClick definida | 2128 |
+
+### Estructura de `newAppointmentData` inicial
+
+```typescript
+// En handleNewAppointment() - Valores por defecto:
+{
+  pacienteId: '',
+  pacienteNombre: '',
+  fecha: new Date().toISOString().split('T')[0], // Fecha actual
+  hora: '',
+  tipo: 'consulta_general',
+  motivo: '',
+  confirmada: false
+}
+```
+
+---
+
 ## Notas de Implementación
 
 ### Prioridades en Cola de Espera
@@ -1158,16 +1213,18 @@ import './RecepcionDashboard.css';
 | Líneas de código (RegistroCliente) | 951 |
 | Total de entidades | 8 |
 | Campos en Pet | 45+ |
-| Funciones principales | 14 |
+| Funciones principales | 15 |
 | Modales | 6 |
 | Secciones UI | 8 |
 | Pasos en Wizard Nueva Mascota | 7 |
 | Pasos en Wizard Cliente QR | 5 |
 | Estados del paciente | 10 |
 | Funciones del contexto usadas | 10 |
+| Estados no usados | 1 (`showNewPatientModal`) |
+| Botones sin lógica completa | 4 |
 
 ---
 
 **Documento generado para el Proyecto EVEREST - VET-OS**  
-**Revisión Senior Dev - Versión 2.1 COMPLETA**  
+**Revisión Senior Dev - Versión 2.1 FINAL (Segunda Revisión)**  
 **Última actualización:** Enero 21, 2026
