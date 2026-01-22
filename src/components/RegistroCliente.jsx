@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useApp } from '../context/AppContext';
+import { ownerService, petService, visitService } from '../services/recepcion.service';
 import './RegistroCliente.css';
 
 const RegistroCliente = () => {
@@ -12,6 +13,9 @@ const RegistroCliente = () => {
   const [foundPatients, setFoundPatients] = useState([]);
   const [selectedPatient, setSelectedPatient] = useState(null);
   const [showSuccess, setShowSuccess] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [submitError, setSubmitError] = useState('');
+  const [foundOwner, setFoundOwner] = useState(null);
   
   const totalSteps = 5;
 
@@ -106,13 +110,59 @@ const RegistroCliente = () => {
     });
   };
 
-  const handleSearchExisting = () => {
+  const handleSearchExisting = async () => {
     if (searchPhone.length >= 8) {
-      const found = pacientes.filter(p => 
-        p.telefono?.includes(searchPhone) || 
-        p.propietario?.telefono?.includes(searchPhone)
-      );
-      setFoundPatients(found);
+      try {
+        // Buscar en la API
+        const owner = await ownerService.searchByPhone(searchPhone);
+        
+        if (owner) {
+          setFoundOwner(owner);
+          // Obtener mascotas del propietario
+          const pets = await petService.getByOwner(owner.id);
+          setFoundPatients(pets.map(pet => ({
+            id: pet.id,
+            nombre: pet.nombre,
+            especie: pet.especie === 'PERRO' ? 'Canino' : pet.especie === 'GATO' ? 'Felino' : pet.especie,
+            raza: pet.raza || 'Sin especificar',
+            edad: pet.fechaNacimiento ? calcularEdad(pet.fechaNacimiento) : 'Sin registrar',
+            propietario: owner.nombre,
+            telefono: owner.telefono,
+          })));
+        } else {
+          // Fallback: buscar en datos locales
+          const found = pacientes?.filter(p => 
+            p.telefono?.includes(searchPhone) || 
+            p.propietario?.telefono?.includes(searchPhone)
+          ) || [];
+          setFoundPatients(found);
+        }
+      } catch (err) {
+        console.error('Error searching:', err);
+        // Fallback a búsqueda local
+        const found = pacientes?.filter(p => 
+          p.telefono?.includes(searchPhone) || 
+          p.propietario?.telefono?.includes(searchPhone)
+        ) || [];
+        setFoundPatients(found);
+      }
+    }
+  };
+
+  // Función para calcular edad
+  const calcularEdad = (fechaNacimiento) => {
+    const hoy = new Date();
+    const nacimiento = new Date(fechaNacimiento);
+    const años = hoy.getFullYear() - nacimiento.getFullYear();
+    const meses = hoy.getMonth() - nacimiento.getMonth();
+    
+    if (años > 0) {
+      return `${años} año${años > 1 ? 's' : ''}`;
+    } else if (meses > 0) {
+      return `${meses} mes${meses > 1 ? 'es' : ''}`;
+    } else {
+      const dias = Math.floor((hoy - nacimiento) / (1000 * 60 * 60 * 24));
+      return `${dias} día${dias > 1 ? 's' : ''}`;
     }
   };
 
@@ -133,38 +183,93 @@ const RegistroCliente = () => {
     }
   };
 
-  const handleSubmit = () => {
-    // Crear nuevo paciente o actualizar existente
-    const nuevoPaciente = {
-      id: selectedPatient?.id || `PAC-${Date.now()}`,
-      nombre: selectedPatient?.nombre || formData.paciente.nombre,
-      especie: selectedPatient?.especie || formData.paciente.especie,
-      raza: selectedPatient?.raza || formData.paciente.raza,
-      edad: selectedPatient?.edad || `${formData.paciente.edad} ${formData.paciente.unidadEdad}`,
-      peso: selectedPatient?.peso || formData.paciente.peso,
-      sexo: formData.paciente.sexo,
-      color: formData.paciente.color,
-      esterilizado: formData.paciente.esterilizado,
-      microchip: formData.paciente.microchip,
-      propietario: selectedPatient?.propietario || formData.propietario.nombre,
-      telefono: selectedPatient?.telefono || formData.propietario.telefono,
-      email: formData.propietario.email,
-      direccion: formData.propietario.direccion,
-      historialMedico: formData.historial,
-      motivoConsulta: formData.consulta.motivoConsulta,
-      sintomas: formData.consulta.sintomas,
-      detallesConsulta: formData.consulta,
-      consentimiento: formData.consentimiento,
-      fechaRegistro: new Date().toISOString(),
-      estado: 'pendiente-checkin'
-    };
+  const handleSubmit = async () => {
+    setIsSubmitting(true);
+    setSubmitError('');
 
-    // Agregar a la lista de pacientes pendientes de check-in
-    if (agregarPacienteACola) {
-      agregarPacienteACola(nuevoPaciente);
+    try {
+      let owner = foundOwner;
+      let pet = selectedPatient;
+
+      // 1. Crear propietario si es nuevo
+      if (!owner && !selectedPatient) {
+        owner = await ownerService.create({
+          nombre: formData.propietario.nombre,
+          telefono: formData.propietario.telefono,
+          email: formData.propietario.email || null,
+          direccion: formData.propietario.direccion || null,
+          ciudad: formData.propietario.ciudad || null,
+          codigoPostal: formData.propietario.codigoPostal || null,
+        });
+      }
+
+      // 2. Crear mascota si es nueva
+      if (!selectedPatient && owner) {
+        // Calcular fecha de nacimiento aproximada
+        let fechaNacimiento = null;
+        if (formData.paciente.edad) {
+          const hoy = new Date();
+          const edadNum = parseInt(formData.paciente.edad);
+          if (formData.paciente.unidadEdad === 'años') {
+            hoy.setFullYear(hoy.getFullYear() - edadNum);
+          } else if (formData.paciente.unidadEdad === 'meses') {
+            hoy.setMonth(hoy.getMonth() - edadNum);
+          }
+          fechaNacimiento = hoy.toISOString().split('T')[0];
+        }
+
+        pet = await petService.create({
+          ownerId: owner.id,
+          nombre: formData.paciente.nombre,
+          especie: formData.paciente.especie,
+          raza: formData.paciente.raza || null,
+          sexo: formData.paciente.sexo,
+          fechaNacimiento: fechaNacimiento,
+          peso: formData.paciente.peso ? parseFloat(formData.paciente.peso) : null,
+          color: formData.paciente.color || null,
+          esterilizado: formData.paciente.esterilizado === 'Sí',
+          // Historial
+          vacunasActualizadas: formData.historial.vacunasAlDia === 'Sí',
+          ultimaVacuna: formData.historial.ultimaVacuna || null,
+          desparasitacionExterna: formData.historial.desparasitacionExterna === 'Sí',
+          ultimaDesparasitacion: formData.historial.fechaDesparasitacionExt || null,
+          otrasCirugias: formData.historial.cirugiasPrevias === 'Sí',
+          detalleCirugias: formData.historial.detalleCirugias || null,
+          alergias: formData.historial.detalleAlergias || null,
+          antecedentes: formData.historial.detalleEnfermedades || null,
+        });
+      }
+
+      // 3. Crear visita/check-in
+      if (pet?.id) {
+        await visitService.create(pet.id);
+      }
+
+      // Fallback: agregar a la cola local también
+      const nuevoPaciente = {
+        id: pet?.id || selectedPatient?.id || `PAC-${Date.now()}`,
+        nombre: pet?.nombre || selectedPatient?.nombre || formData.paciente.nombre,
+        especie: pet?.especie || selectedPatient?.especie || formData.paciente.especie,
+        raza: pet?.raza || selectedPatient?.raza || formData.paciente.raza,
+        propietario: owner?.nombre || selectedPatient?.propietario || formData.propietario.nombre,
+        telefono: owner?.telefono || selectedPatient?.telefono || formData.propietario.telefono,
+        motivoConsulta: formData.consulta.motivoConsulta,
+        sintomas: formData.consulta.sintomas,
+        fechaRegistro: new Date().toISOString(),
+        estado: 'RECIEN_LLEGADO'
+      };
+
+      if (agregarPacienteACola) {
+        agregarPacienteACola(nuevoPaciente);
+      }
+
+      setShowSuccess(true);
+    } catch (err) {
+      console.error('Error en registro:', err);
+      setSubmitError(err.message || 'Error al registrar. Por favor intenta de nuevo.');
+    } finally {
+      setIsSubmitting(false);
     }
-
-    setShowSuccess(true);
   };
 
   const renderStepIndicator = () => (

@@ -1,29 +1,64 @@
 import { useState } from 'react';
-import { mockUsers } from '../data/mockUsers';
+import { useNavigate } from 'react-router-dom';
+import { useAuth } from '../context/AuthContext';
 import './Login.css';
 
-function Login({ onLogin }) {
-  const [username, setUsername] = useState('');
+// Usuarios de demo para acceso rápido
+const demoUsers = [
+  { email: 'admin@vetos.com', nombre: 'Admin', rol: 'ADMIN', avatar: '👨‍💼' },
+  { email: 'recepcion@vetos.com', nombre: 'Recepción', rol: 'RECEPCION', avatar: '👩‍💻' },
+  { email: 'drgarcia@vetos.com', nombre: 'Dr. García', rol: 'MEDICO', avatar: '👨‍⚕️' },
+  { email: 'dramartinez@vetos.com', nombre: 'Dra. Martínez', rol: 'MEDICO', avatar: '👩‍⚕️' },
+  { email: 'laboratorio@vetos.com', nombre: 'Lab', rol: 'LABORATORIO', avatar: '🔬' },
+  { email: 'farmacia@vetos.com', nombre: 'Farmacia', rol: 'FARMACIA', avatar: '💊' },
+];
+
+function Login() {
+  const navigate = useNavigate();
+  const { login, loading, error, clearError } = useAuth();
+  const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [error, setError] = useState('');
+  const [localError, setLocalError] = useState('');
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    setError('');
+    setLocalError('');
+    clearError();
 
-    const user = mockUsers.find(
-      u => u.username === username && u.password === password
-    );
+    if (!email || !password) {
+      setLocalError('Por favor ingrese email y contraseña');
+      return;
+    }
 
-    if (user) {
-      onLogin(user);
-    } else {
-      setError('Usuario o contraseña incorrectos');
+    try {
+      const user = await login(email, password);
+      navigateByRole(user.rol);
+    } catch (err) {
+      setLocalError(err.message || 'Error al iniciar sesión');
     }
   };
 
-  const quickLogin = (user) => {
-    onLogin(user);
+  const quickLogin = async (demoUser) => {
+    setLocalError('');
+    clearError();
+    
+    try {
+      const user = await login(demoUser.email, 'password123');
+      navigateByRole(user.rol);
+    } catch (err) {
+      setLocalError(err.message || 'Error al iniciar sesión');
+    }
+  };
+
+  const navigateByRole = (rol) => {
+    const routes = {
+      ADMIN: '/admin',
+      RECEPCION: '/recepcion',
+      MEDICO: '/medico',
+      LABORATORIO: '/laboratorio',
+      FARMACIA: '/farmacia',
+    };
+    navigate(routes[rol] || '/');
   };
 
   return (
@@ -39,14 +74,15 @@ function Login({ onLogin }) {
 
         <form onSubmit={handleSubmit} className="login-form">
           <div className="form-group">
-            <label htmlFor="username">Usuario</label>
+            <label htmlFor="email">Email</label>
             <input
-              type="text"
-              id="username"
-              value={username}
-              onChange={(e) => setUsername(e.target.value)}
-              placeholder="Ingrese su usuario"
-              autoComplete="username"
+              type="email"
+              id="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              placeholder="correo@ejemplo.com"
+              autoComplete="email"
+              disabled={loading}
             />
           </div>
 
@@ -59,25 +95,29 @@ function Login({ onLogin }) {
               onChange={(e) => setPassword(e.target.value)}
               placeholder="Ingrese su contraseña"
               autoComplete="current-password"
+              disabled={loading}
             />
           </div>
 
-          {error && <div className="error-message">{error}</div>}
+          {(localError || error) && (
+            <div className="error-message">{localError || error}</div>
+          )}
 
-          <button type="submit" className="login-button">
-            Iniciar Sesión
+          <button type="submit" className="login-button" disabled={loading}>
+            {loading ? 'Iniciando...' : 'Iniciar Sesión'}
           </button>
         </form>
 
         <div className="quick-access">
           <p className="quick-access-title">Acceso Rápido (Demo)</p>
           <div className="quick-access-buttons">
-            {mockUsers.map(user => (
+            {demoUsers.map(user => (
               <button
-                key={user.id}
+                key={user.email}
                 onClick={() => quickLogin(user)}
                 className="quick-access-button"
                 title={`${user.nombre} - ${user.rol}`}
+                disabled={loading}
               >
                 <span className="user-avatar">{user.avatar}</span>
                 <div className="user-info">
@@ -87,7 +127,7 @@ function Login({ onLogin }) {
               </button>
             ))}
           </div>
-          <p className="demo-note">Contraseña para todos: <strong>123</strong></p>
+          <p className="demo-note">Contraseña para todos: <strong>password123</strong></p>
         </div>
       </div>
     </div>

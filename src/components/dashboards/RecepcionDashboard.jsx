@@ -1,12 +1,14 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useApp } from '../../context/AppContext';
+import { useAuth } from '../../context/AuthContext';
+import useRecepcion from '../../hooks/useRecepcion';
 import { QRCodeSVG } from 'qrcode.react';
 import './RecepcionDashboard.css';
 
 function RecepcionDashboard() {
+  const { user } = useAuth();
   const { 
     currentUser, 
-    systemState, 
     assignToDoctor, 
     updatePatientState, 
     updatePatientData,
@@ -16,6 +18,24 @@ function RecepcionDashboard() {
     scheduleFollowUp,
     registerPayment
   } = useApp();
+
+  // Hook para operaciones con API real
+  const {
+    loading: apiLoading,
+    error: apiError,
+    visits: todayVisits = [],
+    appointments = [],
+    searchOwnerByPhone,
+    createOwner,
+    createPet,
+    checkInPet,
+    completeTriage,
+    dischargeVisit,
+    createAppointment,
+    confirmAppointment,
+    cancelAppointment,
+    loadInitialData: refreshData
+  } = useRecepcion();
   
   const [selectedPatient, setSelectedPatient] = useState(null);
   const [showTriageModal, setShowTriageModal] = useState(false);
@@ -108,34 +128,66 @@ function RecepcionDashboard() {
     confirmada: false
   });
 
-  const myTasks = systemState.tareasPendientes.RECEPCION || [];
-  const newArrivals = systemState.pacientes.filter(p => p.estado === 'RECIEN_LLEGADO');
-  const waitingPatients = systemState.pacientes.filter(p => p.estado === 'EN_ESPERA');
-  const allPatients = systemState.pacientes;
+  // ============================================================================
+  // DATOS REALES DE LA API (sin mock)
+  // ============================================================================
+  
+  // Transformar visitas de la API al formato del dashboard
+  const allVisits = (todayVisits || []).map(v => ({
+    id: v.pet?.id,
+    visitId: v.id,
+    nombre: v.pet?.nombre || 'Sin nombre',
+    especie: v.pet?.especie || 'Desconocido',
+    raza: v.pet?.raza || '',
+    numeroFicha: v.pet?.numeroFicha || `VET-${String(v.pet?.id).padStart(3, '0')}`,
+    propietario: v.pet?.owner?.nombre || 'Sin propietario',
+    telefono: v.pet?.owner?.telefono || '',
+    estado: v.status,
+    motivo: v.motivo || 'Consulta',
+    prioridad: v.prioridad || 'MEDIA',
+    tipoVisita: v.tipoVisita,
+    peso: v.peso,
+    temperatura: v.temperatura,
+    fromApi: true
+  }));
+
+  // Filtrar por estado
+  const newArrivals = allVisits.filter(p => p.estado === 'RECIEN_LLEGADO');
+  const waitingPatients = allVisits.filter(p => p.estado === 'EN_ESPERA');
+  const inConsultPatients = allVisits.filter(p => p.estado === 'EN_CONSULTA');
+  const readyForDischarge = allVisits.filter(p => p.estado === 'LISTO_PARA_ALTA');
 
   // Búsqueda de pacientes
   const filteredPatients = searchQuery
-    ? allPatients.filter(p => 
+    ? allVisits.filter(p => 
         p.nombre.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        p.numeroFicha.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        p.propietario.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        p.telefono.includes(searchQuery)
+        p.numeroFicha?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        p.propietario?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        p.telefono?.includes(searchQuery)
       )
-    : allPatients;
+    : allVisits;
 
-  // Citas agendadas
-  const todayAppointments = systemState.citas.filter(c => {
-    const citaDate = new Date(c.fecha).toDateString();
-    const today = new Date().toDateString();
-    return citaDate === today;
-  });
+  // Citas de la API
+  const todayAppointments = (appointments || []).map(apt => ({
+    id: apt.id,
+    pacienteId: apt.pet?.id,
+    pacienteNombre: apt.pet?.nombre || 'Sin nombre',
+    propietario: apt.pet?.owner?.nombre || '',
+    telefono: apt.pet?.owner?.telefono || '',
+    fecha: apt.fecha,
+    hora: apt.hora || '',
+    tipo: apt.tipo || 'consulta_general',
+    motivo: apt.motivo || '',
+    confirmada: apt.confirmada,
+    cancelada: apt.cancelada,
+    fromApi: true
+  }));
 
-  // Calendario de medicina preventiva
-  const preventiveCalendar = allPatients.filter(p => {
-    if (!p.vacunas || p.vacunas.length === 0) return false;
-    // Pacientes que necesitan vacunación en los próximos 30 días
-    return true; // Mock: siempre mostrar algunos
-  }).slice(0, 3);
+  // Tareas pendientes (por ahora vacío, se puede implementar después)
+  const myTasks = [];
+
+  // Calendario preventivo (por ahora vacío, se puede implementar con endpoint dedicado)
+  const preventiveCalendar = [];
 
   const getPriorityColor = (priority) => {
     const colors = { ALTA: '#f44336', MEDIA: '#ff9800', BAJA: '#4caf50' };
@@ -172,30 +224,50 @@ function RecepcionDashboard() {
     });
   };
 
-  const handleSubmitTriage = (e) => {
+  const handleSubmitTriage = async (e) => {
     e.preventDefault();
     
-    // Si es medicina preventiva, verificar calendario
-    if (triageData.tipoVisita === 'medicina_preventiva') {
-      // Aquí se verificaría el calendario de vacunas
-      console.log('Verificando calendario de medicina preventiva...');
+    try {
+      // Si es medicina preventiva, verificar calendario
+      if (triageData.tipoVisita === 'medicina_preventiva') {
+        console.log('Verificando calendario de medicina preventiva...');
+      }
+      
+      // Usar API real para completar triage
+      if (selectedPatient.visitId) {
+        await completeTriage(selectedPatient.visitId, {
+          tipoVisita: triageData.tipoVisita,
+          motivo: triageData.motivo,
+          prioridad: triageData.prioridad,
+          peso: triageData.peso,
+          temperatura: triageData.temperatura,
+          antecedentes: triageData.antecedentes,
+          primeraVisita: triageData.primeraVisita
+        });
+        await refreshData();
+      } else {
+        // Fallback a mock si no hay visitId
+        registerTriage(selectedPatient.id, triageData);
+        updatePatientData(selectedPatient.id, {
+          primeraVisita: triageData.primeraVisita
+        });
+      }
+      
+      alert(triageData.primeraVisita 
+        ? 'Triage completado - Se creará nuevo expediente' 
+        : 'Triage completado - Se consultará expediente existente'
+      );
+      setShowTriageModal(false);
+      setSelectedPatient(null);
+    } catch (error) {
+      console.error('Error completando triage:', error);
+      alert('Error al completar triage. Intenta de nuevo.');
     }
-    
-    registerTriage(selectedPatient.id, triageData);
-    updatePatientData(selectedPatient.id, {
-      primeraVisita: triageData.primeraVisita
-    });
-    
-    alert(triageData.primeraVisita 
-      ? 'Triage completado - Se creará nuevo expediente' 
-      : 'Triage completado - Se consultará expediente existente'
-    );
-    setShowTriageModal(false);
-    setSelectedPatient(null);
   };
 
   const handleAssignDoctor = (patientId) => {
-    assignToDoctor(patientId, currentUser.nombre);
+    const userName = user?.firstName || currentUser?.nombre || 'Recepción';
+    assignToDoctor(patientId, userName);
     alert('Paciente asignado al médico');
   };
 
@@ -208,17 +280,36 @@ function RecepcionDashboard() {
     setShowCalendarModal(true);
   };
 
-  const handleConfirmAppointment = (citaId) => {
-    // Confirmar cita
-    alert('Cita confirmada exitosamente');
+  const handleConfirmAppointment = async (citaId) => {
+    try {
+      await confirmAppointment(citaId);
+      await refreshData();
+      alert('✅ Cita confirmada exitosamente');
+    } catch (error) {
+      console.error('Error confirmando cita:', error);
+      alert('❌ Error al confirmar cita: ' + error.message);
+    }
+  };
+
+  const handleCancelAppointment = async (citaId) => {
+    if (!window.confirm('¿Estás seguro de cancelar esta cita?')) return;
+    
+    try {
+      await cancelAppointment(citaId);
+      await refreshData();
+      alert('✅ Cita cancelada');
+    } catch (error) {
+      console.error('Error cancelando cita:', error);
+      alert('❌ Error al cancelar cita: ' + error.message);
+    }
   };
 
   const handleCallPatient = (telefono) => {
     window.open(`tel:${telefono}`, '_self');
   };
 
-  // Función para buscar cliente por teléfono
-  const handleSearchClient = (e) => {
+  // Función para buscar cliente por teléfono (usando API real)
+  const handleSearchClient = async (e) => {
     e.preventDefault();
     setClientSearchError('');
     setFoundClient(null);
@@ -229,34 +320,51 @@ function RecepcionDashboard() {
       return;
     }
 
-    // Buscar pacientes con ese teléfono (el teléfono está asociado al propietario)
-    const clientPets = allPatients.filter(p => 
-      p.telefono && p.telefono.replace(/\D/g, '').includes(clientSearchPhone.replace(/\D/g, ''))
-    );
-    
-    if (clientPets.length > 0) {
-      // Encontró mascotas de este cliente
-      setFoundClient({
-        nombre: clientPets[0].propietario,
-        telefono: clientPets[0].telefono,
-        email: clientPets[0].email || '',
-        mascotas: clientPets
-      });
-      setShowClientPets(true);
-    } else {
-      setClientSearchError('No encontramos ningún cliente con ese número. El cliente puede registrarse escaneando el código QR.');
+    try {
+      const result = await searchOwnerByPhone(clientSearchPhone.trim());
+      
+      if (result && result.owner) {
+        // API retorna campos en español: nombre, telefono, email
+        // result = { owner, pets }
+        const { owner, pets } = result;
+        setFoundClient({
+          id: owner.id,
+          nombre: owner.nombre,
+          telefono: owner.telefono,
+          email: owner.email || '',
+          mascotas: (pets || []).map(pet => ({
+            id: pet.id,
+            nombre: pet.nombre,
+            especie: pet.especie,
+            raza: pet.raza,
+            numeroFicha: pet.numeroFicha || `VET-${String(pet.id).padStart(3, '0')}`,
+            propietario: owner.nombre
+          }))
+        });
+        setShowClientPets(true);
+      } else {
+        setClientSearchError('No encontramos ningún cliente con ese número. El cliente puede registrarse escaneando el código QR.');
+      }
+    } catch (error) {
+      console.error('Error buscando cliente:', error);
+      setClientSearchError('Error al buscar cliente. Intenta de nuevo.');
     }
   };
 
-  // Función para hacer check-in de mascota existente
-  const handleCheckInExistingPet = (pet) => {
-    // Actualizar estado del paciente a RECIEN_LLEGADO
-    updatePatientState(pet.id, 'RECIEN_LLEGADO');
-    alert(`✅ Check-in realizado para ${pet.nombre}\nEl paciente está listo para triage.`);
-    setFoundClient(null);
-    setClientSearchPhone('');
-    setShowClientPets(false);
-    setActiveSection('triage');
+  // Función para hacer check-in de mascota existente (usando API real)
+  const handleCheckInExistingPet = async (pet) => {
+    try {
+      await checkInPet(pet.id);
+      await refreshData(); // Actualizar lista de visitas
+      alert(`✅ Check-in realizado para ${pet.nombre}\nEl paciente está listo para triage.`);
+      setFoundClient(null);
+      setClientSearchPhone('');
+      setShowClientPets(false);
+      setActiveSection('triage');
+    } catch (error) {
+      console.error('Error en check-in:', error);
+      alert('Error al realizar check-in. Intenta de nuevo.');
+    }
   };
 
   // URL para el formulario de cliente (puede ser ajustada según el deploy)
@@ -275,59 +383,162 @@ function RecepcionDashboard() {
     });
   };
 
-  const handleSubmitNewAppointment = (e) => {
+  const handleSubmitNewAppointment = async (e) => {
     e.preventDefault();
     
-    const nuevaCita = {
-      id: Date.now(),
-      ...newAppointmentData,
-      createdBy: currentUser.nombre,
-      createdAt: new Date().toISOString()
-    };
-
-    alert(`✅ Cita agendada exitosamente\nPaciente: ${newAppointmentData.pacienteNombre}\nFecha: ${newAppointmentData.fecha} ${newAppointmentData.hora}`);
-    setShowNewAppointmentModal(false);
-    setActiveSection('citas');
+    try {
+      // Intentar crear cita via API
+      if (newAppointmentData.pacienteId) {
+        await createAppointment({
+          petId: parseInt(newAppointmentData.pacienteId),
+          scheduledDate: new Date(`${newAppointmentData.fecha}T${newAppointmentData.hora}`).toISOString(),
+          appointmentType: newAppointmentData.tipo,
+          reason: newAppointmentData.motivo
+        });
+        await refreshData();
+      }
+      
+      alert(`✅ Cita agendada exitosamente\nPaciente: ${newAppointmentData.pacienteNombre}\nFecha: ${newAppointmentData.fecha} ${newAppointmentData.hora}`);
+      setShowNewAppointmentModal(false);
+      setActiveSection('citas');
+    } catch (error) {
+      console.error('Error creando cita:', error);
+      alert('Error al agendar cita. Intenta de nuevo.');
+    }
   };
 
-  const handleSubmitNewPatient = (e) => {
+  const handleSubmitNewPatient = async (e) => {
     e.preventDefault();
     
-    const nuevoNumeroFicha = `VET-${String(allPatients.length + 1).padStart(3, '0')}`;
-    
-    const nuevoPaciente = {
-      ...newPatientData,
-      id: Date.now(),
-      numeroFicha: nuevoNumeroFicha,
-      estado: 'RECIEN_LLEGADO',
-      fechaIngreso: new Date().toISOString(),
-      primeraVisita: true,
-      alergias: newPatientData.alergias ? newPatientData.alergias.split(',').map(a => a.trim()) : [],
-      vacunas: [],
-      cirugiasPrevias: [],
-      expediente: []
-    };
-
-    // Aquí se agregaría al contexto global
-    alert(`✅ Nuevo paciente registrado: ${nuevoPaciente.nombre}\nFicha: ${nuevoNumeroFicha}`);
-    
-    setActiveSection('todos');
-    setNewPatientData({
-      nombre: '',
-      especie: 'Perro',
-      raza: '',
-      edad: '',
-      sexo: 'Macho',
-      peso: '',
-      propietario: '',
-      telefono: '',
-      email: '',
-      direccion: '',
-      antecedentes: '',
-      alergias: '',
-      vacunas: '',
-      motivo: ''
-    });
+    try {
+      // 1. Crear propietario primero
+      const ownerData = {
+        nombre: newPatientData.propietario,
+        telefono: newPatientData.telefono,
+        email: newPatientData.email || null,
+        direccion: newPatientData.direccion || null,
+      };
+      
+      const owner = await createOwner(ownerData);
+      
+      if (!owner || !owner.id) {
+        throw new Error('No se pudo crear el propietario');
+      }
+      
+      // 2. Crear mascota asociada al propietario
+      const petData = {
+        ownerId: owner.id,
+        nombre: newPatientData.nombre,
+        especie: newPatientData.especie,
+        raza: newPatientData.raza || null,
+        sexo: newPatientData.sexo,
+        fechaNacimiento: newPatientData.fechaNacimiento || null,
+        peso: newPatientData.peso || null,
+        color: newPatientData.color || null,
+        condicionCorporal: newPatientData.condicionCorporal || '3',
+        // Historial médico
+        snapTest: newPatientData.snapTest || null,
+        analisisClinicos: newPatientData.analisisClinicos || null,
+        antecedentes: newPatientData.antecedentes || null,
+        // Vacunas
+        desparasitacionExterna: newPatientData.desparasitacionExterna || false,
+        ultimaDesparasitacion: newPatientData.ultimaDesparasitacion || null,
+        vacunas: newPatientData.vacunas || null,
+        vacunasActualizadas: newPatientData.vacunasActualizadas || false,
+        ultimaVacuna: newPatientData.ultimaVacuna || null,
+        // Cirugías
+        esterilizado: newPatientData.esterilizado,
+        otrasCirugias: newPatientData.otrasCirugias,
+        detalleCirugias: newPatientData.detalleCirugias || null,
+        // Alimentación
+        alimento: newPatientData.alimento || null,
+        porcionesPorDia: newPatientData.porcionesPorDia || null,
+        otrosAlimentos: newPatientData.otrosAlimentos || null,
+        frecuenciaOtrosAlimentos: newPatientData.frecuenciaOtrosAlimentos || null,
+        // Patologías
+        alergias: newPatientData.alergias || null,
+        enfermedadesCronicas: newPatientData.enfermedadesCronicas || null,
+        // Reproducción
+        ultimoCelo: newPatientData.ultimoCelo || null,
+        cantidadPartos: newPatientData.cantidadPartos || null,
+        ultimoParto: newPatientData.ultimoParto || null,
+        // Estilo de vida
+        conviveOtrasMascotas: newPatientData.conviveOtrasMascotas,
+        cualesMascotas: newPatientData.cualesMascotas || null,
+        actividadFisica: newPatientData.actividadFisica,
+        frecuenciaActividad: newPatientData.frecuenciaActividad || null,
+        saleViaPublica: newPatientData.saleViaPublica,
+        frecuenciaSalida: newPatientData.frecuenciaSalida || null,
+        otrosDatos: newPatientData.otrosDatos || null,
+      };
+      
+      const pet = await createPet(petData);
+      
+      if (!pet) {
+        throw new Error('No se pudo crear la mascota');
+      }
+      
+      // 3. Hacer check-in automático
+      await checkInPet(pet.id);
+      await refreshData();
+      
+      alert(`✅ Paciente registrado exitosamente!\n\n` +
+            `Propietario: ${owner.nombre}\n` +
+            `Mascota: ${pet.nombre}\n` +
+            `Ficha: ${pet.numeroFicha || 'Generada'}\n\n` +
+            `El paciente está listo para triage.`);
+      
+      // Resetear formulario
+      setMascotaWizardStep(1);
+      setNewPatientData({
+        propietario: '',
+        direccion: '',
+        telefono: '',
+        email: '',
+        foto: null,
+        fotoPreview: null,
+        nombre: '',
+        fechaNacimiento: '',
+        sexo: 'Macho',
+        peso: '',
+        especie: 'Perro',
+        raza: '',
+        color: '',
+        condicionCorporal: '3',
+        snapTest: '',
+        analisisClinicos: '',
+        desparasitacionExterna: false,
+        ultimaDesparasitacion: '',
+        vacunas: '',
+        vacunasActualizadas: false,
+        ultimaVacuna: '',
+        esterilizado: 'No',
+        otrasCirugias: 'No',
+        detalleCirugias: '',
+        alimento: '',
+        porcionesPorDia: '',
+        otrosAlimentos: '',
+        frecuenciaOtrosAlimentos: '',
+        alergias: '',
+        enfermedadesCronicas: '',
+        ultimoCelo: '',
+        cantidadPartos: '',
+        ultimoParto: '',
+        conviveOtrasMascotas: 'No',
+        cualesMascotas: '',
+        actividadFisica: 'No',
+        frecuenciaActividad: '',
+        saleViaPublica: 'No',
+        frecuenciaSalida: '',
+        otrosDatos: ''
+      });
+      
+      setActiveSection('triage');
+      
+    } catch (error) {
+      console.error('Error registrando paciente:', error);
+      alert(`❌ Error: ${error.message || 'No se pudo registrar el paciente'}`);
+    }
   };
 
   const handleStartDischarge = (patient) => {
@@ -341,31 +552,41 @@ function RecepcionDashboard() {
     });
   };
 
-  const handleSubmitDischarge = (e) => {
+  const handleSubmitDischarge = async (e) => {
     e.preventDefault();
     
-    // Registrar pago
-    registerPayment(selectedPatient.id, {
-      total: parseFloat(dischargeData.total),
-      metodoPago: dischargeData.metodoPago,
-      fecha: new Date().toISOString()
-    });
-
-    // Programar seguimiento si hay fecha
-    if (dischargeData.fechaSeguimiento) {
-      scheduleFollowUp(selectedPatient.id, {
-        fecha: dischargeData.fechaSeguimiento,
-        hora: dischargeData.horaSeguimiento,
-        tipo: 'Seguimiento'
+    try {
+      // Llamar API real para procesar alta
+      await dischargeVisit(selectedPatient.visitId, {
+        total: dischargeData.total,
+        metodoPago: dischargeData.metodoPago,
+        dischargeNotes: dischargeData.notas || ''
       });
-    }
 
-    // Dar de alta
-    dischargePatient(selectedPatient.id);
-    
-    alert('Paciente dado de alta exitosamente');
-    setShowDischargeModal(false);
-    setSelectedPatient(null);
+      // Programar seguimiento si hay fecha (opcional - se puede crear cita)
+      if (dischargeData.fechaSeguimiento) {
+        try {
+          await createAppointment({
+            petId: selectedPatient.petId,
+            ownerId: selectedPatient.ownerId,
+            fecha: dischargeData.fechaSeguimiento,
+            hora: dischargeData.horaSeguimiento || '10:00',
+            tipo: 'SEGUIMIENTO',
+            motivo: `Seguimiento de visita - ${selectedPatient.reason || 'Consulta'}`
+          });
+        } catch (err) {
+          console.warn('Error creando cita de seguimiento:', err);
+        }
+      }
+
+      alert('✅ Paciente dado de alta exitosamente');
+      setShowDischargeModal(false);
+      setSelectedPatient(null);
+      await refreshData();
+    } catch (error) {
+      console.error('Error procesando alta:', error);
+      alert('❌ Error: ' + error.message);
+    }
   };
 
   return (
@@ -448,8 +669,8 @@ function RecepcionDashboard() {
           >
             <span className="nav-icon">✅</span>
             <span>Listos para Alta</span>
-            {systemState.pacientes.filter(p => p.estado === 'LISTO_PARA_ALTA').length > 0 && (
-              <span className="nav-badge success">{systemState.pacientes.filter(p => p.estado === 'LISTO_PARA_ALTA').length}</span>
+            {readyForDischarge.length > 0 && (
+              <span className="nav-badge success">{readyForDischarge.length}</span>
             )}
           </button>
         </nav>
@@ -505,7 +726,7 @@ function RecepcionDashboard() {
               <div className="stat-card">
                 <div className="stat-icon" style={{background: 'rgba(33, 150, 243, 0.3)'}}>👨‍⚕️</div>
                 <div className="stat-content">
-                  <h3>{systemState.pacientes.filter(p => p.estado === 'EN_CONSULTA').length}</h3>
+                  <h3>{inConsultPatients.length}</h3>
                   <p>En Consulta</p>
                 </div>
               </div>
@@ -513,8 +734,8 @@ function RecepcionDashboard() {
               <div className="stat-card">
                 <div className="stat-icon" style={{background: 'rgba(76, 175, 80, 0.3)'}}>✅</div>
                 <div className="stat-content">
-                  <h3>{myTasks.length}</h3>
-                  <p>Tareas Pendientes</p>
+                  <h3>{readyForDischarge.length}</h3>
+                  <p>Listos para Alta</p>
                 </div>
               </div>
             </div>
@@ -1313,31 +1534,43 @@ function RecepcionDashboard() {
             </div>
             {todayAppointments.length > 0 ? (
               <div className="appointments-grid">
-                {todayAppointments.map((cita, idx) => (
-                  <div className="appointment-card">
+                {todayAppointments.map((cita) => (
+                  <div key={cita.id} className="appointment-card">
                       <div className="appointment-header">
                         <div className="appointment-time-large">{cita.hora}</div>
-                        {cita.confirmada ? (
+                        {cita.cancelada ? (
+                          <span className="status-badge error">✕ Cancelada</span>
+                        ) : cita.confirmada ? (
                           <span className="status-badge success">✓ Confirmada</span>
                         ) : (
                           <span className="status-badge warning">⚠ Sin confirmar</span>
                         )}
                       </div>
                       <div className="appointment-body">
-                        <h4>{cita.paciente}</h4>
-                        <p><strong>Tipo:</strong> {cita.tipo}</p>
+                        <h4>{cita.pacienteNombre || cita.paciente}</h4>
+                        <p><strong>Propietario:</strong> {cita.propietario}</p>
+                        <p><strong>Tipo:</strong> {cita.tipo?.replace(/_/g, ' ')}</p>
                         <p><strong>Motivo:</strong> {cita.motivo}</p>
                       </div>
                       <div className="appointment-actions">
                         <button className="btn-icon" title="Llamar" onClick={() => handleCallPatient(cita.telefono || '555-0000')}>📞</button>
                         <button className="btn-icon" title="Ver expediente" onClick={() => alert('Ver expediente')}>📄</button>
-                        {!cita.confirmada && (
+                        {!cita.confirmada && !cita.cancelada && (
                           <button 
                             className="btn-icon success" 
                             title="Confirmar"
                             onClick={() => handleConfirmAppointment(cita.id)}
                           >
                             ✓
+                          </button>
+                        )}
+                        {!cita.cancelada && (
+                          <button 
+                            className="btn-icon error" 
+                            title="Cancelar"
+                            onClick={() => handleCancelAppointment(cita.id)}
+                          >
+                            ✕
                           </button>
                         )}
                       </div>
@@ -1540,11 +1773,9 @@ function RecepcionDashboard() {
         {/* SECCIÓN: LISTOS PARA ALTA */}
         {activeSection === 'alta' && (
           <div className="alta-section">
-            {systemState.pacientes.filter(p => p.estado === 'LISTO_PARA_ALTA').length > 0 ? (
+            {readyForDischarge.length > 0 ? (
               <div className="patients-grid">
-                {systemState.pacientes
-                  .filter(p => p.estado === 'LISTO_PARA_ALTA')
-                  .map(patient => (
+                {readyForDischarge.map(patient => (
                     <div key={patient.id} className="patient-card-alta">
                       <div className="patient-card-header">
                         <div className="patient-avatar-small">
@@ -1964,7 +2195,7 @@ function RecepcionDashboard() {
                   <select
                     value={newAppointmentData.pacienteNombre}
                     onChange={(e) => {
-                      const selectedPatient = allPatients.find(p => p.nombre === e.target.value);
+                      const selectedPatient = allVisits.find(p => p.nombre === e.target.value);
                       setNewAppointmentData({
                         ...newAppointmentData,
                         pacienteId: selectedPatient?.id || '',
@@ -1974,7 +2205,7 @@ function RecepcionDashboard() {
                     required
                   >
                     <option value="">-- Seleccione un paciente --</option>
-                    {allPatients.map(p => (
+                    {allVisits.map(p => (
                       <option key={p.id} value={p.nombre}>
                         {p.nombre} ({p.numeroFicha}) - {p.propietario}
                       </option>

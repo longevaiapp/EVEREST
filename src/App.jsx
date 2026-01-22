@@ -1,5 +1,7 @@
-import { BrowserRouter, Routes, Route } from 'react-router-dom';
-import { AppProvider, useApp } from './context/AppContext';
+import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { AuthProvider, useAuth } from './context/AuthContext';
+import { AppProvider } from './context/AppContext';
+import ProtectedRoute from './components/ProtectedRoute';
 import Login from './components/Login';
 import Navbar from './components/Navbar';
 import RecepcionDashboard from './components/dashboards/RecepcionDashboard';
@@ -10,57 +12,99 @@ import AdminDashboard from './components/dashboards/AdminDashboard';
 import RegistroCliente from './components/RegistroCliente';
 import './App.css';
 
-function AppContent() {
-  const { currentUser, setCurrentUser } = useApp();
-
-  const handleLogin = (user) => {
-    setCurrentUser(user);
-  };
-
-  const handleLogout = () => {
-    setCurrentUser(null);
-  };
-
-  const renderDashboard = () => {
-    if (!currentUser) return null;
-
-    switch (currentUser.rol) {
-      case 'RECEPCION':
-        return <RecepcionDashboard />;
-      case 'MEDICO':
-        return <MedicoDashboard />;
-      case 'FARMACIA':
-        return <FarmaciaDashboard />;
-      case 'LABORATORIO':
-        return <LaboratorioDashboard />;
-      case 'ADMIN':
-        return <AdminDashboard />;
-      default:
-        return <div>Rol no reconocido</div>;
-    }
-  };
-
-  if (!currentUser) {
-    return <Login onLogin={handleLogin} />;
-  }
-
+// Layout con Navbar para usuarios autenticados
+function AuthenticatedLayout({ children }) {
+  const { logout } = useAuth();
+  
   return (
     <div className="app">
-      <Navbar onLogout={handleLogout} />
-      {renderDashboard()}
+      <Navbar onLogout={logout} />
+      {children}
     </div>
   );
+}
+
+// Componente para redirigir al dashboard según rol
+function RoleBasedRedirect() {
+  const { user } = useAuth();
+  
+  if (!user) return <Navigate to="/login" replace />;
+  
+  const routes = {
+    ADMIN: '/admin',
+    RECEPCION: '/recepcion',
+    MEDICO: '/medico',
+    LABORATORIO: '/laboratorio',
+    FARMACIA: '/farmacia',
+  };
+  
+  return <Navigate to={routes[user.rol] || '/login'} replace />;
 }
 
 function App() {
   return (
     <BrowserRouter>
-      <AppProvider>
-        <Routes>
-          <Route path="/registro-cliente" element={<RegistroCliente />} />
-          <Route path="/*" element={<AppContent />} />
-        </Routes>
-      </AppProvider>
+      <AuthProvider>
+        <AppProvider>
+          <Routes>
+            {/* Ruta pública - Login */}
+            <Route path="/login" element={<Login />} />
+            
+            {/* Rutas protegidas */}
+            <Route path="/recepcion" element={
+              <ProtectedRoute roles={['RECEPCION', 'ADMIN']}>
+                <AuthenticatedLayout>
+                  <RecepcionDashboard />
+                </AuthenticatedLayout>
+              </ProtectedRoute>
+            } />
+            
+            <Route path="/medico" element={
+              <ProtectedRoute roles={['MEDICO', 'ADMIN']}>
+                <AuthenticatedLayout>
+                  <MedicoDashboard />
+                </AuthenticatedLayout>
+              </ProtectedRoute>
+            } />
+            
+            <Route path="/farmacia" element={
+              <ProtectedRoute roles={['FARMACIA', 'ADMIN']}>
+                <AuthenticatedLayout>
+                  <FarmaciaDashboard />
+                </AuthenticatedLayout>
+              </ProtectedRoute>
+            } />
+            
+            <Route path="/laboratorio" element={
+              <ProtectedRoute roles={['LABORATORIO', 'ADMIN']}>
+                <AuthenticatedLayout>
+                  <LaboratorioDashboard />
+                </AuthenticatedLayout>
+              </ProtectedRoute>
+            } />
+            
+            <Route path="/admin" element={
+              <ProtectedRoute roles={['ADMIN']}>
+                <AuthenticatedLayout>
+                  <AdminDashboard />
+                </AuthenticatedLayout>
+              </ProtectedRoute>
+            } />
+            
+            <Route path="/registro-cliente" element={
+              <ProtectedRoute roles={['RECEPCION', 'ADMIN']}>
+                <RegistroCliente />
+              </ProtectedRoute>
+            } />
+            
+            {/* Ruta raíz - redirige según rol */}
+            <Route path="/" element={<RoleBasedRedirect />} />
+            
+            {/* Ruta por defecto - 404 */}
+            <Route path="*" element={<Navigate to="/" replace />} />
+          </Routes>
+        </AppProvider>
+      </AuthProvider>
     </BrowserRouter>
   );
 }

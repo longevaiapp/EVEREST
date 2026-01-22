@@ -1,12 +1,23 @@
 import { useState } from 'react';
+import { useAuth } from '../context/AuthContext';
 import { useApp } from '../context/AppContext';
 import './Navbar.css';
 
+// Mapeo de roles a avatars
+const roleAvatars = {
+  ADMIN: '👨‍💼',
+  RECEPCION: '👩‍💻',
+  MEDICO: '👨‍⚕️',
+  LABORATORIO: '🔬',
+  FARMACIA: '💊',
+};
+
 function Navbar({ onLogout }) {
-  const { currentUser, notifications, markAsRead } = useApp();
+  const { user } = useAuth();
+  const { notifications, markAsRead } = useApp();
   const [showNotifications, setShowNotifications] = useState(false);
   
-  const myNotifications = notifications.filter(n => n.para === currentUser?.rol);
+  const myNotifications = notifications.filter(n => n.para === user?.rol);
   const unreadCount = myNotifications.filter(n => !n.leida).length;
 
   const handleNotificationClick = (notification) => {
@@ -108,10 +119,10 @@ function Navbar({ onLogout }) {
           </div>
           
           <div className="user-profile">
-            <span className="user-avatar-nav">{currentUser?.avatar}</span>
+            <span className="user-avatar-nav">{roleAvatars[user?.rol] || '👤'}</span>
             <div className="user-info-nav">
-              <span className="user-name-nav">{currentUser?.nombre}</span>
-              <span className="user-role-nav">{currentUser?.rol}</span>
+              <span className="user-name-nav">{user?.nombre}</span>
+              <span className="user-role-nav">{user?.rol}</span>
             </div>
           </div>
 
