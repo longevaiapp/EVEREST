@@ -3,7 +3,7 @@
 ## Documentación Técnica Completa
 
 **Fecha:** Enero 21, 2026  
-**Versión:** 2.1 (Tercera revisión exhaustiva Senior Dev)  
+**Versión:** 2.2 (Tercera revisión exhaustiva Senior Dev)  
 **Archivo fuente:** `src/components/dashboards/MedicoDashboard.jsx` (1,407 líneas)
 
 ---
@@ -713,6 +713,25 @@ type NivelConciencia =
 | Hospitalizados | `hospitalizados` | Pacientes en estado HOSPITALIZADO | Cantidad (urgent) |
 | Todos los Pacientes | `todos` | Tabla con búsqueda y filtros | - |
 
+### Header Dinámico
+
+```jsx
+<div className="dashboard-header">
+  <div>
+    <h1>
+      {activeSection === 'dashboard' && 'Dashboard Médico'}
+      {activeSection === 'consultas' && 'Mis Consultas'}
+      {activeSection === 'estudios' && 'Pacientes en Estudios'}
+      {activeSection === 'hospitalizados' && 'Pacientes Hospitalizados'}
+      {activeSection === 'todos' && 'Todos los Pacientes'}
+    </h1>
+    <p>Dr. {currentUser.nombre} - {currentUser.especialidad}</p>
+  </div>
+</div>
+```
+
+**Nota:** El subtítulo muestra "Dr. {nombre}" seguido de la especialidad del médico actual.
+
 ---
 
 ## Funciones del Contexto
@@ -782,7 +801,9 @@ const readyForDischarge = systemState.pacientes.filter(p => p.estado === 'LISTO_
 // Todos los pacientes
 const allPatients = systemState.pacientes;
 
-// Nota: readyForDischarge está calculado pero no se utiliza activamente en la UI del médico
+// ⚠️ VARIABLES DECLARADAS PERO NO USADAS EN LA UI:
+// - waitingPatients: Calculada pero nunca renderizada (pacientes EN_ESPERA)
+// - readyForDischarge: Calculada pero nunca renderizada (pacientes LISTO_PARA_ALTA)
 
 // Búsqueda filtrada
 const filteredPatients = searchQuery
@@ -1166,6 +1187,44 @@ interface MedicoUser {
 | `escalaDolor` | Default: '0' (rango 0-10) |
 | `observaciones` | Opcional |
 
+### Botones con Estado Disabled
+
+Los modales implementan validación visual deshabilitando botones hasta que se completen los campos requeridos:
+
+| Modal | Condición para Disabled |
+|-------|------------------------|
+| Programar Cirugía | `!tipo \|\| !fecha \|\| !hora` |
+| Reporte Quirúrgico | `!procedimiento \|\| !anestesia` |
+| Monitoreo EFG | `!temperatura \|\| !frecuenciaCardiaca \|\| !frecuenciaRespiratoria` |
+
+### Emojis en Formulario de Monitoreo
+
+El formulario de monitoreo EFG usa emojis para identificar cada campo visualmente:
+
+| Emoji | Campo |
+|-------|-------|
+| 🌡️ | Temperatura (°C) |
+| ❤️ | Frecuencia Cardíaca (lpm) |
+| 🫁 | Frecuencia Respiratoria (rpm) |
+| 🩺 | Presión Arterial (mmHg) |
+| 🧠 | Nivel de Conciencia |
+| 😣 | Escala de Dolor (0-10) |
+| 📋 | Observaciones |
+
+### Enlaces Telefónicos Click-to-Call
+
+En varias partes del módulo se usan enlaces telefónicos clickeables:
+
+```jsx
+// En tabla de "Todos los Pacientes"
+<a href={`tel:${patient.telefono}`} className="phone-link">
+  {patient.telefono}
+</a>
+
+// En modal de Expediente Clínico
+<p>Tel: <a href={`tel:${selectedPatient.telefono}`}>{selectedPatient.telefono}</a></p>
+```
+
 ---
 
 ## Resumen de Estadísticas
@@ -1182,7 +1241,9 @@ interface MedicoUser {
 | Tipos de cirugía | 8 |
 | Pre-quirúrgicos | 5 |
 | Estados que maneja | 7 |
-| Datos computados | 9 |
+| Datos computados | 9 (2 no usados) |
+| Variables no usadas en UI | 2 (`waitingPatients`, `readyForDischarge`) |
+| Datos hardcodeados | 2 (historial consultas, expediente) |
 
 ---
 
@@ -1215,5 +1276,5 @@ interface MedicoUser {
 ---
 
 **Documento generado para el Proyecto EVEREST - VET-OS**  
-**Revisión Senior Dev - Versión 2.1 FINAL**  
+**Revisión Senior Dev - Versión 2.2 FINAL (Tercera Revisión)**  
 **Última actualización:** Enero 21, 2026
