@@ -1,6 +1,8 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { useAuth } from '../context/AuthContext';
+import LanguageSwitch from './LanguageSwitch';
 import './Login.css';
 
 // Usuarios de demo para acceso rápido
@@ -15,6 +17,7 @@ const demoUsers = [
 
 function Login() {
   const navigate = useNavigate();
+  const { t } = useTranslation();
   const { login, loading, error, clearError } = useAuth();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -26,7 +29,7 @@ function Login() {
     clearError();
 
     if (!email || !password) {
-      setLocalError('Por favor ingrese email y contraseña');
+      setLocalError(t('auth.enterCredentials'));
       return;
     }
 
@@ -34,7 +37,7 @@ function Login() {
       const user = await login(email, password);
       navigateByRole(user.rol);
     } catch (err) {
-      setLocalError(err.message || 'Error al iniciar sesión');
+      setLocalError(err.message || t('auth.loginError'));
     }
   };
 
@@ -46,7 +49,7 @@ function Login() {
       const user = await login(demoUser.email, 'password123');
       navigateByRole(user.rol);
     } catch (err) {
-      setLocalError(err.message || 'Error al iniciar sesión');
+      setLocalError(err.message || t('auth.loginError'));
     }
   };
 
@@ -64,36 +67,39 @@ function Login() {
   return (
     <div className="login-container">
       <div className="login-card">
+        <div className="login-language-switch">
+          <LanguageSwitch />
+        </div>
         <div className="login-header">
           <div className="login-logo">
             <img src="/logo login.png" alt="VET-OS Logo" />
           </div>
           <h1>VET-OS</h1>
-          <p>Sistema de Gestión Veterinaria</p>
+          <p>{t('auth.systemTitle')}</p>
         </div>
 
         <form onSubmit={handleSubmit} className="login-form">
           <div className="form-group">
-            <label htmlFor="email">Email</label>
+            <label htmlFor="email">{t('auth.email')}</label>
             <input
               type="email"
               id="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              placeholder="correo@ejemplo.com"
+              placeholder={t('auth.enterEmail')}
               autoComplete="email"
               disabled={loading}
             />
           </div>
 
           <div className="form-group">
-            <label htmlFor="password">Contraseña</label>
+            <label htmlFor="password">{t('auth.password')}</label>
             <input
               type="password"
               id="password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              placeholder="Ingrese su contraseña"
+              placeholder={t('auth.enterPassword')}
               autoComplete="current-password"
               disabled={loading}
             />
@@ -104,30 +110,30 @@ function Login() {
           )}
 
           <button type="submit" className="login-button" disabled={loading}>
-            {loading ? 'Iniciando...' : 'Iniciar Sesión'}
+            {loading ? t('auth.loggingIn') : t('auth.loginButton')}
           </button>
         </form>
 
         <div className="quick-access">
-          <p className="quick-access-title">Acceso Rápido (Demo)</p>
+          <p className="quick-access-title">{t('auth.quickAccess')}</p>
           <div className="quick-access-buttons">
             {demoUsers.map(user => (
               <button
                 key={user.email}
                 onClick={() => quickLogin(user)}
                 className="quick-access-button"
-                title={`${user.nombre} - ${user.rol}`}
+                title={`${user.nombre} - ${t(`roles.${user.rol}`)}`}
                 disabled={loading}
               >
                 <span className="user-avatar">{user.avatar}</span>
                 <div className="user-info">
-                  <span className="user-role">{user.rol}</span>
+                  <span className="user-role">{t(`roles.${user.rol}`)}</span>
                   <span className="user-name">{user.nombre}</span>
                 </div>
               </button>
             ))}
           </div>
-          <p className="demo-note">Contraseña para todos: <strong>password123</strong></p>
+          <p className="demo-note">{t('auth.demoPassword')} <strong>password123</strong></p>
         </div>
       </div>
     </div>

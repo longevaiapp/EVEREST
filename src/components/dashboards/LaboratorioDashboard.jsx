@@ -1,8 +1,10 @@
 import { useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useApp } from '../../context/AppContext';
 import './LaboratorioDashboard.css';
 
 const LaboratorioDashboard = () => {
+  const { t } = useTranslation();
   const { systemState, currentUser, completeTask, addToHistory, updatePatientState, addNotification } = useApp();
   const [currentSection, setCurrentSection] = useState('dashboard');
   const [searchTerm, setSearchTerm] = useState('');
@@ -168,14 +170,14 @@ const LaboratorioDashboard = () => {
 
     return (
       <div className="lab-dashboard-content">
-        <h2>📊 Dashboard de Laboratorio</h2>
+        <h2>📊 {t('laboratorio.title')}</h2>
         
         <div className="stats-grid">
           <div className="stat-card pending">
             <div className="stat-icon">⏳</div>
             <div className="stat-info">
               <div className="stat-value">{pendingCount}</div>
-              <div className="stat-label">Estudios Pendientes</div>
+              <div className="stat-label">{t('laboratorio.pendingTests')}</div>
             </div>
           </div>
           
@@ -183,7 +185,7 @@ const LaboratorioDashboard = () => {
             <div className="stat-icon">🔬</div>
             <div className="stat-info">
               <div className="stat-value">{inProgressCount}</div>
-              <div className="stat-label">En Proceso</div>
+              <div className="stat-label">{t('laboratorio.inProgress')}</div>
             </div>
           </div>
           
@@ -191,13 +193,13 @@ const LaboratorioDashboard = () => {
             <div className="stat-icon">✅</div>
             <div className="stat-info">
               <div className="stat-value">{completedTodayCount}</div>
-              <div className="stat-label">Completados Hoy</div>
+              <div className="stat-label">{t('laboratorio.completedToday')}</div>
             </div>
           </div>
         </div>
 
         <div className="recent-studies">
-          <h3>📋 Estudios Recientes</h3>
+          <h3>📋 {t('laboratorio.recentStudies')}</h3>
           {pendingStudies.slice(0, 5).map(task => {
             const patient = systemState.pacientes.find(p => p.id === task.pacienteId);
             return (
@@ -220,13 +222,13 @@ const LaboratorioDashboard = () => {
                   className="btn-start-study"
                   onClick={() => handleStartStudy(task.id)}
                 >
-                  Iniciar
+                  {t('laboratorio.start')}
                 </button>
               </div>
             );
           })}
           {pendingStudies.length === 0 && (
-            <p className="empty-message">No hay estudios pendientes</p>
+            <p className="empty-message">{t('laboratorio.noPending')}</p>
           )}
         </div>
       </div>
@@ -239,11 +241,11 @@ const LaboratorioDashboard = () => {
     return (
       <div className="lab-section-content">
         <div className="section-header">
-          <h2>⏳ Estudios Pendientes</h2>
+          <h2>⏳ {t('laboratorio.pendingTests')}</h2>
           <div className="search-bar">
             <input
               type="text"
-              placeholder="Buscar por paciente o tipo de estudio..."
+              placeholder={t('laboratorio.searchPlaceholder')}
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
             />
@@ -269,15 +271,15 @@ const LaboratorioDashboard = () => {
                 </div>
                 <div className="study-card-body">
                   <div className="study-detail">
-                    <span className="label">Tipo de Estudio:</span>
+                    <span className="label">{t('laboratorio.studyType')}:</span>
                     <span className="value">{task.descripcion}</span>
                   </div>
                   <div className="study-detail">
-                    <span className="label">Solicitado:</span>
+                    <span className="label">{t('laboratorio.requested')}:</span>
                     <span className="value">{new Date(task.timestamp).toLocaleString()}</span>
                   </div>
                   <div className="study-detail">
-                    <span className="label">Propietario:</span>
+                    <span className="label">{t('recepcion.patient.owner')}:</span>
                     <span className="value">{patient?.propietario}</span>
                   </div>
                 </div>
@@ -286,14 +288,14 @@ const LaboratorioDashboard = () => {
                     className="btn-primary"
                     onClick={() => handleStartStudy(task.id)}
                   >
-                    Iniciar Estudio
+                    {t('laboratorio.startStudy')}
                   </button>
                 </div>
               </div>
             );
           })}
           {filtered.length === 0 && (
-            <p className="empty-message">No se encontraron estudios pendientes</p>
+            <p className="empty-message">{t('laboratorio.noStudiesFound')}</p>
           )}
         </div>
       </div>
@@ -499,7 +501,7 @@ const LaboratorioDashboard = () => {
             </tbody>
           </table>
           {filtered.length === 0 && (
-            <p className="empty-message">No hay historial de estudios</p>
+            <p className="empty-message">{t('laboratorio.noStudiesFound')}</p>
           )}
         </div>
       </div>
@@ -510,7 +512,7 @@ const LaboratorioDashboard = () => {
     <div className="laboratorio-dashboard">
       <div className="lab-sidebar">
         <div className="sidebar-header">
-          <h2>🔬 Laboratorio</h2>
+          <h2>🔬 {t('roles.LABORATORIO')}</h2>
           <p>{currentUser?.nombre}</p>
         </div>
         
@@ -520,7 +522,7 @@ const LaboratorioDashboard = () => {
             onClick={() => setCurrentSection('dashboard')}
           >
             <span className="nav-icon">📊</span>
-            <span className="nav-text">Dashboard</span>
+            <span className="nav-text">{t('recepcion.dashboard')}</span>
           </button>
           
           <button
@@ -528,7 +530,7 @@ const LaboratorioDashboard = () => {
             onClick={() => setCurrentSection('pendientes')}
           >
             <span className="nav-icon">⏳</span>
-            <span className="nav-text">Pendientes</span>
+            <span className="nav-text">{t('laboratorio.pendingTests')}</span>
             {pendingStudies.length > 0 && (
               <span className="nav-badge">{pendingStudies.length}</span>
             )}
@@ -539,7 +541,7 @@ const LaboratorioDashboard = () => {
             onClick={() => setCurrentSection('en-proceso')}
           >
             <span className="nav-icon">🔬</span>
-            <span className="nav-text">En Proceso</span>
+            <span className="nav-text">{t('laboratorio.inProgress')}</span>
             {inProgressStudies.length > 0 && (
               <span className="nav-badge">{inProgressStudies.length}</span>
             )}
@@ -550,7 +552,7 @@ const LaboratorioDashboard = () => {
             onClick={() => setCurrentSection('completados')}
           >
             <span className="nav-icon">✅</span>
-            <span className="nav-text">Completados</span>
+            <span className="nav-text">{t('laboratorio.completed')}</span>
           </button>
           
           <button
@@ -558,7 +560,7 @@ const LaboratorioDashboard = () => {
             onClick={() => setCurrentSection('historial')}
           >
             <span className="nav-icon">📚</span>
-            <span className="nav-text">Historial</span>
+            <span className="nav-text">{t('laboratorio.history')}</span>
           </button>
         </nav>
       </div>
@@ -575,21 +577,21 @@ const LaboratorioDashboard = () => {
       {showSedationModal && (
         <div className="modal-overlay" onClick={() => setShowSedationModal(false)}>
           <div className="modal-content" onClick={(e) => e.stopPropagation()}>
-            <h2>⚠️ Autorización de Sedación</h2>
-            <p>Este estudio requiere sedación del paciente.</p>
+            <h2>⚠️ {t('laboratorio.sedationAuth')}</h2>
+            <p>{t('laboratorio.sedationRequired')}</p>
             <div className="sedation-info">
-              <p><strong>Paciente:</strong> {systemState.pacientes.find(p => p.id === selectedStudy?.pacienteId)?.nombre}</p>
-              <p><strong>Estudio:</strong> {selectedStudy?.descripcion}</p>
+              <p><strong>{t('recepcion.patient.name')}:</strong> {systemState.pacientes.find(p => p.id === selectedStudy?.pacienteId)?.nombre}</p>
+              <p><strong>{t('laboratorio.studyType')}:</strong> {selectedStudy?.descripcion}</p>
               <p className="warning-text">
-                ⚠️ Asegúrese de que el propietario ha firmado el consentimiento de sedación
+                ⚠️ {t('laboratorio.consentWarning')}
               </p>
             </div>
             <div className="modal-actions">
               <button className="btn-secondary" onClick={() => setShowSedationModal(false)}>
-                Cancelar
+                {t('common.cancel')}
               </button>
               <button className="btn-primary" onClick={handleConfirmSedation}>
-                Confirmar y Continuar
+                {t('common.confirm')}
               </button>
             </div>
           </div>
@@ -600,37 +602,37 @@ const LaboratorioDashboard = () => {
       {showResultsModal && (
         <div className="modal-overlay" onClick={() => setShowResultsModal(false)}>
           <div className="modal-content large" onClick={(e) => e.stopPropagation()}>
-            <h2>📋 Subir Resultados de Estudio</h2>
+            <h2>📋 {t('laboratorio.uploadResults')}</h2>
             <div className="results-form">
               <div className="form-group">
-                <label>Paciente:</label>
+                <label>{t('recepcion.patient.name')}:</label>
                 <p className="readonly">{systemState.pacientes.find(p => p.id === selectedStudy?.pacienteId)?.nombre}</p>
               </div>
               <div className="form-group">
-                <label>Tipo de Estudio:</label>
+                <label>{t('laboratorio.studyType')}:</label>
                 <p className="readonly">{selectedStudy?.tipo}</p>
               </div>
               <div className="form-group">
-                <label>Resultados: *</label>
+                <label>{t('laboratorio.results')}: *</label>
                 <textarea
                   value={resultsForm.resultados}
                   onChange={(e) => setResultsForm({...resultsForm, resultados: e.target.value})}
-                  placeholder="Ingrese los resultados del estudio..."
+                  placeholder={t('laboratorio.enterResults')}
                   rows={6}
                   required
                 />
               </div>
               <div className="form-group">
-                <label>Observaciones:</label>
+                <label>{t('laboratorio.observations')}:</label>
                 <textarea
                   value={resultsForm.observaciones}
                   onChange={(e) => setResultsForm({...resultsForm, observaciones: e.target.value})}
-                  placeholder="Observaciones adicionales (opcional)..."
+                  placeholder={t('laboratorio.observationsPlaceholder')}
                   rows={3}
                 />
               </div>
               <div className="form-group">
-                <label>Archivos Adjuntos:</label>
+                <label>{t('laboratorio.attachFiles')}:</label>
                 <input
                   type="file"
                   multiple
@@ -648,14 +650,14 @@ const LaboratorioDashboard = () => {
             </div>
             <div className="modal-actions">
               <button className="btn-secondary" onClick={() => setShowResultsModal(false)}>
-                Cancelar
+                {t('common.cancel')}
               </button>
               <button 
                 className="btn-success" 
                 onClick={handleSubmitResults}
                 disabled={!resultsForm.resultados}
               >
-                Guardar y Notificar Médico
+                {t('laboratorio.saveAndNotify')}
               </button>
             </div>
           </div>

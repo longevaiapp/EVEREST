@@ -1,8 +1,10 @@
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useApp } from '../../context/AppContext';
 import './MedicoDashboard.css';
 
 function MedicoDashboard() {
+  const { t } = useTranslation();
   const { 
     currentUser, 
     systemState, 
@@ -267,7 +269,7 @@ function MedicoDashboard() {
       {/* SIDEBAR */}
       <aside className="sidebar">
         <div className="sidebar-header">
-          <h3>👨‍⚕️ Médico</h3>
+          <h3>👨‍⚕️ {t('roles.MEDICO')}</h3>
         </div>
         
         <nav className="sidebar-nav">
@@ -276,7 +278,7 @@ function MedicoDashboard() {
             onClick={() => setActiveSection('dashboard')}
           >
             <span className="nav-icon">📊</span>
-            <span>Dashboard</span>
+            <span>{t('recepcion.dashboard')}</span>
           </button>
           
           <button 
@@ -284,7 +286,7 @@ function MedicoDashboard() {
             onClick={() => setActiveSection('consultas')}
           >
             <span className="nav-icon">🏥</span>
-            <span>Mis Consultas</span>
+            <span>{t('medico.consultations')}</span>
             {myPatients.length > 0 && (
               <span className="nav-badge">{myPatients.length}</span>
             )}
@@ -295,7 +297,7 @@ function MedicoDashboard() {
             onClick={() => setActiveSection('estudios')}
           >
             <span className="nav-icon">🔬</span>
-            <span>En Estudios</span>
+            <span>{t('laboratorio.inProgress')}</span>
             {inStudies.length > 0 && (
               <span className="nav-badge warning">{inStudies.length}</span>
             )}
@@ -306,7 +308,7 @@ function MedicoDashboard() {
             onClick={() => setActiveSection('hospitalizados')}
           >
             <span className="nav-icon">🏥</span>
-            <span>Hospitalizados</span>
+            <span>{t('medico.hospitalized')}</span>
             {hospitalized.length > 0 && (
               <span className="nav-badge urgent">{hospitalized.length}</span>
             )}
@@ -317,7 +319,7 @@ function MedicoDashboard() {
             onClick={() => setActiveSection('todos')}
           >
             <span className="nav-icon">📋</span>
-            <span>Todos los Pacientes</span>
+            <span>{t('recepcion.allPatients')}</span>
           </button>
         </nav>
       </aside>
@@ -327,11 +329,11 @@ function MedicoDashboard() {
         <div className="dashboard-header">
           <div>
             <h1>
-              {activeSection === 'dashboard' && 'Dashboard Médico'}
-              {activeSection === 'consultas' && 'Mis Consultas'}
-              {activeSection === 'estudios' && 'Pacientes en Estudios'}
-              {activeSection === 'hospitalizados' && 'Pacientes Hospitalizados'}
-              {activeSection === 'todos' && 'Todos los Pacientes'}
+              {activeSection === 'dashboard' && t('medico.title')}
+              {activeSection === 'consultas' && t('medico.consultations')}
+              {activeSection === 'estudios' && t('medico.inStudies')}
+              {activeSection === 'hospitalizados' && t('medico.hospitalized')}
+              {activeSection === 'todos' && t('recepcion.allPatients')}
             </h1>
             <p>Dr. {currentUser.nombre} - {currentUser.especialidad}</p>
           </div>
@@ -345,28 +347,28 @@ function MedicoDashboard() {
                 <div className="stat-icon" style={{background: '#2196f3'}}>🏥</div>
                 <div className="stat-content">
                   <h3>{myPatients.length}</h3>
-                  <p>Pacientes en Consulta</p>
+                  <p>{t('medico.patientsInConsult')}</p>
                 </div>
               </div>
               <div className="stat-card">
                 <div className="stat-icon" style={{background: '#ff9800'}}>📋</div>
                 <div className="stat-content">
                   <h3>{myTasks.length}</h3>
-                  <p>Tareas Pendientes</p>
+                  <p>{t('medico.pendingTasks')}</p>
                 </div>
               </div>
               <div className="stat-card">
                 <div className="stat-icon" style={{background: '#9c27b0'}}>🔪</div>
                 <div className="stat-content">
                   <h3>{scheduledSurgeries.length}</h3>
-                  <p>Cirugías Programadas</p>
+                  <p>{t('medico.scheduledSurgeries')}</p>
                 </div>
               </div>
               <div className="stat-card">
                 <div className="stat-icon" style={{background: '#4caf50'}}>🏨</div>
                 <div className="stat-content">
                   <h3>{hospitalized.length}</h3>
-                  <p>Hospitalizados</p>
+                  <p>{t('medico.hospitalized')}</p>
                 </div>
               </div>
             </div>
@@ -375,20 +377,20 @@ function MedicoDashboard() {
               {/* Cirugías del Día */}
               {(scheduledSurgeries.length > 0 || inSurgery.length > 0) && (
                 <div className="content-section full-width">
-                  <h2>🔪 Cirugías del Día</h2>
+                  <h2>🔪 {t('medico.todaySurgeries')}</h2>
                   <div className="surgery-grid">
                     {scheduledSurgeries.map(patient => (
                       <div key={patient.id} className="surgery-card scheduled">
                         <div className="surgery-header">
                           <h3>{patient.nombre}</h3>
-                          <span className="surgery-status scheduled">Programada</span>
+                          <span className="surgery-status scheduled">{t('medico.scheduled')}</span>
                         </div>
                         <div className="surgery-info">
-                          <p><strong>Tipo:</strong> {patient.cirugiaProgramada?.tipo}</p>
-                          <p><strong>Hora:</strong> {patient.cirugiaProgramada?.hora}</p>
-                          <p><strong>Prioridad:</strong> <span className={`priority-badge ${patient.cirugiaProgramada?.prioridad?.toLowerCase()}`}>{patient.cirugiaProgramada?.prioridad}</span></p>
+                          <p><strong>{t('recepcion.appointments.type')}:</strong> {patient.cirugiaProgramada?.tipo}</p>
+                          <p><strong>{t('recepcion.appointments.time')}:</strong> {patient.cirugiaProgramada?.hora}</p>
+                          <p><strong>{t('recepcion.triage.priority')}:</strong> <span className={`priority-badge ${patient.cirugiaProgramada?.prioridad?.toLowerCase()}`}>{patient.cirugiaProgramada?.prioridad}</span></p>
                           {patient.cirugiaProgramada?.observaciones && (
-                            <p><strong>Notas:</strong> {patient.cirugiaProgramada.observaciones}</p>
+                            <p><strong>{t('medico.clinicalNotes')}:</strong> {patient.cirugiaProgramada.observaciones}</p>
                           )}
                         </div>
                         <div className="surgery-actions">
@@ -396,13 +398,13 @@ function MedicoDashboard() {
                             className="btn-start-surgery"
                             onClick={() => handleStartSurgery(patient)}
                           >
-                            Iniciar Cirugía
+                            {t('medico.startSurgery')}
                           </button>
                           <button 
                             className="btn-view"
                             onClick={() => handleViewExpediente(patient)}
                           >
-                            Ver Expediente
+                            {t('medico.viewRecord')}
                           </button>
                         </div>
                       </div>
@@ -411,18 +413,18 @@ function MedicoDashboard() {
                       <div key={patient.id} className="surgery-card in-progress">
                         <div className="surgery-header">
                           <h3>{patient.nombre}</h3>
-                          <span className="surgery-status in-progress">En Progreso</span>
+                          <span className="surgery-status in-progress">{t('medico.inProgress')}</span>
                         </div>
                         <div className="surgery-info">
-                          <p><strong>Tipo:</strong> {patient.cirugiaProgramada?.tipo}</p>
-                          <p><strong>Inicio:</strong> {new Date(patient.fechaInicioCirugia || Date.now()).toLocaleTimeString()}</p>
+                          <p><strong>{t('recepcion.appointments.type')}:</strong> {patient.cirugiaProgramada?.tipo}</p>
+                          <p><strong>{t('common.time')}:</strong> {new Date(patient.fechaInicioCirugia || Date.now()).toLocaleTimeString()}</p>
                         </div>
                         <div className="surgery-actions">
                           <button 
                             className="btn-complete-surgery"
                             onClick={() => handleCompleteSurgery(patient)}
                           >
-                            Completar y Generar Reporte
+                            {t('medico.complete')} {t('medico.generateReport')}
                           </button>
                         </div>
                       </div>
@@ -432,10 +434,10 @@ function MedicoDashboard() {
               )}
 
               <div className="content-section">
-                <h2>Tareas Asignadas</h2>
+                <h2>{t('medico.assignedTasks')}</h2>
                 <div className="tasks-list">
                   {myTasks.length === 0 ? (
-                    <div className="empty-state">No hay tareas pendientes</div>
+                    <div className="empty-state">{t('medico.noTasks')}</div>
                   ) : (
                     myTasks.map(task => {
                       const patient = systemState.pacientes.find(p => p.id === task.pacienteId);

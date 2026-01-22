@@ -1,0 +1,428 @@
+{
+  "common": {
+    "loading": "Cargando...",
+    "save": "Guardar",
+    "cancel": "Cancelar",
+    "confirm": "Confirmar",
+    "delete": "Eliminar",
+    "edit": "Editar",
+    "search": "Buscar",
+    "back": "Volver",
+    "next": "Siguiente",
+    "previous": "Anterior",
+    "close": "Cerrar",
+    "yes": "Sí",
+    "no": "No",
+    "error": "Error",
+    "success": "Éxito",
+    "required": "Requerido",
+    "optional": "Opcional",
+    "actions": "Acciones",
+    "status": "Estado",
+    "date": "Fecha",
+    "time": "Hora",
+    "today": "Hoy",
+    "now": "Ahora",
+    "ago": "Hace",
+    "minutes": "minutos",
+    "hours": "horas",
+    "days": "días",
+    "notRegistered": "No registrado",
+    "notSpecified": "No especificado"
+  },
+  
+  "auth": {
+    "login": "Iniciar Sesión",
+    "logout": "Cerrar Sesión",
+    "email": "Email",
+    "password": "Contraseña",
+    "enterEmail": "correo@ejemplo.com",
+    "enterPassword": "Ingrese su contraseña",
+    "loginButton": "Iniciar Sesión",
+    "loggingIn": "Iniciando...",
+    "quickAccess": "Acceso Rápido (Demo)",
+    "demoPassword": "Contraseña para todos:",
+    "loginError": "Error al iniciar sesión",
+    "enterCredentials": "Por favor ingrese email y contraseña",
+    "systemTitle": "Sistema de Gestión Veterinaria"
+  },
+  
+  "navbar": {
+    "notifications": "Notificaciones",
+    "unread": "sin leer",
+    "noNotifications": "No hay notificaciones",
+    "profile": "Perfil",
+    "settings": "Configuración",
+    "language": "Idioma",
+    "spanish": "Español",
+    "english": "English"
+  },
+  
+  "roles": {
+    "ADMIN": "Administrador",
+    "RECEPCION": "Recepción",
+    "MEDICO": "Médico",
+    "LABORATORIO": "Laboratorio",
+    "FARMACIA": "Farmacia"
+  },
+  
+  "notifications": {
+    "NUEVA_TAREA": "Nueva Tarea",
+    "ESTUDIOS_SOLICITADOS": "Estudios Solicitados",
+    "RESULTADOS_LISTOS": "Resultados Listos",
+    "PACIENTE_LISTO_ALTA": "Paciente Listo para Alta",
+    "CIRUGIA_PROGRAMADA": "Cirugía Programada"
+  },
+  
+  "recepcion": {
+    "title": "Panel de Recepción",
+    "dashboard": "Dashboard",
+    "checkIn": "Check-in",
+    "patients": "Pacientes",
+    "allPatients": "Todos los Pacientes",
+    
+    "stats": {
+      "todayPatients": "Pacientes de Hoy",
+      "pendingTriage": "Triage Pendiente",
+      "inQueue": "En Cola de Espera",
+      "todayAppointments": "Citas Hoy"
+    },
+    
+    "sections": {
+      "recentArrivals": "Recién Llegados",
+      "triagePending": "Triage Pendiente",
+      "waitingQueue": "Cola de Espera",
+      "readyForDischarge": "Listos para Alta",
+      "todayAppointments": "Citas del Día"
+    },
+    
+    "patient": {
+      "name": "Nombre",
+      "owner": "Propietario",
+      "species": "Especie",
+      "breed": "Raza",
+      "sex": "Sexo",
+      "male": "Macho",
+      "female": "Hembra",
+      "age": "Edad",
+      "weight": "Peso",
+      "currentWeight": "Peso actual",
+      "color": "Color",
+      "birthDate": "Fecha de Nacimiento",
+      "phone": "Teléfono",
+      "email": "Email",
+      "address": "Dirección",
+      "bodyCondition": "Condición Corporal",
+      "photo": "Foto",
+      "reason": "Motivo",
+      "record": "Ficha"
+    },
+    
+    "species": {
+      "dog": "Perro",
+      "cat": "Gato",
+      "bird": "Ave",
+      "rabbit": "Conejo",
+      "hamster": "Hámster",
+      "reptile": "Reptil",
+      "other": "Otro"
+    },
+    
+    "triage": {
+      "title": "Triage",
+      "startTriage": "Iniciar Triage",
+      "completeTriage": "Completar Triage",
+      "reason": "Motivo de consulta",
+      "visitType": "Tipo de visita",
+      "priority": "Prioridad",
+      "high": "Alta",
+      "medium": "Media",
+      "low": "Baja",
+      "temperature": "Temperatura (°C)",
+      "background": "Antecedentes",
+      "firstVisit": "Primera visita",
+      "general": "Consulta General",
+      "followUp": "Seguimiento",
+      "vaccination": "Vacunación",
+      "surgery": "Cirugía",
+      "emergency": "Emergencia",
+      "preventive": "Medicina Preventiva",
+      "consultationTypes": {
+        "general": "Consulta General",
+        "followUp": "Seguimiento",
+        "preventive": "Medicina Preventiva",
+        "emergency": "Emergencia"
+      }
+    },
+    
+    "checkInFlow": {
+      "title": "Check-in de Paciente",
+      "searchClient": "Buscar Cliente",
+      "searchByPhone": "Buscar por teléfono",
+      "enterPhone": "Ingrese número de teléfono",
+      "searching": "Buscando...",
+      "clientFound": "Cliente Encontrado",
+      "clientNotFound": "Cliente no encontrado",
+      "selectPet": "Seleccionar Mascota",
+      "noPetsRegistered": "No hay mascotas registradas",
+      "registerNewPet": "Registrar Nueva Mascota",
+      "checkInPet": "Hacer Check-in",
+      "checkInSuccess": "Check-in realizado exitosamente",
+      "checkedInAt": "Llegó a las"
+    },
+    
+    "newPatient": {
+      "title": "Nuevo Paciente",
+      "ownerInfo": "Información del Propietario",
+      "petInfo": "Información de la Mascota",
+      "medicalHistory": "Historial Médico",
+      "vaccines": "Vacunas y Desparasitación",
+      "surgeries": "Cirugías",
+      "feeding": "Alimentación",
+      "lifestyle": "Estilo de Vida",
+      "registerPatient": "Registrar Paciente",
+      "generateQR": "Generar QR"
+    },
+    
+    "medicalHistory": {
+      "snapTest": "Snap Test",
+      "clinicalAnalysis": "Análisis Clínicos",
+      "background": "Antecedentes",
+      "externalDeworming": "Desparasitación Externa",
+      "lastDeworming": "Última Desparasitación",
+      "vaccines": "Vacunas",
+      "vaccinesUpToDate": "Vacunas Actualizadas",
+      "lastVaccine": "Última Vacuna"
+    },
+    
+    "surgeries": {
+      "sterilized": "Esterilizado/a",
+      "otherSurgeries": "Otras Cirugías",
+      "surgeryDetails": "Detalles de Cirugías"
+    },
+    
+    "feeding": {
+      "food": "Alimento",
+      "portionsPerDay": "Porciones por Día",
+      "otherFoods": "Otros Alimentos",
+      "frequency": "Frecuencia"
+    },
+    
+    "lifestyle": {
+      "livesWithOtherPets": "Convive con otras mascotas",
+      "whichPets": "¿Cuáles?",
+      "physicalActivity": "Actividad Física",
+      "activityFrequency": "Frecuencia de Actividad",
+      "goesOutside": "Sale a vía pública",
+      "outingFrequency": "Frecuencia de Salida",
+      "otherData": "Otros Datos"
+    },
+    
+    "allergies": {
+      "title": "Alergias",
+      "chronicDiseases": "Enfermedades Crónicas"
+    },
+    
+    "reproductive": {
+      "lastHeat": "Último Celo",
+      "numberOfBirths": "Cantidad de Partos",
+      "lastBirth": "Último Parto"
+    },
+    
+    "appointments": {
+      "title": "Citas",
+      "newAppointment": "Nueva Cita",
+      "scheduleAppointment": "Agendar Cita",
+      "scheduleNew": "Agendar Nueva Cita",
+      "date": "Fecha",
+      "time": "Hora",
+      "dateTime": "Fecha y Hora",
+      "type": "Tipo de Cita",
+      "reason": "Motivo de la Cita",
+      "reasonPlaceholder": "Describa brevemente el motivo de la cita...",
+      "confirmImmediately": "Confirmar cita inmediatamente",
+      "patientInfo": "Información del Paciente",
+      "selectPatient": "Seleccionar Paciente",
+      "appointmentDetails": "Detalles de la Cita",
+      "confirmed": "Confirmada",
+      "pending": "Pendiente",
+      "cancelled": "Cancelada",
+      "confirmAppointment": "Confirmar Cita",
+      "cancelAppointment": "Cancelar Cita",
+      "appointmentConfirmed": "Cita confirmada exitosamente",
+      "appointmentCancelled": "Cita cancelada",
+      "confirmCancel": "¿Estás seguro de cancelar esta cita?"
+    },
+    
+    "discharge": {
+      "title": "Proceso de Alta",
+      "processDischarge": "Procesar Alta",
+      "dischargeNotes": "Notas de Alta",
+      "total": "Total a Cobrar",
+      "payment": "Cobro",
+      "paymentMethod": "Método de Pago",
+      "cash": "Efectivo",
+      "card": "Tarjeta",
+      "transfer": "Transferencia",
+      "followUp": "Cita de Seguimiento",
+      "scheduleFollowUp": "Agendar Cita de Seguimiento",
+      "followUpDate": "Fecha de Seguimiento",
+      "completeDischarge": "Completar Alta",
+      "dischargeSuccess": "Paciente dado de alta exitosamente"
+    },
+    
+    "expediente": {
+      "title": "Expediente",
+      "clinicalRecord": "Expediente Clínico",
+      "generalInfo": "Información General",
+      "medicalHistory": "Antecedentes Médicos",
+      "allergies": "Alergias",
+      "vaccinesApplied": "Vacunas Aplicadas",
+      "nextDose": "Próxima dosis",
+      "previousSurgeries": "Cirugías Previas",
+      "consultHistory": "Historial de Consultas",
+      "closeRecord": "Cerrar Expediente"
+    },
+    
+    "preventive": {
+      "title": "Medicina Preventiva",
+      "calendar": "Calendario de Medicina Preventiva",
+      "patientsNeedingAttention": "Pacientes que requieren atención preventiva próximamente",
+      "pendingVaccines": "Vacunas pendientes",
+      "initialVaccineSchedule": "Esquema de vacunación inicial",
+      "callToSchedule": "Llamar para Agendar",
+      "noPendingPatients": "No hay pacientes con medicina preventiva pendiente",
+      "closeCalendar": "Cerrar Calendario"
+    },
+    
+    "queue": {
+      "position": "Posición",
+      "waitingTime": "Tiempo de Espera",
+      "assignDoctor": "Asignar Doctor",
+      "doctorAssigned": "Doctor Asignado"
+    },
+    
+    "actions": {
+      "viewRecord": "Ver Expediente",
+      "call": "Llamar",
+      "startTriage": "Iniciar Triage",
+      "completeDischarge": "Completar Alta"
+    },
+    
+    "status": {
+      "RECIEN_LLEGADO": "Recién Llegado",
+      "EN_ESPERA": "En Espera",
+      "EN_CONSULTA": "En Consulta",
+      "EN_ESTUDIOS": "En Estudios",
+      "EN_FARMACIA": "En Farmacia",
+      "LISTO_PARA_ALTA": "Listo para Alta",
+      "ALTA": "Alta"
+    },
+    
+    "messages": {
+      "noRecentArrivals": "No hay pacientes recién llegados",
+      "noPendingTriage": "No hay triage pendiente",
+      "noWaitingPatients": "No hay pacientes en espera",
+      "noDischargeReady": "No hay pacientes listos para alta",
+      "noAppointmentsToday": "No hay citas programadas para hoy",
+      "patientRegistered": "Paciente registrado exitosamente",
+      "triageCompleted": "Triage completado",
+      "errorOccurred": "Ocurrió un error"
+    }
+  },
+  
+  "medico": {
+    "title": "Panel Médico",
+    "consultations": "Mis Consultas",
+    "waitingPatients": "Pacientes en Espera",
+    "myPatients": "Mis Pacientes",
+    "diagnosis": "Diagnóstico",
+    "treatment": "Tratamiento",
+    "prescription": "Receta",
+    "labRequest": "Solicitar Estudios",
+    "clinicalNotes": "Notas Clínicas",
+    "hospitalized": "Hospitalizados",
+    "inStudies": "Pacientes en Estudios",
+    "patientsInConsult": "Pacientes en Consulta",
+    "pendingTasks": "Tareas Pendientes",
+    "scheduledSurgeries": "Cirugías Programadas",
+    "todaySurgeries": "Cirugías del Día",
+    "assignedTasks": "Tareas Asignadas",
+    "noTasks": "No hay tareas pendientes",
+    "startSurgery": "Iniciar Cirugía",
+    "viewRecord": "Ver Expediente",
+    "inProgress": "En Progreso",
+    "scheduled": "Programada",
+    "complete": "Completar",
+    "generateReport": "Generar Reporte"
+  },
+  
+  "laboratorio": {
+    "title": "Panel de Laboratorio",
+    "pendingTests": "Estudios Pendientes",
+    "inProgress": "En Proceso",
+    "completed": "Completados",
+    "completedToday": "Completados Hoy",
+    "results": "Resultados",
+    "uploadResults": "Subir Resultados",
+    "recentStudies": "Estudios Recientes",
+    "start": "Iniciar",
+    "noPending": "No hay estudios pendientes",
+    "searchPlaceholder": "Buscar por paciente o tipo de estudio...",
+    "studyType": "Tipo de Estudio",
+    "requested": "Solicitado",
+    "startStudy": "Iniciar Estudio",
+    "noStudiesFound": "No se encontraron estudios",
+    "observations": "Observaciones",
+    "attachFiles": "Archivos Adjuntos",
+    "submitResults": "Enviar Resultados",
+    "sedationRequired": "Este estudio puede requerir sedación",
+    "confirmSedation": "¿Confirmar sedación?",
+    "history": "Historial",
+    "sedationAuth": "Autorización de Sedación",
+    "consentWarning": "Asegúrese de que el propietario ha firmado el consentimiento de sedación",
+    "enterResults": "Ingrese los resultados del estudio...",
+    "observationsPlaceholder": "Observaciones adicionales (opcional)...",
+    "saveAndNotify": "Guardar y Notificar Médico"
+  },
+  
+  "farmacia": {
+    "title": "Panel de Farmacia",
+    "pendingPrescriptions": "Recetas Pendientes",
+    "inventory": "Inventario",
+    "dispense": "Dispensar",
+    "lowStock": "Stock Bajo",
+    "medications": "Medicamentos",
+    "dispensed": "Dispensados",
+    "urgentOrders": "Órdenes Urgentes",
+    "completedToday": "Completados Hoy",
+    "prepare": "Preparar",
+    "delivering": "Entregando...",
+    "stockAlert": "Alerta de Stock",
+    "minimum": "Mínimo",
+    "current": "Actual",
+    "category": "Categoría",
+    "price": "Precio",
+    "quantity": "Cantidad"
+  },
+  
+  "admin": {
+    "title": "Panel de Administración",
+    "users": "Usuarios",
+    "reports": "Reportes",
+    "settings": "Configuración",
+    "statistics": "Estadísticas",
+    "systemHealth": "Estado del Sistema",
+    "audit": "Auditoría",
+    "userManagement": "Gestión de Usuarios",
+    "patientDatabase": "Base de Datos de Pacientes",
+    "totalUsers": "Total de Usuarios",
+    "totalPatients": "Total de Pacientes",
+    "pendingTasks": "Tareas Pendientes",
+    "addUser": "Agregar Usuario",
+    "editUser": "Editar Usuario",
+    "deleteUser": "Eliminar Usuario",
+    "role": "Rol",
+    "specialty": "Especialidad"
+  }
+}

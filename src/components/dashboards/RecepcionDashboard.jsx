@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useApp } from '../../context/AppContext';
 import { useAuth } from '../../context/AuthContext';
 import useRecepcion from '../../hooks/useRecepcion';
@@ -6,6 +7,7 @@ import { QRCodeSVG } from 'qrcode.react';
 import './RecepcionDashboard.css';
 
 function RecepcionDashboard() {
+  const { t } = useTranslation();
   const { user } = useAuth();
   const { 
     currentUser, 
@@ -594,7 +596,7 @@ function RecepcionDashboard() {
       {/* SIDEBAR */}
       <aside className="sidebar">
         <div className="sidebar-header">
-          <h3>🏥 Recepción</h3>
+          <h3>🏥 {t('recepcion.title')}</h3>
         </div>
         
         <nav className="sidebar-nav">
@@ -603,7 +605,7 @@ function RecepcionDashboard() {
             onClick={() => setActiveSection('dashboard')}
           >
             <span className="nav-icon">📊</span>
-            <span>Dashboard</span>
+            <span>{t('recepcion.dashboard')}</span>
           </button>
           
           <button 
@@ -611,7 +613,7 @@ function RecepcionDashboard() {
             onClick={() => setActiveSection('checkin')}
           >
             <span className="nav-icon">📲</span>
-            <span>Check-in Cliente</span>
+            <span>{t('recepcion.checkIn')}</span>
           </button>
           
           <button 
@@ -619,7 +621,7 @@ function RecepcionDashboard() {
             onClick={() => setActiveSection('nueva-mascota')}
           >
             <span className="nav-icon">🐾</span>
-            <span>Nueva Mascota</span>
+            <span>{t('recepcion.newPatient.title')}</span>
           </button>
           
           <button 
@@ -627,7 +629,7 @@ function RecepcionDashboard() {
             onClick={() => setActiveSection('citas')}
           >
             <span className="nav-icon">📅</span>
-            <span>Citas del Día</span>
+            <span>{t('recepcion.sections.todayAppointments')}</span>
             {todayAppointments.length > 0 && (
               <span className="nav-badge">{todayAppointments.length}</span>
             )}
@@ -638,7 +640,7 @@ function RecepcionDashboard() {
             onClick={() => setActiveSection('preventiva')}
           >
             <span className="nav-icon">💉</span>
-            <span>Medicina Preventiva</span>
+            <span>{t('recepcion.triage.consultationTypes.preventive')}</span>
             {preventiveCalendar.length > 0 && (
               <span className="nav-badge warning">{preventiveCalendar.length}</span>
             )}
@@ -649,7 +651,7 @@ function RecepcionDashboard() {
             onClick={() => setActiveSection('triage')}
           >
             <span className="nav-icon">🚨</span>
-            <span>Triage Urgente</span>
+            <span>{t('recepcion.triage.title')}</span>
             {newArrivals.length > 0 && (
               <span className="nav-badge urgent">{newArrivals.length}</span>
             )}
@@ -660,7 +662,7 @@ function RecepcionDashboard() {
             onClick={() => setActiveSection('todos')}
           >
             <span className="nav-icon">📋</span>
-            <span>Todos los Pacientes</span>
+            <span>{t('recepcion.allPatients')}</span>
           </button>
           
           <button 
@@ -668,7 +670,7 @@ function RecepcionDashboard() {
             onClick={() => setActiveSection('alta')}
           >
             <span className="nav-icon">✅</span>
-            <span>Listos para Alta</span>
+            <span>{t('recepcion.sections.readyForDischarge')}</span>
             {readyForDischarge.length > 0 && (
               <span className="nav-badge success">{readyForDischarge.length}</span>
             )}
@@ -676,29 +678,30 @@ function RecepcionDashboard() {
         </nav>
       </aside>
 
+
       {/* MAIN CONTENT */}
       <main className="main-content">
         <div className="dashboard-header">
           <div>
             <h1>
-              {activeSection === 'dashboard' && 'Dashboard'}
-              {activeSection === 'checkin' && 'Check-in de Clientes'}
-              {activeSection === 'nueva-mascota' && 'Nueva Mascota'}
-              {activeSection === 'citas' && 'Citas del Día'}
-              {activeSection === 'preventiva' && 'Medicina Preventiva'}
-              {activeSection === 'triage' && 'Triage Urgente'}
-              {activeSection === 'todos' && 'Todos los Pacientes'}
-              {activeSection === 'alta' && 'Listos para Alta'}
+              {activeSection === 'dashboard' && t('recepcion.dashboard')}
+              {activeSection === 'checkin' && t('recepcion.checkInFlow.title')}
+              {activeSection === 'nueva-mascota' && t('recepcion.newPatient.title')}
+              {activeSection === 'citas' && t('recepcion.sections.todayAppointments')}
+              {activeSection === 'preventiva' && t('recepcion.triage.consultationTypes.preventive')}
+              {activeSection === 'triage' && t('recepcion.triage.title')}
+              {activeSection === 'todos' && t('recepcion.allPatients')}
+              {activeSection === 'alta' && t('recepcion.sections.readyForDischarge')}
             </h1>
             <p>
-              {activeSection === 'dashboard' && 'Resumen general de la recepción'}
-              {activeSection === 'checkin' && 'El cliente puede escanear el QR o buscar su registro'}
-              {activeSection === 'nueva-mascota' && 'Registro completo de nueva mascota'}
-              {activeSection === 'citas' && `${todayAppointments.length} citas programadas para hoy`}
-              {activeSection === 'preventiva' && 'Pacientes que requieren vacunación'}
-              {activeSection === 'triage' && 'Pacientes recién llegados que necesitan evaluación'}
-              {activeSection === 'todos' && 'Listado completo de pacientes'}
-              {activeSection === 'alta' && 'Pacientes listos para procesar alta'}
+              {activeSection === 'dashboard' && t('recepcion.title')}
+              {activeSection === 'checkin' && t('recepcion.checkInFlow.searchByPhone')}
+              {activeSection === 'nueva-mascota' && t('recepcion.newPatient.registerPatient')}
+              {activeSection === 'citas' && `${todayAppointments.length} ${t('recepcion.sections.todayAppointments').toLowerCase()}`}
+              {activeSection === 'preventiva' && t('recepcion.triage.consultationTypes.preventive')}
+              {activeSection === 'triage' && t('recepcion.sections.triagePending')}
+              {activeSection === 'todos' && t('recepcion.allPatients')}
+              {activeSection === 'alta' && t('recepcion.sections.readyForDischarge')}
             </p>
           </div>
         </div>
@@ -711,7 +714,7 @@ function RecepcionDashboard() {
                 <div className="stat-icon" style={{background: 'rgba(244, 67, 54, 0.3)'}}>🆕</div>
                 <div className="stat-content">
                   <h3>{newArrivals.length}</h3>
-                  <p>Recién Llegados</p>
+                  <p>{t('recepcion.sections.recentArrivals')}</p>
                 </div>
               </div>
               
@@ -719,7 +722,7 @@ function RecepcionDashboard() {
                 <div className="stat-icon" style={{background: 'rgba(255, 152, 0, 0.3)'}}>⏳</div>
                 <div className="stat-content">
                   <h3>{waitingPatients.length}</h3>
-                  <p>En Sala de Espera</p>
+                  <p>{t('recepcion.sections.waitingQueue')}</p>
                 </div>
               </div>
               
@@ -727,7 +730,7 @@ function RecepcionDashboard() {
                 <div className="stat-icon" style={{background: 'rgba(33, 150, 243, 0.3)'}}>👨‍⚕️</div>
                 <div className="stat-content">
                   <h3>{inConsultPatients.length}</h3>
-                  <p>En Consulta</p>
+                  <p>{t('recepcion.status.EN_CONSULTA')}</p>
                 </div>
               </div>
               
@@ -735,7 +738,7 @@ function RecepcionDashboard() {
                 <div className="stat-icon" style={{background: 'rgba(76, 175, 80, 0.3)'}}>✅</div>
                 <div className="stat-content">
                   <h3>{readyForDischarge.length}</h3>
-                  <p>Listos para Alta</p>
+                  <p>{t('recepcion.sections.readyForDischarge')}</p>
                 </div>
               </div>
             </div>
@@ -744,30 +747,30 @@ function RecepcionDashboard() {
               {/* Resumen de alertas */}
               {newArrivals.length > 0 && (
                 <div className="content-section urgent">
-                  <h2>🚨 Atención Urgente</h2>
-                  <p>{newArrivals.length} paciente(s) esperando triage</p>
+                  <h2>🚨 {t('recepcion.triage.title')}</h2>
+                  <p>{newArrivals.length} {t('recepcion.sections.triagePending').toLowerCase()}</p>
                   <button className="btn-action" onClick={() => setActiveSection('triage')}>
-                    Ver Pacientes
+                    {t('recepcion.patients')}
                   </button>
                 </div>
               )}
 
               {todayAppointments.length > 0 && (
                 <div className="content-section info">
-                  <h2>📅 Citas de Hoy</h2>
-                  <p>{todayAppointments.length} cita(s) programadas</p>
+                  <h2>📅 {t('recepcion.sections.todayAppointments')}</h2>
+                  <p>{todayAppointments.length} {t('recepcion.appointments')}</p>
                   <button className="btn-action" onClick={() => setActiveSection('citas')}>
-                    Ver Agenda
+                    {t('common.search')}
                   </button>
                 </div>
               )}
 
               {preventiveCalendar.length > 0 && (
                 <div className="content-section warning">
-                  <h2>💉 Medicina Preventiva</h2>
-                  <p>{preventiveCalendar.length} paciente(s) requieren vacunación</p>
+                  <h2>💉 {t('recepcion.triage.consultationTypes.preventive')}</h2>
+                  <p>{preventiveCalendar.length} {t('recepcion.patients')}</p>
                   <button className="btn-action" onClick={() => setActiveSection('preventiva')}>
-                    Ver Calendario
+                    {t('common.search')}
                   </button>
                 </div>
               )}
@@ -782,11 +785,11 @@ function RecepcionDashboard() {
               {/* QR Code para nuevos clientes */}
               <div className="checkin-card qr-card">
                 <div className="qr-header">
-                  <span className="qr-badge">NUEVO</span>
-                  <h3>📱 Cliente Nuevo</h3>
+                  <span className="qr-badge">{t('recepcion.newPatient.title').toUpperCase()}</span>
+                  <h3>📱 {t('recepcion.checkInFlow.searchClient')}</h3>
                 </div>
                 <p className="qr-description">
-                  El cliente escanea este código QR para registrar sus datos y los de su mascota desde su celular
+                  {t('recepcion.checkInFlow.searchByPhone')}
                 </p>
                 <div className="qr-container">
                   <QRCodeSVG 
@@ -799,7 +802,7 @@ function RecepcionDashboard() {
                   />
                 </div>
                 <p className="qr-instruction">
-                  📋 Formulario de Antecedentes Clínicos
+                  📋 {t('recepcion.newPatient.medicalHistory')}
                 </p>
                 <div className="qr-url">
                   <small>{clientFormURL}</small>
@@ -809,11 +812,11 @@ function RecepcionDashboard() {
               {/* Búsqueda de cliente existente */}
               <div className="checkin-card search-card">
                 <div className="search-header">
-                  <span className="search-badge">RECURRENTE</span>
-                  <h3>🔍 ¿Ya eres cliente?</h3>
+                  <span className="search-badge">{t('recepcion.checkIn').toUpperCase()}</span>
+                  <h3>🔍 {t('recepcion.checkInFlow.searchClient')}</h3>
                 </div>
                 <p className="search-description">
-                  Busca tu registro por número de teléfono para hacer check-in rápido
+                  {t('recepcion.checkInFlow.searchByPhone')}
                 </p>
                 
                 <form onSubmit={handleSearchClient} className="client-search-form">
@@ -823,11 +826,11 @@ function RecepcionDashboard() {
                       type="tel"
                       value={clientSearchPhone}
                       onChange={(e) => setClientSearchPhone(e.target.value)}
-                      placeholder="Ingresa tu número de teléfono"
+                      placeholder={t('recepcion.checkInFlow.enterPhone')}
                       className="phone-input"
                     />
                     <button type="submit" className="btn-search">
-                      Buscar
+                      {t('common.search')}
                     </button>
                   </div>
                 </form>
@@ -848,7 +851,7 @@ function RecepcionDashboard() {
                     </div>
                     
                     <div className="pets-list">
-                      <h5>🐾 Mascotas registradas:</h5>
+                      <h5>🐾 {t('recepcion.checkInFlow.selectPet')}:</h5>
                       {foundClient.mascotas.map(pet => (
                         <div key={pet.id} className="pet-item">
                           <div className="pet-info">
@@ -864,7 +867,7 @@ function RecepcionDashboard() {
                             className="btn-checkin"
                             onClick={() => handleCheckInExistingPet(pet)}
                           >
-                            ✓ Check-in
+                            ✓ {t('recepcion.checkIn')}
                           </button>
                         </div>
                       ))}
@@ -873,10 +876,10 @@ function RecepcionDashboard() {
                     <button 
                       className="btn-add-pet"
                       onClick={() => {
-                        alert('El cliente puede escanear el QR para agregar una nueva mascota');
+                        alert(t('recepcion.checkInFlow.registerNewPet'));
                       }}
                     >
-                      ➕ Agregar nueva mascota
+                      ➕ {t('recepcion.checkInFlow.registerNewPet')}
                     </button>
                   </div>
                 )}
@@ -885,19 +888,19 @@ function RecepcionDashboard() {
 
             {/* Instrucciones para recepción */}
             <div className="checkin-instructions">
-              <h4>📋 Instrucciones</h4>
+              <h4>📋 {t('common.actions')}</h4>
               <div className="instructions-grid">
                 <div className="instruction-item">
                   <span className="step">1</span>
-                  <p><strong>Cliente nuevo:</strong> Muestra el código QR al cliente para que registre sus datos</p>
+                  <p><strong>{t('recepcion.newPatient.title')}:</strong> {t('recepcion.checkInFlow.searchByPhone')}</p>
                 </div>
                 <div className="instruction-item">
                   <span className="step">2</span>
-                  <p><strong>Cliente existente:</strong> Busca por teléfono y haz check-in de la mascota</p>
+                  <p><strong>{t('recepcion.checkIn')}:</strong> {t('recepcion.checkInFlow.selectPet')}</p>
                 </div>
                 <div className="instruction-item">
                   <span className="step">3</span>
-                  <p><strong>Después del check-in:</strong> El paciente aparecerá en la sección de Triage</p>
+                  <p><strong>{t('recepcion.triage.title')}:</strong> {t('recepcion.sections.triagePending')}</p>
                 </div>
               </div>
             </div>
@@ -910,13 +913,13 @@ function RecepcionDashboard() {
             {/* Indicador de pasos */}
             <div className="wizard-steps">
               {[
-                { num: 1, label: 'Propietario', icon: '👤' },
-                { num: 2, label: 'Paciente', icon: '🐾' },
-                { num: 3, label: 'Historial', icon: '📋' },
-                { num: 4, label: 'Vacunas', icon: '💉' },
-                { num: 5, label: 'Cirugías', icon: '🏥' },
-                { num: 6, label: 'Alimentación', icon: '🍖' },
-                { num: 7, label: 'Otros', icon: '📝' }
+                { num: 1, label: t('recepcion.patient.owner'), icon: '👤' },
+                { num: 2, label: t('recepcion.patients'), icon: '🐾' },
+                { num: 3, label: t('recepcion.newPatient.medicalHistory'), icon: '📋' },
+                { num: 4, label: t('recepcion.newPatient.vaccines'), icon: '💉' },
+                { num: 5, label: t('recepcion.newPatient.surgeries'), icon: '🏥' },
+                { num: 6, label: t('recepcion.newPatient.feeding'), icon: '🍖' },
+                { num: 7, label: t('recepcion.lifestyle.otherData'), icon: '📝' }
               ].map((step) => (
                 <div 
                   key={step.num}
@@ -937,44 +940,44 @@ function RecepcionDashboard() {
               {/* PASO 1: DATOS DEL PROPIETARIO */}
               {mascotaWizardStep === 1 && (
                 <div className="form-card wizard-card">
-                  <h3>👤 Datos del Propietario</h3>
+                  <h3>👤 {t('recepcion.newPatient.ownerInfo')}</h3>
                   <div className="form-grid">
                     <div className="form-group full-width">
-                      <label>Nombre del propietario: *</label>
+                      <label>{t('recepcion.patient.owner')}: *</label>
                       <input
                         type="text"
                         value={newPatientData.propietario}
                         onChange={(e) => setNewPatientData({...newPatientData, propietario: e.target.value})}
-                        placeholder="Nombre completo"
+                        placeholder={t('recepcion.patient.name')}
                         required
                       />
                     </div>
                     <div className="form-group full-width">
-                      <label>Dirección:</label>
+                      <label>{t('recepcion.patient.address')}:</label>
                       <input
                         type="text"
                         value={newPatientData.direccion}
                         onChange={(e) => setNewPatientData({...newPatientData, direccion: e.target.value})}
-                        placeholder="Calle, número, colonia, ciudad"
+                        placeholder={t('recepcion.patient.address')}
                       />
                     </div>
                     <div className="form-group">
-                      <label>Teléfono: *</label>
+                      <label>{t('recepcion.patient.phone')}: *</label>
                       <input
                         type="tel"
                         value={newPatientData.telefono}
                         onChange={(e) => setNewPatientData({...newPatientData, telefono: e.target.value})}
-                        placeholder="10 dígitos"
+                        placeholder="10 digits"
                         required
                       />
                     </div>
                     <div className="form-group">
-                      <label>Correo electrónico:</label>
+                      <label>{t('recepcion.patient.email')}:</label>
                       <input
                         type="email"
                         value={newPatientData.email}
                         onChange={(e) => setNewPatientData({...newPatientData, email: e.target.value})}
-                        placeholder="correo@ejemplo.com"
+                        placeholder={t('auth.enterEmail')}
                       />
                     </div>
                   </div>
@@ -984,7 +987,7 @@ function RecepcionDashboard() {
               {/* PASO 2: DATOS DEL PACIENTE */}
               {mascotaWizardStep === 2 && (
                 <div className="form-card wizard-card">
-                  <h3>🐾 Datos del Paciente</h3>
+                  <h3>🐾 {t('recepcion.newPatient.petInfo')}</h3>
                   
                   {/* Foto de la mascota */}
                   <div className="foto-upload-container">
@@ -994,7 +997,7 @@ function RecepcionDashboard() {
                       ) : (
                         <div className="foto-placeholder">
                           <span>📷</span>
-                          <p>Foto de la mascota</p>
+                          <p>{t('recepcion.patient.photo')}</p>
                         </div>
                       )}
                     </div>
@@ -1495,7 +1498,7 @@ function RecepcionDashboard() {
                   className="btn-wizard-prev"
                   onClick={() => setMascotaWizardStep(mascotaWizardStep - 1)}
                 >
-                  ← Anterior
+                  ← {t('common.previous')}
                 </button>
               )}
               
@@ -1505,19 +1508,19 @@ function RecepcionDashboard() {
                   className="btn-wizard-next"
                   onClick={() => setMascotaWizardStep(mascotaWizardStep + 1)}
                 >
-                  Siguiente →
+                  {t('common.next')} →
                 </button>
               ) : (
                 <button 
                   type="button" 
                   className="btn-wizard-submit"
                   onClick={() => {
-                    alert('Mascota registrada exitosamente');
+                    alert(t('recepcion.messages.patientRegistered'));
                     setMascotaWizardStep(1);
                     setActiveSection('dashboard');
                   }}
                 >
-                  🐾 Guardar Mascota
+                  🐾 {t('common.save')}
                 </button>
               )}
             </div>
@@ -1529,7 +1532,7 @@ function RecepcionDashboard() {
           <div className="appointments-section">
             <div className="section-actions">
               <button className="btn-primary" onClick={handleNewAppointment}>
-                ➕ Agendar Nueva Cita
+                ➕ {t('recepcion.appointment.newAppointment')}
               </button>
             </div>
             {todayAppointments.length > 0 ? (
@@ -1539,26 +1542,26 @@ function RecepcionDashboard() {
                       <div className="appointment-header">
                         <div className="appointment-time-large">{cita.hora}</div>
                         {cita.cancelada ? (
-                          <span className="status-badge error">✕ Cancelada</span>
+                          <span className="status-badge error">✕ {t('recepcion.appointment.cancelled')}</span>
                         ) : cita.confirmada ? (
-                          <span className="status-badge success">✓ Confirmada</span>
+                          <span className="status-badge success">✓ {t('recepcion.appointment.confirmed')}</span>
                         ) : (
-                          <span className="status-badge warning">⚠ Sin confirmar</span>
+                          <span className="status-badge warning">⚠ {t('recepcion.appointment.pending')}</span>
                         )}
                       </div>
                       <div className="appointment-body">
                         <h4>{cita.pacienteNombre || cita.paciente}</h4>
-                        <p><strong>Propietario:</strong> {cita.propietario}</p>
-                        <p><strong>Tipo:</strong> {cita.tipo?.replace(/_/g, ' ')}</p>
-                        <p><strong>Motivo:</strong> {cita.motivo}</p>
+                        <p><strong>{t('recepcion.patient.owner')}:</strong> {cita.propietario}</p>
+                        <p><strong>{t('recepcion.appointment.appointmentType')}:</strong> {cita.tipo?.replace(/_/g, ' ')}</p>
+                        <p><strong>{t('recepcion.triage.reason')}:</strong> {cita.motivo}</p>
                       </div>
                       <div className="appointment-actions">
-                        <button className="btn-icon" title="Llamar" onClick={() => handleCallPatient(cita.telefono || '555-0000')}>📞</button>
-                        <button className="btn-icon" title="Ver expediente" onClick={() => alert('Ver expediente')}>📄</button>
+                        <button className="btn-icon" title={t('recepcion.actions.call')} onClick={() => handleCallPatient(cita.telefono || '555-0000')}>📞</button>
+                        <button className="btn-icon" title={t('recepcion.actions.viewRecord')} onClick={() => alert(t('recepcion.actions.viewRecord'))}>📄</button>
                         {!cita.confirmada && !cita.cancelada && (
                           <button 
                             className="btn-icon success" 
-                            title="Confirmar"
+                            title={t('common.confirm')}
                             onClick={() => handleConfirmAppointment(cita.id)}
                           >
                             ✓
@@ -1567,7 +1570,7 @@ function RecepcionDashboard() {
                         {!cita.cancelada && (
                           <button 
                             className="btn-icon error" 
-                            title="Cancelar"
+                            title={t('common.cancel')}
                             onClick={() => handleCancelAppointment(cita.id)}
                           >
                             ✕
@@ -1579,7 +1582,7 @@ function RecepcionDashboard() {
               </div>
             ) : (
               <div className="empty-state">
-                <p>📅 No hay citas programadas para hoy</p>
+                <p>📅 {t('recepcion.messages.noAppointmentsToday')}</p>
               </div>
             )}
           </div>
@@ -1604,15 +1607,15 @@ function RecepcionDashboard() {
 
                       <div className="calendar-patient-details">
                       <div className="detail-item">
-                        <strong>Ficha:</strong> {patient.numeroFicha}
+                        <strong>{t('recepcion.patient.name')}:</strong> {patient.numeroFicha}
                       </div>
                       <div className="detail-item">
-                        <strong>Teléfono:</strong> {patient.telefono}
+                        <strong>{t('recepcion.patient.phone')}:</strong> {patient.telefono}
                       </div>
                     </div>
 
                     <div className="pending-vaccines">
-                      <h5>💉 Vacunas pendientes:</h5>
+                      <h5>💉 {t('recepcion.newPatient.vaccines')}:</h5>
                       <ul>
                         {patient.vacunas && patient.vacunas
                           .filter(v => v.proximaDosis)
@@ -1662,23 +1665,23 @@ function RecepcionDashboard() {
                         </div>
                       </div>
                       <div className="patient-details-small">
-                        <p><strong>Propietario:</strong> {patient.propietario}</p>
-                        <p><strong>Especie:</strong> {patient.especie} - {patient.raza}</p>
-                        <p><strong>Teléfono:</strong> {patient.telefono}</p>
-                        {patient.motivo && <p><strong>Motivo:</strong> {patient.motivo}</p>}
+                        <p><strong>{t('recepcion.patient.owner')}:</strong> {patient.propietario}</p>
+                        <p><strong>{t('recepcion.patient.species')}:</strong> {patient.especie} - {patient.raza}</p>
+                        <p><strong>{t('recepcion.patient.phone')}:</strong> {patient.telefono}</p>
+                        {patient.motivo && <p><strong>{t('recepcion.triage.reason')}:</strong> {patient.motivo}</p>}
                       </div>
                       <button 
                         className="btn-action urgent"
                         onClick={() => handleStartTriage(patient)}
                       >
-                        📋 Iniciar Triage
+                        📋 {t('recepcion.triage.startTriage')}
                       </button>
                     </div>
                 ))}
               </div>
             ) : (
               <div className="empty-state">
-                <p>✅ No hay pacientes esperando triage</p>
+                <p>✅ {t('recepcion.messages.noPendingTriage')}</p>
               </div>
             )}
           </div>
@@ -1690,7 +1693,7 @@ function RecepcionDashboard() {
             <div className="search-bar">
               <input
                 type="text"
-                placeholder="🔍 Buscar por nombre, ficha, propietario o teléfono..."
+                placeholder={`🔍 ${t('common.search')}...`}
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 className="search-input"
@@ -1702,13 +1705,13 @@ function RecepcionDashboard() {
             <table>
               <thead>
                 <tr>
-                  <th>Ficha</th>
-                  <th>Paciente</th>
-                  <th>Propietario</th>
-                  <th>Motivo</th>
-                  <th>Estado</th>
-                  <th>Prioridad</th>
-                  <th>Acciones</th>
+                  <th>ID</th>
+                  <th>{t('recepcion.patients')}</th>
+                  <th>{t('recepcion.patient.owner')}</th>
+                  <th>{t('recepcion.triage.reason')}</th>
+                  <th>{t('common.status')}</th>
+                  <th>{t('recepcion.triage.priority')}</th>
+                  <th>{t('common.actions')}</th>
                 </tr>
               </thead>
               <tbody>
@@ -1725,22 +1728,22 @@ function RecepcionDashboard() {
                       </div>
                     </td>
                     <td>{patient.propietario}</td>
-                    <td>{patient.motivo || 'Sin registrar'}</td>
+                    <td>{patient.motivo || t('recepcion.messages.noRecentArrivals')}</td>
                     <td>
                       <span className="status-badge" style={{background: getStatusColor(patient.estado)}}>
-                        {patient.estado.replace(/_/g, ' ')}
+                        {t(`recepcion.status.${patient.estado}`) || patient.estado.replace(/_/g, ' ')}
                       </span>
                     </td>
                     <td>
                       {patient.prioridad && (
                         <span className="priority-badge" style={{background: getPriorityColor(patient.prioridad)}}>
-                          {patient.prioridad}
+                          {t(`recepcion.triage.${patient.prioridad.toLowerCase()}`) || patient.prioridad}
                         </span>
                       )}
                     </td>
                     <td>
                       <div className="action-buttons">
-                        <button className="btn-icon" onClick={() => handleViewExpediente(patient)} title="Ver expediente">
+                        <button className="btn-icon" onClick={() => handleViewExpediente(patient)} title={t('recepcion.actions.viewRecord')}>
                           📄
                         </button>
                         {patient.estado === 'RECIEN_LLEGADO' && (
@@ -1787,15 +1790,15 @@ function RecepcionDashboard() {
                         </div>
                       </div>
                       <div className="patient-details-small">
-                        <p><strong>Propietario:</strong> {patient.propietario}</p>
-                        <p><strong>Teléfono:</strong> {patient.telefono}</p>
-                        <p><strong>Especie:</strong> {patient.especie} - {patient.raza}</p>
+                        <p><strong>{t('recepcion.patient.owner')}:</strong> {patient.propietario}</p>
+                        <p><strong>{t('recepcion.patient.phone')}:</strong> {patient.telefono}</p>
+                        <p><strong>{t('recepcion.patient.species')}:</strong> {patient.especie} - {patient.raza}</p>
                       </div>
                       <button 
                         className="btn-action success"
                         onClick={() => handleStartDischarge(patient)}
                       >
-                        💰 Procesar Alta
+                        💰 {t('recepcion.discharge.processDischarge')}
                       </button>
                     </div>
                   ))
@@ -1803,7 +1806,7 @@ function RecepcionDashboard() {
               </div>
             ) : (
               <div className="empty-state">
-                <p>No hay pacientes listos para alta</p>
+                <p>{t('recepcion.messages.noDischargeReady')}</p>
               </div>
             )}
           </div>
@@ -1815,48 +1818,49 @@ function RecepcionDashboard() {
       {showTriageModal && selectedPatient && (
         <div className="modal-overlay" onClick={() => setShowTriageModal(false)}>
           <div className="modal-content large" onClick={e => e.stopPropagation()}>
-              <h2>📋 Triage - {selectedPatient.nombre}</h2>
+              <h2>📋 {t('recepcion.triage.title')} - {selectedPatient.nombre}</h2>
             
             <div className="patient-info-modal">
               <div className="info-row">
-                <strong>Propietario:</strong> {selectedPatient.propietario}
+                <strong>{t('recepcion.patient.owner')}:</strong> {selectedPatient.propietario}
               </div>
               <div className="info-row">
-                <strong>Teléfono:</strong> {selectedPatient.telefono}
+                <strong>{t('recepcion.patient.phone')}:</strong> {selectedPatient.telefono}
               </div>
               <div className="info-row">
-                <strong>Especie:</strong> {selectedPatient.especie} - {selectedPatient.raza}
+                <strong>{t('recepcion.patient.species')}:</strong> {selectedPatient.especie} - {selectedPatient.raza}
               </div>
             </div>
 
             <form onSubmit={handleSubmitTriage} className="triage-form">
               <div className="form-section">
-                <h3>1. Tipo de Visita</h3>
+                <h3>1. {t('recepcion.triage.visitType')}</h3>
                 <select 
                   value={triageData.tipoVisita}
                   onChange={(e) => setTriageData({...triageData, tipoVisita: e.target.value})}
                   required
                 >
-                  <option value="consulta_general">Consulta General</option>
-                  <option value="seguimiento">Seguimiento</option>
-                  <option value="medicina_preventiva">Medicina Preventiva</option>
-                  <option value="emergencia">Emergencia</option>
+                  <option value="consulta_general">{t('recepcion.triage.consultationTypes.general')}</option>
+                  <option value="seguimiento">{t('recepcion.triage.consultationTypes.followUp')}</option>
+                  <option value="medicina_preventiva">{t('recepcion.triage.consultationTypes.preventive')}</option>
+                  <option value="emergencia">{t('recepcion.triage.consultationTypes.emergency')}</option>
                 </select>
               </div>
 
               <div className="form-section">
-                <h3>2. Motivo de la Visita</h3>
+                <h3>2. {t('recepcion.triage.reason')}</h3>
                 <textarea
                   value={triageData.motivo}
                   onChange={(e) => setTriageData({...triageData, motivo: e.target.value})}
-                  placeholder="Describa el motivo de la visita..."
+                  placeholder={t('recepcion.triage.reason')}
                   rows="3"
                   required
                 />
               </div>
 
+
               <div className="form-section">
-                <h3>3. Prioridad</h3>
+                <h3>3. {t('recepcion.triage.priority')}</h3>
                 <div className="priority-options">
                   <label className={triageData.prioridad === 'BAJA' ? 'selected' : ''}>
                     <input 
@@ -1866,7 +1870,7 @@ function RecepcionDashboard() {
                       checked={triageData.prioridad === 'BAJA'}
                       onChange={(e) => setTriageData({...triageData, prioridad: e.target.value})}
                     />
-                    <span style={{background: '#4caf50'}}>BAJA</span>
+                    <span style={{background: '#4caf50'}}>{t('recepcion.triage.low').toUpperCase()}</span>
                   </label>
                   <label className={triageData.prioridad === 'MEDIA' ? 'selected' : ''}>
                     <input 
@@ -1876,7 +1880,7 @@ function RecepcionDashboard() {
                       checked={triageData.prioridad === 'MEDIA'}
                       onChange={(e) => setTriageData({...triageData, prioridad: e.target.value})}
                     />
-                    <span style={{background: '#ff9800'}}>MEDIA</span>
+                    <span style={{background: '#ff9800'}}>{t('recepcion.triage.medium').toUpperCase()}</span>
                   </label>
                   <label className={triageData.prioridad === 'ALTA' ? 'selected' : ''}>
                     <input 
@@ -1886,14 +1890,14 @@ function RecepcionDashboard() {
                       checked={triageData.prioridad === 'ALTA'}
                       onChange={(e) => setTriageData({...triageData, prioridad: e.target.value})}
                     />
-                    <span style={{background: '#f44336'}}>ALTA</span>
+                    <span style={{background: '#f44336'}}>{t('recepcion.triage.high').toUpperCase()}</span>
                   </label>
                 </div>
               </div>
 
               <div className="form-row">
                 <div className="form-group">
-                  <label>Peso (kg)</label>
+                  <label>{t('recepcion.patient.weight')} (kg)</label>
                   <input
                     type="number"
                     step="0.1"
@@ -1904,7 +1908,7 @@ function RecepcionDashboard() {
                   />
                 </div>
                 <div className="form-group">
-                  <label>Temperatura (°C)</label>
+                  <label>{t('recepcion.triage.temperature')}</label>
                   <input
                     type="number"
                     step="0.1"
@@ -1923,25 +1927,24 @@ function RecepcionDashboard() {
                       checked={triageData.primeraVisita}
                       onChange={(e) => setTriageData({...triageData, primeraVisita: e.target.checked})}
                     />
-                    <strong>¿Es primera visita?</strong>
-                    <small>(Se creará expediente nuevo y se solicitará formato de antecedentes)</small>
+                    <strong>{t('recepcion.triage.firstVisit')}?</strong>
                   </label>
                 </div>
               </div>
 
               <div className="form-section">
-                <h3>4. Antecedentes Clínicos</h3>
+                <h3>4. {t('recepcion.triage.background')}</h3>
                 <textarea
                   value={triageData.antecedentes}
                   onChange={(e) => setTriageData({...triageData, antecedentes: e.target.value})}
-                  placeholder="Alergias, cirugías previas, medicamentos actuales..."
+                  placeholder={t('recepcion.triage.background')}
                   rows="4"
                 />
               </div>
 
               <div className="modal-actions">
                 <button type="button" className="btn-close" onClick={() => setShowTriageModal(false)}>
-                  Cancelar
+                  {t('common.cancel')}
                 </button>
                 <button type="submit" className="btn-success">
                   ✓ Completar Triage
@@ -1957,23 +1960,23 @@ function RecepcionDashboard() {
       {showDischargeModal && selectedPatient && (
         <div className="modal-overlay" onClick={() => setShowDischargeModal(false)}>
           <div className="modal-content" onClick={e => e.stopPropagation()}>
-              <h2>💰 Proceso de Alta - {selectedPatient.nombre}</h2>
+              <h2>💰 {t('recepcion.discharge.title')} - {selectedPatient.nombre}</h2>
             
             <div className="patient-info-modal">
               <div className="info-row">
-                <strong>Propietario:</strong> {selectedPatient.propietario}
+                <strong>{t('recepcion.patient.owner')}:</strong> {selectedPatient.propietario}
               </div>
               <div className="info-row">
-                <strong>Ficha:</strong> {selectedPatient.numeroFicha}
+                <strong>{t('recepcion.patient.record')}:</strong> {selectedPatient.numeroFicha}
               </div>
             </div>
 
             <form onSubmit={handleSubmitDischarge} className="discharge-form">
               <div className="form-section">
-                <h3>1. Cobro</h3>
+                <h3>1. {t('recepcion.discharge.payment')}</h3>
                 <div className="form-row">
                   <div className="form-group">
-                    <label>Total a Cobrar ($)</label>
+                    <label>{t('recepcion.discharge.total')} ($)</label>
                     <input
                       type="number"
                       value={dischargeData.total}
@@ -1982,24 +1985,24 @@ function RecepcionDashboard() {
                     />
                   </div>
                   <div className="form-group">
-                    <label>Método de Pago</label>
+                    <label>{t('recepcion.discharge.paymentMethod')}</label>
                     <select
                       value={dischargeData.metodoPago}
                       onChange={(e) => setDischargeData({...dischargeData, metodoPago: e.target.value})}
                     >
-                      <option value="efectivo">Efectivo</option>
-                      <option value="tarjeta">Tarjeta</option>
-                      <option value="transferencia">Transferencia</option>
+                      <option value="efectivo">{t('recepcion.discharge.cash')}</option>
+                      <option value="tarjeta">{t('recepcion.discharge.card')}</option>
+                      <option value="transferencia">{t('recepcion.discharge.transfer')}</option>
                     </select>
                   </div>
                 </div>
               </div>
 
               <div className="form-section">
-                <h3>2. Cita de Seguimiento (Opcional)</h3>
+                <h3>2. {t('recepcion.discharge.followUp')} ({t('common.optional')})</h3>
                 <div className="form-row">
                   <div className="form-group">
-                    <label>Fecha</label>
+                    <label>{t('recepcion.appointments.date')}</label>
                     <input
                       type="date"
                       value={dischargeData.fechaSeguimiento}
@@ -2007,7 +2010,7 @@ function RecepcionDashboard() {
                     />
                   </div>
                   <div className="form-group">
-                    <label>Hora</label>
+                    <label>{t('recepcion.appointments.time')}</label>
                     <input
                       type="time"
                       value={dischargeData.horaSeguimiento}
@@ -2019,10 +2022,10 @@ function RecepcionDashboard() {
 
               <div className="modal-actions">
                 <button type="button" className="btn-close" onClick={() => setShowDischargeModal(false)}>
-                  Cancelar
+                  {t('common.cancel')}
                 </button>
                 <button type="submit" className="btn-success">
-                  ✅ Completar Alta
+                  ✅ {t('recepcion.discharge.completeDischarge')}
                 </button>
               </div>
             </form>
@@ -2035,43 +2038,43 @@ function RecepcionDashboard() {
       {selectedPatient && !showTriageModal && !showDischargeModal && !showExpedienteModal && (
         <div className="modal-overlay" onClick={() => setSelectedPatient(null)}>
           <div className="modal-content" onClick={e => e.stopPropagation()}>
-              <h2>📄 Expediente - {selectedPatient.nombre}</h2>
+              <h2>📄 {t('recepcion.expediente.title')} - {selectedPatient.nombre}</h2>
             <div className="patient-detail-info">
               <div className="detail-row">
-                <strong>Nombre:</strong> {selectedPatient.nombre}
+                <strong>{t('recepcion.patient.name')}:</strong> {selectedPatient.nombre}
               </div>
               <div className="detail-row">
-                <strong>Especie:</strong> {selectedPatient.especie}
+                <strong>{t('recepcion.patient.species')}:</strong> {selectedPatient.especie}
               </div>
               <div className="detail-row">
-                <strong>Raza:</strong> {selectedPatient.raza}
+                <strong>{t('recepcion.patient.breed')}:</strong> {selectedPatient.raza}
               </div>
               <div className="detail-row">
-                <strong>Edad:</strong> {selectedPatient.edad}
+                <strong>{t('recepcion.patient.age')}:</strong> {selectedPatient.edad}
               </div>
               <div className="detail-row">
-                <strong>Peso:</strong> {selectedPatient.peso || 'No registrado'}
+                <strong>{t('recepcion.patient.weight')}:</strong> {selectedPatient.peso || t('common.notRegistered')}
               </div>
               <div className="detail-row">
-                <strong>Propietario:</strong> {selectedPatient.propietario}
+                <strong>{t('recepcion.patient.owner')}:</strong> {selectedPatient.propietario}
               </div>
               <div className="detail-row">
-                <strong>Teléfono:</strong> {selectedPatient.telefono}
+                <strong>{t('recepcion.patient.phone')}:</strong> {selectedPatient.telefono}
               </div>
               <div className="detail-row">
-                <strong>Estado:</strong> 
+                <strong>{t('common.status')}:</strong> 
                 <span className="status-badge" style={{background: getStatusColor(selectedPatient.estado), marginLeft: '0.5rem'}}>
                   {selectedPatient.estado.replace(/_/g, ' ')}
                 </span>
               </div>
               {selectedPatient.motivo && (
                 <div className="detail-row">
-                  <strong>Motivo:</strong> {selectedPatient.motivo}
+                  <strong>{t('recepcion.patient.reason')}:</strong> {selectedPatient.motivo}
                 </div>
               )}
             </div>
             <button className="btn-close" onClick={() => setSelectedPatient(null)}>
-              Cerrar
+              {t('common.close')}
             </button>
           </div>
             
@@ -2082,40 +2085,40 @@ function RecepcionDashboard() {
       {showExpedienteModal && selectedPatient && (
         <div className="modal-overlay" onClick={() => setShowExpedienteModal(false)}>
           <div className="modal-content large" onClick={e => e.stopPropagation()}>
-              <h2>📄 Expediente Clínico - {selectedPatient.nombre}</h2>
+              <h2>📄 {t('recepcion.expediente.clinicalRecord')} - {selectedPatient.nombre}</h2>
             
             <div className="expediente-content">
               <div className="expediente-section">
-                <h3>Información General</h3>
+                <h3>{t('recepcion.expediente.generalInfo')}</h3>
                 <div className="info-grid">
-                  <div><strong>Ficha:</strong> {selectedPatient.numeroFicha}</div>
-                  <div><strong>Especie:</strong> {selectedPatient.especie}</div>
-                  <div><strong>Raza:</strong> {selectedPatient.raza}</div>
-                  <div><strong>Edad:</strong> {selectedPatient.edad}</div>
-                  <div><strong>Sexo:</strong> {selectedPatient.sexo || 'No especificado'}</div>
-                  <div><strong>Peso actual:</strong> {selectedPatient.peso || 'No registrado'}</div>
+                  <div><strong>{t('recepcion.patient.record')}:</strong> {selectedPatient.numeroFicha}</div>
+                  <div><strong>{t('recepcion.patient.species')}:</strong> {selectedPatient.especie}</div>
+                  <div><strong>{t('recepcion.patient.breed')}:</strong> {selectedPatient.raza}</div>
+                  <div><strong>{t('recepcion.patient.age')}:</strong> {selectedPatient.edad}</div>
+                  <div><strong>{t('recepcion.patient.sex')}:</strong> {selectedPatient.sexo || t('common.notSpecified')}</div>
+                  <div><strong>{t('recepcion.patient.currentWeight')}:</strong> {selectedPatient.peso || t('common.notRegistered')}</div>
                 </div>
               </div>
 
               <div className="expediente-section">
-                <h3>Propietario</h3>
+                <h3>{t('recepcion.patient.owner')}</h3>
                 <div className="info-grid">
-                  <div><strong>Nombre:</strong> {selectedPatient.propietario}</div>
-                  <div><strong>Teléfono:</strong> {selectedPatient.telefono}</div>
-                  <div><strong>Email:</strong> {selectedPatient.email || 'No registrado'}</div>
+                  <div><strong>{t('recepcion.patient.name')}:</strong> {selectedPatient.propietario}</div>
+                  <div><strong>{t('recepcion.patient.phone')}:</strong> {selectedPatient.telefono}</div>
+                  <div><strong>{t('recepcion.patient.email')}:</strong> {selectedPatient.email || t('common.notRegistered')}</div>
                 </div>
               </div>
 
               {selectedPatient.antecedentes && (
                 <div className="expediente-section">
-                  <h3>Antecedentes Médicos</h3>
+                  <h3>{t('recepcion.expediente.medicalHistory')}</h3>
                   <p className="expediente-text">{selectedPatient.antecedentes}</p>
                 </div>
               )}
 
               {selectedPatient.alergias && selectedPatient.alergias.length > 0 && (
                 <div className="expediente-section">
-                  <h3>⚠️ Alergias</h3>
+                  <h3>⚠️ {t('recepcion.expediente.allergies')}</h3>
                   <ul className="expediente-list">
                     {selectedPatient.alergias.map((alergia, idx) => (
                       <li key={idx} className="alert-item">{alergia}</li>
@@ -2126,12 +2129,12 @@ function RecepcionDashboard() {
 
               {selectedPatient.vacunas && selectedPatient.vacunas.length > 0 && (
                 <div className="expediente-section">
-                  <h3>💉 Vacunas Aplicadas</h3>
+                  <h3>💉 {t('recepcion.expediente.vaccinesApplied')}</h3>
                   <ul className="expediente-list">
                     {selectedPatient.vacunas.map((vacuna, idx) => (
                       <li key={idx}>
                         <strong>{vacuna.nombre}</strong> - {vacuna.fecha}
-                        {vacuna.proximaDosis && <span className="text-small"> (Próxima: {vacuna.proximaDosis})</span>}
+                        {vacuna.proximaDosis && <span className="text-small"> ({t('recepcion.expediente.nextDose')}: {vacuna.proximaDosis})</span>}
                       </li>
                     ))}
                   </ul>
@@ -2140,7 +2143,7 @@ function RecepcionDashboard() {
 
               {selectedPatient.cirugiasPrevias && selectedPatient.cirugiasPrevias.length > 0 && (
                 <div className="expediente-section">
-                  <h3>🏥 Cirugías Previas</h3>
+                  <h3>🏥 {t('recepcion.expediente.previousSurgeries')}</h3>
                   <ul className="expediente-list">
                     {selectedPatient.cirugiasPrevias.map((cirugia, idx) => (
                       <li key={idx}>
@@ -2154,16 +2157,16 @@ function RecepcionDashboard() {
 
               {selectedPatient.expediente && selectedPatient.expediente.length > 0 && (
                 <div className="expediente-section">
-                  <h3>📋 Historial de Consultas</h3>
+                  <h3>📋 {t('recepcion.expediente.consultHistory')}</h3>
                   <div className="consultas-timeline">
                     {selectedPatient.expediente.map((consulta, idx) => (
                       <div key={idx} className="consulta-item">
                         <div className="consulta-date">{consulta.fecha}</div>
                         <div className="consulta-content">
-                          <strong>{consulta.tipo || 'Consulta General'}</strong>
+                          <strong>{consulta.tipo || t('recepcion.triage.general')}</strong>
                           <p>{consulta.motivo}</p>
-                          {consulta.diagnostico && <p><strong>Diagnóstico:</strong> {consulta.diagnostico}</p>}
-                          {consulta.tratamiento && <p><strong>Tratamiento:</strong> {consulta.tratamiento}</p>}
+                          {consulta.diagnostico && <p><strong>{t('medico.diagnosis')}:</strong> {consulta.diagnostico}</p>}
+                          {consulta.tratamiento && <p><strong>{t('medico.treatment')}:</strong> {consulta.tratamiento}</p>}
                           <span className="consulta-doctor">Dr. {consulta.medico}</span>
                         </div>
                       </div>
@@ -2174,7 +2177,7 @@ function RecepcionDashboard() {
             </div>
 
             <button className="btn-close" onClick={() => setShowExpedienteModal(false)}>
-              Cerrar Expediente
+              {t('recepcion.expediente.closeRecord')}
             </button>
           </div>
             
@@ -2185,13 +2188,13 @@ function RecepcionDashboard() {
       {showNewAppointmentModal && (
         <div className="modal-overlay" onClick={() => setShowNewAppointmentModal(false)}>
           <div className="modal-content" onClick={e => e.stopPropagation()}>
-            <h2>📅 Agendar Nueva Cita</h2>
+            <h2>📅 {t('recepcion.appointments.scheduleNew')}</h2>
             
             <form onSubmit={handleSubmitNewAppointment} className="appointment-form">
               <div className="form-section">
-                <h3>Información del Paciente</h3>
+                <h3>{t('recepcion.appointments.patientInfo')}</h3>
                 <div className="form-group">
-                  <label>Seleccionar Paciente *</label>
+                  <label>{t('recepcion.appointments.selectPatient')} *</label>
                   <select
                     value={newAppointmentData.pacienteNombre}
                     onChange={(e) => {
@@ -2204,7 +2207,7 @@ function RecepcionDashboard() {
                     }}
                     required
                   >
-                    <option value="">-- Seleccione un paciente --</option>
+                    <option value="">-- {t('recepcion.appointments.selectPatient')} --</option>
                     {allVisits.map(p => (
                       <option key={p.id} value={p.nombre}>
                         {p.nombre} ({p.numeroFicha}) - {p.propietario}
@@ -2215,10 +2218,10 @@ function RecepcionDashboard() {
               </div>
 
               <div className="form-section">
-                <h3>Fecha y Hora</h3>
+                <h3>{t('recepcion.appointments.dateTime')}</h3>
                 <div className="form-row">
                   <div className="form-group">
-                    <label>Fecha *</label>
+                    <label>{t('recepcion.appointments.date')} *</label>
                     <input
                       type="date"
                       value={newAppointmentData.fecha}
@@ -2227,7 +2230,7 @@ function RecepcionDashboard() {
                     />
                   </div>
                   <div className="form-group">
-                    <label>Hora *</label>
+                    <label>{t('recepcion.appointments.time')} *</label>
                     <input
                       type="time"
                       value={newAppointmentData.hora}
@@ -2239,28 +2242,28 @@ function RecepcionDashboard() {
               </div>
 
               <div className="form-section">
-                <h3>Detalles de la Cita</h3>
+                <h3>{t('recepcion.appointments.appointmentDetails')}</h3>
                 <div className="form-group">
-                  <label>Tipo de Cita *</label>
+                  <label>{t('recepcion.appointments.type')} *</label>
                   <select
                     value={newAppointmentData.tipo}
                     onChange={(e) => setNewAppointmentData({...newAppointmentData, tipo: e.target.value})}
                     required
                   >
-                    <option value="consulta_general">Consulta General</option>
-                    <option value="seguimiento">Seguimiento</option>
-                    <option value="vacunacion">Vacunación</option>
-                    <option value="cirugia">Cirugía</option>
-                    <option value="emergencia">Emergencia</option>
+                    <option value="consulta_general">{t('recepcion.triage.general')}</option>
+                    <option value="seguimiento">{t('recepcion.triage.followUp')}</option>
+                    <option value="vacunacion">{t('recepcion.triage.vaccination')}</option>
+                    <option value="cirugia">{t('recepcion.triage.surgery')}</option>
+                    <option value="emergencia">{t('recepcion.triage.emergency')}</option>
                   </select>
                 </div>
 
                 <div className="form-group">
-                  <label>Motivo de la Cita *</label>
+                  <label>{t('recepcion.appointments.reason')} *</label>
                   <textarea
                     value={newAppointmentData.motivo}
                     onChange={(e) => setNewAppointmentData({...newAppointmentData, motivo: e.target.value})}
-                    placeholder="Describa brevemente el motivo de la cita..."
+                    placeholder={t('recepcion.appointments.reasonPlaceholder')}
                     rows="3"
                     required
                   />
@@ -2273,17 +2276,17 @@ function RecepcionDashboard() {
                       checked={newAppointmentData.confirmada}
                       onChange={(e) => setNewAppointmentData({...newAppointmentData, confirmada: e.target.checked})}
                     />
-                    {' '}Confirmar cita inmediatamente
+                    {' '}{t('recepcion.appointments.confirmImmediately')}
                   </label>
                 </div>
               </div>
 
               <div className="modal-actions">
                 <button type="button" className="btn-close" onClick={() => setShowNewAppointmentModal(false)}>
-                  Cancelar
+                  {t('common.cancel')}
                 </button>
                 <button type="submit" className="btn-success">
-                  ✅ Agendar Cita
+                  ✅ {t('recepcion.appointments.scheduleAppointment')}
                 </button>
               </div>
             </form>
@@ -2295,11 +2298,11 @@ function RecepcionDashboard() {
       {showCalendarModal && (
         <div className="modal-overlay" onClick={() => setShowCalendarModal(false)}>
           <div className="modal-content large" onClick={e => e.stopPropagation()}>
-            <h2>📅 Calendario de Medicina Preventiva</h2>
+            <h2>📅 {t('recepcion.preventive.calendar')}</h2>
             
             <div className="calendar-content">
               <div className="calendar-info">
-                <p>Pacientes que requieren atención preventiva próximamente</p>
+                <p>{t('recepcion.preventive.patientsNeedingAttention')}</p>
               </div>
 
               <div className="preventive-calendar-grid">
@@ -2317,15 +2320,15 @@ function RecepcionDashboard() {
 
                     <div className="calendar-patient-details">
                       <div className="detail-item">
-                        <strong>Ficha:</strong> {patient.numeroFicha}
+                        <strong>{t('recepcion.patient.record')}:</strong> {patient.numeroFicha}
                       </div>
                       <div className="detail-item">
-                        <strong>Teléfono:</strong> {patient.telefono}
+                        <strong>{t('recepcion.patient.phone')}:</strong> {patient.telefono}
                       </div>
                     </div>
 
                     <div className="pending-vaccines">
-                      <h5>💉 Vacunas pendientes:</h5>
+                      <h5>💉 {t('recepcion.preventive.pendingVaccines')}:</h5>
                       <ul>
                         {patient.vacunas && patient.vacunas
                           .filter(v => v.proximaDosis)
@@ -2333,32 +2336,32 @@ function RecepcionDashboard() {
                             <li key={idx}>
                               <strong>{vacuna.nombre}</strong>
                               <br />
-                              <span className="text-small">Próxima dosis: {vacuna.proximaDosis}</span>
+                              <span className="text-small">{t('recepcion.expediente.nextDose')}: {vacuna.proximaDosis}</span>
                             </li>
                           ))
                         }
                         {(!patient.vacunas || patient.vacunas.length === 0) && (
-                          <li>Esquema de vacunación inicial</li>
+                          <li>{t('recepcion.preventive.initialVaccineSchedule')}</li>
                         )}
                       </ul>
                     </div>
 
                     <button className="btn-action">
-                      📞 Llamar para Agendar
+                      📞 {t('recepcion.preventive.callToSchedule')}
                     </button>
                   </div>
                 ))}
 
                 {preventiveCalendar.length === 0 && (
                   <div className="empty-state">
-                    <p>✅ No hay pacientes con medicina preventiva pendiente</p>
+                    <p>✅ {t('recepcion.preventive.noPendingPatients')}</p>
                   </div>
                 )}
               </div>
             </div>
 
             <button className="btn-close" onClick={() => setShowCalendarModal(false)}>
-              Cerrar Calendario
+              {t('recepcion.preventive.closeCalendar')}
             </button>
           </div>
         </div>
@@ -2368,4 +2371,3 @@ function RecepcionDashboard() {
 }
 
 export default RecepcionDashboard;
-

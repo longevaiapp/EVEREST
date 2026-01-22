@@ -24,6 +24,13 @@
   overflow: hidden;
 }
 
+.login-language-switch {
+  position: absolute;
+  top: 1rem;
+  right: 1rem;
+  z-index: 10;
+}
+
 .login-card::before {
   content: '';
   position: absolute;

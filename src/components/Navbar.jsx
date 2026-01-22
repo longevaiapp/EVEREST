@@ -1,6 +1,8 @@
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useAuth } from '../context/AuthContext';
 import { useApp } from '../context/AppContext';
+import LanguageSwitch from './LanguageSwitch';
 import './Navbar.css';
 
 // Mapeo de roles a avatars
@@ -13,6 +15,7 @@ const roleAvatars = {
 };
 
 function Navbar({ onLogout }) {
+  const { t } = useTranslation();
   const { user } = useAuth();
   const { notifications, markAsRead } = useApp();
   const [showNotifications, setShowNotifications] = useState(false);
@@ -49,10 +52,10 @@ function Navbar({ onLogout }) {
     const hours = Math.floor(minutes / 60);
     const days = Math.floor(hours / 24);
 
-    if (minutes < 1) return 'Ahora';
-    if (minutes < 60) return `Hace ${minutes}m`;
-    if (hours < 24) return `Hace ${hours}h`;
-    return `Hace ${days}d`;
+    if (minutes < 1) return t('common.now');
+    if (minutes < 60) return `${minutes}m ${t('common.ago')}`;
+    if (hours < 24) return `${hours}h ${t('common.ago')}`;
+    return `${days}d ${t('common.ago')}`;
   };
 
   return (
@@ -83,15 +86,15 @@ function Navbar({ onLogout }) {
                 />
                 <div className="notifications-dropdown">
                   <div className="notifications-header">
-                    <h3>Notificaciones</h3>
+                    <h3>{t('navbar.notifications')}</h3>
                     {unreadCount > 0 && (
-                      <span className="unread-count">{unreadCount} sin leer</span>
+                      <span className="unread-count">{unreadCount} {t('navbar.unread')}</span>
                     )}
                   </div>
                   <div className="notifications-list">
                     {myNotifications.length === 0 ? (
                       <div className="no-notifications">
-                        <p>No hay notificaciones</p>
+                        <p>{t('navbar.noNotifications')}</p>
                       </div>
                     ) : (
                       myNotifications.slice(0, 10).map(notification => (
@@ -118,16 +121,18 @@ function Navbar({ onLogout }) {
             )}
           </div>
           
+          <LanguageSwitch />
+          
           <div className="user-profile">
             <span className="user-avatar-nav">{roleAvatars[user?.rol] || '👤'}</span>
             <div className="user-info-nav">
               <span className="user-name-nav">{user?.nombre}</span>
-              <span className="user-role-nav">{user?.rol}</span>
+              <span className="user-role-nav">{t(`roles.${user?.rol}`) || user?.rol}</span>
             </div>
           </div>
 
           <button className="btn-logout" onClick={onLogout}>
-            Cerrar Sesión
+            {t('auth.logout')}
           </button>
         </div>
       </div>

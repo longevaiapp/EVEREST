@@ -1,8 +1,10 @@
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useApp } from '../../context/AppContext';
 import './FarmaciaDashboard.css';
 
 function FarmaciaDashboard() {
+  const { t } = useTranslation();
   const { currentUser, systemState, completeTask, deliverMedication, addToHistory } = useApp();
   const [selectedOrder, setSelectedOrder] = useState(null);
   const [preparingMeds, setPreparingMeds] = useState({});
@@ -63,7 +65,7 @@ function FarmaciaDashboard() {
       {/* SIDEBAR */}
       <aside className="sidebar">
         <div className="sidebar-header">
-          <h3>💊 Farmacia</h3>
+          <h3>💊 {t('roles.FARMACIA')}</h3>
         </div>
         
         <nav className="sidebar-nav">
@@ -72,7 +74,7 @@ function FarmaciaDashboard() {
             onClick={() => setActiveSection('dashboard')}
           >
             <span className="nav-icon">📊</span>
-            <span>Dashboard</span>
+            <span>{t('recepcion.dashboard')}</span>
           </button>
           
           <button 
@@ -80,7 +82,7 @@ function FarmaciaDashboard() {
             onClick={() => setActiveSection('recetas')}
           >
             <span className="nav-icon">📝</span>
-            <span>Recetas Pendientes</span>
+            <span>{t('farmacia.pendingPrescriptions')}</span>
             {myTasks.length > 0 && (
               <span className="nav-badge">{myTasks.length}</span>
             )}
@@ -91,7 +93,7 @@ function FarmaciaDashboard() {
             onClick={() => setActiveSection('inventario')}
           >
             <span className="nav-icon">📦</span>
-            <span>Inventario</span>
+            <span>{t('farmacia.inventory')}</span>
             {getLowStockCount() > 0 && (
               <span className="nav-badge urgent">{getLowStockCount()}</span>
             )}
@@ -102,7 +104,7 @@ function FarmaciaDashboard() {
             onClick={() => setActiveSection('dispensados')}
           >
             <span className="nav-icon">✅</span>
-            <span>Dispensados</span>
+            <span>{t('farmacia.dispensed')}</span>
           </button>
           
           <button 
@@ -110,7 +112,7 @@ function FarmaciaDashboard() {
             onClick={() => setActiveSection('reportes')}
           >
             <span className="nav-icon">📈</span>
-            <span>Reportes</span>
+            <span>{t('admin.reports')}</span>
           </button>
         </nav>
       </aside>

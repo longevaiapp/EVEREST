@@ -1,9 +1,11 @@
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useApp } from '../../context/AppContext';
 import { mockUsers } from '../../data/mockUsers';
 import './AdminDashboard.css';
 
 function AdminDashboard() {
+  const { t } = useTranslation();
   const { currentUser, systemState } = useApp();
   const [activeSection, setActiveSection] = useState('dashboard');
   const [searchQuery, setSearchQuery] = useState('');
@@ -54,7 +56,7 @@ function AdminDashboard() {
       {/* SIDEBAR */}
       <aside className="sidebar">
         <div className="sidebar-header">
-          <h3>👨‍💼 Admin</h3>
+          <h3>👨‍💼 {t('roles.ADMIN')}</h3>
         </div>
         
         <nav className="sidebar-nav">
@@ -63,7 +65,7 @@ function AdminDashboard() {
             onClick={() => setActiveSection('dashboard')}
           >
             <span className="nav-icon">📊</span>
-            <span>Dashboard</span>
+            <span>{t('recepcion.dashboard')}</span>
           </button>
           
           <button 
@@ -71,7 +73,7 @@ function AdminDashboard() {
             onClick={() => setActiveSection('usuarios')}
           >
             <span className="nav-icon">👥</span>
-            <span>Usuarios</span>
+            <span>{t('admin.users')}</span>
             <span className="nav-badge">{allUsers.length}</span>
           </button>
           
@@ -80,7 +82,7 @@ function AdminDashboard() {
             onClick={() => setActiveSection('pacientes')}
           >
             <span className="nav-icon">🐾</span>
-            <span>Pacientes</span>
+            <span>{t('recepcion.patients')}</span>
             <span className="nav-badge">{systemState.pacientes.length}</span>
           </button>
           
@@ -89,7 +91,7 @@ function AdminDashboard() {
             onClick={() => setActiveSection('reportes')}
           >
             <span className="nav-icon">📈</span>
-            <span>Reportes</span>
+            <span>{t('admin.reports')}</span>
           </button>
           
           <button 
@@ -97,7 +99,7 @@ function AdminDashboard() {
             onClick={() => setActiveSection('auditoria')}
           >
             <span className="nav-icon">📋</span>
-            <span>Auditoría</span>
+            <span>{t('admin.audit')}</span>
           </button>
           
           <button 
@@ -105,7 +107,7 @@ function AdminDashboard() {
             onClick={() => setActiveSection('configuracion')}
           >
             <span className="nav-icon">⚙️</span>
-            <span>Configuración</span>
+            <span>{t('admin.settings')}</span>
           </button>
         </nav>
       </aside>
@@ -115,9 +117,9 @@ function AdminDashboard() {
         <div className="dashboard-header">
           <div>
             <h1>
-              {activeSection === 'dashboard' && 'Dashboard Administrativo'}
-              {activeSection === 'usuarios' && 'Gestión de Usuarios'}
-              {activeSection === 'pacientes' && 'Base de Datos de Pacientes'}
+              {activeSection === 'dashboard' && t('admin.title')}
+              {activeSection === 'usuarios' && t('admin.userManagement')}
+              {activeSection === 'pacientes' && t('admin.patientDatabase')}
               {activeSection === 'reportes' && 'Reportes del Sistema'}
               {activeSection === 'auditoria' && 'Auditoría del Sistema'}
               {activeSection === 'configuracion' && 'Configuración del Sistema'}
