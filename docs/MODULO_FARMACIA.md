@@ -3,7 +3,7 @@
 ## Documentación Técnica Completa
 
 **Fecha:** Enero 21, 2026  
-**Versión:** 2.2 (Tercera revisión exhaustiva Senior Dev)  
+**Versión:** 2.3 (Cuarta revisión exhaustiva Senior Dev)  
 **Archivo fuente:** `src/components/dashboards/FarmaciaDashboard.jsx` (767 líneas)
 
 ---
@@ -651,6 +651,29 @@ const dashboardStats = [
 ];
 ```
 
+### Vista Recetas Pendientes
+
+Lista todas las tareas de farmacia (`myTasks`) con información completa.
+
+**Tarjeta de orden:**
+- Badge de prioridad (ALTA con clase `urgent`, MEDIA, BAJA)
+- Hora de la receta
+- Avatar del paciente (🐕/🐈)
+- Nombre, propietario, ficha
+- **Teléfono clickeable** con enlace `tel:`
+- Medicamentos prescritos
+- Botones: "Ver Detalles Completos", "Preparar y Entregar"
+
+**Código del enlace telefónico:**
+```jsx
+<p className="patient-detail">Tel: <a href={`tel:${patient.telefono}`}>{patient.telefono}</a></p>
+```
+
+**Estado vacío:** 
+> "No hay órdenes pendientes"
+
+---
+
 ### Vista Dashboard - Órdenes Urgentes
 
 Filtra y muestra solo tareas con `prioridad === 'ALTA'`.
@@ -672,7 +695,12 @@ Muestra productos donde `stock <= minimo`.
 - Nombre del medicamento
 - Stock actual vs mínimo ("Stock actual: **X** unidades (Mínimo: Y)")
 - Categoría (badge)
-- Botón "Reabastecer" (⚠️ `className="btn-small"` sin onClick - NO FUNCIONA)
+- Botón "Reabastecer" (⚠️ **SIN onClick** - NO FUNCIONA)
+
+```jsx
+// Código del botón sin funcionalidad
+<button className="btn-small">Reabastecer</button>
+```
 
 **Estado vacío:** Si no hay productos con stock bajo, muestra:
 > "✅ Todos los productos tienen stock suficiente"
@@ -819,7 +847,7 @@ const myTasks = systemState.tareasPendientes.FARMACIA || [];
 // Pacientes en farmacia (⚠️ DECLARADO PERO NO USADO EN UI)
 const pharmacyPatients = systemState.pacientes.filter(p => p.estado === 'EN_FARMACIA');
 
-// Órdenes pendientes (prioridad ALTA o MEDIA)
+// Órdenes pendientes - prioridad ALTA o MEDIA (⚠️ DECLARADO PERO NO USADO EN UI)
 const pendingOrders = myTasks.filter(t => t.prioridad === 'ALTA' || t.prioridad === 'MEDIA');
 
 // Órdenes urgentes (solo ALTA)
@@ -835,9 +863,9 @@ const filteredInventory = inventory.filter(item =>
 );
 ```
 
-> ⚠️ **NOTA:** `pharmacyPatients` está declarado pero **NO se utiliza** en ninguna parte de la UI.
-
-> ⚠️ **NOTA:** `pendingOrders` está declarado pero **NO se utiliza** en ninguna parte de la UI (se usa `urgentOrders` y `myTasks` en su lugar).
+> ⚠️ **VARIABLES DECLARADAS PERO NO USADAS EN LA UI:**
+> - `pharmacyPatients` - Filtra pacientes con estado `EN_FARMACIA` pero nunca se renderiza
+> - `pendingOrders` - Filtra tareas de prioridad ALTA o MEDIA pero se usa `urgentOrders` y `myTasks` en su lugar
 
 ### Estructura de Task (Tarea de Farmacia)
 
@@ -1029,9 +1057,13 @@ const inventory = [
    - Ver Historial (📊)
    - Reabastecer (➕)
 
-5. **`pharmacyPatients`:** Variable declarada pero no utilizada.
+5. **Botón "Reabastecer" en Alertas de Stock:** Tiene `className="btn-small"` pero **NO tiene onClick** - diferente a los botones de inventario.
 
-6. **`addToHistory`:** Importado del contexto pero no utilizado.
+6. **`pharmacyPatients`:** Variable declarada pero no utilizada.
+
+7. **`pendingOrders`:** Variable declarada pero no utilizada (se usa `urgentOrders` y `myTasks` en su lugar).
+
+8. **`addToHistory`:** Importado del contexto pero no utilizado.
 
 ### Cálculo de Barra de Stock
 
@@ -1062,12 +1094,35 @@ const barColor = isLowStock ? '#f44336' : '#4caf50';
 | Secciones UI | 5 |
 | Funciones del contexto | 3 (1 sin usar) |
 | Variables de estado | 6 |
-| Datos computados | 6 (2 sin usar) |
+| Datos computados | 6 (3 sin usar: pharmacyPatients, pendingOrders, addToHistory) |
 | Productos en mock | 10 |
 | Productos con stock bajo | 3 |
 | Registros en historial mock | 5 |
 | Categorías en inventario | 6 |
-| Botones sin lógica | 4 |
+| Botones sin lógica | 5 (3 inventario + 1 alertas + 1 modal) |
+
+---
+
+## Enlaces Telefónicos Click-to-Call
+
+El módulo implementa enlaces telefónicos clickeables en dos lugares:
+
+| Ubicación | Código |
+|-----------|--------|
+| Recetas Pendientes | `<a href={`tel:${patient.telefono}`}>{patient.telefono}</a>` |
+| Modal Detalles | `<a href={`tel:${patient.telefono}`}>{patient.telefono}</a>` |
+
+---
+
+## Estados Vacíos (Empty States)
+
+| Sección | Condición | Mensaje |
+|---------|-----------|---------|
+| Dashboard - Órdenes Urgentes | `urgentOrders.length === 0` | "No hay órdenes urgentes" |
+| Dashboard - Alertas Stock | `getLowStockCount() === 0` | "✅ Todos los productos tienen stock suficiente" |
+| Recetas Pendientes | `myTasks.length === 0` | "No hay órdenes pendientes" |
+| Inventario | `filteredInventory.length === 0` && `searchQuery` | "No se encontraron medicamentos" |
+| Inventario | `filteredInventory.length === 0` && !`searchQuery` | "Inventario vacío" |
 
 ---
 
@@ -1082,5 +1137,5 @@ const barColor = isLowStock ? '#f44336' : '#4caf50';
 ---
 
 **Documento generado para el Proyecto EVEREST - VET-OS**  
-**Revisión Senior Dev - Versión 2.2 FINAL (Tercera Revisión)**  
+**Revisión Senior Dev - Versión 2.3 FINAL (Cuarta Revisión)**  
 **Última actualización:** Enero 21, 2026
