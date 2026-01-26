@@ -13,7 +13,7 @@ const router = Router();
 router.get('/', authenticate, isMedico, async (req, res) => {
   const { status, fecha } = req.query;
 
-  const where: any = { vetId: req.user!.id };
+  const where: any = { doctorId: req.user!.userId };
   
   if (status) where.status = status;
   
@@ -58,8 +58,8 @@ router.post('/', authenticate, isMedico, async (req, res) => {
   const consultation = await prisma.consultation.create({
     data: {
       visitId,
-      vetId: req.user!.id,
-      vetName: req.user!.nombre,
+      petId: visit.petId,
+      doctorId: req.user!.userId,
       status: 'EN_PROGRESO',
     },
     include: {
@@ -88,7 +88,7 @@ router.post('/', authenticate, isMedico, async (req, res) => {
 
 // GET /consultations/:id - Get consultation details
 router.get('/:id', authenticate, async (req, res) => {
-  const { id } = req.params;
+  const id = req.params.id as string;
 
   const consultation = await prisma.consultation.findUnique({
     where: { id },
@@ -112,15 +112,14 @@ router.get('/:id', authenticate, async (req, res) => {
 
 // PUT /consultations/:id - Update consultation (SOAP notes, diagnosis, etc.)
 router.put('/:id', authenticate, isMedico, async (req, res) => {
-  const { id } = req.params;
+  const id = req.params.id as string;
   const schema = z.object({
-    subjetivo: z.string().optional(),
-    objetivo: z.string().optional(),
-    analisis: z.string().optional(),
-    plan: z.string().optional(),
-    diagnostico: z.string().optional(),
-    diagnosticosCIE: z.array(z.string()).optional(),
-    notasInternas: z.string().optional(),
+    soapSubjective: z.string().optional(),
+    soapObjective: z.string().optional(),
+    soapAssessment: z.string().optional(),
+    soapPlan: z.string().optional(),
+    diagnosis: z.string().optional(),
+    notes: z.string().optional(),
   });
 
   const data = schema.parse(req.body);
@@ -135,12 +134,12 @@ router.put('/:id', authenticate, isMedico, async (req, res) => {
 
 // PUT /consultations/:id/complete - Complete consultation
 router.put('/:id/complete', authenticate, isMedico, async (req, res) => {
-  const { id } = req.params;
+  const id = req.params.id as string;
   const schema = z.object({
-    diagnostico: z.string().min(1),
-    plan: z.string().min(1),
-    proximaCita: z.string().datetime().optional(),
-    notasAlta: z.string().optional(),
+    diagnosis: z.string().min(1),
+    soapPlan: z.string().min(1),
+    followUpDate: z.string().datetime().optional(),
+    followUpNotes: z.string().optional(),
   });
 
   const data = schema.parse(req.body);
@@ -148,8 +147,11 @@ router.put('/:id/complete', authenticate, isMedico, async (req, res) => {
   const consultation = await prisma.consultation.update({
     where: { id },
     data: {
-      ...data,
-      proximaCita: data.proximaCita ? new Date(data.proximaCita) : null,
+      diagnosis: data.diagnosis,
+      soapPlan: data.soapPlan,
+      followUpRequired: !!data.followUpDate,
+      followUpDate: data.followUpDate ? new Date(data.followUpDate) : null,
+      followUpNotes: data.followUpNotes,
       status: 'COMPLETADA',
     },
   });
@@ -159,7 +161,7 @@ router.put('/:id/complete', authenticate, isMedico, async (req, res) => {
     where: { consultationId: id, status: 'PENDIENTE' },
   });
 
-  const newVisitStatus = prescriptions.length > 0 ? 'PENDIENTE_FARMACIA' : 'LISTO_PARA_PAGO';
+  const newVisitStatus = prescriptions.length > 0 ? 'EN_FARMACIA' : 'LISTO_PARA_ALTA';
 
   await prisma.visit.update({
     where: { id: consultation.visitId },

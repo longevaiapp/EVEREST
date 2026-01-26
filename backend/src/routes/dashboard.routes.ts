@@ -32,7 +32,7 @@ router.get('/recepcion', authenticate, async (req, res) => {
 
   // Pending payments
   const pendingPayments = await prisma.visit.count({
-    where: { status: 'LISTO_PARA_PAGO' },
+    where: { status: 'LISTO_PARA_ALTA' },
   });
 
   // Today's appointments
@@ -220,7 +220,7 @@ router.get('/laboratorio', authenticate, async (req, res) => {
   const urgentPending = await prisma.labRequest.count({
     where: {
       status: { in: ['PENDIENTE', 'EN_PROCESO'] },
-      priority: 'URGENTE',
+      urgency: 'URGENTE',
     },
   });
 

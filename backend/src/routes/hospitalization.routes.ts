@@ -60,7 +60,7 @@ router.post('/', authenticate, isMedico, async (req, res) => {
       consultationId: data.consultationId,
       reason: data.reason,
       location: data.location,
-      admittedById: req.user!.id,
+      admittedById: req.user!.userId,
       status: 'ACTIVA',
     },
     include: {
@@ -88,7 +88,7 @@ router.post('/', authenticate, isMedico, async (req, res) => {
 
 // GET /hospitalizations/:id - Get hospitalization details
 router.get('/:id', authenticate, async (req, res) => {
-  const { id } = req.params;
+  const id = req.params.id as string;
 
   const hospitalization = await prisma.hospitalization.findUnique({
     where: { id },
@@ -108,7 +108,7 @@ router.get('/:id', authenticate, async (req, res) => {
 
 // POST /hospitalizations/:id/monitorings - Add monitoring record
 router.post('/:id/monitorings', authenticate, isMedico, async (req, res) => {
-  const { id } = req.params;
+  const id = req.params.id as string;
   const schema = z.object({
     temperatura: z.number().optional(),
     frecuenciaCardiaca: z.number().int().optional(),
@@ -131,7 +131,7 @@ router.post('/:id/monitorings', authenticate, isMedico, async (req, res) => {
     data: {
       ...data,
       hospitalizationId: id,
-      recordedById: req.user!.id,
+      recordedById: req.user!.userId,
     },
   });
 
@@ -140,7 +140,7 @@ router.post('/:id/monitorings', authenticate, isMedico, async (req, res) => {
 
 // PUT /hospitalizations/:id/discharge - Discharge patient
 router.put('/:id/discharge', authenticate, isMedico, async (req, res) => {
-  const { id } = req.params;
+  const id = req.params.id as string;
 
   const hospitalization = await prisma.hospitalization.update({
     where: { id },
@@ -157,14 +157,14 @@ router.put('/:id/discharge', authenticate, isMedico, async (req, res) => {
   // Update pet status
   await prisma.pet.update({
     where: { id: hospitalization.petId },
-    data: { estado: 'LISTO_PARA_PAGO' },
+    data: { estado: 'LISTO_PARA_ALTA' },
   });
 
   // Update visit status
   if (hospitalization.consultation?.visit) {
     await prisma.visit.update({
       where: { id: hospitalization.consultation.visitId },
-      data: { status: 'LISTO_PARA_PAGO' },
+      data: { status: 'LISTO_PARA_ALTA' },
     });
   }
 

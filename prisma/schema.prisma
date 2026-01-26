@@ -5,6 +5,7 @@
 
 generator client {
   provider = "prisma-client-js"
+  output   = "../backend/node_modules/.prisma/client"
 }
 
 datasource db {
@@ -350,22 +351,37 @@ enum VisitType {
 }
 
 model Appointment {
-  id             String          @id @default(cuid())
+  id             String            @id @default(cuid())
   petId          String
-  pet            Pet             @relation(fields: [petId], references: [id])
-  fecha          DateTime        @db.Date
+  pet            Pet               @relation(fields: [petId], references: [id])
+  fecha          DateTime          @db.Date
   hora           String
   tipo           AppointmentType
-  motivo         String          @db.Text
-  confirmada     Boolean         @default(false)
-  cancelada      Boolean         @default(false)
-  notas          String?         @db.Text
+  motivo         String            @db.Text
+  confirmada     Boolean           @default(false)
+  cancelada      Boolean           @default(false)
+  notas          String?           @db.Text
   createdById    String?
-  createdAt      DateTime        @default(now())
-  updatedAt      DateTime        @updatedAt
+  
+  // === STATUS FLOW ===
+  status         AppointmentStatus @default(PENDIENTE)
+  visitId        String?           // Link to Visit when patient checks in
+  
+  createdAt      DateTime          @default(now())
+  updatedAt      DateTime          @updatedAt
 
   @@index([fecha])
   @@index([petId])
+  @@index([status])
+}
+
+enum AppointmentStatus {
+  PENDIENTE
+  CONFIRMADA
+  EN_CONSULTA
+  COMPLETADA
+  NO_ASISTIO
+  CANCELADA
 }
 
 enum AppointmentType {
@@ -412,23 +428,43 @@ model Consultation {
   // === TIEMPOS ===
   startTime   DateTime           @default(now())
   endTime     DateTime?
+  duration    Int?               // Duración en minutos (calculado)
   
-  // === DATOS CLÍNICOS ===
-  symptoms       String?         @db.Text
-  physicalExam   String?         @db.Text
-  diagnosis      String?         @db.Text
-  treatment      String?         @db.Text
-  notes          String?         @db.Text
+  // === SOAP - Subjective (Lo que reporta el dueño) ===
+  soapSubjective     String?     @db.Text  // Historia clínica del paciente
+  motivoConsulta     String?     @db.Text  // Razón de la visita
+  historiaEnfermedad String?     @db.Text  // Evolución del problema
   
-  // === SIGNOS VITALES ===
-  vitalTemperature    Float?
-  vitalHeartRate      Int?
+  // === SOAP - Objective (Examen físico) ===
+  soapObjective      String?     @db.Text  // Hallazgos del examen
+  physicalExam       String?     @db.Text  // Examen físico detallado
+  
+  // === SOAP - Assessment (Diagnóstico) ===
+  soapAssessment     String?     @db.Text  // Conclusión diagnóstica
+  diagnosis          String?     @db.Text  // Diagnóstico (texto libre, legacy)
+  
+  // === SOAP - Plan (Tratamiento) ===
+  soapPlan           String?     @db.Text  // Plan de tratamiento
+  treatment          String?     @db.Text  // Tratamiento (legacy)
+  
+  // === LEGACY FIELDS (mantener compatibilidad) ===
+  symptoms           String?     @db.Text  // Síntomas reportados
+  notes              String?     @db.Text  // Notas adicionales
+  
+  // === SIGNOS VITALES AL INGRESO ===
+  vitalTemperature     Float?
+  vitalHeartRate       Int?
   vitalRespiratoryRate Int?
-  vitalWeight         Float?
+  vitalWeight          Float?
+  vitalBloodPressure   String?    // e.g., "120/80"
+  vitalPulse           Int?
+  vitalHydration       String?    // Estado de hidratación
+  vitalMucosas         String?    // Color de mucosas
   
   // === SEGUIMIENTO ===
   followUpRequired Boolean       @default(false)
   followUpDate     DateTime?
+  followUpNotes    String?       @db.Text
   
   // === ESTADO ===
   status       ConsultationStatus @default(EN_PROGRESO)
@@ -437,19 +473,105 @@ model Consultation {
   updatedAt    DateTime          @updatedAt
 
   // Relaciones
-  labRequests   LabRequest[]
-  prescriptions Prescription[]
-  surgeries     Surgery[]
-  hospitalization Hospitalization?
+  diagnosticos      Diagnostico[]
+  signosVitales     SignosVitales[]
+  labRequests       LabRequest[]
+  prescriptions     Prescription[]
+  surgeries         Surgery[]
+  hospitalization   Hospitalization?
 
   @@index([petId])
   @@index([doctorId])
   @@index([startTime])
+  @@index([status])
 }
 
 enum ConsultationStatus {
   EN_PROGRESO
   COMPLETADA
+}
+
+// === DIAGNÓSTICO (Estructura para CIE-10 y clasificación) ===
+model Diagnostico {
+  id              String          @id @default(cuid())
+  consultationId  String
+  consultation    Consultation    @relation(fields: [consultationId], references: [id], onDelete: Cascade)
+  
+  // === CLASIFICACIÓN CIE-10 ===
+  codigoCIE10     String?         // Código CIE-10 (ej: A00.1)
+  nombreCIE10     String?         // Nombre del código CIE-10
+  
+  // === DIAGNÓSTICO ===
+  descripcion     String          @db.Text  // Descripción del diagnóstico
+  tipo            DiagnosticoTipo @default(PRESUNTIVO)
+  severidad       Severidad?
+  
+  // === DETALLES ===
+  observaciones   String?         @db.Text
+  diferenciales   String?         @db.Text  // Diagnósticos diferenciales
+  
+  // === ORDEN ===
+  orden           Int             @default(1)  // Orden de prioridad
+  esPrincipal     Boolean         @default(false)
+  
+  createdAt       DateTime        @default(now())
+  updatedAt       DateTime        @updatedAt
+
+  @@index([consultationId])
+  @@index([codigoCIE10])
+}
+
+enum DiagnosticoTipo {
+  PRESUNTIVO
+  DEFINITIVO
+  DIFERENCIAL
+}
+
+enum Severidad {
+  LEVE
+  MODERADO
+  SEVERO
+  CRITICO
+}
+
+// === SIGNOS VITALES (Mediciones durante la consulta) ===
+model SignosVitales {
+  id              String       @id @default(cuid())
+  consultationId  String
+  consultation    Consultation @relation(fields: [consultationId], references: [id], onDelete: Cascade)
+  
+  // === TIMESTAMP ===
+  registeredAt    DateTime     @default(now())
+  
+  // === SIGNOS VITALES PRINCIPALES ===
+  temperatura           Float?    // °C
+  frecuenciaCardiaca    Int?      // lpm (latidos por minuto)
+  frecuenciaRespiratoria Int?     // rpm (respiraciones por minuto)
+  peso                  Float?    // kg
+  
+  // === SIGNOS VITALES SECUNDARIOS ===
+  presionArterial       String?   // e.g., "120/80 mmHg"
+  pulso                 Int?      // ppm
+  saturacionOxigeno     Float?    // SpO2 %
+  glucosa               Float?    // mg/dL
+  
+  // === ESTADO FÍSICO ===
+  hidratacion           String?   // Normal, Leve, Moderada, Severa
+  mucosas               String?   // Rosadas, Pálidas, Cianóticas, Ictéricas
+  tiempoLlenadoCapilar  String?   // TLC en segundos
+  condicionCorporal     Int?      // Escala 1-9
+  
+  // === DOLOR ===
+  escalaDolor           Int?      // 0-10
+  localizacionDolor     String?
+  
+  // === OBSERVACIONES ===
+  observaciones         String?   @db.Text
+  
+  createdAt             DateTime  @default(now())
+
+  @@index([consultationId])
+  @@index([registeredAt])
 }
 
 model LabRequest {

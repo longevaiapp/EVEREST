@@ -13,7 +13,7 @@ const router = Router();
 router.get('/', authenticate, async (req, res) => {
   const { leida, tipo, limit } = req.query;
 
-  const where: any = { userId: req.user!.id };
+  const where: any = { userId: req.user!.userId };
   
   if (leida !== undefined) where.leida = leida === 'true';
   if (tipo) where.tipo = tipo;
@@ -31,7 +31,7 @@ router.get('/', authenticate, async (req, res) => {
 router.get('/unread-count', authenticate, async (req, res) => {
   const count = await prisma.notification.count({
     where: {
-      userId: req.user!.id,
+      userId: req.user!.userId,
       leida: false,
     },
   });
@@ -60,7 +60,7 @@ router.post('/', authenticate, async (req, res) => {
 
 // PUT /notifications/:id/read - Mark as read
 router.put('/:id/read', authenticate, async (req, res) => {
-  const { id } = req.params;
+  const id = req.params.id as string;
 
   const notification = await prisma.notification.update({
     where: { id },
@@ -74,7 +74,7 @@ router.put('/:id/read', authenticate, async (req, res) => {
 router.put('/mark-all-read', authenticate, async (req, res) => {
   await prisma.notification.updateMany({
     where: {
-      userId: req.user!.id,
+      userId: req.user!.userId,
       leida: false,
     },
     data: { leida: true },
@@ -85,7 +85,7 @@ router.put('/mark-all-read', authenticate, async (req, res) => {
 
 // DELETE /notifications/:id - Delete notification
 router.delete('/:id', authenticate, async (req, res) => {
-  const { id } = req.params;
+  const id = req.params.id as string;
 
   await prisma.notification.delete({ where: { id } });
 
@@ -95,7 +95,7 @@ router.delete('/:id', authenticate, async (req, res) => {
 // DELETE /notifications/clear - Clear all notifications
 router.delete('/clear', authenticate, async (req, res) => {
   await prisma.notification.deleteMany({
-    where: { userId: req.user!.id },
+    where: { userId: req.user!.userId },
   });
 
   res.json({ status: 'success', message: 'All notifications cleared' });

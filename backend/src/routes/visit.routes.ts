@@ -13,9 +13,10 @@ const router = Router();
 router.post('/', authenticate, isRecepcion, async (req, res) => {
   const schema = z.object({
     petId: z.string().or(z.number()).transform(val => String(val)),
+    appointmentId: z.string().cuid().optional(), // Link to scheduled appointment
   });
 
-  const { petId } = schema.parse(req.body);
+  const { petId, appointmentId } = schema.parse(req.body);
 
   // Verify pet exists
   const pet = await prisma.pet.findUnique({ where: { id: petId } });
@@ -32,6 +33,17 @@ router.post('/', authenticate, isRecepcion, async (req, res) => {
     },
   });
 
+  // If linked to an appointment, update the appointment
+  if (appointmentId) {
+    await prisma.appointment.update({
+      where: { id: appointmentId },
+      data: { 
+        status: 'CONFIRMADA',
+        visitId: visit.id,
+      },
+    });
+  }
+
   await prisma.pet.update({
     where: { id: petId },
     data: { estado: 'RECIEN_LLEGADO' },
@@ -42,7 +54,7 @@ router.post('/', authenticate, isRecepcion, async (req, res) => {
 
 // PUT /visits/:id/triage - Complete triage
 router.put('/:id/triage', authenticate, isRecepcion, async (req, res) => {
-  const { id } = req.params;
+  const id = req.params.id as string;
   const schema = z.object({
     tipoVisita: z.enum(['CONSULTA_GENERAL', 'SEGUIMIENTO', 'MEDICINA_PREVENTIVA', 'EMERGENCIA']),
     motivo: z.string().min(1),
@@ -95,7 +107,7 @@ router.get('/today', authenticate, async (req, res) => {
 
 // PUT /visits/:id/discharge - Process discharge
 router.put('/:id/discharge', authenticate, isRecepcion, async (req, res) => {
-  const { id } = req.params;
+  const id = req.params.id as string;
   const schema = z.object({
     dischargeNotes: z.string().optional(),
     total: z.number().positive(),

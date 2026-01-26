@@ -115,7 +115,7 @@ router.post('/', authenticate, isFarmacia, async (req, res) => {
 
 // GET /medications/:id - Get medication details
 router.get('/:id', authenticate, async (req, res) => {
-  const { id } = req.params;
+  const id = req.params.id as string;
 
   const medication = await prisma.medication.findUnique({
     where: { id },
@@ -134,7 +134,7 @@ router.get('/:id', authenticate, async (req, res) => {
 
 // PUT /medications/:id - Update medication
 router.put('/:id', authenticate, isFarmacia, async (req, res) => {
-  const { id } = req.params;
+  const id = req.params.id as string;
   const schema = z.object({
     name: z.string().optional(),
     genericName: z.string().optional(),
@@ -161,7 +161,7 @@ router.put('/:id', authenticate, isFarmacia, async (req, res) => {
 
 // PUT /medications/:id/adjust-stock - Adjust stock (manual adjustment)
 router.put('/:id/adjust-stock', authenticate, isFarmacia, async (req, res) => {
-  const { id } = req.params;
+  const id = req.params.id as string;
   const schema = z.object({
     quantity: z.number().int(), // Positive for addition, negative for subtraction
     reason: z.string().min(1),
@@ -192,7 +192,7 @@ router.put('/:id/adjust-stock', authenticate, isFarmacia, async (req, res) => {
       newStock,
       reason,
       batchNumber,
-      performedById: req.user!.id,
+      performedById: req.user!.userId,
     },
   });
 
@@ -219,7 +219,7 @@ router.put('/:id/adjust-stock', authenticate, isFarmacia, async (req, res) => {
 
 // DELETE /medications/:id - Deactivate medication (soft delete)
 router.delete('/:id', authenticate, isFarmacia, async (req, res) => {
-  const { id } = req.params;
+  const id = req.params.id as string;
 
   await prisma.medication.update({
     where: { id },

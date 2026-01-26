@@ -75,7 +75,7 @@ router.post('/', authenticate, isMedico, async (req, res) => {
   const labRequest = await prisma.labRequest.create({
     data: {
       ...data,
-      requestedById: req.user!.id,
+      requestedById: req.user!.userId,
       status: 'PENDIENTE',
     },
   });
@@ -85,7 +85,7 @@ router.post('/', authenticate, isMedico, async (req, res) => {
 
 // PUT /lab-requests/:id/start - Start processing
 router.put('/:id/start', authenticate, isLaboratorio, async (req, res) => {
-  const { id } = req.params;
+  const id = req.params.id as string;
 
   const labRequest = await prisma.labRequest.update({
     where: { id },
@@ -99,7 +99,7 @@ router.put('/:id/start', authenticate, isLaboratorio, async (req, res) => {
 
 // PUT /lab-requests/:id/results - Add results
 router.put('/:id/results', authenticate, isLaboratorio, async (req, res) => {
-  const { id } = req.params;
+  const id = req.params.id as string;
   const schema = z.object({
     results: z.string().min(1),
     resultFiles: z.array(z.string()).optional(),
@@ -114,7 +114,7 @@ router.put('/:id/results', authenticate, isLaboratorio, async (req, res) => {
       resultFiles: data.resultFiles,
       status: 'COMPLETADO',
       completedAt: new Date(),
-      completedById: req.user!.id,
+      completedById: req.user!.userId,
     },
   });
 
@@ -141,7 +141,7 @@ router.put('/:id/results', authenticate, isLaboratorio, async (req, res) => {
 
 // GET /lab-requests/:id - Get lab request details
 router.get('/:id', authenticate, async (req, res) => {
-  const { id } = req.params;
+  const id = req.params.id as string;
 
   const labRequest = await prisma.labRequest.findUnique({
     where: { id },

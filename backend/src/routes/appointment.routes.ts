@@ -73,6 +73,7 @@ router.post('/', authenticate, isRecepcion, async (req, res) => {
       notas: data.notas,
       confirmada: false,
       cancelada: false,
+      status: 'PENDIENTE',
     },
     include: {
       pet: { include: { owner: true } },
@@ -84,7 +85,7 @@ router.post('/', authenticate, isRecepcion, async (req, res) => {
 
 // PUT /appointments/:id - Update appointment
 router.put('/:id', authenticate, isRecepcion, async (req, res) => {
-  const { id } = req.params;
+  const id = req.params.id as string;
   const schema = z.object({
     fecha: z.string().optional(),
     hora: z.string().regex(/^\d{2}:\d{2}$/).optional(),
@@ -114,11 +115,11 @@ router.put('/:id', authenticate, isRecepcion, async (req, res) => {
 
 // PUT /appointments/:id/confirm - Confirm appointment
 router.put('/:id/confirm', authenticate, isRecepcion, async (req, res) => {
-  const { id } = req.params;
+  const id = req.params.id as string;
 
   const appointment = await prisma.appointment.update({
     where: { id },
-    data: { confirmada: true },
+    data: { confirmada: true, status: 'CONFIRMADA' },
   });
 
   res.json({ status: 'success', data: { appointment } });
@@ -126,11 +127,77 @@ router.put('/:id/confirm', authenticate, isRecepcion, async (req, res) => {
 
 // PUT /appointments/:id/cancel - Cancel appointment
 router.put('/:id/cancel', authenticate, isRecepcion, async (req, res) => {
-  const { id } = req.params;
+  const id = req.params.id as string;
 
   const appointment = await prisma.appointment.update({
     where: { id },
-    data: { cancelada: true },
+    data: { cancelada: true, status: 'CANCELADA' },
+  });
+
+  res.json({ status: 'success', data: { appointment } });
+});
+
+// PUT /appointments/:id/checkin - Check-in patient (create visit from appointment)
+router.put('/:id/checkin', authenticate, isRecepcion, async (req, res) => {
+  const id = req.params.id as string;
+
+  // Get the appointment
+  const appointment = await prisma.appointment.findUnique({
+    where: { id },
+    include: { pet: true },
+  });
+
+  if (!appointment) {
+    throw new AppError('Cita no encontrada', 404);
+  }
+
+  if (appointment.cancelada) {
+    throw new AppError('No se puede registrar una cita cancelada', 400);
+  }
+
+  if (appointment.visitId) {
+    throw new AppError('Esta cita ya fue registrada', 400);
+  }
+
+  // Create visit
+  const visit = await prisma.visit.create({
+    data: {
+      petId: appointment.petId,
+      status: 'RECIEN_LLEGADO',
+      tipoVisita: appointment.tipo as any,
+      motivo: appointment.motivo,
+    },
+    include: {
+      pet: { include: { owner: true } },
+    },
+  });
+
+  // Update appointment with visitId and status
+  await prisma.appointment.update({
+    where: { id },
+    data: {
+      visitId: visit.id,
+      status: 'CONFIRMADA',
+      confirmada: true,
+    },
+  });
+
+  // Update pet status
+  await prisma.pet.update({
+    where: { id: appointment.petId },
+    data: { estado: 'RECIEN_LLEGADO' },
+  });
+
+  res.json({ status: 'success', data: { visit, appointment: { ...appointment, visitId: visit.id } } });
+});
+
+// PUT /appointments/:id/no-show - Mark as no-show
+router.put('/:id/no-show', authenticate, isRecepcion, async (req, res) => {
+  const id = req.params.id as string;
+
+  const appointment = await prisma.appointment.update({
+    where: { id },
+    data: { status: 'NO_ASISTIO' },
   });
 
   res.json({ status: 'success', data: { appointment } });
@@ -138,7 +205,7 @@ router.put('/:id/cancel', authenticate, isRecepcion, async (req, res) => {
 
 // DELETE /appointments/:id
 router.delete('/:id', authenticate, isRecepcion, async (req, res) => {
-  const { id } = req.params;
+  const id = req.params.id as string;
 
   await prisma.appointment.delete({ where: { id } });
 

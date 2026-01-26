@@ -27,6 +27,7 @@ import dispenseRoutes from './routes/dispense.routes';
 import taskRoutes from './routes/task.routes';
 import notificationRoutes from './routes/notification.routes';
 import dashboardRoutes from './routes/dashboard.routes';
+import medicoRoutes from './routes/medico.routes';
 
 const app = express();
 const PORT = process.env.PORT || 3001;
@@ -92,6 +93,7 @@ app.use(`${API_PREFIX}/dispenses`, dispenseRoutes);
 app.use(`${API_PREFIX}/tasks`, taskRoutes);
 app.use(`${API_PREFIX}/notifications`, notificationRoutes);
 app.use(`${API_PREFIX}/dashboard`, dashboardRoutes);
+app.use(`${API_PREFIX}/medico`, medicoRoutes);
 
 // ===========================================================================
 // ERROR HANDLING
@@ -104,8 +106,16 @@ app.use(errorHandler);
 // START SERVER
 // ===========================================================================
 
-app.listen(PORT, () => {
-  console.log(`
+import { prisma } from './lib/prisma';
+
+const startServer = async () => {
+  try {
+    // Test database connection
+    await prisma.$connect();
+    console.log('✅ Database connected successfully');
+
+    const server = app.listen(PORT, () => {
+      console.log(`
   🏥 VET-OS API Server
   =====================
   📍 Running on: http://localhost:${PORT}
@@ -113,7 +123,29 @@ app.listen(PORT, () => {
   🔗 API:        http://localhost:${PORT}${API_PREFIX}
   🌍 Environment: ${process.env.NODE_ENV || 'development'}
   =====================
-  `);
-});
+      `);
+    });
+
+    // Handle graceful shutdown
+    const shutdown = async (signal: string) => {
+      console.log(`\n${signal} received. Shutting down gracefully...`);
+      server.close(async () => {
+        await prisma.$disconnect();
+        console.log('Server closed.');
+        process.exit(0);
+      });
+    };
+
+    process.on('SIGINT', () => shutdown('SIGINT'));
+    process.on('SIGTERM', () => shutdown('SIGTERM'));
+
+  } catch (error) {
+    console.error('❌ Failed to start server:', error);
+    await prisma.$disconnect();
+    process.exit(1);
+  }
+};
+
+startServer();
 
 export default app;

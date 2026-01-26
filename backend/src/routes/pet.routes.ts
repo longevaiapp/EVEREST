@@ -164,7 +164,7 @@ router.get('/by-status/:status', authenticate, async (req, res) => {
 
 // GET /pets/:id - Get pet by ID with full details
 router.get('/:id', authenticate, async (req, res) => {
-  const { id } = req.params;
+  const id = req.params.id as string;
 
   const pet = await prisma.pet.findUnique({
     where: { id },
@@ -253,7 +253,7 @@ router.post('/', authenticate, isRecepcion, async (req, res) => {
 
 // PUT /pets/:id - Update pet
 router.put('/:id', authenticate, async (req, res) => {
-  const { id } = req.params;
+  const id = req.params.id as string;
   const data = updatePetSchema.parse(req.body);
 
   const pet = await prisma.pet.update({
@@ -279,7 +279,7 @@ router.put('/:id', authenticate, async (req, res) => {
 
 // PATCH /pets/:id/status - Update pet status
 router.patch('/:id/status', authenticate, async (req, res) => {
-  const { id } = req.params;
+  const id = req.params.id as string;
   const { estado } = z.object({
     estado: z.enum([
       'RECIEN_LLEGADO', 'EN_ESPERA', 'EN_CONSULTA', 'EN_ESTUDIOS',
@@ -301,7 +301,7 @@ router.patch('/:id/status', authenticate, async (req, res) => {
 
 // DELETE /pets/:id - Soft delete pet
 router.delete('/:id', authenticate, isRecepcion, async (req, res) => {
-  const { id } = req.params;
+  const id = req.params.id as string;
 
   await prisma.pet.update({
     where: { id },

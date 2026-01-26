@@ -13,7 +13,7 @@ const router = Router();
 router.get('/', authenticate, async (req, res) => {
   const { status, priority, tipo } = req.query;
 
-  const where: any = { assigneeId: req.user!.id };
+  const where: any = { assigneeId: req.user!.userId };
   
   if (status) where.estado = status;
   if (priority) where.prioridad = priority;
@@ -34,7 +34,7 @@ router.get('/', authenticate, async (req, res) => {
 router.get('/pending', authenticate, async (req, res) => {
   const tasks = await prisma.task.findMany({
     where: {
-      assigneeId: req.user!.id,
+      assigneeId: req.user!.userId,
       estado: { in: ['PENDIENTE', 'EN_PROGRESO'] },
     },
     orderBy: [
@@ -66,8 +66,8 @@ router.post('/', authenticate, async (req, res) => {
       descripcion: data.descripcion,
       prioridad: data.prioridad,
       tipo: data.tipo,
-      assigneeId: data.assigneeId || req.user!.id,
-      createdById: req.user!.id,
+      assigneeId: data.assigneeId || req.user!.userId,
+      createdById: req.user!.userId,
       petId: data.petId,
       visitId: data.visitId,
       estado: 'PENDIENTE',
@@ -79,7 +79,7 @@ router.post('/', authenticate, async (req, res) => {
 
 // PUT /tasks/:id - Update task
 router.put('/:id', authenticate, async (req, res) => {
-  const { id } = req.params;
+  const id = req.params.id as string;
   const schema = z.object({
     titulo: z.string().optional(),
     descripcion: z.string().optional(),
@@ -99,7 +99,7 @@ router.put('/:id', authenticate, async (req, res) => {
 
 // PUT /tasks/:id/complete - Mark task as complete
 router.put('/:id/complete', authenticate, async (req, res) => {
-  const { id } = req.params;
+  const id = req.params.id as string;
 
   const task = await prisma.task.update({
     where: { id },
@@ -114,7 +114,7 @@ router.put('/:id/complete', authenticate, async (req, res) => {
 
 // DELETE /tasks/:id - Delete task
 router.delete('/:id', authenticate, async (req, res) => {
-  const { id } = req.params;
+  const id = req.params.id as string;
 
   await prisma.task.delete({ where: { id } });
 

@@ -15,7 +15,7 @@ router.get('/', authenticate, async (req, res) => {
 
   const where: any = {};
   
-  if (prescriptionId) where.prescriptionId = prescriptionId;
+  if (prescriptionId) where.prescriptionId = prescriptionId as string;
   
   if (fecha) {
     const date = new Date(fecha as string);
@@ -53,20 +53,20 @@ router.get('/', authenticate, async (req, res) => {
 // POST /dispenses - Create dispense (fulfill prescription)
 router.post('/', authenticate, isFarmacia, async (req, res) => {
   const itemSchema = z.object({
-    prescriptionItemId: z.string().cuid(),
-    cantidadDespachada: z.number().int().positive(),
-    lote: z.string().optional(),
-    sustitucion: z.object({
-      medicationId: z.string().cuid(),
-      motivo: z.string(),
-    }).optional(),
+    medicationId: z.string().cuid(),
+    medicationName: z.string(),
+    requestedQty: z.number().int().positive(),
+    dispensedQty: z.number().int().nonnegative(),
+    reason: z.string().optional(),
+    unitPrice: z.number().positive(),
   });
 
   const schema = z.object({
     prescriptionId: z.string().cuid(),
+    petId: z.string().cuid(),
     items: z.array(itemSchema).min(1),
-    observaciones: z.string().optional(),
-    firmaDigital: z.string().optional(), // Base64
+    notes: z.string().optional(),
+    deliveredTo: z.string().optional(),
   });
 
   const data = schema.parse(req.body);
@@ -88,89 +88,78 @@ router.post('/', authenticate, isFarmacia, async (req, res) => {
     const dispenseRecord = await tx.dispense.create({
       data: {
         prescriptionId: data.prescriptionId,
-        farmaceuticoId: req.user!.id,
-        farmaceuticoName: req.user!.nombre,
-        observaciones: data.observaciones,
-        firmaDigital: data.firmaDigital,
+        petId: data.petId,
+        dispensedById: req.user!.userId,
+        notes: data.notes,
+        deliveredTo: data.deliveredTo,
+        status: 'COMPLETO',
       },
     });
 
     // Process each item
     for (const item of data.items) {
-      const prescriptionItem = prescription.items.find(
-        (pi) => pi.id === item.prescriptionItemId
-      );
-
-      if (!prescriptionItem) {
-        throw new AppError(`Prescription item ${item.prescriptionItemId} not found`, 404);
-      }
-
-      const medicationId = item.sustitucion?.medicationId || prescriptionItem.medicationId;
-
       // Verify stock
       const medication = await tx.medication.findUnique({
-        where: { id: medicationId },
+        where: { id: item.medicationId },
       });
 
       if (!medication) {
         throw new AppError(`Medication not found`, 404);
       }
 
-      if (medication.stockActual < item.cantidadDespachada) {
-        throw new AppError(`Insufficient stock for ${medication.nombre}`, 400);
+      if (medication.currentStock < item.dispensedQty) {
+        throw new AppError(`Insufficient stock for ${medication.name}`, 400);
       }
+
+      const subtotal = item.unitPrice * item.dispensedQty;
 
       // Create dispense item
       await tx.dispenseItem.create({
         data: {
           dispenseId: dispenseRecord.id,
-          prescriptionItemId: item.prescriptionItemId,
-          medicationId,
-          cantidadDespachada: item.cantidadDespachada,
-          lote: item.lote || medication.lote,
-          precioUnitario: medication.precioVenta,
-          subtotal: medication.precioVenta * item.cantidadDespachada,
-          esSustitucion: !!item.sustitucion,
-          motivoSustitucion: item.sustitucion?.motivo,
+          medicationId: item.medicationId,
+          medicationName: item.medicationName,
+          requestedQty: item.requestedQty,
+          dispensedQty: item.dispensedQty,
+          reason: item.reason,
+          unitPrice: item.unitPrice,
+          subtotal: subtotal,
         },
       });
 
       // Decrease stock
-      const newStock = medication.stockActual - item.cantidadDespachada;
+      const newStock = medication.currentStock - item.dispensedQty;
       await tx.medication.update({
-        where: { id: medicationId },
-        data: { stockActual: newStock },
+        where: { id: item.medicationId },
+        data: { currentStock: newStock },
       });
 
       // Log stock movement
       await tx.stockMovement.create({
         data: {
-          medicationId,
-          tipo: 'SALIDA',
-          cantidad: item.cantidadDespachada,
-          stockAnterior: medication.stockActual,
-          stockNuevo: newStock,
-          motivo: `Despacho receta ${prescription.id}`,
-          dispenseId: dispenseRecord.id,
-          userId: req.user!.id,
-          userName: req.user!.nombre,
+          medicationId: item.medicationId,
+          type: 'SALIDA',
+          quantity: item.dispensedQty,
+          previousStock: medication.currentStock,
+          newStock: newStock,
+          reason: `Dispense for prescription ${prescription.id}`,
+          performedById: req.user!.userId,
         },
       });
 
       // Check for low stock alert
-      if (newStock <= medication.stockMinimo) {
+      if (newStock <= medication.minStock) {
         const existingAlert = await tx.stockAlert.findFirst({
-          where: { medicationId, resuelta: false },
+          where: { medicationId: item.medicationId, status: 'ACTIVA' },
         });
 
         if (!existingAlert) {
           await tx.stockAlert.create({
             data: {
-              medicationId,
-              tipoAlerta: 'STOCK_BAJO',
-              mensaje: `Stock bajo para ${medication.nombre}: ${newStock} unidades`,
-              nivelActual: newStock,
-              nivelMinimo: medication.stockMinimo,
+              medicationId: item.medicationId,
+              type: 'STOCK_BAJO',
+              message: `Low stock for ${medication.name}: ${newStock} units`,
+              priority: 'MEDIA',
             },
           });
         }
@@ -213,7 +202,7 @@ router.post('/', authenticate, isFarmacia, async (req, res) => {
   const pendingPrescriptions = await prisma.prescription.findMany({
     where: {
       consultationId: prescription.consultationId,
-      status: { in: ['PENDIENTE', 'EN_PREPARACION'] },
+      status: { in: ['PENDIENTE', 'PARCIAL'] },
     },
   });
 
@@ -225,7 +214,7 @@ router.post('/', authenticate, isFarmacia, async (req, res) => {
     if (consultation) {
       await prisma.visit.update({
         where: { id: consultation.visitId },
-        data: { status: 'LISTO_PARA_PAGO' },
+        data: { status: 'LISTO_PARA_ALTA' },
       });
     }
   }
@@ -235,7 +224,7 @@ router.post('/', authenticate, isFarmacia, async (req, res) => {
 
 // GET /dispenses/:id - Get dispense details
 router.get('/:id', authenticate, async (req, res) => {
-  const { id } = req.params;
+  const id = req.params.id as string;
 
   const dispense = await prisma.dispense.findUnique({
     where: { id },
@@ -245,7 +234,7 @@ router.get('/:id', authenticate, async (req, res) => {
       },
       prescription: {
         include: {
-          items: { include: { medication: true } },
+          items: true,
           consultation: {
             include: {
               visit: {
@@ -267,7 +256,7 @@ router.get('/:id', authenticate, async (req, res) => {
 
 // GET /dispenses/prescription/:prescriptionId - Get dispense by prescription
 router.get('/prescription/:prescriptionId', authenticate, async (req, res) => {
-  const { prescriptionId } = req.params;
+  const prescriptionId = req.params.prescriptionId as string;
 
   const dispense = await prisma.dispense.findFirst({
     where: { prescriptionId },
