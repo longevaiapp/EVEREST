@@ -315,6 +315,9 @@
       "EN_CONSULTA": "In Consultation",
       "EN_ESTUDIOS": "In Lab Tests",
       "EN_FARMACIA": "In Pharmacy",
+      "CIRUGIA_PROGRAMADA": "Surgery Scheduled",
+      "EN_CIRUGIA": "In Surgery",
+      "HOSPITALIZADO": "Hospitalized",
       "LISTO_PARA_ALTA": "Ready for Discharge",
       "ALTA": "Discharged"
     },

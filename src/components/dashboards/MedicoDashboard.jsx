@@ -1,27 +1,41 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
-import { useApp } from '../../context/AppContext';
+import { useAuth } from '../../context/AuthContext';
+import useMedico from '../../hooks/useMedico';
 import './MedicoDashboard.css';
 
 function MedicoDashboard() {
   const { t } = useTranslation();
-  const { 
-    currentUser, 
-    systemState, 
-    updatePatientState, 
-    requestStudies, 
-    prescribeMedication, 
-    addToHistory,
-    hospitalize,
-    addMonitoring,
-    registerConsultation
-  } = useApp();
+  const { user } = useAuth();
+  
+  // Hook para operaciones con API real
+  const {
+    loading: apiLoading,
+    error: apiError,
+    resumen,
+    waitingPatients,
+    patientsInConsultation,
+    patientsInStudies,
+    todayAppointments,
+    loadDashboardData,
+    getPaciente,
+    getHistorial,
+    iniciarConsulta,
+    actualizarConsulta,
+    completarConsulta,
+    agregarDiagnostico,
+    guardarSignosVitales,
+    crearReceta,
+    crearOrdenLab,
+    hospitalizarPaciente,
+    clearError,
+  } = useMedico();
 
   // State Management
   const [selectedPatient, setSelectedPatient] = useState(null);
   const [activeConsultation, setActiveConsultation] = useState(null);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState(null);
+  const [localLoading, setLocalLoading] = useState(false);
+  const [localError, setLocalError] = useState(null);
   
   // Modal states
   const [showVitalsModal, setShowVitalsModal] = useState(false);
@@ -30,6 +44,10 @@ function MedicoDashboard() {
   const [showLabOrderModal, setShowLabOrderModal] = useState(false);
   const [showHospitalizationModal, setShowHospitalizationModal] = useState(false);
   const [showHistoryModal, setShowHistoryModal] = useState(false);
+  
+  // Estado para historial completo desde API
+  const [historialData, setHistorialData] = useState(null);
+  const [loadingHistorial, setLoadingHistorial] = useState(false);
 
   // Form states
   const [consultationNotes, setConsultationNotes] = useState({
@@ -37,6 +55,14 @@ function MedicoDashboard() {
     objetivo: '',
     analisis: '',
     plan: ''
+  });
+  
+  // Track which SOAP sections have been saved
+  const [savedSections, setSavedSections] = useState({
+    subjetivo: false,
+    objetivo: false,
+    analisis: false,
+    plan: false
   });
 
   const [vitalsForm, setVitalsForm] = useState({
@@ -84,27 +110,39 @@ function MedicoDashboard() {
     estimacionDias: ''
   });
 
-  // Derived state
-  const todayAppointments = (systemState.citas || []).filter(cita => {
-    const today = new Date().toISOString().split('T')[0];
-    const citaDate = new Date(cita.fecha).toISOString().split('T')[0];
-    return citaDate === today && !cita.cancelada;
-  });
+  // Derived state - Usando datos de la API
+  const myPatients = patientsInConsultation || [];
+  const inStudies = patientsInStudies || [];
+  const hospitalized = []; // TODO: Agregar endpoint de hospitalizados
+  const myTasks = []; // TODO: Agregar endpoint de tareas
 
-  const myTasks = systemState.tareasPendientes?.MEDICO || [];
-  const waitingPatients = systemState.pacientes.filter(p => p.estado === 'EN_ESPERA' || p.estado === 'REGISTRADO');
-  const myPatients = systemState.pacientes.filter(p => p.estado === 'EN_CONSULTA');
-  const inStudies = systemState.pacientes.filter(p => p.estado === 'EN_ESTUDIOS');
-  const hospitalized = systemState.pacientes.filter(p => p.estado === 'HOSPITALIZADO');
+  // Estados combinados de loading y error
+  const loading = apiLoading || localLoading;
+  const error = apiError || localError;
 
+  // Auto-limpiar errores después de 5 segundos
+  useEffect(() => {
+    if (error) {
+      const timer = setTimeout(() => {
+        clearError?.();
+        setLocalError(null);
+      }, 5000);
+      return () => clearTimeout(timer);
+    }
+  }, [error, clearError]);
+
+  // Opciones de estudios (enums del backend)
   const studiesOptions = [
-    { id: 'hemograma', name: t('medico.studies.hemograma', 'Hemograma Completo') },
-    { id: 'bioquimica', name: t('medico.studies.bioquimica', 'Bioquímica Sanguínea') },
-    { id: 'urinalisis', name: t('medico.studies.urinalisis', 'Uroanálisis') },
-    { id: 'coprologico', name: t('medico.studies.coprologico', 'Coproparasitoscópico') },
-    { id: 'radiografia', name: t('medico.studies.radiografia', 'Radiografía') },
-    { id: 'ecografia', name: t('medico.studies.ecografia', 'Ecografía') },
-    { id: 'electrocardiograma', name: t('medico.studies.electrocardiograma', 'Electrocardiograma') }
+    { id: 'HEMOGRAMA', name: t('medico.studies.hemograma', 'Hemograma Completo') },
+    { id: 'QUIMICA_SANGUINEA', name: t('medico.studies.bioquimica', 'Química Sanguínea') },
+    { id: 'URINALISIS', name: t('medico.studies.urinalisis', 'Uroanálisis') },
+    { id: 'COPROLOGIA', name: t('medico.studies.coprologico', 'Coproparasitoscópico') },
+    { id: 'RAYOS_X', name: t('medico.studies.radiografia', 'Radiografía') },
+    { id: 'ULTRASONIDO', name: t('medico.studies.ecografia', 'Ecografía') },
+    { id: 'ELECTROCARDIOGRAMA', name: t('medico.studies.electrocardiograma', 'Electrocardiograma') },
+    { id: 'PERFIL_TIROIDEO', name: t('medico.studies.tiroideo', 'Perfil Tiroideo') },
+    { id: 'CITOLOGIA', name: t('medico.studies.citologia', 'Citología') },
+    { id: 'BIOPSIA', name: t('medico.studies.biopsia', 'Biopsia') }
   ];
 
   const commonMedications = [
@@ -117,83 +155,168 @@ function MedicoDashboard() {
     'Omeprazol 20mg'
   ];
 
-  const handleSelectPatient = useCallback((patient) => {
+  const handleSelectPatient = useCallback(async (patient) => {
+    console.log('[handleSelectPatient] patient:', patient);
     setSelectedPatient(patient);
-    setError(null);
-  }, []);
-
-  const handleStartConsultation = useCallback((patient) => {
-    setLoading(true);
-    try {
-      updatePatientState(patient.id, 'EN_CONSULTA', currentUser?.nombre);
+    setLocalError(null);
+    
+    // Si el paciente ya tiene una consulta activa (viene de patientsInConsultation), establecerla
+    if (patient.consultationId) {
+      console.log('[handleSelectPatient] Estableciendo activeConsultation con id:', patient.consultationId);
       setActiveConsultation({
-        id: Date.now(),
+        id: patient.consultationId,
         patientId: patient.id,
-        startTime: new Date().toISOString(),
+        visitId: patient.visitId,
+        status: 'IN_PROGRESS'
+      });
+    } else {
+      // Si no tiene consulta, limpiar activeConsultation
+      setActiveConsultation(null);
+    }
+    
+    // Cargar datos completos del paciente (incluye historial de visitas, consultas, etc.)
+    if (patient.id) {
+      try {
+        const pacienteCompleto = await getPaciente(patient.id);
+        console.log('[handleSelectPatient] Paciente completo cargado:', pacienteCompleto);
+        if (pacienteCompleto) {
+          // Fusionar datos básicos del paciente con los datos completos
+          setSelectedPatient(prev => ({
+            ...prev,
+            ...pacienteCompleto,
+            // Mantener datos de la visita actual
+            visitId: patient.visitId,
+            consultationId: patient.consultationId,
+            estado: patient.estado || pacienteCompleto.estado
+          }));
+        }
+      } catch (err) {
+        console.error('[handleSelectPatient] Error cargando paciente:', err);
+        // Error silencioso, usamos los datos que ya tenemos
+      }
+    }
+  }, [getPaciente]);
+
+  const handleStartConsultation = useCallback(async (patient) => {
+    console.log('[handleStartConsultation] patient:', patient);
+    if (!patient.visitId) {
+      setLocalError(t('medico.errors.noVisitId', 'El paciente no tiene una visita activa'));
+      return;
+    }
+    
+    // Si ya tiene una consulta activa, solo establecerla sin crear nueva
+    if (patient.consultationId) {
+      console.log('[handleStartConsultation] Paciente ya tiene consulta, estableciendo como activa:', patient.consultationId);
+      setActiveConsultation({
+        id: patient.consultationId,
+        patientId: patient.id,
+        visitId: patient.visitId,
         status: 'IN_PROGRESS'
       });
       setSelectedPatient(patient);
-      setConsultationNotes({ subjetivo: '', objetivo: '', analisis: '', plan: '' });
-      addToHistory(patient.id, {
-        accion: t('medico.consultationStarted', 'Consulta iniciada'),
-        usuario: currentUser?.nombre,
-        timestamp: new Date().toISOString()
-      });
-    } catch (err) {
-      setError(t('medico.errors.startConsultation', 'Error al iniciar consulta'));
-    } finally {
-      setLoading(false);
+      return;
     }
-  }, [updatePatientState, currentUser, addToHistory, t]);
-
-  const handleEndConsultation = useCallback(() => {
-    if (!selectedPatient || !activeConsultation) return;
     
-    setLoading(true);
+    setLocalLoading(true);
     try {
-      if (registerConsultation) {
-        registerConsultation(selectedPatient.id, {
-          ...consultationNotes,
-          medicoId: currentUser?.id,
-          fecha: new Date().toISOString()
+      const consulta = await iniciarConsulta(patient.visitId, patient.id);
+      console.log('[handleStartConsultation] consulta creada:', consulta);
+      if (consulta) {
+        setActiveConsultation({
+          id: consulta.id,
+          patientId: patient.id,
+          visitId: patient.visitId,
+          startTime: consulta.startTime,
+          status: 'IN_PROGRESS'
         });
+        console.log('[handleStartConsultation] activeConsultation establecido con id:', consulta.id);
+        setSelectedPatient(patient);
+        setConsultationNotes({ subjetivo: '', objetivo: '', analisis: '', plan: '' });
+        setSavedSections({ subjetivo: false, objetivo: false, analisis: false, plan: false });
       }
-      
-      updatePatientState(selectedPatient.id, 'LISTO_PARA_ALTA', currentUser?.nombre);
-      
-      addToHistory(selectedPatient.id, {
-        accion: t('medico.consultationCompleted', 'Consulta completada'),
-        detalles: consultationNotes,
-        usuario: currentUser?.nombre,
-        timestamp: new Date().toISOString()
+    } catch (err) {
+      console.error('[handleStartConsultation] Error:', err);
+      setLocalError(err.message || t('medico.errors.startConsultation', 'Error al iniciar consulta'));
+    } finally {
+      setLocalLoading(false);
+    }
+  }, [iniciarConsulta, t]);
+
+  const handleEndConsultation = useCallback(async () => {
+    if (!selectedPatient || !activeConsultation?.id) {
+      setLocalError(t('medico.errors.noActiveConsultation', 'No hay consulta activa'));
+      return;
+    }
+    
+    setLocalLoading(true);
+    try {
+      await completarConsulta(activeConsultation.id, {
+        diagnosis: consultationNotes.analisis || 'Consulta completada',
+        soapPlan: consultationNotes.plan || 'Seguimiento según indicaciones',
       });
       
       setActiveConsultation(null);
       setSelectedPatient(null);
       setConsultationNotes({ subjetivo: '', objetivo: '', analisis: '', plan: '' });
+      setSavedSections({ subjetivo: false, objetivo: false, analisis: false, plan: false });
     } catch (err) {
-      setError(t('medico.errors.endConsultation', 'Error al finalizar consulta'));
+      setLocalError(err.message || t('medico.errors.endConsultation', 'Error al finalizar consulta'));
     } finally {
-      setLoading(false);
+      setLocalLoading(false);
     }
-  }, [selectedPatient, activeConsultation, consultationNotes, currentUser, registerConsultation, updatePatientState, addToHistory, t]);
+  }, [selectedPatient, activeConsultation, consultationNotes, completarConsulta, t]);
 
-  const handleSaveVitals = useCallback(() => {
-    if (!selectedPatient) return;
+  // Guardar sección SOAP individual
+  const handleSaveSOAPSection = useCallback(async (section) => {
+    if (!activeConsultation?.id) {
+      setLocalError(t('medico.errors.noActiveConsultation', 'No hay consulta activa'));
+      return;
+    }
     
-    setLoading(true);
+    const value = consultationNotes[section];
+    if (!value || value.trim() === '') {
+      return; // No guardar si está vacío
+    }
+    
+    setLocalLoading(true);
     try {
-      addMonitoring(selectedPatient.id, {
-        ...vitalsForm,
-        registradoPor: currentUser?.nombre,
-        timestamp: new Date().toISOString()
+      // Mapear nombres de campo frontend a backend
+      const fieldMap = {
+        subjetivo: 'soapSubjective',
+        objetivo: 'soapObjective',
+        analisis: 'soapAssessment',
+        plan: 'soapPlan'
+      };
+      
+      await actualizarConsulta(activeConsultation.id, {
+        [fieldMap[section]]: value
       });
       
-      addToHistory(selectedPatient.id, {
-        accion: t('medico.vitalsRecorded', 'Signos vitales registrados'),
-        detalles: vitalsForm,
-        usuario: currentUser?.nombre,
-        timestamp: new Date().toISOString()
+      // Marcar la sección como guardada
+      setSavedSections(prev => ({ ...prev, [section]: true }));
+    } catch (err) {
+      console.error(`Error guardando ${section}:`, err);
+      setLocalError(err.message || t('medico.errors.saveSOAP', 'Error al guardar notas'));
+    } finally {
+      setLocalLoading(false);
+    }
+  }, [activeConsultation, consultationNotes, actualizarConsulta, t]);
+
+  const handleSaveVitals = useCallback(async () => {
+    if (!activeConsultation) {
+      setLocalError(t('medico.errors.noActiveConsultation', 'No hay consulta activa'));
+      return;
+    }
+    
+    setLocalLoading(true);
+    try {
+      await guardarSignosVitales(activeConsultation.id, {
+        temperatura: vitalsForm.temperatura ? parseFloat(vitalsForm.temperatura) : undefined,
+        frecuenciaCardiaca: vitalsForm.frecuenciaCardiaca ? parseInt(vitalsForm.frecuenciaCardiaca) : undefined,
+        frecuenciaRespiratoria: vitalsForm.frecuenciaRespiratoria ? parseInt(vitalsForm.frecuenciaRespiratoria) : undefined,
+        presionArterial: vitalsForm.presionArterial || undefined,
+        peso: vitalsForm.peso ? parseFloat(vitalsForm.peso) : undefined,
+        escalaDolor: vitalsForm.escalaDolor ? parseInt(vitalsForm.escalaDolor) : undefined
       });
       
       setShowVitalsModal(false);
@@ -207,22 +330,27 @@ function MedicoDashboard() {
         escalaDolor: '0'
       });
     } catch (err) {
-      setError(t('medico.errors.saveVitals', 'Error al guardar signos vitales'));
+      setLocalError(err.message || t('medico.errors.saveVitals', 'Error al guardar signos vitales'));
     } finally {
-      setLoading(false);
+      setLocalLoading(false);
     }
-  }, [selectedPatient, vitalsForm, currentUser, addMonitoring, addToHistory, t]);
+  }, [activeConsultation, vitalsForm, guardarSignosVitales, t]);
 
-  const handleAddDiagnosis = useCallback(() => {
-    if (!selectedPatient || !diagnosisForm.descripcion) return;
+  const handleAddDiagnosis = useCallback(async () => {
+    if (!activeConsultation || !diagnosisForm.descripcion) {
+      setLocalError(t('medico.errors.diagnosisRequired', 'Descripción del diagnóstico requerida'));
+      return;
+    }
     
-    setLoading(true);
+    setLocalLoading(true);
     try {
-      addToHistory(selectedPatient.id, {
-        accion: t('medico.diagnosisAdded', 'Diagnóstico agregado'),
-        detalles: diagnosisForm,
-        usuario: currentUser?.nombre,
-        timestamp: new Date().toISOString()
+      await agregarDiagnostico({
+        consultationId: activeConsultation.id,
+        codigoCIE10: diagnosisForm.codigo || undefined,
+        descripcion: diagnosisForm.descripcion,
+        tipo: diagnosisForm.tipo,
+        severidad: diagnosisForm.severidad,
+        observaciones: diagnosisForm.notas || undefined
       });
       
       setShowDiagnosisModal(false);
@@ -234,11 +362,11 @@ function MedicoDashboard() {
         notas: ''
       });
     } catch (err) {
-      setError(t('medico.errors.addDiagnosis', 'Error al agregar diagnóstico'));
+      setLocalError(err.message || t('medico.errors.addDiagnosis', 'Error al agregar diagnóstico'));
     } finally {
-      setLoading(false);
+      setLocalLoading(false);
     }
-  }, [selectedPatient, diagnosisForm, currentUser, addToHistory, t]);
+  }, [activeConsultation, diagnosisForm, agregarDiagnostico, t]);
 
   const handleAddMedication = useCallback(() => {
     if (!currentMedication.nombre || !currentMedication.dosis) return;
@@ -264,32 +392,43 @@ function MedicoDashboard() {
     }));
   }, []);
 
-  const handleCreatePrescription = useCallback(() => {
-    if (!selectedPatient || prescriptionForm.medicamentos.length === 0) return;
+  const handleCreatePrescription = useCallback(async () => {
+    console.log('[handleCreatePrescription] activeConsultation:', activeConsultation);
+    console.log('[handleCreatePrescription] prescriptionForm:', prescriptionForm);
+    console.log('[handleCreatePrescription] selectedPatient:', selectedPatient);
     
-    setLoading(true);
+    if (!activeConsultation || prescriptionForm.medicamentos.length === 0) {
+      setLocalError(t('medico.errors.noMedications', 'Debe agregar al menos un medicamento'));
+      return;
+    }
+    if (!selectedPatient?.id) {
+      setLocalError(t('medico.errors.noPatient', 'No hay paciente seleccionado'));
+      return;
+    }
+    
+    setLocalLoading(true);
     try {
-      const medications = prescriptionForm.medicamentos.map(m => 
-        `${m.nombre} ${m.dosis} - ${m.frecuencia} (${m.via})`
-      );
-      
-      prescribeMedication(selectedPatient.id, medications);
-      
-      addToHistory(selectedPatient.id, {
-        accion: t('medico.prescriptionCreated', 'Receta creada'),
-        detalles: prescriptionForm,
-        usuario: currentUser?.nombre,
-        timestamp: new Date().toISOString()
+      console.log('[handleCreatePrescription] calling crearReceta with:', activeConsultation.id);
+      await crearReceta(activeConsultation.id, {
+        petId: selectedPatient.id,
+        items: prescriptionForm.medicamentos.map(m => ({
+          nombre: m.nombre,
+          dosis: m.dosis,
+          frecuencia: m.frecuencia,
+          duracion: m.duracion || '7 días',
+          cantidad: 1
+        })),
+        instruccionesGenerales: prescriptionForm.instrucciones || undefined
       });
       
       setShowPrescriptionModal(false);
       setPrescriptionForm({ medicamentos: [], instrucciones: '', duracion: '' });
     } catch (err) {
-      setError(t('medico.errors.createPrescription', 'Error al crear receta'));
+      setLocalError(err.message || t('medico.errors.createPrescription', 'Error al crear receta'));
     } finally {
-      setLoading(false);
+      setLocalLoading(false);
     }
-  }, [selectedPatient, prescriptionForm, currentUser, prescribeMedication, addToHistory, t]);
+  }, [activeConsultation, selectedPatient, prescriptionForm, crearReceta, t]);
 
   const handleToggleStudy = useCallback((studyId) => {
     setLabOrderForm(prev => ({
@@ -300,39 +439,54 @@ function MedicoDashboard() {
     }));
   }, []);
 
-  const handleCreateLabOrder = useCallback(() => {
-    if (!selectedPatient || labOrderForm.estudios.length === 0) return;
+  const handleCreateLabOrder = useCallback(async () => {
+    if (!activeConsultation || labOrderForm.estudios.length === 0) {
+      setLocalError(t('medico.errors.noStudies', 'Debe seleccionar al menos un estudio'));
+      return;
+    }
+    if (!selectedPatient?.id) {
+      setLocalError(t('medico.errors.noPatient', 'No hay paciente seleccionado'));
+      return;
+    }
     
-    setLoading(true);
+    setLocalLoading(true);
     try {
-      const studyNames = labOrderForm.estudios.map(id => 
-        studiesOptions.find(s => s.id === id)?.name || id
-      );
-      
-      requestStudies(selectedPatient.id, studyNames);
-      
-      addToHistory(selectedPatient.id, {
-        accion: t('medico.labOrderCreated', 'Orden de laboratorio creada'),
-        detalles: { estudios: studyNames, ...labOrderForm },
-        usuario: currentUser?.nombre,
-        timestamp: new Date().toISOString()
+      // labOrderForm.estudios ya contiene los IDs del enum (HEMOGRAMA, QUIMICA_SANGUINEA, etc.)
+      await crearOrdenLab(activeConsultation.id, {
+        petId: selectedPatient.id,
+        estudios: labOrderForm.estudios,
+        prioridad: labOrderForm.prioridad,
+        indicaciones: labOrderForm.indicaciones || null
       });
       
       setShowLabOrderModal(false);
       setLabOrderForm({ estudios: [], prioridad: 'NORMAL', indicaciones: '' });
     } catch (err) {
-      setError(t('medico.errors.createLabOrder', 'Error al crear orden de laboratorio'));
+      setLocalError(err.message || t('medico.errors.createLabOrder', 'Error al crear orden de laboratorio'));
     } finally {
-      setLoading(false);
+      setLocalLoading(false);
     }
-  }, [selectedPatient, labOrderForm, studiesOptions, currentUser, requestStudies, addToHistory, t]);
+  }, [activeConsultation, selectedPatient, labOrderForm, crearOrdenLab, t]);
 
-  const handleCreateHospitalization = useCallback(() => {
-    if (!selectedPatient || !hospitalizationForm.motivo) return;
+  const handleCreateHospitalization = useCallback(async () => {
+    if (!activeConsultation || !hospitalizationForm.motivo) {
+      setLocalError(t('medico.errors.hospitalizationReasonRequired', 'Motivo de hospitalización requerido'));
+      return;
+    }
+    if (!selectedPatient?.id) {
+      setLocalError(t('medico.errors.noPatient', 'No hay paciente seleccionado'));
+      return;
+    }
     
-    setLoading(true);
+    setLocalLoading(true);
     try {
-      hospitalize(selectedPatient.id, hospitalizationForm);
+      await hospitalizarPaciente(activeConsultation.id, {
+        petId: selectedPatient.id,
+        motivo: hospitalizationForm.motivo,
+        frecuenciaMonitoreo: hospitalizationForm.frecuenciaMonitoreo,
+        cuidadosEspeciales: hospitalizationForm.cuidadosEspeciales || null,
+        estimacionDias: hospitalizationForm.estimacionDias ? parseInt(hospitalizationForm.estimacionDias) : null
+      });
       
       setShowHospitalizationModal(false);
       setHospitalizationForm({
@@ -344,15 +498,372 @@ function MedicoDashboard() {
       setActiveConsultation(null);
       setSelectedPatient(null);
     } catch (err) {
-      setError(t('medico.errors.hospitalize', 'Error al hospitalizar paciente'));
+      setLocalError(err.message || t('medico.errors.hospitalize', 'Error al hospitalizar paciente'));
     } finally {
-      setLoading(false);
+      setLocalLoading(false);
     }
-  }, [selectedPatient, hospitalizationForm, hospitalize, t]);
+  }, [activeConsultation, selectedPatient, hospitalizationForm, hospitalizarPaciente, t]);
 
+  // Función para abrir el modal de historial y cargar datos desde la API
+  const handleOpenHistory = useCallback(async () => {
+    if (!selectedPatient?.id) return;
+    
+    setLoadingHistorial(true);
+    setShowHistoryModal(true);
+    
+    try {
+      const data = await getHistorial(selectedPatient.id);
+      console.log('[handleOpenHistory] Historial cargado:', data);
+      setHistorialData(data);
+    } catch (err) {
+      console.error('[handleOpenHistory] Error:', err);
+      setHistorialData(null);
+    } finally {
+      setLoadingHistorial(false);
+    }
+  }, [selectedPatient, getHistorial]);
+
+  // Transformar historial de la API a formato para mostrar
+  const getFormattedHistory = useCallback(() => {
+    if (!historialData?.historial) return [];
+    
+    const history = [];
+    const { consultas, cirugias, hospitalizaciones, vacunas, notas } = historialData.historial;
+    
+    // Agregar consultas con detalles completos
+    if (consultas && Array.isArray(consultas)) {
+      consultas.forEach(consulta => {
+        const detalles = {
+          soap: {},
+          diagnosticos: [],
+          signosVitales: null,
+          recetas: [],
+          laboratorios: [],
+          notas: consulta.notes || null
+        };
+        
+        // SOAP Notes
+        if (consulta.soapSubjective) detalles.soap.subjetivo = consulta.soapSubjective;
+        if (consulta.soapObjective) detalles.soap.objetivo = consulta.soapObjective;
+        if (consulta.soapAssessment) detalles.soap.analisis = consulta.soapAssessment;
+        if (consulta.soapPlan) detalles.soap.plan = consulta.soapPlan;
+        
+        // Diagnósticos
+        if (consulta.diagnosticos && consulta.diagnosticos.length > 0) {
+          detalles.diagnosticos = consulta.diagnosticos.map(d => ({
+            descripcion: d.descripcion,
+            tipo: d.tipo,
+            severidad: d.severidad,
+            codigoCIE10: d.codigoCIE10
+          }));
+        }
+        
+        // Signos vitales
+        if (consulta.signosVitales && consulta.signosVitales.length > 0) {
+          const sv = consulta.signosVitales[0];
+          detalles.signosVitales = {
+            temperatura: sv.temperatura,
+            frecuenciaCardiaca: sv.frecuenciaCardiaca,
+            frecuenciaRespiratoria: sv.frecuenciaRespiratoria,
+            presionSistolica: sv.presionSistolica,
+            presionDiastolica: sv.presionDiastolica,
+            peso: sv.peso,
+            mucpilas: sv.mucpilas,
+            hidratacion: sv.hidratacion,
+            condicionCorporal: sv.condicionCorporal
+          };
+        }
+        
+        // Recetas/Prescripciones
+        if (consulta.prescriptions && consulta.prescriptions.length > 0) {
+          detalles.recetas = consulta.prescriptions.map(p => ({
+            id: p.id,
+            fecha: p.createdAt,
+            items: p.items?.map(item => ({
+              medicamento: item.medicationName || item.medication?.nombre,
+              dosis: item.dosage,
+              frecuencia: item.frequency,
+              duracion: item.duration,
+              via: item.route,
+              cantidad: item.quantity,
+              instrucciones: item.instructions
+            })) || []
+          }));
+        }
+        
+        // Solicitudes de laboratorio
+        if (consulta.labRequests && consulta.labRequests.length > 0) {
+          detalles.laboratorios = consulta.labRequests.map(lab => ({
+            id: lab.id,
+            tipo: lab.testType,
+            prioridad: lab.priority,
+            estado: lab.status,
+            notas: lab.notes,
+            resultados: lab.results,
+            fechaSolicitud: lab.requestedAt,
+            fechaResultado: lab.completedAt
+          }));
+        }
+        
+        history.push({
+          timestamp: consulta.startTime,
+          endTime: consulta.endTime,
+          accion: `Consulta${consulta.status === 'COMPLETADA' ? ' Completada' : ''}`,
+          tipo: 'consulta',
+          status: consulta.status,
+          detalles: detalles,
+          doctor: consulta.doctor?.nombre || 'Médico',
+          duracion: consulta.duration ? `${consulta.duration} min` : null
+        });
+      });
+    }
+    
+    // Agregar hospitalizaciones con detalles
+    if (hospitalizaciones && Array.isArray(hospitalizaciones)) {
+      hospitalizaciones.forEach(hosp => {
+        history.push({
+          timestamp: hosp.admittedAt,
+          accion: `Hospitalización${hosp.status === 'ALTA' ? ' (Alta)' : ''}`,
+          tipo: 'hospitalizacion',
+          status: hosp.status,
+          detalles: {
+            motivo: hosp.reason,
+            ubicacion: hosp.location,
+            frecuenciaMonitoreo: hosp.frecuenciaMonitoreo,
+            cuidadosEspeciales: hosp.cuidadosEspeciales,
+            dieta: hosp.dieta,
+            diasEstimados: hosp.estimacionDias,
+            fechaAlta: hosp.dischargedAt ? new Date(hosp.dischargedAt).toLocaleDateString() : null,
+            notasAlta: hosp.dischargeNotes,
+            monitoreos: hosp.monitorings?.map(m => ({
+              fecha: m.recordedAt,
+              temperatura: m.temperature,
+              frecuenciaCardiaca: m.heartRate,
+              frecuenciaRespiratoria: m.respiratoryRate,
+              notas: m.notes,
+              estado: m.status
+            })) || []
+          },
+          doctor: hosp.admittedBy?.nombre || 'Médico'
+        });
+      });
+    }
+    
+    // Agregar cirugías
+    if (cirugias && Array.isArray(cirugias)) {
+      cirugias.forEach(surgery => {
+        history.push({
+          timestamp: surgery.scheduledDate,
+          accion: `Cirugía - ${surgery.type || surgery.procedureName || 'Procedimiento'}`,
+          tipo: 'cirugia',
+          status: surgery.status,
+          detalles: {
+            procedimiento: surgery.procedureName,
+            tipo: surgery.type,
+            notas: surgery.notes,
+            notasPreOp: surgery.preOpNotes,
+            notasPostOp: surgery.postOpNotes,
+            anestesia: surgery.anesthesiaType,
+            duracion: surgery.duration
+          },
+          doctor: surgery.surgeon?.nombre || 'Cirujano'
+        });
+      });
+    }
+    
+    // Agregar vacunas
+    if (vacunas && Array.isArray(vacunas)) {
+      vacunas.forEach(vacuna => {
+        history.push({
+          timestamp: vacuna.fecha,
+          accion: `Vacuna - ${vacuna.nombre || vacuna.tipo}`,
+          tipo: 'vacuna',
+          detalles: {
+            nombre: vacuna.nombre,
+            lote: vacuna.lote,
+            proximaDosis: vacuna.proximaDosis
+          }
+        });
+      });
+    }
+    
+    // Ordenar por fecha descendente
+    return history.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+  }, [historialData]);
+
+  // El historial ahora viene del paciente seleccionado desde la API
+  // Transformamos visits y consultations a formato de historial con detalles completos
   const getPatientHistory = useCallback((patientId) => {
-    return systemState.historiales?.[patientId] || [];
-  }, [systemState.historiales]);
+    if (selectedPatient?.id !== patientId) {
+      return [];
+    }
+    
+    const history = [];
+    
+    // Agregar consultas con detalles completos
+    if (selectedPatient.consultations && Array.isArray(selectedPatient.consultations)) {
+      selectedPatient.consultations.forEach(consulta => {
+        const detalles = {
+          soap: {},
+          diagnosticos: [],
+          signosVitales: null,
+          recetas: [],
+          laboratorios: [],
+          notas: consulta.notes || null
+        };
+        
+        // SOAP Notes
+        if (consulta.soapSubjective) detalles.soap.subjetivo = consulta.soapSubjective;
+        if (consulta.soapObjective) detalles.soap.objetivo = consulta.soapObjective;;
+        if (consulta.soapAssessment) detalles.soap.analisis = consulta.soapAssessment;
+        if (consulta.soapPlan) detalles.soap.plan = consulta.soapPlan;
+        
+        // Diagnósticos
+        if (consulta.diagnosticos && consulta.diagnosticos.length > 0) {
+          detalles.diagnosticos = consulta.diagnosticos.map(d => ({
+            descripcion: d.descripcion,
+            tipo: d.tipo,
+            severidad: d.severidad,
+            codigoCIE10: d.codigoCIE10
+          }));
+        }
+        
+        // Signos vitales
+        if (consulta.signosVitales && consulta.signosVitales.length > 0) {
+          const sv = consulta.signosVitales[0];
+          detalles.signosVitales = {
+            temperatura: sv.temperatura,
+            frecuenciaCardiaca: sv.frecuenciaCardiaca,
+            frecuenciaRespiratoria: sv.frecuenciaRespiratoria,
+            presionSistolica: sv.presionSistolica,
+            presionDiastolica: sv.presionDiastolica,
+            peso: sv.peso,
+            mucpilas: sv.mucpilas,
+            hidratacion: sv.hidratacion,
+            condicionCorporal: sv.condicionCorporal
+          };
+        }
+        
+        // Recetas/Prescripciones
+        if (consulta.prescriptions && consulta.prescriptions.length > 0) {
+          detalles.recetas = consulta.prescriptions.map(p => ({
+            id: p.id,
+            fecha: p.createdAt,
+            items: p.items?.map(item => ({
+              medicamento: item.medicationName || item.medication?.nombre,
+              dosis: item.dosage,
+              frecuencia: item.frequency,
+              duracion: item.duration,
+              via: item.route,
+              cantidad: item.quantity,
+              instrucciones: item.instructions
+            })) || []
+          }));
+        }
+        
+        // Solicitudes de laboratorio
+        if (consulta.labRequests && consulta.labRequests.length > 0) {
+          detalles.laboratorios = consulta.labRequests.map(lab => ({
+            id: lab.id,
+            tipo: lab.testType,
+            prioridad: lab.priority,
+            estado: lab.status,
+            notas: lab.notes,
+            resultados: lab.results,
+            fechaSolicitud: lab.requestedAt,
+            fechaResultado: lab.completedAt
+          }));
+        }
+        
+        history.push({
+          timestamp: consulta.startTime,
+          endTime: consulta.endTime,
+          accion: `Consulta${consulta.status === 'COMPLETADA' ? ' Completada' : ' en curso'}`,
+          tipo: 'consulta',
+          status: consulta.status,
+          detalles: detalles,
+          doctor: consulta.doctor?.nombre || 'Médico',
+          duracion: consulta.duration ? `${consulta.duration} min` : null
+        });
+      });
+    }
+    
+    // Agregar visitas sin consulta
+    if (selectedPatient.visits && Array.isArray(selectedPatient.visits)) {
+      selectedPatient.visits.forEach(visit => {
+        // Solo agregar si no tiene consulta (para evitar duplicados)
+        if (!visit.consultation) {
+          history.push({
+            timestamp: visit.arrivalTime,
+            accion: `Visita - ${visit.tipoVisita || 'Consulta'} (${visit.status})`,
+            tipo: 'visita',
+            detalles: { 
+              motivo: visit.motivo,
+              peso: visit.peso,
+              temperatura: visit.temperatura,
+              prioridad: visit.prioridad
+            }
+          });
+        }
+      });
+    }
+    
+    // Agregar hospitalizaciones con detalles
+    if (selectedPatient.hospitalizations && Array.isArray(selectedPatient.hospitalizations)) {
+      selectedPatient.hospitalizations.forEach(hosp => {
+        history.push({
+          timestamp: hosp.admittedAt,
+          accion: `Hospitalización${hosp.status === 'ALTA' ? ' (Alta)' : ' (Activa)'}`,
+          tipo: 'hospitalizacion',
+          status: hosp.status,
+          detalles: {
+            motivo: hosp.reason,
+            ubicacion: hosp.location,
+            frecuenciaMonitoreo: hosp.frecuenciaMonitoreo,
+            cuidadosEspeciales: hosp.cuidadosEspeciales,
+            dieta: hosp.dieta,
+            diasEstimados: hosp.estimacionDias,
+            fechaAlta: hosp.dischargedAt ? new Date(hosp.dischargedAt).toLocaleDateString() : null,
+            notasAlta: hosp.dischargeNotes,
+            monitoreos: hosp.monitorings?.map(m => ({
+              fecha: m.recordedAt,
+              temperatura: m.temperature,
+              frecuenciaCardiaca: m.heartRate,
+              frecuenciaRespiratoria: m.respiratoryRate,
+              notas: m.notes,
+              estado: m.status
+            })) || []
+          },
+          doctor: hosp.admittedBy?.nombre || 'Médico'
+        });
+      });
+    }
+    
+    // Agregar cirugías
+    if (selectedPatient.surgeries && Array.isArray(selectedPatient.surgeries)) {
+      selectedPatient.surgeries.forEach(surgery => {
+        history.push({
+          timestamp: surgery.scheduledDate,
+          accion: `Cirugía - ${surgery.type || surgery.procedureName || 'Procedimiento'}`,
+          tipo: 'cirugia',
+          status: surgery.status,
+          detalles: {
+            procedimiento: surgery.procedureName,
+            tipo: surgery.type,
+            notas: surgery.notes,
+            notasPreOp: surgery.preOpNotes,
+            notasPostOp: surgery.postOpNotes,
+            anestesia: surgery.anesthesiaType,
+            duracion: surgery.duration
+          },
+          doctor: surgery.surgeon?.nombre || 'Cirujano'
+        });
+      });
+    }
+    
+    // Ordenar por fecha descendente
+    return history.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+  }, [selectedPatient]);
 
   const getStatusBadgeClass = (status) => {
     switch (status) {
@@ -395,7 +906,7 @@ function MedicoDashboard() {
       {error && (
         <div className="error-notification">
           <span>{error}</span>
-          <button onClick={() => setError(null)}>✕</button>
+          <button onClick={() => { clearError?.(); setLocalError(null); }}>✕</button>
         </div>
       )}
 
@@ -423,7 +934,11 @@ function MedicoDashboard() {
                   <div className="appointment-time">{patient.horaRegistro || '--:--'}</div>
                   <div className="appointment-info">
                     <div className="patient-name">
-                      <span className="pet-icon">{patient.especie === 'Perro' ? '🐕' : '🐈'}</span>
+                      {patient.fotoUrl ? (
+                        <img src={patient.fotoUrl} alt={patient.nombre} className="pet-icon-photo" />
+                      ) : (
+                        <span className="pet-icon">{patient.especie === 'Perro' ? '🐕' : '🐈'}</span>
+                      )}
                       {patient.nombre}
                     </div>
                     <div className="patient-details-small">{patient.raza} • {patient.propietario}</div>
@@ -451,7 +966,11 @@ function MedicoDashboard() {
                   <div className="appointment-time">{patient.horaConsulta || '--:--'}</div>
                   <div className="appointment-info">
                     <div className="patient-name">
-                      <span className="pet-icon">{patient.especie === 'Perro' ? '🐕' : '🐈'}</span>
+                      {patient.fotoUrl ? (
+                        <img src={patient.fotoUrl} alt={patient.nombre} className="pet-icon-photo" />
+                      ) : (
+                        <span className="pet-icon">{patient.especie === 'Perro' ? '🐕' : '🐈'}</span>
+                      )}
                       {patient.nombre}
                     </div>
                     <div className="patient-details-small">{patient.raza} • {patient.propietario}</div>
@@ -471,20 +990,25 @@ function MedicoDashboard() {
                 <span className="count">{todayAppointments.length}</span>
               </h4>
               {todayAppointments.map(cita => {
-                const patient = systemState.pacientes.find(p => p.id === cita.pacienteId);
+                // El paciente viene anidado en la cita desde la API
+                const patient = cita.paciente;
                 return (
                   <div 
                     key={cita.id}
                     className={`appointment-card scheduled ${selectedPatient?.id === patient?.id ? 'selected' : ''}`}
-                    onClick={() => patient && handleSelectPatient(patient)}
+                    onClick={() => patient && handleSelectPatient({ ...patient, citaId: cita.id, motivo: cita.motivo })}
                   >
                     <div className="appointment-time">{cita.hora}</div>
                     <div className="appointment-info">
                       <div className="patient-name">
-                        <span className="pet-icon">{patient?.especie === 'Perro' ? '🐕' : '🐈'}</span>
+                        {patient?.fotoUrl ? (
+                          <img src={patient.fotoUrl} alt={patient?.nombre || 'Paciente'} className="pet-icon-photo" />
+                        ) : (
+                          <span className="pet-icon">{patient?.especie === 'PERRO' ? '🐕' : '🐈'}</span>
+                        )}
                         {patient?.nombre || 'Paciente'}
                       </div>
-                      <div className="patient-details-small">{cita.tipo} • {patient?.propietario}</div>
+                      <div className="patient-details-small">{cita.tipo} • {patient?.propietario?.nombre || 'Propietario'}</div>
                       <div className="appointment-reason">{cita.motivo}</div>
                     </div>
                     <span className={`status-badge ${getStatusBadgeClass(cita.estado || 'PENDIENTE')}`}>
@@ -511,7 +1035,11 @@ function MedicoDashboard() {
                 >
                   <div className="appointment-info">
                     <div className="patient-name">
-                      <span className="pet-icon">{patient.especie === 'Perro' ? '🐕' : '🐈'}</span>
+                      {patient.fotoUrl ? (
+                        <img src={patient.fotoUrl} alt={patient.nombre} className="pet-icon-photo" />
+                      ) : (
+                        <span className="pet-icon">{patient.especie === 'Perro' ? '🐕' : '🐈'}</span>
+                      )}
                       {patient.nombre}
                     </div>
                     <div className="patient-details-small">{patient.raza} • {patient.propietario}</div>
@@ -540,7 +1068,7 @@ function MedicoDashboard() {
               : `👨‍⚕️ ${t('medico.consultationWorkspace', 'Área de Consulta')}`
             }
           </h2>
-          <p>{t('medico.doctor', 'Dr.')} {currentUser?.nombre} - {currentUser?.especialidad || t('medico.generalPractice', 'Medicina General')}</p>
+          <p>{t('medico.doctor', 'Dr.')} {user?.nombre} - {user?.especialidad || t('medico.generalPractice', 'Medicina General')}</p>
         </div>
 
         {!selectedPatient && !activeConsultation && (
@@ -575,7 +1103,11 @@ function MedicoDashboard() {
         {selectedPatient && !activeConsultation && (
           <div className="consultation-preview">
             <div className="preview-header">
-              <div className="patient-avatar-large">{selectedPatient.especie === 'Perro' ? '🐕' : '🐈'}</div>
+              {selectedPatient.fotoUrl ? (
+                <img src={selectedPatient.fotoUrl} alt={selectedPatient.nombre} className="patient-avatar-photo-large" />
+              ) : (
+                <div className="patient-avatar-large">{selectedPatient.especie === 'Perro' ? '🐕' : '🐈'}</div>
+              )}
               <div className="patient-main-info">
                 <h3>{selectedPatient.nombre}</h3>
                 <p>{selectedPatient.raza} • {selectedPatient.edad} • {selectedPatient.sexo}</p>
@@ -583,30 +1115,128 @@ function MedicoDashboard() {
               </div>
             </div>
             
-            <div className="preview-details">
-              <div className="detail-row">
-                <strong>{t('medico.owner', 'Propietario')}:</strong> 
-                <span>{selectedPatient.propietario}</span>
-              </div>
-              <div className="detail-row">
-                <strong>{t('medico.reason', 'Motivo')}:</strong> 
-                <span>{selectedPatient.motivo}</span>
-              </div>
-              <div className="detail-row">
-                <strong>{t('medico.weight', 'Peso')}:</strong> 
-                <span>{selectedPatient.peso}</span>
-              </div>
-              <div className="detail-row">
-                <strong>{t('medico.status', 'Estado')}:</strong> 
-                <span className={`status-badge ${getStatusBadgeClass(selectedPatient.estado)}`}>{selectedPatient.estado}</span>
+            {/* Sección: Visita Actual */}
+            <div className="info-section">
+              <h4 className="section-label">🏥 Visita Actual</h4>
+              <div className="preview-details-grid">
+                <div className="detail-card highlight">
+                  <span className="detail-icon">📝</span>
+                  <div className="detail-content">
+                    <span className="detail-label">Motivo de Consulta</span>
+                    <span className="detail-value">{selectedPatient.motivo || 'No especificado'}</span>
+                  </div>
+                </div>
+                <div className="detail-card">
+                  <span className="detail-icon">🎯</span>
+                  <div className="detail-content">
+                    <span className="detail-label">Prioridad</span>
+                    <span className={`priority-badge ${selectedPatient.prioridad?.toLowerCase() || 'media'}`}>
+                      {selectedPatient.prioridad || 'MEDIA'}
+                    </span>
+                  </div>
+                </div>
+                <div className="detail-card">
+                  <span className="detail-icon">⚖️</span>
+                  <div className="detail-content">
+                    <span className="detail-label">Peso Actual</span>
+                    <span className="detail-value">{selectedPatient.peso ? `${selectedPatient.peso} kg` : 'No registrado'}</span>
+                  </div>
+                </div>
+                <div className="detail-card">
+                  <span className="detail-icon">🌡️</span>
+                  <div className="detail-content">
+                    <span className="detail-label">Temperatura</span>
+                    <span className="detail-value">{selectedPatient.temperatura ? `${selectedPatient.temperatura}°C` : 'No registrada'}</span>
+                  </div>
+                </div>
               </div>
             </div>
+
+            {/* Sección: Datos del Paciente */}
+            <div className="info-section">
+              <h4 className="section-label">🐾 Datos del Paciente</h4>
+              <div className="preview-details-grid three-cols">
+                <div className="detail-card compact">
+                  <span className="detail-icon-small">🏷️</span>
+                  <div className="detail-content">
+                    <span className="detail-label">Especie</span>
+                    <span className="detail-value">{selectedPatient.especie}</span>
+                  </div>
+                </div>
+                <div className="detail-card compact">
+                  <span className="detail-icon-small">🐕</span>
+                  <div className="detail-content">
+                    <span className="detail-label">Raza</span>
+                    <span className="detail-value">{selectedPatient.raza || 'Sin especificar'}</span>
+                  </div>
+                </div>
+                <div className="detail-card compact">
+                  <span className="detail-icon-small">📅</span>
+                  <div className="detail-content">
+                    <span className="detail-label">Edad</span>
+                    <span className="detail-value">{selectedPatient.edad || 'No registrada'}</span>
+                  </div>
+                </div>
+                <div className="detail-card compact">
+                  <span className="detail-icon-small">⚧</span>
+                  <div className="detail-content">
+                    <span className="detail-label">Sexo</span>
+                    <span className="detail-value">{selectedPatient.sexo}</span>
+                  </div>
+                </div>
+                <div className="detail-card compact">
+                  <span className="detail-icon-small">🎨</span>
+                  <div className="detail-content">
+                    <span className="detail-label">Color</span>
+                    <span className="detail-value">{selectedPatient.color || 'No especificado'}</span>
+                  </div>
+                </div>
+                <div className="detail-card compact">
+                  <span className="detail-icon-small">💉</span>
+                  <div className="detail-content">
+                    <span className="detail-label">Esterilizado</span>
+                    <span className="detail-value">{selectedPatient.esterilizado ? 'Sí' : 'No'}</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Sección: Propietario */}
+            <div className="info-section">
+              <h4 className="section-label">👤 Propietario</h4>
+              <div className="preview-details-grid">
+                <div className="detail-card">
+                  <span className="detail-icon">👤</span>
+                  <div className="detail-content">
+                    <span className="detail-label">Nombre</span>
+                    <span className="detail-value">{selectedPatient.propietario}</span>
+                  </div>
+                </div>
+                <div className="detail-card">
+                  <span className="detail-icon">📱</span>
+                  <div className="detail-content">
+                    <span className="detail-label">Teléfono</span>
+                    <span className="detail-value clickable">{selectedPatient.telefono || 'No registrado'}</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Notas/Antecedentes si existen */}
+            {selectedPatient.antecedentes && (
+              <div className="info-section">
+                <h4 className="section-label">📋 Antecedentes</h4>
+                <div className="notes-box">
+                  {selectedPatient.antecedentes}
+                </div>
+              </div>
+            )}
 
             <div className="preview-actions">
               <button className="btn-start-consultation" onClick={() => handleStartConsultation(selectedPatient)}>
                 🏥 {t('medico.startConsultation', 'Iniciar Consulta')}
               </button>
-              <button className="btn-view-history" onClick={() => setShowHistoryModal(true)}>
+              <button className="btn-view-history" onClick={handleOpenHistory}>
                 📋 {t('medico.viewHistory', 'Ver Historial')}
               </button>
             </div>
@@ -617,7 +1247,11 @@ function MedicoDashboard() {
           <div className="consultation-active">
             <div className="consultation-header">
               <div className="patient-summary">
-                <span className="pet-avatar">{selectedPatient.especie === 'Perro' ? '🐕' : '🐈'}</span>
+                {selectedPatient.fotoUrl ? (
+                  <img src={selectedPatient.fotoUrl} alt={selectedPatient.nombre} className="pet-avatar-photo" />
+                ) : (
+                  <span className="pet-avatar">{selectedPatient.especie === 'Perro' ? '🐕' : '🐈'}</span>
+                )}
                 <div>
                   <h3>{selectedPatient.nombre}</h3>
                   <p>{selectedPatient.raza} • {selectedPatient.propietario}</p>
@@ -631,41 +1265,93 @@ function MedicoDashboard() {
 
             <div className="soap-notes">
               <div className="soap-section">
-                <label><span className="soap-letter">S</span>{t('medico.subjective', 'Subjetivo')}</label>
+                <div className="soap-header">
+                  <label><span className="soap-letter">S</span>{t('medico.subjective', 'Subjetivo')}</label>
+                  <button 
+                    className={`soap-save-btn ${savedSections.subjetivo ? 'saved' : ''}`}
+                    onClick={() => handleSaveSOAPSection('subjetivo')}
+                    disabled={!consultationNotes.subjetivo || localLoading}
+                    title={savedSections.subjetivo ? 'Guardado' : 'Guardar'}
+                  >
+                    {savedSections.subjetivo ? '✓' : '💾'}
+                  </button>
+                </div>
                 <textarea
                   placeholder={t('medico.subjectivePlaceholder', 'Historia clínica, síntomas reportados por el dueño...')}
                   value={consultationNotes.subjetivo}
-                  onChange={(e) => setConsultationNotes(prev => ({ ...prev, subjetivo: e.target.value }))}
+                  onChange={(e) => {
+                    setConsultationNotes(prev => ({ ...prev, subjetivo: e.target.value }));
+                    setSavedSections(prev => ({ ...prev, subjetivo: false }));
+                  }}
                   rows="3"
                 />
               </div>
               
               <div className="soap-section">
-                <label><span className="soap-letter">O</span>{t('medico.objective', 'Objetivo')}</label>
+                <div className="soap-header">
+                  <label><span className="soap-letter">O</span>{t('medico.objective', 'Objetivo')}</label>
+                  <button 
+                    className={`soap-save-btn ${savedSections.objetivo ? 'saved' : ''}`}
+                    onClick={() => handleSaveSOAPSection('objetivo')}
+                    disabled={!consultationNotes.objetivo || localLoading}
+                    title={savedSections.objetivo ? 'Guardado' : 'Guardar'}
+                  >
+                    {savedSections.objetivo ? '✓' : '💾'}
+                  </button>
+                </div>
                 <textarea
                   placeholder={t('medico.objectivePlaceholder', 'Hallazgos del examen físico, signos vitales...')}
                   value={consultationNotes.objetivo}
-                  onChange={(e) => setConsultationNotes(prev => ({ ...prev, objetivo: e.target.value }))}
+                  onChange={(e) => {
+                    setConsultationNotes(prev => ({ ...prev, objetivo: e.target.value }));
+                    setSavedSections(prev => ({ ...prev, objetivo: false }));
+                  }}
                   rows="3"
                 />
               </div>
               
               <div className="soap-section">
-                <label><span className="soap-letter">A</span>{t('medico.assessment', 'Análisis')}</label>
+                <div className="soap-header">
+                  <label><span className="soap-letter">A</span>{t('medico.assessment', 'Análisis')}</label>
+                  <button 
+                    className={`soap-save-btn ${savedSections.analisis ? 'saved' : ''}`}
+                    onClick={() => handleSaveSOAPSection('analisis')}
+                    disabled={!consultationNotes.analisis || localLoading}
+                    title={savedSections.analisis ? 'Guardado' : 'Guardar'}
+                  >
+                    {savedSections.analisis ? '✓' : '💾'}
+                  </button>
+                </div>
                 <textarea
                   placeholder={t('medico.assessmentPlaceholder', 'Diagnóstico diferencial, interpretación...')}
                   value={consultationNotes.analisis}
-                  onChange={(e) => setConsultationNotes(prev => ({ ...prev, analisis: e.target.value }))}
+                  onChange={(e) => {
+                    setConsultationNotes(prev => ({ ...prev, analisis: e.target.value }));
+                    setSavedSections(prev => ({ ...prev, analisis: false }));
+                  }}
                   rows="3"
                 />
               </div>
               
               <div className="soap-section">
-                <label><span className="soap-letter">P</span>{t('medico.plan', 'Plan')}</label>
+                <div className="soap-header">
+                  <label><span className="soap-letter">P</span>{t('medico.plan', 'Plan')}</label>
+                  <button 
+                    className={`soap-save-btn ${savedSections.plan ? 'saved' : ''}`}
+                    onClick={() => handleSaveSOAPSection('plan')}
+                    disabled={!consultationNotes.plan || localLoading}
+                    title={savedSections.plan ? 'Guardado' : 'Guardar'}
+                  >
+                    {savedSections.plan ? '✓' : '💾'}
+                  </button>
+                </div>
                 <textarea
                   placeholder={t('medico.planPlaceholder', 'Plan de tratamiento, seguimiento...')}
                   value={consultationNotes.plan}
-                  onChange={(e) => setConsultationNotes(prev => ({ ...prev, plan: e.target.value }))}
+                  onChange={(e) => {
+                    setConsultationNotes(prev => ({ ...prev, plan: e.target.value }));
+                    setSavedSections(prev => ({ ...prev, plan: false }));
+                  }}
                   rows="3"
                 />
               </div>
@@ -777,7 +1463,7 @@ function MedicoDashboard() {
             <div className="info-card actions">
               <h4>{t('medico.quickActions', 'Acciones Rápidas')}</h4>
               <div className="quick-action-buttons">
-                <button className="quick-action-btn" onClick={() => setShowHistoryModal(true)}>
+                <button className="quick-action-btn" onClick={handleOpenHistory}>
                   📋 {t('medico.viewFullHistory', 'Ver Historial Completo')}
                 </button>
                 {selectedPatient.estado === 'HOSPITALIZADO' && (
@@ -1051,34 +1737,313 @@ function MedicoDashboard() {
         </div>
       )}
 
-      {/* History Modal */}
+      {/* History Modal - Historial Médico Completo */}
       {showHistoryModal && selectedPatient && (
         <div className="modal-overlay" onClick={() => setShowHistoryModal(false)}>
-          <div className="modal-content large" onClick={e => e.stopPropagation()}>
-            <h2>📋 {t('medico.medicalHistory', 'Historial Médico')} - {selectedPatient.nombre}</h2>
-            <div className="patient-info-modal">
-              <div className="info-row"><strong>{t('medico.patient', 'Paciente')}:</strong> {selectedPatient.nombre} ({selectedPatient.raza})</div>
-              <div className="info-row"><strong>{t('medico.owner', 'Propietario')}:</strong> {selectedPatient.propietario}</div>
-              <div className="info-row"><strong>{t('medico.fileNumber', 'Ficha')}:</strong> {selectedPatient.numeroFicha}</div>
+          <div className="modal-content history-modal" onClick={e => e.stopPropagation()}>
+            <div className="history-modal-header">
+              <h2>📋 {t('medico.medicalHistory', 'Historial Médico')}</h2>
+              <button className="close-btn" onClick={() => setShowHistoryModal(false)}>✕</button>
             </div>
-            <div className="history-full-timeline">
-              {getPatientHistory(selectedPatient.id).length === 0 ? (
-                <div className="empty-state"><p>{t('medico.noHistoryFound', 'No se encontró historial para este paciente')}</p></div>
+            
+            <div className="history-patient-summary">
+              <div className="patient-photo-history">
+                {selectedPatient.fotoUrl ? (
+                  <img src={selectedPatient.fotoUrl} alt={selectedPatient.nombre} />
+                ) : (
+                  <span>{selectedPatient.especie === 'Perro' ? '🐕' : '🐈'}</span>
+                )}
+              </div>
+              <div className="patient-info-history">
+                <h3>{selectedPatient.nombre}</h3>
+                <p>{selectedPatient.raza} • {selectedPatient.edad} • {selectedPatient.sexo}</p>
+                <span className="ficha-badge">{selectedPatient.numeroFicha}</span>
+              </div>
+              <div className="patient-owner-history">
+                <p><strong>Propietario:</strong> {selectedPatient.propietario || historialData?.paciente?.owner?.nombre}</p>
+                <p><strong>Teléfono:</strong> {selectedPatient.telefono || historialData?.paciente?.owner?.telefono}</p>
+              </div>
+            </div>
+
+            <div className="history-timeline">
+              {loadingHistorial ? (
+                <div className="loading-history">
+                  <div className="loading-spinner"></div>
+                  <p>Cargando historial...</p>
+                </div>
+              ) : getFormattedHistory().length === 0 ? (
+                <div className="empty-history">
+                  <span className="empty-icon">📭</span>
+                  <p>{t('medico.noHistoryFound', 'No se encontró historial para este paciente')}</p>
+                  <p className="empty-sub">Las consultas y procedimientos aparecerán aquí</p>
+                </div>
               ) : (
-                getPatientHistory(selectedPatient.id).slice().reverse().map((entry, idx) => (
-                  <div key={idx} className="history-entry-full">
-                    <div className="history-date-full">{new Date(entry.timestamp).toLocaleString()}</div>
-                    <div className="history-content-full">
-                      <h4>{entry.accion}</h4>
-                      {entry.detalles && <pre className="history-details-full">{typeof entry.detalles === 'object' ? JSON.stringify(entry.detalles, null, 2) : entry.detalles}</pre>}
-                      <span className="history-user">{t('medico.by', 'Por')}: {entry.usuario}</span>
+                getFormattedHistory().map((entry, idx) => (
+                  <div key={idx} className={`history-card history-${entry.tipo}`}>
+                    <div className="history-card-header">
+                      <div className="history-icon">
+                        {entry.tipo === 'consulta' && '🩺'}
+                        {entry.tipo === 'vacuna' && '💉'}
+                        {entry.tipo === 'hospitalizacion' && '🏥'}
+                        {entry.tipo === 'cirugia' && '⚕️'}
+                        {entry.tipo === 'visita' && '📋'}
+                      </div>
+                      <div className="history-title">
+                        <h4>{entry.accion}</h4>
+                        <span className="history-date">
+                          {new Date(entry.timestamp).toLocaleDateString('es-MX', { 
+                            weekday: 'long', 
+                            year: 'numeric', 
+                            month: 'long', 
+                            day: 'numeric' 
+                          })}
+                          {' - '}
+                          {new Date(entry.timestamp).toLocaleTimeString('es-MX', { 
+                            hour: '2-digit', 
+                            minute: '2-digit' 
+                          })}
+                        </span>
+                      </div>
+                      <div className="history-meta">
+                        {entry.doctor && <span className="doctor-badge">👨‍⚕️ {entry.doctor}</span>}
+                        {entry.duracion && <span className="duration-badge">⏱️ {entry.duracion}</span>}
+                      </div>
                     </div>
+                    
+                    {entry.detalles && (
+                      <div className="history-card-body">
+                        {/* SOAP Notes */}
+                        {entry.detalles.soap && Object.keys(entry.detalles.soap).length > 0 && (
+                          <div className="history-section soap-section">
+                            <h5>📝 Notas SOAP</h5>
+                            <div className="soap-grid">
+                              {entry.detalles.soap.subjetivo && (
+                                <div className="soap-item">
+                                  <span className="soap-letter">S</span>
+                                  <div>
+                                    <strong>Subjetivo</strong>
+                                    <p>{entry.detalles.soap.subjetivo}</p>
+                                  </div>
+                                </div>
+                              )}
+                              {entry.detalles.soap.objetivo && (
+                                <div className="soap-item">
+                                  <span className="soap-letter">O</span>
+                                  <div>
+                                    <strong>Objetivo</strong>
+                                    <p>{entry.detalles.soap.objetivo}</p>
+                                  </div>
+                                </div>
+                              )}
+                              {entry.detalles.soap.analisis && (
+                                <div className="soap-item">
+                                  <span className="soap-letter">A</span>
+                                  <div>
+                                    <strong>Análisis</strong>
+                                    <p>{entry.detalles.soap.analisis}</p>
+                                  </div>
+                                </div>
+                              )}
+                              {entry.detalles.soap.plan && (
+                                <div className="soap-item">
+                                  <span className="soap-letter">P</span>
+                                  <div>
+                                    <strong>Plan</strong>
+                                    <p>{entry.detalles.soap.plan}</p>
+                                  </div>
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                        )}
+                        
+                        {/* Signos Vitales */}
+                        {entry.detalles.signosVitales && (
+                          <div className="history-section vitals-section">
+                            <h5>🌡️ Signos Vitales</h5>
+                            <div className="vitals-grid">
+                              {entry.detalles.signosVitales.temperatura && (
+                                <div className="vital-item">
+                                  <span className="vital-icon">🌡️</span>
+                                  <span className="vital-value">{entry.detalles.signosVitales.temperatura}°C</span>
+                                  <span className="vital-label">Temp.</span>
+                                </div>
+                              )}
+                              {entry.detalles.signosVitales.frecuenciaCardiaca && (
+                                <div className="vital-item">
+                                  <span className="vital-icon">❤️</span>
+                                  <span className="vital-value">{entry.detalles.signosVitales.frecuenciaCardiaca}</span>
+                                  <span className="vital-label">FC (bpm)</span>
+                                </div>
+                              )}
+                              {entry.detalles.signosVitales.frecuenciaRespiratoria && (
+                                <div className="vital-item">
+                                  <span className="vital-icon">💨</span>
+                                  <span className="vital-value">{entry.detalles.signosVitales.frecuenciaRespiratoria}</span>
+                                  <span className="vital-label">FR (rpm)</span>
+                                </div>
+                              )}
+                              {entry.detalles.signosVitales.peso && (
+                                <div className="vital-item">
+                                  <span className="vital-icon">⚖️</span>
+                                  <span className="vital-value">{entry.detalles.signosVitales.peso} kg</span>
+                                  <span className="vital-label">Peso</span>
+                                </div>
+                              )}
+                              {(entry.detalles.signosVitales.presionSistolica || entry.detalles.signosVitales.presionDiastolica) && (
+                                <div className="vital-item">
+                                  <span className="vital-icon">🩺</span>
+                                  <span className="vital-value">
+                                    {entry.detalles.signosVitales.presionSistolica}/{entry.detalles.signosVitales.presionDiastolica}
+                                  </span>
+                                  <span className="vital-label">PA (mmHg)</span>
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                        )}
+                        
+                        {/* Diagnósticos */}
+                        {entry.detalles.diagnosticos && entry.detalles.diagnosticos.length > 0 && (
+                          <div className="history-section diagnosis-section">
+                            <h5>🔍 Diagnósticos</h5>
+                            <div className="diagnosis-list">
+                              {entry.detalles.diagnosticos.map((d, i) => (
+                                <div key={i} className="diagnosis-item">
+                                  <span className="diagnosis-text">{d.descripcion}</span>
+                                  <div className="diagnosis-badges">
+                                    <span className={`badge tipo-${d.tipo?.toLowerCase()}`}>{d.tipo}</span>
+                                    {d.severidad && <span className={`badge severity-${d.severidad?.toLowerCase()}`}>{d.severidad}</span>}
+                                    {d.codigoCIE10 && <span className="badge code">{d.codigoCIE10}</span>}
+                                  </div>
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+                        
+                        {/* Recetas/Prescripciones */}
+                        {entry.detalles.recetas && entry.detalles.recetas.length > 0 && (
+                          <div className="history-section prescription-section">
+                            <h5>💊 Recetas</h5>
+                            {entry.detalles.recetas.map((receta, ri) => (
+                              <div key={ri} className="prescription-card">
+                                {receta.items.map((item, ii) => (
+                                  <div key={ii} className="medication-item">
+                                    <div className="med-name">{item.medicamento}</div>
+                                    <div className="med-details">
+                                      {item.dosis && <span>📏 {item.dosis}</span>}
+                                      {item.frecuencia && <span>⏰ {item.frecuencia}</span>}
+                                      {item.duracion && <span>📅 {item.duracion}</span>}
+                                      {item.via && <span>💉 Vía: {item.via}</span>}
+                                    </div>
+                                    {item.instrucciones && (
+                                      <div className="med-instructions">📝 {item.instrucciones}</div>
+                                    )}
+                                  </div>
+                                ))}
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                        
+                        {/* Laboratorios */}
+                        {entry.detalles.laboratorios && entry.detalles.laboratorios.length > 0 && (
+                          <div className="history-section lab-section">
+                            <h5>🔬 Estudios de Laboratorio</h5>
+                            <div className="lab-list">
+                              {entry.detalles.laboratorios.map((lab, li) => (
+                                <div key={li} className={`lab-item status-${lab.estado?.toLowerCase()}`}>
+                                  <div className="lab-header">
+                                    <span className="lab-type">{lab.tipo}</span>
+                                    <span className={`lab-status ${lab.estado?.toLowerCase()}`}>{lab.estado}</span>
+                                  </div>
+                                  {lab.notas && <p className="lab-notes">{lab.notas}</p>}
+                                  {lab.resultados && (
+                                    <div className="lab-results">
+                                      <strong>Resultados:</strong> {lab.resultados}
+                                    </div>
+                                  )}
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+                        
+                        {/* Hospitalización detalles */}
+                        {entry.tipo === 'hospitalizacion' && (
+                          <div className="history-section hosp-section">
+                            {entry.detalles.motivo && (
+                              <p><strong>📝 Motivo:</strong> {entry.detalles.motivo}</p>
+                            )}
+                            {entry.detalles.ubicacion && (
+                              <p><strong>📍 Ubicación:</strong> {entry.detalles.ubicacion}</p>
+                            )}
+                            {entry.detalles.cuidadosEspeciales && (
+                              <p><strong>⚠️ Cuidados:</strong> {entry.detalles.cuidadosEspeciales}</p>
+                            )}
+                            {entry.detalles.dieta && (
+                              <p><strong>🍽️ Dieta:</strong> {entry.detalles.dieta}</p>
+                            )}
+                            {entry.detalles.monitoreos && entry.detalles.monitoreos.length > 0 && (
+                              <div className="monitoring-history">
+                                <h6>📊 Monitoreos ({entry.detalles.monitoreos.length})</h6>
+                                <div className="monitoring-list">
+                                  {entry.detalles.monitoreos.slice(-3).map((m, mi) => (
+                                    <div key={mi} className="monitoring-item">
+                                      <span className="monitoring-date">
+                                        {new Date(m.fecha).toLocaleString('es-MX')}
+                                      </span>
+                                      <span>
+                                        {m.temperatura && `🌡️${m.temperatura}°C `}
+                                        {m.frecuenciaCardiaca && `❤️${m.frecuenciaCardiaca} `}
+                                        {m.estado}
+                                      </span>
+                                    </div>
+                                  ))}
+                                </div>
+                              </div>
+                            )}
+                            {entry.detalles.fechaAlta && (
+                              <p className="discharge-info">
+                                <strong>✅ Alta:</strong> {entry.detalles.fechaAlta}
+                                {entry.detalles.notasAlta && ` - ${entry.detalles.notasAlta}`}
+                              </p>
+                            )}
+                          </div>
+                        )}
+                        
+                        {/* Cirugía detalles */}
+                        {entry.tipo === 'cirugia' && entry.detalles && (
+                          <div className="history-section surgery-section">
+                            {entry.detalles.anestesia && (
+                              <p><strong>💉 Anestesia:</strong> {entry.detalles.anestesia}</p>
+                            )}
+                            {entry.detalles.duracion && (
+                              <p><strong>⏱️ Duración:</strong> {entry.detalles.duracion} min</p>
+                            )}
+                            {entry.detalles.notasPreOp && (
+                              <p><strong>📋 Pre-Op:</strong> {entry.detalles.notasPreOp}</p>
+                            )}
+                            {entry.detalles.notas && (
+                              <p><strong>📝 Notas:</strong> {entry.detalles.notas}</p>
+                            )}
+                            {entry.detalles.notasPostOp && (
+                              <p><strong>✅ Post-Op:</strong> {entry.detalles.notasPostOp}</p>
+                            )}
+                          </div>
+                        )}
+                      </div>
+                    )}
                   </div>
                 ))
               )}
             </div>
+            
             <div className="modal-actions">
-              <button className="btn-primary" onClick={() => setShowHistoryModal(false)}>{t('common.close', 'Cerrar')}</button>
+              <button className="btn-secondary" onClick={() => setShowHistoryModal(false)}>
+                Cerrar
+              </button>
             </div>
           </div>
         </div>

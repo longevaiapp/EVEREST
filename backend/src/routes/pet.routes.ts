@@ -20,7 +20,7 @@ const createPetSchema = z.object({
   peso: z.number().positive().optional().nullable(),
   color: z.string().optional().nullable(),
   condicionCorporal: z.enum(['MUY_DELGADO', 'DELGADO', 'IDEAL', 'SOBREPESO', 'OBESO']).optional().nullable(),
-  fotoUrl: z.string().url().optional().nullable(),
+  fotoUrl: z.string().optional().nullable(), // Base64 encoded image
   // Medical history
   snapTest: z.string().optional().nullable(),
   analisisClinicos: z.string().optional().nullable(),
@@ -129,6 +129,29 @@ router.get('/', authenticate, async (req, res) => {
   });
 });
 
+// GET /pets/by-owner/:ownerId - Get pets by owner ID
+router.get('/by-owner/:ownerId', authenticate, async (req, res) => {
+  const ownerId = req.params.ownerId as string;
+
+  const pets = await prisma.pet.findMany({
+    where: {
+      ownerId,
+      activo: true,
+    },
+    include: {
+      owner: {
+        select: { id: true, nombre: true, telefono: true },
+      },
+    },
+    orderBy: { nombre: 'asc' },
+  });
+
+  res.json({
+    status: 'success',
+    data: { pets },
+  });
+});
+
 // GET /pets/by-status/:status - Get pets by status
 router.get('/by-status/:status', authenticate, async (req, res) => {
   const { status } = req.params;
@@ -159,6 +182,198 @@ router.get('/by-status/:status', authenticate, async (req, res) => {
   res.json({
     status: 'success',
     data: { pets },
+  });
+});
+
+// GET /pets/historial/:id - Get complete medical history for a pet
+// Can be accessed by both RECEPCION and MEDICO
+router.get('/historial/:id', authenticate, async (req, res) => {
+  const petId = req.params.id as string;
+
+  const pet = await prisma.pet.findUnique({
+    where: { id: petId },
+    include: { owner: true },
+  });
+
+  if (!pet) throw new AppError('Paciente no encontrado', 404);
+
+  // Get all consultations with full details
+  const consultas = await prisma.consultation.findMany({
+    where: { petId },
+    include: {
+      doctor: { select: { id: true, nombre: true, especialidad: true } },
+      diagnosticos: true,
+      signosVitales: { orderBy: { registeredAt: 'desc' } },
+      prescriptions: { include: { items: true } },
+      labRequests: true,
+    },
+    orderBy: { startTime: 'desc' },
+  });
+
+  // Get all surgeries
+  const cirugias = await prisma.surgery.findMany({
+    where: { petId },
+    include: {
+      surgeon: { select: { id: true, nombre: true, especialidad: true } },
+    },
+    orderBy: { scheduledDate: 'desc' },
+  });
+
+  // Get all hospitalizations
+  const hospitalizaciones = await prisma.hospitalization.findMany({
+    where: { petId },
+    include: {
+      monitorings: { orderBy: { recordedAt: 'desc' } },
+      admittedBy: { select: { id: true, nombre: true } },
+    },
+    orderBy: { admittedAt: 'desc' },
+  });
+
+  // Get all vaccines
+  const vacunas = await prisma.vaccineRecord.findMany({
+    where: { petId },
+    orderBy: { fecha: 'desc' },
+  });
+
+  // Get all medical notes
+  const notas = await prisma.medicalNote.findMany({
+    where: { petId },
+    include: {
+      createdBy: { select: { id: true, nombre: true } },
+    },
+    orderBy: { createdAt: 'desc' },
+  });
+
+  res.json({
+    status: 'success',
+    data: {
+      paciente: pet,
+      historial: {
+        consultas,
+        cirugias,
+        hospitalizaciones,
+        vacunas,
+        notas,
+      },
+      resumen: {
+        totalConsultas: consultas.length,
+        totalCirugias: cirugias.length,
+        totalHospitalizaciones: hospitalizaciones.length,
+        ultimaConsulta: consultas[0]?.startTime || null,
+      },
+    },
+  });
+});
+
+// GET /pets/preventive-calendar - Get pets needing preventive care (vaccines, deworming)
+// MUST be before /:id route to avoid being caught by the parameter route
+router.get('/preventive-calendar', authenticate, async (req, res) => {
+  const today = new Date();
+  const oneMonthFromNow = new Date();
+  oneMonthFromNow.setMonth(oneMonthFromNow.getMonth() + 1);
+  
+  const threeMonthsAgo = new Date();
+  threeMonthsAgo.setMonth(threeMonthsAgo.getMonth() - 3);
+  
+  const sixMonthsAgo = new Date();
+  sixMonthsAgo.setMonth(sixMonthsAgo.getMonth() - 6);
+  
+  const oneYearAgo = new Date();
+  oneYearAgo.setFullYear(oneYearAgo.getFullYear() - 1);
+
+  // Find pets that need preventive care:
+  const petsNeedingCare = await prisma.pet.findMany({
+    where: {
+      activo: true,
+      OR: [
+        { vacunasActualizadas: false },
+        { ultimaVacuna: null },
+        { ultimaVacuna: { lt: oneYearAgo } },
+        { ultimaDesparasitacion: { lt: sixMonthsAgo } },
+        { 
+          AND: [
+            { desparasitacionExterna: true },
+            { ultimaDesparasitacion: null }
+          ]
+        },
+      ],
+    },
+    include: {
+      owner: {
+        select: { id: true, nombre: true, telefono: true, email: true },
+      },
+      vaccineRecords: {
+        where: {
+          proximaDosis: {
+            gte: today,
+            lte: oneMonthFromNow,
+          },
+        },
+        orderBy: { proximaDosis: 'asc' },
+        take: 1,
+      },
+    },
+    orderBy: [
+      { ultimaVacuna: 'asc' },
+      { ultimaDesparasitacion: 'asc' },
+    ],
+    take: 50,
+  });
+
+  const preventiveCalendar = petsNeedingCare.map(pet => {
+    const needs: any[] = [];
+    
+    if (!pet.vacunasActualizadas || !pet.ultimaVacuna || pet.ultimaVacuna < oneYearAgo) {
+      needs.push({
+        type: 'VACUNA',
+        reason: !pet.ultimaVacuna ? 'Sin registro de vacunas' : 
+                pet.ultimaVacuna < oneYearAgo ? 'Vacuna vencida' : 'Vacunas no actualizadas',
+        lastDate: pet.ultimaVacuna,
+        priority: !pet.ultimaVacuna ? 'alta' : 'media',
+      });
+    }
+
+    if (!pet.ultimaDesparasitacion || pet.ultimaDesparasitacion < sixMonthsAgo) {
+      needs.push({
+        type: 'DESPARASITACION',
+        reason: !pet.ultimaDesparasitacion ? 'Sin registro de desparasitación' : 'Desparasitación vencida',
+        lastDate: pet.ultimaDesparasitacion,
+        priority: !pet.ultimaDesparasitacion ? 'alta' : 'media',
+      });
+    }
+
+    if (pet.vaccineRecords.length > 0) {
+      const nextVaccine = pet.vaccineRecords[0];
+      needs.push({
+        type: 'VACUNA_PROGRAMADA',
+        reason: `${nextVaccine.vacuna} programada`,
+        scheduledDate: nextVaccine.proximaDosis,
+        priority: 'alta',
+      });
+    }
+
+    return {
+      id: pet.id,
+      nombre: pet.nombre,
+      numeroFicha: pet.numeroFicha,
+      especie: pet.especie,
+      raza: pet.raza,
+      fotoUrl: pet.fotoUrl,
+      propietario: pet.owner.nombre,
+      telefono: pet.owner.telefono,
+      email: pet.owner.email,
+      needs,
+      ultimaVacuna: pet.ultimaVacuna,
+      ultimaDesparasitacion: pet.ultimaDesparasitacion,
+    };
+  }).filter(pet => pet.needs.length > 0);
+
+  res.json({
+    status: 'success',
+    data: {
+      preventiveCalendar,
+      total: preventiveCalendar.length,
+    },
   });
 });
 

@@ -174,7 +174,7 @@ model Pet {
   peso         Float?
   color        String?
   condicionCorporal BodyCondition?
-  fotoUrl      String?
+  fotoUrl      String?   @db.LongText  // Base64 encoded image
   
   // === HISTORIAL MÉDICO ===
   snapTest         String?   @db.Text
@@ -763,6 +763,12 @@ model Hospitalization {
   dischargedAt    DateTime?
   reason          String              @db.Text
   location        String?
+  
+  // === DETALLES DE HOSPITALIZACIÓN ===
+  frecuenciaMonitoreo   String?       // "1h", "2h", "4h", "6h", "8h"
+  cuidadosEspeciales    String?       @db.Text
+  estimacionDias        Int?
+  dischargeNotes        String?       @db.Text
   
   // === ESTADO ===
   status          HospitalizationStatus @default(ACTIVA)

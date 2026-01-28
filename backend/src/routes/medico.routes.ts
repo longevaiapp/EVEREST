@@ -94,16 +94,22 @@ router.get('/paciente/:id', authenticate, isMedico, async (req: Request, res: Re
       },
       consultations: {
         orderBy: { startTime: 'desc' },
-        take: 5,
+        take: 10,
         include: {
+          doctor: { select: { id: true, nombre: true } },
           diagnosticos: true,
           signosVitales: { orderBy: { registeredAt: 'desc' }, take: 1 },
+          prescriptions: { include: { items: true } },
+          labRequests: true,
         },
       },
       hospitalizations: {
         orderBy: { admittedAt: 'desc' },
         take: 3,
-        include: { monitorings: { orderBy: { recordedAt: 'desc' }, take: 5 } },
+        include: { 
+          monitorings: { orderBy: { recordedAt: 'desc' }, take: 5 },
+          admittedBy: { select: { id: true, nombre: true } }
+        },
       },
       surgeries: { orderBy: { scheduledDate: 'desc' }, take: 5 },
       medicalNotes: { orderBy: { createdAt: 'desc' }, take: 10 },
@@ -592,6 +598,9 @@ router.post('/hospitalizacion', authenticate, isMedico, async (req: Request, res
     petId: z.string().cuid(),
     reason: z.string().min(1),
     location: z.string().optional(),
+    frecuenciaMonitoreo: z.string().optional(),
+    cuidadosEspeciales: z.string().optional(),
+    estimacionDias: z.number().int().optional(),
   });
 
   const data = schema.parse(req.body);
@@ -611,18 +620,45 @@ router.post('/hospitalizacion', authenticate, isMedico, async (req: Request, res
     throw new AppError('El paciente ya está hospitalizado', 400);
   }
 
+  // Create hospitalization with all details
   const hospitalization = await prisma.hospitalization.create({
     data: {
       petId: data.petId,
       consultationId: data.consultationId,
       reason: data.reason,
       location: data.location,
+      frecuenciaMonitoreo: data.frecuenciaMonitoreo,
+      cuidadosEspeciales: data.cuidadosEspeciales,
+      estimacionDias: data.estimacionDias,
       admittedById: req.user!.userId,
       status: 'ACTIVA',
     },
     include: {
       pet: { include: { owner: true } },
       admittedBy: { select: { id: true, nombre: true } },
+      consultation: {
+        include: {
+          diagnosticos: true,
+          signosVitales: { orderBy: { registeredAt: 'desc' }, take: 1 },
+        },
+      },
+    },
+  });
+
+  // Complete the consultation (mark as COMPLETADA)
+  const startTime = new Date(consultation.startTime);
+  const endTime = new Date();
+  const duration = Math.round((endTime.getTime() - startTime.getTime()) / 60000);
+  
+  await prisma.consultation.update({
+    where: { id: data.consultationId },
+    data: {
+      status: 'COMPLETADA',
+      endTime: endTime,
+      duration: duration,
+      soapPlan: consultation.soapPlan 
+        ? `${consultation.soapPlan}\n\n** HOSPITALIZACIÓN **\nMotivo: ${data.reason}${data.cuidadosEspeciales ? `\nCuidados: ${data.cuidadosEspeciales}` : ''}` 
+        : `** HOSPITALIZACIÓN **\nMotivo: ${data.reason}${data.cuidadosEspeciales ? `\nCuidados: ${data.cuidadosEspeciales}` : ''}`,
     },
   });
 

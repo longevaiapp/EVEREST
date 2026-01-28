@@ -116,6 +116,19 @@ router.put('/:id/discharge', authenticate, isRecepcion, async (req, res) => {
 
   const data = schema.parse(req.body);
 
+  // First, check if visit exists and can be discharged
+  const existingVisit = await prisma.visit.findUnique({
+    where: { id },
+  });
+
+  if (!existingVisit) {
+    throw new AppError('Visita no encontrada', 404);
+  }
+
+  if (existingVisit.status === 'ALTA') {
+    throw new AppError('Esta visita ya fue dada de alta', 409);
+  }
+
   // Update visit
   const visit = await prisma.visit.update({
     where: { id },

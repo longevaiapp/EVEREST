@@ -421,13 +421,31 @@
 
 .priority-badge,
 .status-badge {
-  display: inline-block;
-  padding: 0.25rem 0.75rem;
-  border-radius: 12px;
-  font-size: 0.75rem;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.35rem 0.85rem;
+  border-radius: 20px;
+  font-size: 0.8rem;
   color: white;
   font-weight: 600;
-  margin-top: 0.5rem;
+  white-space: nowrap;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+}
+
+.status-badge.warning {
+  background: linear-gradient(135deg, #ff9800, #f57c00);
+  box-shadow: 0 2px 8px rgba(255, 152, 0, 0.3);
+}
+
+.status-badge.success {
+  background: linear-gradient(135deg, #4caf50, #388e3c);
+  box-shadow: 0 2px 8px rgba(76, 175, 80, 0.3);
+}
+
+.status-badge.error {
+  background: linear-gradient(135deg, #f44336, #d32f2f);
+  box-shadow: 0 2px 8px rgba(244, 67, 54, 0.3);
 }
 
 .btn-action {
@@ -499,46 +517,56 @@
 }
 
 .btn-icon {
-  padding: 0.5rem;
-  background: #e3f2fd;
-  border: none;
-  border-radius: 6px;
+  width: 40px;
+  height: 40px;
+  padding: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(255, 255, 255, 0.15);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 10px;
   cursor: pointer;
-  font-size: 1rem;
-  transition: all 0.2s;
+  font-size: 1.1rem;
+  color: white;
+  transition: all 0.2s ease;
+  backdrop-filter: blur(5px);
 }
 
 .btn-icon:hover {
-  background: #bbdefb;
+  background: rgba(255, 255, 255, 0.25);
+  transform: scale(1.05);
+  border-color: rgba(255, 255, 255, 0.4);
 }
 
 .btn-icon.success {
-  background: #e8f5e9;
+  background: rgba(76, 175, 80, 0.25);
+  border-color: rgba(76, 175, 80, 0.4);
+  color: #81c784;
 }
 
 .btn-icon.success:hover {
-  background: #c8e6c9;
+  background: rgba(76, 175, 80, 0.4);
 }
 
 .btn-icon.warning {
-  background: rgba(255, 152, 0, 0.2);
-  backdrop-filter: blur(10px);
-  -webkit-backdrop-filter: blur(10px);
-  border: 1px solid rgba(255, 152, 0, 0.3);
+  background: rgba(255, 152, 0, 0.25);
+  border-color: rgba(255, 152, 0, 0.4);
+  color: #ffb74d;
 }
 
 .btn-icon.warning:hover {
-  background: rgba(255, 152, 0, 0.3);
-  border-color: rgba(255, 152, 0, 0.5);
+  background: rgba(255, 152, 0, 0.4);
 }
 
 .btn-icon.error {
-  background: rgba(244, 67, 54, 0.15);
-  color: #d32f2f;
+  background: rgba(244, 67, 54, 0.25);
+  border-color: rgba(244, 67, 54, 0.4);
+  color: #e57373;
 }
 
 .btn-icon.error:hover {
-  background: rgba(244, 67, 54, 0.3);
+  background: rgba(244, 67, 54, 0.4);
 }
 
 .patient-card-urgent {
@@ -712,6 +740,16 @@
   color: rgba(255, 255, 255, 0.7);
   font-style: italic;
   text-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
+  background: rgba(255, 255, 255, 0.08);
+  border-radius: 16px;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+}
+
+.empty-state .empty-icon {
+  font-size: 3rem;
+  display: block;
+  margin-bottom: 1rem;
+  opacity: 0.6;
 }
 
 .modal-overlay {
@@ -951,7 +989,7 @@
 }
 
 .checkbox-group small {
-  color: #666;
+  color: rgba(255, 255, 255, 0.7);
   font-size: 0.875rem;
   margin-left: 1.5rem;
 }
@@ -1084,14 +1122,15 @@
 }
 
 .consulta-content strong {
-  color: #333;
+  color: rgba(255, 255, 255, 0.95);
   display: block;
   margin-bottom: 0.5rem;
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
 }
 
 .consulta-content p {
   margin: 0.5rem 0;
-  color: #666;
+  color: rgba(255, 255, 255, 0.8);
   line-height: 1.5;
 }
 
@@ -1099,11 +1138,308 @@
   display: inline-block;
   margin-top: 0.5rem;
   padding: 0.25rem 0.75rem;
-  background: #e3f2fd;
-  color: #2196f3;
+  background: rgba(33, 150, 243, 0.2);
+  color: #64b5f6;
   border-radius: 12px;
   font-size: 0.875rem;
   font-weight: 600;
+  border: 1px solid rgba(33, 150, 243, 0.3);
+}
+
+/* ============================================================================
+   EXPEDIENTE MODAL - HISTORIAL MÉDICO COMPLETO
+   ============================================================================ */
+
+.expediente-modal {
+  max-width: 900px;
+  max-height: 90vh;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.expediente-modal .modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding-bottom: 1rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+  margin-bottom: 1rem;
+}
+
+.expediente-modal .modal-header h2 {
+  margin: 0;
+  color: white;
+}
+
+.expediente-modal .close-btn {
+  background: rgba(255, 255, 255, 0.1);
+  border: none;
+  color: white;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  cursor: pointer;
+  font-size: 1.2rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+}
+
+.expediente-modal .close-btn:hover {
+  background: rgba(255, 255, 255, 0.2);
+}
+
+.expediente-modal .expediente-content {
+  flex: 1;
+  overflow-y: auto;
+  padding-right: 0.5rem;
+}
+
+/* Historial Section */
+.historial-section {
+  margin-top: 1.5rem;
+}
+
+.loading-historial {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 3rem;
+  color: rgba(255, 255, 255, 0.8);
+}
+
+.loading-historial .spinner {
+  width: 40px;
+  height: 40px;
+  border: 3px solid rgba(255, 255, 255, 0.2);
+  border-top-color: #2196f3;
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+  margin-bottom: 1rem;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+.empty-historial {
+  text-align: center;
+  padding: 3rem;
+  color: rgba(255, 255, 255, 0.7);
+}
+
+.empty-historial span {
+  font-size: 3rem;
+  display: block;
+  margin-bottom: 1rem;
+}
+
+/* Consultas Timeline - Nuevo diseño */
+.expediente-modal .consultas-timeline {
+  padding-left: 0;
+}
+
+.consulta-card {
+  background: rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(10px);
+  border-radius: 12px;
+  margin-bottom: 1rem;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  overflow: hidden;
+}
+
+.consulta-card.consulta-consulta {
+  border-left: 4px solid #4caf50;
+}
+
+.consulta-card.consulta-hospitalizacion {
+  border-left: 4px solid #ff9800;
+}
+
+.consulta-card.consulta-cirugia {
+  border-left: 4px solid #f44336;
+}
+
+.consulta-card.consulta-vacuna {
+  border-left: 4px solid #2196f3;
+}
+
+.consulta-header {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 1rem;
+  background: rgba(255, 255, 255, 0.05);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.consulta-icon {
+  font-size: 1.5rem;
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 50%;
+}
+
+.consulta-info {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.consulta-tipo {
+  font-weight: 600;
+  color: white;
+  font-size: 1rem;
+}
+
+.consulta-fecha {
+  font-size: 0.85rem;
+  color: rgba(255, 255, 255, 0.7);
+}
+
+.consulta-header .consulta-doctor {
+  margin: 0;
+  font-size: 0.8rem;
+}
+
+.consulta-detalles {
+  padding: 1rem;
+}
+
+/* SOAP Section */
+.consulta-detalles .soap-section {
+  margin-bottom: 1rem;
+}
+
+.consulta-detalles .soap-section h5,
+.consulta-detalles .vitales-section h5,
+.consulta-detalles .diagnosticos-section h5,
+.consulta-detalles .recetas-section h5,
+.consulta-detalles .labs-section h5 {
+  color: rgba(255, 255, 255, 0.9);
+  font-size: 0.9rem;
+  margin-bottom: 0.75rem;
+  padding-bottom: 0.5rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.consulta-detalles .soap-grid {
+  display: grid;
+  gap: 0.75rem;
+}
+
+.consulta-detalles .soap-item {
+  background: rgba(255, 255, 255, 0.05);
+  padding: 0.75rem;
+  border-radius: 8px;
+}
+
+.consulta-detalles .soap-label {
+  color: #4caf50;
+  font-weight: 600;
+  font-size: 0.85rem;
+  display: block;
+  margin-bottom: 0.25rem;
+}
+
+.consulta-detalles .soap-item p {
+  margin: 0;
+  color: rgba(255, 255, 255, 0.9);
+  font-size: 0.9rem;
+  line-height: 1.5;
+}
+
+/* Vitales Grid */
+.consulta-detalles .vitales-section {
+  margin-bottom: 1rem;
+}
+
+.consulta-detalles .vitales-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.consulta-detalles .vitales-grid span {
+  background: rgba(33, 150, 243, 0.2);
+  padding: 0.5rem 0.75rem;
+  border-radius: 6px;
+  font-size: 0.85rem;
+  color: rgba(255, 255, 255, 0.9);
+  border: 1px solid rgba(33, 150, 243, 0.3);
+}
+
+/* Diagnósticos */
+.consulta-detalles .diagnosticos-section ul,
+.consulta-detalles .recetas-section ul,
+.consulta-detalles .labs-section ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.consulta-detalles .diagnosticos-section li,
+.consulta-detalles .recetas-section li,
+.consulta-detalles .labs-section li {
+  background: rgba(255, 255, 255, 0.05);
+  padding: 0.75rem;
+  border-radius: 6px;
+  margin-bottom: 0.5rem;
+  color: rgba(255, 255, 255, 0.9);
+  font-size: 0.9rem;
+}
+
+.consulta-detalles .badge {
+  display: inline-block;
+  padding: 0.2rem 0.5rem;
+  border-radius: 4px;
+  font-size: 0.75rem;
+  margin-left: 0.5rem;
+  background: rgba(255, 255, 255, 0.1);
+  color: rgba(255, 255, 255, 0.8);
+}
+
+.consulta-detalles .badge.severity-leve {
+  background: rgba(76, 175, 80, 0.2);
+  color: #81c784;
+}
+
+.consulta-detalles .badge.severity-moderado {
+  background: rgba(255, 193, 7, 0.2);
+  color: #ffd54f;
+}
+
+.consulta-detalles .badge.severity-severo,
+.consulta-detalles .badge.severity-critico {
+  background: rgba(244, 67, 54, 0.2);
+  color: #ef5350;
+}
+
+.consulta-detalles .badge.status-pendiente {
+  background: rgba(255, 193, 7, 0.2);
+  color: #ffd54f;
+}
+
+.consulta-detalles .badge.status-completado,
+.consulta-detalles .badge.status-completada {
+  background: rgba(76, 175, 80, 0.2);
+  color: #81c784;
+}
+
+.consulta-detalles .resultados {
+  margin-top: 0.5rem;
+  padding-top: 0.5rem;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  font-size: 0.85rem;
+  color: rgba(255, 255, 255, 0.8);
 }
 
 /* Modal de calendario */
@@ -1224,13 +1560,56 @@
 
 .pending-vaccines li {
   padding: 0.5rem 0;
-  color: #666;
+  color: rgba(255, 255, 255, 0.7);
 }
 
 .pending-vaccines li strong {
   color: white;
   font-size: 0.95rem;
   text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+}
+
+/* Need items for preventive calendar */
+.need-item {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  padding: 0.75rem !important;
+  margin-bottom: 0.5rem;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.need-item.priority-alta {
+  border-left: 3px solid #f44336;
+  background: rgba(244, 67, 54, 0.1);
+}
+
+.need-item.priority-media {
+  border-left: 3px solid #ff9800;
+  background: rgba(255, 152, 0, 0.1);
+}
+
+.need-icon {
+  font-size: 1rem;
+  margin-right: 0.25rem;
+}
+
+.need-date {
+  display: block;
+  color: rgba(255, 255, 255, 0.6);
+  font-size: 0.8rem;
+}
+
+.need-date.scheduled {
+  color: #4caf50;
+}
+
+.patient-avatar-photo-small {
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  object-fit: cover;
 }
 
 /* Formulario nuevo paciente */
@@ -1319,70 +1698,123 @@
   padding: 1rem 0;
 }
 
+.appointments-section .section-actions {
+  margin-bottom: 1.5rem;
+}
+
 .appointments-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
   gap: 1.5rem;
 }
 
-.appointment-card {
+.appointments-section .appointment-card {
+  display: flex;
+  flex-direction: column;
   background: rgba(255, 255, 255, 0.15);
   backdrop-filter: blur(20px) saturate(180%);
   -webkit-backdrop-filter: blur(20px) saturate(180%);
   border-radius: 16px;
-  padding: 1.5rem;
+  padding: 1.25rem;
   border: 1px solid rgba(255, 255, 255, 0.3);
   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-.appointment-card:hover {
-  transform: translateY(-6px);
+.appointments-section .appointment-card:hover {
+  transform: translateY(-4px);
   box-shadow: 0 12px 40px rgba(0, 0, 0, 0.2);
   border-color: rgba(255, 255, 255, 0.5);
   background: rgba(255, 255, 255, 0.2);
 }
 
-.appointment-header {
+.appointments-section .appointment-header {
   display: flex;
-  justify-content: space-between;
   align-items: center;
+  gap: 1rem;
   margin-bottom: 1rem;
-  padding-bottom: 1rem;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+  padding-bottom: 0.75rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.15);
 }
 
-.appointment-time-large {
-  font-size: 1.75rem;
+.appointments-section .appointment-time-large {
+  font-size: 1.5rem;
   font-weight: 700;
-  color: #2196f3;
+  color: #64b5f6;
+  min-width: 70px;
 }
 
-.status-badge.success {
-  background: #4caf50;
+.appointments-section .appointment-body {
+  flex: 1;
+  margin-bottom: 0.75rem;
 }
 
-.appointment-body {
-  margin-bottom: 1rem;
-}
-
-.appointment-body h4 {
+.appointments-section .appointment-body h4 {
   margin: 0 0 0.5rem 0;
   color: white;
-  text-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
+  font-size: 1.1rem;
+  font-weight: 600;
 }
 
-.appointment-body p {
-  margin: 0.25rem 0;
-  color: #666;
-  font-size: 0.875rem;
+.appointments-section .appointment-body p {
+  margin: 0.3rem 0;
+  color: rgba(255, 255, 255, 0.9);
+  font-size: 0.85rem;
+  line-height: 1.4;
 }
 
-.appointment-actions {
+.appointments-section .appointment-body p strong {
+  color: rgba(255, 255, 255, 0.7);
+  font-weight: 500;
+  margin-right: 0.25rem;
+}
+
+.appointments-section .appointment-actions {
   display: flex;
   gap: 0.5rem;
-  padding-top: 1rem;
-  border-top: 1px solid rgba(255, 255, 255, 0.2);
+  padding-top: 0.75rem;
+  border-top: 1px solid rgba(255, 255, 255, 0.15);
+  justify-content: flex-end;
+}
+
+.appointments-section .appointment-actions .btn-icon {
+  width: 38px;
+  height: 38px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  background: rgba(255, 255, 255, 0.1);
+  color: white;
+  font-size: 1rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.appointments-section .appointment-actions .btn-icon:hover {
+  background: rgba(255, 255, 255, 0.25);
+  transform: scale(1.05);
+}
+
+.appointments-section .appointment-actions .btn-icon.success {
+  background: rgba(76, 175, 80, 0.3);
+  border-color: rgba(76, 175, 80, 0.5);
+  color: #81c784;
+}
+
+.appointments-section .appointment-actions .btn-icon.success:hover {
+  background: rgba(76, 175, 80, 0.5);
+}
+
+.appointments-section .appointment-actions .btn-icon.error {
+  background: rgba(244, 67, 54, 0.3);
+  border-color: rgba(244, 67, 54, 0.5);
+  color: #e57373;
+}
+
+.appointments-section .appointment-actions .btn-icon.error:hover {
+  background: rgba(244, 67, 54, 0.5);
 }
 
 .patients-table-section {
@@ -1394,6 +1826,328 @@
   border: 1px solid rgba(255, 255, 255, 0.3);
   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
   overflow-x: auto;
+}
+
+/* ========== MODERN PATIENTS GRID ========== */
+.patients-grid-modern {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  gap: 1.25rem;
+  margin-top: 1rem;
+}
+
+.patient-card-modern {
+  background: rgba(255, 255, 255, 0.12);
+  backdrop-filter: blur(20px) saturate(180%);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
+  border-radius: 16px;
+  padding: 1.25rem;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
+  overflow: hidden;
+}
+
+.patient-card-modern::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: linear-gradient(90deg, #667eea, #764ba2);
+  opacity: 0;
+  transition: opacity 0.3s;
+}
+
+.patient-card-modern:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.2);
+  border-color: rgba(255, 255, 255, 0.35);
+}
+
+.patient-card-modern:hover::before {
+  opacity: 1;
+}
+
+.patient-card-modern.hospitalized {
+  border-color: rgba(255, 87, 34, 0.5);
+  background: rgba(255, 87, 34, 0.1);
+}
+
+.patient-card-modern.hospitalized::before {
+  background: linear-gradient(90deg, #ff5722, #ff9800);
+  opacity: 1;
+}
+
+.patient-card-top {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  margin-bottom: 1rem;
+  padding-bottom: 1rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.patient-avatar-container {
+  position: relative;
+  flex-shrink: 0;
+}
+
+.patient-avatar-photo {
+  width: 60px;
+  height: 60px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 2px solid rgba(255, 255, 255, 0.25);
+  background: rgba(255, 255, 255, 0.15);
+}
+
+.patient-avatar-emoji {
+  font-size: 2.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 60px;
+  height: 60px;
+  background: rgba(255, 255, 255, 0.15);
+  border-radius: 50%;
+  border: 2px solid rgba(255, 255, 255, 0.25);
+}
+
+.status-dot {
+  position: absolute;
+  bottom: 2px;
+  right: 2px;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  border: 3px solid rgba(30, 30, 60, 0.9);
+  background: #757575;
+}
+
+.status-dot.recien-llegado { background: #9e9e9e; }
+.status-dot.en-espera { background: #ff9800; }
+.status-dot.en-consulta { background: #2196f3; }
+.status-dot.en-estudios { background: #9c27b0; }
+.status-dot.en-farmacia { background: #673ab7; }
+.status-dot.cirugia-programada { background: #e91e63; }
+.status-dot.en-cirugia { background: #f44336; }
+.status-dot.hospitalizado { background: #ff5722; animation: pulse-dot 2s infinite; }
+.status-dot.listo-para-alta { background: #4caf50; animation: pulse-dot 2s infinite; }
+.status-dot.alta { background: #757575; }
+
+@keyframes pulse-dot {
+  0%, 100% { transform: scale(1); box-shadow: 0 0 0 0 currentColor; }
+  50% { transform: scale(1.1); box-shadow: 0 0 8px 2px currentColor; }
+}
+
+.patient-main-details {
+  flex: 1;
+  min-width: 0;
+}
+
+.patient-name {
+  margin: 0 0 0.25rem 0;
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: #fff;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.patient-ficha-badge {
+  display: inline-block;
+  padding: 0.2rem 0.6rem;
+  background: rgba(102, 126, 234, 0.25);
+  border: 1px solid rgba(102, 126, 234, 0.4);
+  border-radius: 6px;
+  font-size: 0.75rem;
+  font-family: 'Monaco', 'Menlo', monospace;
+  color: rgba(255, 255, 255, 0.9);
+}
+
+.patient-card-actions {
+  display: flex;
+  gap: 0.5rem;
+  flex-shrink: 0;
+}
+
+.btn-card-action {
+  width: 40px;
+  height: 40px;
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  background: rgba(255, 255, 255, 0.1);
+  font-size: 1.1rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.btn-card-action:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+}
+
+.btn-card-action.primary {
+  background: rgba(33, 150, 243, 0.2);
+  border-color: rgba(33, 150, 243, 0.4);
+}
+
+.btn-card-action.primary:hover {
+  background: rgba(33, 150, 243, 0.4);
+}
+
+.btn-card-action.warning {
+  background: rgba(255, 152, 0, 0.2);
+  border-color: rgba(255, 152, 0, 0.4);
+}
+
+.btn-card-action.warning:hover {
+  background: rgba(255, 152, 0, 0.4);
+}
+
+.btn-card-action.success {
+  background: rgba(76, 175, 80, 0.2);
+  border-color: rgba(76, 175, 80, 0.4);
+}
+
+.btn-card-action.success:hover {
+  background: rgba(76, 175, 80, 0.4);
+}
+
+.btn-card-action.secondary {
+  background: rgba(156, 39, 176, 0.2);
+  border-color: rgba(156, 39, 176, 0.4);
+}
+
+.btn-card-action.secondary:hover {
+  background: rgba(156, 39, 176, 0.4);
+}
+
+.patient-card-info {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  margin-bottom: 1rem;
+}
+
+.info-item {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 0.85rem;
+  color: rgba(255, 255, 255, 0.85);
+  background: rgba(255, 255, 255, 0.08);
+  padding: 0.35rem 0.65rem;
+  border-radius: 8px;
+}
+
+.info-item.full-width {
+  width: 100%;
+}
+
+.info-icon {
+  font-size: 0.9rem;
+  opacity: 0.8;
+}
+
+.info-text {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 200px;
+}
+
+.info-item.full-width .info-text {
+  max-width: none;
+  white-space: normal;
+}
+
+.patient-card-footer {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+  padding-top: 0.75rem;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.status-badge-modern {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.4rem 0.85rem;
+  border-radius: 20px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: white;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+  white-space: nowrap;
+}
+
+.status-badge-modern.recien-llegado { background: linear-gradient(135deg, #9e9e9e, #757575); }
+.status-badge-modern.en-espera { background: linear-gradient(135deg, #ff9800, #f57c00); }
+.status-badge-modern.en-consulta { background: linear-gradient(135deg, #2196f3, #1976d2); }
+.status-badge-modern.en-estudios { background: linear-gradient(135deg, #9c27b0, #7b1fa2); }
+.status-badge-modern.en-farmacia { background: linear-gradient(135deg, #673ab7, #512da8); }
+.status-badge-modern.cirugia-programada { background: linear-gradient(135deg, #e91e63, #c2185b); }
+.status-badge-modern.en-cirugia { background: linear-gradient(135deg, #f44336, #d32f2f); }
+.status-badge-modern.hospitalizado { background: linear-gradient(135deg, #ff5722, #e64a19); }
+.status-badge-modern.listo-para-alta { background: linear-gradient(135deg, #4caf50, #388e3c); }
+.status-badge-modern.alta { background: linear-gradient(135deg, #607d8b, #455a64); }
+
+.priority-badge-modern {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.35rem 0.7rem;
+  border-radius: 12px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  background: rgba(255, 255, 255, 0.1);
+  color: rgba(255, 255, 255, 0.9);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.priority-badge-modern.alta {
+  background: rgba(244, 67, 54, 0.2);
+  border-color: rgba(244, 67, 54, 0.4);
+  color: #ff8a80;
+}
+
+.priority-badge-modern.media {
+  background: rgba(255, 152, 0, 0.2);
+  border-color: rgba(255, 152, 0, 0.4);
+  color: #ffcc80;
+}
+
+.priority-badge-modern.baja {
+  background: rgba(76, 175, 80, 0.2);
+  border-color: rgba(76, 175, 80, 0.4);
+  color: #a5d6a7;
+}
+
+@media (max-width: 768px) {
+  .patients-grid-modern {
+    grid-template-columns: 1fr;
+  }
+  
+  .patient-card-top {
+    flex-wrap: wrap;
+  }
+  
+  .patient-card-actions {
+    width: 100%;
+    justify-content: flex-end;
+    margin-top: 0.5rem;
+  }
 }
 
 .card-actions {
@@ -1418,15 +2172,6 @@
   box-shadow: 0 12px 40px rgba(0, 0, 0, 0.2);
   border-color: rgba(76, 175, 80, 0.8);
   background: rgba(76, 175, 80, 0.2);
-}
-
-.empty-state {
-  background: #f5f7fa;
-  padding: 3rem;
-  border-radius: 12px;
-  text-align: center;
-  color: #666;
-  font-size: 1.1rem;
 }
 
 @media (max-width: 1024px) {
@@ -1704,11 +2449,12 @@
 }
 
 .qr-url {
-  background: rgba(0, 0, 0, 0.2);
+  background: rgba(255, 255, 255, 0.1);
   padding: 0.5rem 1rem;
   border-radius: 8px;
   max-width: 100%;
   overflow: hidden;
+  border: 1px solid rgba(255, 255, 255, 0.15);
 }
 
 .qr-url small {
@@ -2398,4 +3144,233 @@
     flex: 1;
     min-width: 120px;
   }
+}
+
+/* ============================================
+   BÚSQUEDA DE MASCOTAS EN MODAL DE CITAS
+   ============================================ */
+
+.search-result-item:hover {
+  background: #f5f5f5 !important;
+}
+
+.search-results {
+  background: white;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+}
+
+.search-results .search-result-item:last-child {
+  border-bottom: none !important;
+}
+
+/* ============================================
+   MODAL EDITAR FOTO DE MASCOTA
+   ============================================ */
+
+.modal-edit-photo {
+  max-width: 420px;
+  width: 95%;
+  background: linear-gradient(145deg, rgba(30, 40, 70, 0.98) 0%, rgba(20, 30, 55, 0.99) 100%);
+  border-radius: 20px;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  box-shadow: 0 25px 80px rgba(0, 0, 0, 0.5);
+  overflow: hidden;
+}
+
+.modal-edit-photo .modal-header {
+  padding: 1.25rem 1.5rem;
+  background: rgba(255, 255, 255, 0.05);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.modal-edit-photo .modal-header h3 {
+  margin: 0;
+  font-size: 1.1rem;
+  color: white;
+  font-weight: 600;
+}
+
+.modal-edit-photo .btn-close-modal {
+  background: rgba(255, 255, 255, 0.1);
+  border: none;
+  color: white;
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 1rem;
+  transition: all 0.2s;
+}
+
+.modal-edit-photo .btn-close-modal:hover {
+  background: rgba(244, 67, 54, 0.3);
+}
+
+.edit-photo-body {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1.25rem;
+  padding: 1.5rem;
+}
+
+.photo-preview-container {
+  width: 200px;
+  height: 200px;
+  border-radius: 16px;
+  overflow: hidden;
+  background: linear-gradient(145deg, rgba(0, 0, 0, 0.2), rgba(0, 0, 0, 0.1));
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 2px dashed rgba(255, 255, 255, 0.2);
+  transition: all 0.3s ease;
+}
+
+.photo-preview-container:hover {
+  border-color: rgba(102, 126, 234, 0.5);
+}
+
+.photo-preview-large {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.photo-placeholder-large {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  color: rgba(255, 255, 255, 0.5);
+}
+
+.photo-placeholder-large .placeholder-emoji {
+  font-size: 3.5rem;
+  margin-bottom: 0.5rem;
+  opacity: 0.7;
+}
+
+.photo-placeholder-large p {
+  margin: 0;
+  font-size: 0.85rem;
+}
+
+.photo-upload-section {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+  width: 100%;
+}
+
+.btn-upload-photo {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 0.875rem 2rem;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  border: none;
+  border-radius: 10px;
+  cursor: pointer;
+  font-size: 0.95rem;
+  font-weight: 600;
+  transition: all 0.3s ease;
+  width: 100%;
+  max-width: 250px;
+}
+
+.btn-upload-photo:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
+}
+
+.photo-hint {
+  margin: 0;
+  font-size: 0.75rem;
+  color: rgba(255, 255, 255, 0.4);
+}
+
+.modal-edit-photo .modal-footer {
+  display: flex;
+  gap: 0.75rem;
+  padding: 1.25rem 1.5rem;
+  background: rgba(0, 0, 0, 0.2);
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  justify-content: flex-end;
+}
+
+.modal-edit-photo .modal-footer .btn-danger {
+  background: linear-gradient(135deg, #f44336 0%, #d32f2f 100%);
+  color: white;
+  border: none;
+  padding: 0.7rem 1.1rem;
+  border-radius: 8px;
+  cursor: pointer;
+  font-weight: 500;
+  font-size: 0.85rem;
+  transition: all 0.3s ease;
+  margin-right: auto;
+}
+
+.modal-edit-photo .modal-footer .btn-danger:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 15px rgba(244, 67, 54, 0.4);
+}
+
+.modal-edit-photo .modal-footer .btn-danger:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.modal-edit-photo .modal-footer .btn-secondary {
+  background: rgba(255, 255, 255, 0.08);
+  color: rgba(255, 255, 255, 0.8);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  padding: 0.7rem 1.25rem;
+  border-radius: 8px;
+  cursor: pointer;
+  font-weight: 500;
+  font-size: 0.85rem;
+  transition: all 0.2s ease;
+}
+
+.modal-edit-photo .modal-footer .btn-secondary:hover {
+  background: rgba(255, 255, 255, 0.15);
+  color: white;
+}
+
+.modal-edit-photo .modal-footer .btn-secondary:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.modal-edit-photo .modal-footer .btn-primary {
+  background: linear-gradient(135deg, #4caf50 0%, #43a047 100%);
+  color: white;
+  border: none;
+  padding: 0.7rem 1.5rem;
+  border-radius: 8px;
+  cursor: pointer;
+  font-weight: 600;
+  font-size: 0.85rem;
+  transition: all 0.3s ease;
+}
+
+.modal-edit-photo .modal-footer .btn-primary:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 15px rgba(76, 175, 80, 0.4);
+}
+
+.modal-edit-photo .modal-footer .btn-primary:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  transform: none;
+  background: rgba(76, 175, 80, 0.3);
 }

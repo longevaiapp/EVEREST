@@ -40,7 +40,9 @@ const RegistroCliente = () => {
       peso: '',
       color: '',
       esterilizado: '',
-      microchip: ''
+      microchip: '',
+      foto: null,
+      fotoPreview: null
     },
     // Paso 3: Historial Médico
     historial: {
@@ -228,6 +230,7 @@ const RegistroCliente = () => {
           peso: formData.paciente.peso ? parseFloat(formData.paciente.peso) : null,
           color: formData.paciente.color || null,
           esterilizado: formData.paciente.esterilizado === 'Sí',
+          fotoUrl: formData.paciente.fotoPreview || null, // Base64 photo
           // Historial
           vacunasActualizadas: formData.historial.vacunasAlDia === 'Sí',
           ultimaVacuna: formData.historial.ultimaVacuna || null,
@@ -581,6 +584,87 @@ const RegistroCliente = () => {
             onChange={(e) => handleInputChange('paciente', 'microchip', e.target.value)}
             placeholder="Si tiene"
           />
+        </div>
+      </div>
+
+      {/* Foto de la mascota */}
+      <div className="form-group foto-upload-section">
+        <label>📷 Foto de la mascota (opcional)</label>
+        <div className="foto-upload-container-qr">
+          <div className="foto-preview-qr">
+            {formData.paciente.fotoPreview ? (
+              <img src={formData.paciente.fotoPreview} alt="Foto mascota" />
+            ) : (
+              <div className="foto-placeholder-qr">
+                <span>🐾</span>
+                <p>Sin foto</p>
+              </div>
+            )}
+          </div>
+          <div className="foto-actions-qr">
+            <label className="btn-upload-foto">
+              📷 Tomar / Seleccionar foto
+              <input
+                type="file"
+                accept="image/*"
+                capture="environment"
+                onChange={(e) => {
+                  const file = e.target.files[0];
+                  if (file) {
+                    const reader = new FileReader();
+                    reader.onloadend = () => {
+                      // Compress image to reduce size
+                      const img = new Image();
+                      img.onload = () => {
+                        const canvas = document.createElement('canvas');
+                        const MAX_SIZE = 400;
+                        let width = img.width;
+                        let height = img.height;
+                        
+                        if (width > height && width > MAX_SIZE) {
+                          height *= MAX_SIZE / width;
+                          width = MAX_SIZE;
+                        } else if (height > MAX_SIZE) {
+                          width *= MAX_SIZE / height;
+                          height = MAX_SIZE;
+                        }
+                        
+                        canvas.width = width;
+                        canvas.height = height;
+                        const ctx = canvas.getContext('2d');
+                        ctx.drawImage(img, 0, 0, width, height);
+                        
+                        const compressedBase64 = canvas.toDataURL('image/jpeg', 0.7);
+                        setFormData(prev => ({
+                          ...prev,
+                          paciente: {
+                            ...prev.paciente,
+                            foto: file,
+                            fotoPreview: compressedBase64
+                          }
+                        }));
+                      };
+                      img.src = reader.result;
+                    };
+                    reader.readAsDataURL(file);
+                  }
+                }}
+                style={{ display: 'none' }}
+              />
+            </label>
+            {formData.paciente.fotoPreview && (
+              <button 
+                type="button"
+                className="btn-remove-foto"
+                onClick={() => setFormData(prev => ({
+                  ...prev,
+                  paciente: { ...prev.paciente, foto: null, fotoPreview: null }
+                }))}
+              >
+                ❌ Quitar foto
+              </button>
+            )}
+          </div>
         </div>
       </div>
     </div>

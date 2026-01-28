@@ -853,3 +853,114 @@
     width: 100%;
   }
 }
+
+/* ============================================
+   FOTO UPLOAD - REGISTRO CLIENTE QR
+   ============================================ */
+
+.foto-upload-section {
+  margin-top: 1.5rem;
+  padding-top: 1.5rem;
+  border-top: 1px solid rgba(255, 255, 255, 0.15);
+}
+
+.foto-upload-container-qr {
+  display: flex;
+  gap: 1rem;
+  align-items: flex-start;
+  flex-wrap: wrap;
+}
+
+.foto-preview-qr {
+  width: 120px;
+  height: 120px;
+  border-radius: 12px;
+  overflow: hidden;
+  background: rgba(255, 255, 255, 0.1);
+  border: 2px dashed rgba(255, 255, 255, 0.3);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.foto-preview-qr img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.foto-placeholder-qr {
+  text-align: center;
+  color: rgba(255, 255, 255, 0.5);
+}
+
+.foto-placeholder-qr span {
+  font-size: 2.5rem;
+  display: block;
+}
+
+.foto-placeholder-qr p {
+  margin: 0.25rem 0 0;
+  font-size: 0.85rem;
+}
+
+.foto-actions-qr {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.btn-upload-foto {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.75rem 1rem;
+  background: linear-gradient(135deg, rgba(102, 126, 234, 0.6), rgba(118, 75, 162, 0.6));
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 8px;
+  color: white;
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.btn-upload-foto:hover {
+  background: linear-gradient(135deg, rgba(102, 126, 234, 0.8), rgba(118, 75, 162, 0.8));
+  transform: translateY(-2px);
+}
+
+.btn-remove-foto {
+  padding: 0.5rem 0.75rem;
+  background: rgba(244, 67, 54, 0.3);
+  border: 1px solid rgba(244, 67, 54, 0.5);
+  border-radius: 6px;
+  color: #ff8a80;
+  font-size: 0.85rem;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.btn-remove-foto:hover {
+  background: rgba(244, 67, 54, 0.5);
+}
+
+@media (max-width: 480px) {
+  .foto-upload-container-qr {
+    flex-direction: column;
+    align-items: center;
+  }
+  
+  .foto-preview-qr {
+    width: 150px;
+    height: 150px;
+  }
+  
+  .foto-actions-qr {
+    width: 100%;
+  }
+  
+  .btn-upload-foto {
+    width: 100%;
+    justify-content: center;
+  }
+}

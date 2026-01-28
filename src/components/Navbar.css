@@ -112,11 +112,11 @@
   right: 0;
   width: 400px;
   max-height: 500px;
-  background: rgba(255, 255, 255, 0.15);
+  background: linear-gradient(145deg, rgba(30, 40, 70, 0.97) 0%, rgba(20, 30, 55, 0.98) 100%);
   backdrop-filter: blur(30px);
-  border: 1px solid rgba(255, 255, 255, 0.25);
+  border: 1px solid rgba(255, 255, 255, 0.2);
   border-radius: 15px;
-  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(255, 255, 255, 0.1) inset;
   z-index: 1000;
   overflow: hidden;
   animation: slideDown 0.3s ease;
@@ -178,22 +178,23 @@
   display: flex;
   gap: 1rem;
   padding: 1rem 1.5rem;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
   cursor: pointer;
   transition: all 0.2s ease;
   position: relative;
+  background: rgba(255, 255, 255, 0.03);
 }
 
 .notification-item:hover {
-  background: rgba(255, 255, 255, 0.1);
+  background: rgba(255, 255, 255, 0.12);
 }
 
 .notification-item.unread {
-  background: rgba(33, 150, 243, 0.15);
+  background: rgba(33, 150, 243, 0.2);
 }
 
 .notification-item.unread:hover {
-  background: rgba(33, 150, 243, 0.25);
+  background: rgba(33, 150, 243, 0.3);
 }
 
 .notification-item.priority-alta {

@@ -315,6 +315,9 @@
       "EN_CONSULTA": "En Consulta",
       "EN_ESTUDIOS": "En Estudios",
       "EN_FARMACIA": "En Farmacia",
+      "CIRUGIA_PROGRAMADA": "Cirugía Programada",
+      "EN_CIRUGIA": "En Cirugía",
+      "HOSPITALIZADO": "Hospitalizado",
       "LISTO_PARA_ALTA": "Listo para Alta",
       "ALTA": "Alta"
     },
