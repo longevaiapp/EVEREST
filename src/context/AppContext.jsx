@@ -109,7 +109,7 @@ export const AppProvider = ({ children }) => {
     });
 
     addToHistory(patientId, {
-      accion: 'Triage completado',
+      accion: 'Triage completed',
       detalles: triageData,
       usuario: currentUser?.nombre,
       timestamp: new Date().toISOString()
@@ -134,7 +134,7 @@ export const AppProvider = ({ children }) => {
     addNotification({
       para: rol,
       tipo: 'NUEVA_TAREA',
-      titulo: 'Nueva tarea asignada',
+      titulo: 'New task assigned',
       mensaje: task.titulo,
       prioridad: task.prioridad
     });
@@ -170,8 +170,8 @@ export const AppProvider = ({ children }) => {
     updatePatientState(patientId, 'EN_CONSULTA', currentUser?.nombre);
     addTask('MEDICO', {
       pacienteId: patientId,
-      titulo: `Atender paciente`,
-      descripcion: `Paciente asignado por ${currentUser?.nombre}`,
+      titulo: `Attend patient`,
+      descripcion: `Patient assigned by ${currentUser?.nombre}`,
       prioridad: 'ALTA'
     });
   };
@@ -184,7 +184,7 @@ export const AppProvider = ({ children }) => {
     studies.forEach(study => {
       addTask('LABORATORIO', {
         pacienteId: patientId,
-        titulo: `Estudio solicitado por Dr. ${currentUser?.nombre}`,
+        titulo: `Study requested by Dr. ${currentUser?.nombre}`,
         descripcion: study,
         prioridad: 'ALTA'
       });
@@ -199,8 +199,8 @@ export const AppProvider = ({ children }) => {
     addNotification({
       para: 'LABORATORIO',
       tipo: 'ESTUDIOS_SOLICITADOS',
-      titulo: 'Nuevos estudios solicitados',
-      mensaje: `Dr. ${currentUser?.nombre} solicitó ${studies.length} estudio(s)`,
+      titulo: 'New studies requested',
+      mensaje: `Dr. ${currentUser?.nombre} requested ${studies.length} study(ies)`,
       prioridad: 'ALTA'
     });
   };
@@ -211,7 +211,7 @@ export const AppProvider = ({ children }) => {
     
     addTask('FARMACIA', {
       pacienteId: patientId,
-      titulo: 'Preparar medicamentos',
+      titulo: 'Prepare medications',
       descripcion: medications.join(', '),
       prioridad: 'ALTA'
     });
@@ -219,8 +219,8 @@ export const AppProvider = ({ children }) => {
     addNotification({
       para: 'FARMACIA',
       tipo: 'NUEVA_TAREA',
-      titulo: 'Nueva receta para preparar',
-      mensaje: `${medications.length} medicamento(s) prescritos por Dr. ${currentUser?.nombre}`,
+      titulo: 'New prescription to prepare',
+      mensaje: `${medications.length} medication(s) prescribed by Dr. ${currentUser?.nombre}`,
       prioridad: 'ALTA'
     });
 
@@ -237,16 +237,16 @@ export const AppProvider = ({ children }) => {
     
     addTask('RECEPCION', {
       pacienteId: patientId,
-      titulo: 'Procesar alta del paciente',
-      descripcion: 'Medicamentos entregados, listo para cobro y alta',
+      titulo: 'Process patient discharge',
+      descripcion: 'Medications delivered, ready for billing and discharge',
       prioridad: 'ALTA'
     });
 
     addNotification({
       para: 'RECEPCION',
       tipo: 'PACIENTE_LISTO_ALTA',
-      titulo: 'Paciente listo para alta',
-      mensaje: `Medicamentos entregados, proceder con cobro y alta`,
+      titulo: 'Patient ready for discharge',
+      mensaje: `Medications delivered, proceed with billing and discharge`,
       prioridad: 'ALTA'
     });
   };
@@ -256,7 +256,7 @@ export const AppProvider = ({ children }) => {
     updatePatientState(patientId, 'ALTA', currentUser?.nombre);
     
     addToHistory(patientId, {
-      accion: 'Paciente dado de alta',
+      accion: 'Patient discharged',
       usuario: currentUser?.nombre,
       timestamp: new Date().toISOString()
     });
@@ -269,7 +269,7 @@ export const AppProvider = ({ children }) => {
     });
 
     addToHistory(patientId, {
-      accion: 'Consulta médica realizada',
+      accion: 'Medical consultation performed',
       detalles: consultationData,
       usuario: currentUser?.nombre,
       timestamp: new Date().toISOString()
@@ -284,7 +284,7 @@ export const AppProvider = ({ children }) => {
     });
 
     addToHistory(patientId, {
-      accion: 'Cirugía programada',
+      accion: 'Surgery scheduled',
       detalles: surgeryData,
       usuario: currentUser?.nombre,
       timestamp: new Date().toISOString()
@@ -292,15 +292,15 @@ export const AppProvider = ({ children }) => {
 
     addTask('MEDICO', {
       pacienteId: patientId,
-      titulo: `Cirugía programada: ${surgeryData.tipo}`,
-      descripcion: `Fecha: ${surgeryData.fecha} ${surgeryData.hora} - Prioridad: ${surgeryData.prioridad}`,
+      titulo: `Scheduled surgery: ${surgeryData.tipo}`,
+      descripcion: `Date: ${surgeryData.fecha} ${surgeryData.hora} - Priority: ${surgeryData.prioridad}`,
       prioridad: surgeryData.prioridad
     });
 
     addNotification({
       para: 'MEDICO',
       tipo: 'CIRUGIA_PROGRAMADA',
-      titulo: 'Cirugía programada',
+      titulo: 'Surgery scheduled',
       mensaje: `${surgeryData.tipo} - ${surgeryData.fecha} ${surgeryData.hora}`,
       prioridad: surgeryData.prioridad
     });
@@ -319,7 +319,7 @@ export const AppProvider = ({ children }) => {
     }));
     
     addToHistory(patientId, {
-      accion: 'Cirugía iniciada',
+      accion: 'Surgery started',
       usuario: currentUser?.nombre,
       timestamp: new Date().toISOString()
     });
@@ -332,7 +332,7 @@ export const AppProvider = ({ children }) => {
     });
 
     addToHistory(patientId, {
-      accion: 'Cirugía completada',
+      accion: 'Surgery completed',
       detalles: surgeryReport,
       usuario: currentUser?.nombre,
       timestamp: new Date().toISOString()
@@ -351,7 +351,7 @@ export const AppProvider = ({ children }) => {
     });
 
     addToHistory(patientId, {
-      accion: 'Paciente hospitalizado',
+      accion: 'Patient hospitalized',
       detalles: hospitalizationData,
       usuario: currentUser?.nombre,
       timestamp: new Date().toISOString()
@@ -359,8 +359,8 @@ export const AppProvider = ({ children }) => {
 
     addTask('MEDICO', {
       pacienteId: patientId,
-      titulo: 'Monitoreo de paciente hospitalizado',
-      descripcion: `Realizar EFG según frecuencia indicada`,
+      titulo: 'Hospitalized patient monitoring',
+      descripcion: `Perform EFG per indicated frequency`,
       prioridad: 'ALTA'
     });
   };
@@ -387,7 +387,7 @@ export const AppProvider = ({ children }) => {
     }));
 
     addToHistory(patientId, {
-      accion: 'Monitoreo registrado',
+      accion: 'Monitoring recorded',
       detalles: monitoringData,
       usuario: currentUser?.nombre,
       timestamp: new Date().toISOString()
@@ -409,7 +409,7 @@ export const AppProvider = ({ children }) => {
     }));
 
     addToHistory(patientId, {
-      accion: 'Cita de seguimiento programada',
+      accion: 'Follow-up appointment scheduled',
       detalles: appointmentData,
       usuario: currentUser?.nombre,
       timestamp: new Date().toISOString()
@@ -424,7 +424,7 @@ export const AppProvider = ({ children }) => {
     });
 
     addToHistory(patientId, {
-      accion: 'Pago registrado',
+      accion: 'Payment registered',
       detalles: paymentData,
       usuario: currentUser?.nombre,
       timestamp: new Date().toISOString()
@@ -449,8 +449,8 @@ export const AppProvider = ({ children }) => {
     addNotification({
       para: 'RECEPCION',
       tipo: 'NUEVO_REGISTRO',
-      titulo: 'Nuevo registro de cliente',
-      mensaje: `${nuevoPaciente.nombre} (${nuevoPaciente.propietario}) completó el formulario de registro`,
+      titulo: 'New client registration',
+      mensaje: `${nuevoPaciente.nombre} (${nuevoPaciente.propietario}) completed the registration form`,
       prioridad: 'NORMAL'
     });
   };
@@ -466,7 +466,7 @@ export const AppProvider = ({ children }) => {
     }));
 
     addToHistory(pacienteId, {
-      accion: 'Check-in confirmado por recepción',
+      accion: 'Check-in confirmed by reception',
       usuario: currentUser?.nombre,
       timestamp: new Date().toISOString()
     });

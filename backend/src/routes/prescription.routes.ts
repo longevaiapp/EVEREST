@@ -152,4 +152,68 @@ router.put('/:id/cancel', authenticate, isMedico, async (req, res) => {
   res.json({ status: 'success', data: { prescription } });
 });
 
+// PUT /prescriptions/:id/reject - Reject prescription (from pharmacy)
+router.put('/:id/reject', authenticate, async (req, res) => {
+  const id = req.params.id as string;
+  
+  const schema = z.object({
+    reason: z.string().min(1, 'Rejection reason is required'),
+    notes: z.string().optional(),
+  });
+
+  const { reason, notes } = schema.parse(req.body);
+
+  // Find the prescription
+  const prescription = await prisma.prescription.findUnique({
+    where: { id },
+    include: {
+      consultation: {
+        include: {
+          doctor: { select: { id: true, nombre: true } },
+          visit: {
+            include: {
+              pet: { select: { nombre: true } },
+            },
+          },
+        },
+      },
+    },
+  });
+
+  if (!prescription) throw new AppError('Prescription not found', 404);
+
+  // Update prescription status
+  const updatedPrescription = await prisma.prescription.update({
+    where: { id },
+    data: { 
+      status: 'CANCELADA',
+      generalInstructions: prescription.generalInstructions 
+        ? `${prescription.generalInstructions}\n\n[REJECTED BY PHARMACY: ${reason}]${notes ? ` - ${notes}` : ''}`
+        : `[REJECTED BY PHARMACY: ${reason}]${notes ? ` - ${notes}` : ''}`,
+    },
+    include: {
+      items: true,
+    },
+  });
+
+  // Create notification for the prescribing doctor
+  if (prescription.consultation?.doctor?.id) {
+    await prisma.notification.create({
+      data: {
+        userId: prescription.consultation.doctor.id,
+        tipo: 'RECETA_PENDIENTE',
+        titulo: 'Receta Rechazada',
+        mensaje: `La receta para ${prescription.consultation.visit?.pet?.nombre || 'paciente'} fue rechazada por farmacia: ${reason}`,
+        data: {
+          prescriptionId: id,
+          reason,
+          notes,
+        },
+      },
+    });
+  }
+
+  res.json({ status: 'success', data: { prescription: updatedPrescription } });
+});
+
 export default router;

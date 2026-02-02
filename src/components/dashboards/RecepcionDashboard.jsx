@@ -80,14 +80,14 @@ function RecepcionDashboard() {
     direccion: '',
     telefono: '',
     email: '',
-    // Datos del Paciente
+    // Patient Data
     foto: null,
     fotoPreview: null,
     nombre: '',
     fechaNacimiento: '',
-    sexo: 'Macho',
+    sexo: 'Male',
     peso: '',
-    especie: 'Perro',
+    especie: 'Dog',
     raza: '',
     color: '',
     condicionCorporal: '3',
@@ -142,21 +142,21 @@ function RecepcionDashboard() {
   });
 
   // ============================================================================
-  // DATOS REALES DE LA API (sin mock)
+  // REAL DATA FROM API (no mock)
   // ============================================================================
   
-  // Transformar visitas de la API al formato del dashboard
+  // Transform visits from API to dashboard format
   const allVisits = (todayVisits || []).map(v => ({
     id: v.pet?.id,
     visitId: v.id,
-    nombre: v.pet?.nombre || 'Sin nombre',
-    especie: v.pet?.especie || 'Desconocido',
+    nombre: v.pet?.nombre || 'No name',
+    especie: v.pet?.especie || 'Unknown',
     raza: v.pet?.raza || '',
     numeroFicha: v.pet?.numeroFicha || `VET-${String(v.pet?.id).padStart(3, '0')}`,
-    propietario: v.pet?.owner?.nombre || 'Sin propietario',
+    propietario: v.pet?.owner?.nombre || 'No owner',
     telefono: v.pet?.owner?.telefono || '',
     estado: v.status,
-    motivo: v.motivo || 'Consulta',
+    motivo: v.motivo || 'Consultation',
     prioridad: v.prioridad || 'MEDIA',
     tipoVisita: v.tipoVisita,
     peso: v.peso,
@@ -165,26 +165,26 @@ function RecepcionDashboard() {
     fromApi: true
   }));
 
-  // Filtrar por estado
+  // Filter by status
   const newArrivals = allVisits.filter(p => p.estado === 'RECIEN_LLEGADO');
   const waitingPatients = allVisits.filter(p => p.estado === 'EN_ESPERA');
   const inConsultPatients = allVisits.filter(p => p.estado === 'EN_CONSULTA');
   const readyForDischarge = allVisits.filter(p => p.estado === 'LISTO_PARA_ALTA');
 
-  // Lista de TODAS las mascotas registradas (para sección "Todos los Pacientes")
+  // List of ALL registered pets (for "All Patients" section)
   const allPetsFormatted = (allPets || []).map(pet => ({
     id: pet.id,
-    nombre: pet.nombre || 'Sin nombre',
-    especie: pet.especie || 'Desconocido',
+    nombre: pet.nombre || 'No name',
+    especie: pet.especie || 'Unknown',
     raza: pet.raza || '',
     numeroFicha: pet.numeroFicha || `VET-${String(pet.id).padStart(3, '0')}`,
-    propietario: pet.owner?.nombre || 'Sin propietario',
+    propietario: pet.owner?.nombre || 'No owner',
     telefono: pet.owner?.telefono || '',
     estado: pet.estado || 'ALTA',
     fotoUrl: pet.fotoUrl || null,
   }));
 
-  // Búsqueda de pacientes - usa allPetsFormatted en lugar de allVisits para sección "todos"
+  // Patient search - uses allPetsFormatted instead of allVisits for "all" section
   const filteredPatients = searchQuery
     ? allPetsFormatted.filter(p => 
         p.nombre.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -194,11 +194,11 @@ function RecepcionDashboard() {
       )
     : allPetsFormatted;
 
-  // Citas de la API
+  // Appointments from API
   const todayAppointments = (appointments || []).map(apt => ({
     id: apt.id,
     pacienteId: apt.pet?.id,
-    pacienteNombre: apt.pet?.nombre || 'Sin nombre',
+    pacienteNombre: apt.pet?.nombre || 'No name',
     propietario: apt.pet?.owner?.nombre || '',
     telefono: apt.pet?.owner?.telefono || '',
     fecha: apt.fecha,
@@ -210,10 +210,10 @@ function RecepcionDashboard() {
     fromApi: true
   }));
 
-  // Tareas pendientes (por ahora vacío, se puede implementar después)
+  // Pending tasks (empty for now, can be implemented later)
   const myTasks = [];
 
-  // preventiveCalendar ya viene del hook useRecepcion
+  // preventiveCalendar comes from useRecepcion hook
 
   const getPriorityColor = (priority) => {
     const colors = { ALTA: '#f44336', MEDIA: '#ff9800', BAJA: '#4caf50' };
@@ -254,7 +254,7 @@ function RecepcionDashboard() {
     e.preventDefault();
     
     if (!selectedPatient?.visitId) {
-      alert('Error: El paciente no tiene una visita asociada');
+      alert('Error: Patient does not have an associated visit');
       return;
     }
     
@@ -271,21 +271,21 @@ function RecepcionDashboard() {
       await refreshData();
       
       alert(triageData.primeraVisita 
-        ? 'Triage completado - Se creará nuevo expediente' 
-        : 'Triage completado - Se consultará expediente existente'
+        ? 'Triage completed - New record will be created' 
+        : 'Triage completed - Existing record will be consulted'
       );
       setShowTriageModal(false);
       setSelectedPatient(null);
     } catch (error) {
-      console.error('Error completando triage:', error);
-      alert('Error al completar triage: ' + (error.message || 'Intenta de nuevo.'));
+      console.error('Error completing triage:', error);
+      alert('Error completing triage: ' + (error.message || 'Please try again.'));
     }
   };
 
   const handleAssignDoctor = (patientId) => {
     // TODO: Implementar asignación de doctor vía API
     const userName = user?.firstName || user?.nombre || 'Recepción';
-    alert(`Paciente asignado al médico por ${userName}`);
+    alert(`Patient assigned to doctor by ${userName}`);
   };
 
   const handleViewExpediente = useCallback(async (patient) => {
@@ -407,9 +407,9 @@ function RecepcionDashboard() {
     const file = e.target.files[0];
     if (!file) return;
 
-    // Validar tipo de archivo
+    // Validate file type
     if (!file.type.startsWith('image/')) {
-      alert('Por favor selecciona un archivo de imagen válido');
+      alert('Please select a valid image file');
       return;
     }
 
@@ -451,28 +451,28 @@ function RecepcionDashboard() {
 
   const handleSavePhoto = async () => {
     if (!editingPet || !editPhotoData) {
-      alert('No hay foto para guardar');
+      alert('No photo to save');
       return;
     }
 
     setSavingPhoto(true);
     try {
-      console.log('[EditPhoto] Guardando foto para:', editingPet.nombre);
-      console.log('[EditPhoto] Longitud del Base64:', editPhotoData.length);
+      console.log('[EditPhoto] Saving photo for:', editingPet.nombre);
+      console.log('[EditPhoto] Base64 length:', editPhotoData.length);
       
       await updatePet(editingPet.id, { fotoUrl: editPhotoData });
       
-      // Refrescar datos
+      // Refresh data
       await refreshData();
       
-      alert('✅ Foto guardada exitosamente');
+      alert('✅ Photo saved successfully');
       setShowEditPhotoModal(false);
       setEditingPet(null);
       setEditPhotoPreview(null);
       setEditPhotoData(null);
     } catch (error) {
-      console.error('Error guardando foto:', error);
-      alert('❌ Error al guardar foto: ' + error.message);
+      console.error('Error saving photo:', error);
+      alert('❌ Error saving photo: ' + error.message);
     } finally {
       setSavingPhoto(false);
     }
@@ -481,21 +481,21 @@ function RecepcionDashboard() {
   const handleRemovePhoto = async () => {
     if (!editingPet) return;
     
-    if (!window.confirm('¿Estás seguro de eliminar la foto?')) return;
+    if (!window.confirm('Are you sure you want to delete the photo?')) return;
 
     setSavingPhoto(true);
     try {
       await updatePet(editingPet.id, { fotoUrl: null });
       await refreshData();
       
-      alert('✅ Foto eliminada');
+      alert('✅ Photo deleted');
       setShowEditPhotoModal(false);
       setEditingPet(null);
       setEditPhotoPreview(null);
       setEditPhotoData(null);
     } catch (error) {
-      console.error('Error eliminando foto:', error);
-      alert('❌ Error al eliminar foto: ' + error.message);
+      console.error('Error deleting photo:', error);
+      alert('❌ Error deleting photo: ' + error.message);
     } finally {
       setSavingPhoto(false);
     }
@@ -509,23 +509,23 @@ function RecepcionDashboard() {
     try {
       await confirmAppointment(citaId);
       await refreshData();
-      alert('✅ Cita confirmada exitosamente');
+      alert('✅ Appointment confirmed successfully');
     } catch (error) {
-      console.error('Error confirmando cita:', error);
-      alert('❌ Error al confirmar cita: ' + error.message);
+      console.error('Error confirming appointment:', error);
+      alert('❌ Error confirming appointment: ' + error.message);
     }
   };
 
   const handleCancelAppointment = async (citaId) => {
-    if (!window.confirm('¿Estás seguro de cancelar esta cita?')) return;
+    if (!window.confirm('Are you sure you want to cancel this appointment?')) return;
     
     try {
       await cancelAppointment(citaId);
       await refreshData();
-      alert('✅ Cita cancelada');
+      alert('✅ Appointment cancelled');
     } catch (error) {
-      console.error('Error cancelando cita:', error);
-      alert('❌ Error al cancelar cita: ' + error.message);
+      console.error('Error cancelling appointment:', error);
+      alert('❌ Error cancelling appointment: ' + error.message);
     }
   };
 
@@ -541,7 +541,7 @@ function RecepcionDashboard() {
     setShowClientPets(false);
     
     if (!clientSearchPhone.trim()) {
-      setClientSearchError('Por favor ingresa un número de teléfono');
+      setClientSearchError('Please enter a phone number');
       return;
     }
 
@@ -568,11 +568,11 @@ function RecepcionDashboard() {
         });
         setShowClientPets(true);
       } else {
-        setClientSearchError('No encontramos ningún cliente con ese número. El cliente puede registrarse escaneando el código QR.');
+        setClientSearchError('No client found with that number. The client can register by scanning the QR code.');
       }
     } catch (error) {
-      console.error('Error buscando cliente:', error);
-      setClientSearchError('Error al buscar cliente. Intenta de nuevo.');
+      console.error('Error searching for client:', error);
+      setClientSearchError('Error searching for client. Please try again.');
     }
   };
 
@@ -580,15 +580,15 @@ function RecepcionDashboard() {
   const handleCheckInExistingPet = async (pet) => {
     try {
       await checkInPet(pet.id);
-      await refreshData(); // Actualizar lista de visitas
-      alert(`✅ Check-in realizado para ${pet.nombre}\nEl paciente está listo para triage.`);
+      await refreshData(); // Update visits list
+      alert(`✅ Check-in completed for ${pet.nombre}\nThe patient is ready for triage.`);
       setFoundClient(null);
       setClientSearchPhone('');
       setShowClientPets(false);
       setActiveSection('triage');
     } catch (error) {
-      console.error('Error en check-in:', error);
-      alert('Error al realizar check-in. Intenta de nuevo.');
+      console.error('Check-in error:', error);
+      alert('Error performing check-in. Please try again.');
     }
   };
 
@@ -627,25 +627,25 @@ function RecepcionDashboard() {
     e.preventDefault();
     
     try {
-      // Intentar crear cita via API
+      // Try to create appointment via API
       if (newAppointmentData.pacienteId) {
-        // No convertir a parseInt - petId puede ser un CUID string
+        // Don't convert to parseInt - petId may be a CUID string
         await createAppointment({
           petId: newAppointmentData.pacienteId,
           fecha: newAppointmentData.fecha,
           hora: newAppointmentData.hora,
           tipo: newAppointmentData.tipo,
-          motivo: newAppointmentData.motivo || 'Consulta programada'
+          motivo: newAppointmentData.motivo || 'Scheduled consultation'
         });
         await refreshData();
       }
       
-      alert(`✅ Cita agendada exitosamente\nPaciente: ${newAppointmentData.pacienteNombre}\nFecha: ${newAppointmentData.fecha} ${newAppointmentData.hora}`);
+      alert(`✅ Appointment scheduled successfully\nPatient: ${newAppointmentData.pacienteNombre}\nDate: ${newAppointmentData.fecha} ${newAppointmentData.hora}`);
       setShowNewAppointmentModal(false);
       setActiveSection('citas');
     } catch (error) {
-      console.error('Error creando cita:', error);
-      alert('Error al agendar cita: ' + (error.message || 'Intenta de nuevo.'));
+      console.error('Error creating appointment:', error);
+      alert('Error scheduling appointment: ' + (error.message || 'Please try again.'));
     }
   };
 
@@ -653,9 +653,9 @@ function RecepcionDashboard() {
     e.preventDefault();
     
     try {
-      console.log('[handleSubmitNewPatient] Iniciando registro de nuevo paciente...');
+      console.log('[handleSubmitNewPatient] Starting new patient registration...');
       
-      // 1. Crear propietario primero
+      // 1. Create owner first
       const ownerData = {
         nombre: newPatientData.propietario,
         telefono: newPatientData.telefono,
@@ -663,39 +663,55 @@ function RecepcionDashboard() {
         direccion: newPatientData.direccion || null,
       };
       
-      console.log('[handleSubmitNewPatient] Creando propietario:', ownerData);
+      console.log('[handleSubmitNewPatient] Creating owner:', ownerData);
       const owner = await createOwner(ownerData);
-      console.log('[handleSubmitNewPatient] Propietario creado:', owner);
+      console.log('[handleSubmitNewPatient] Owner created:', owner);
       
       if (!owner || !owner.id) {
-        throw new Error('No se pudo crear el propietario');
+        throw new Error('Could not create owner');
       }
       
-      // 2. Crear mascota asociada al propietario
+      // Helper functions to transform frontend values to backend enum values
+      const mapEspecie = (val) => {
+        const map = { 'Dog': 'PERRO', 'Cat': 'GATO', 'Bird': 'AVE', 'Rodent': 'ROEDOR', 'Reptile': 'REPTIL', 'Other': 'OTRO' };
+        return map[val] || 'OTRO';
+      };
+      const mapSexo = (val) => {
+        const map = { 'Male': 'MACHO', 'Female': 'HEMBRA' };
+        return map[val] || 'MACHO';
+      };
+      const mapCondicion = (val) => {
+        const map = { '1': 'MUY_DELGADO', '2': 'DELGADO', '3': 'IDEAL', '4': 'SOBREPESO', '5': 'OBESO' };
+        return map[val] || 'IDEAL';
+      };
+      const toBoolean = (val) => val === 'Yes' || val === true;
+      const toDatetimeOrNull = (val) => val ? new Date(val).toISOString() : null;
+      
+      // 2. Create pet associated with owner
       const petData = {
         ownerId: owner.id,
         nombre: newPatientData.nombre,
-        especie: newPatientData.especie,
+        especie: mapEspecie(newPatientData.especie),
         raza: newPatientData.raza || null,
-        sexo: newPatientData.sexo,
-        fechaNacimiento: newPatientData.fechaNacimiento || null,
-        peso: newPatientData.peso || null,
+        sexo: mapSexo(newPatientData.sexo),
+        fechaNacimiento: toDatetimeOrNull(newPatientData.fechaNacimiento),
+        peso: newPatientData.peso ? parseFloat(newPatientData.peso) : null,
         color: newPatientData.color || null,
-        condicionCorporal: newPatientData.condicionCorporal || '3',
+        condicionCorporal: mapCondicion(newPatientData.condicionCorporal),
         fotoUrl: newPatientData.fotoPreview || null, // Base64 encoded photo
         // Historial médico
         snapTest: newPatientData.snapTest || null,
         analisisClinicos: newPatientData.analisisClinicos || null,
         antecedentes: newPatientData.antecedentes || null,
         // Vacunas
-        desparasitacionExterna: newPatientData.desparasitacionExterna || false,
-        ultimaDesparasitacion: newPatientData.ultimaDesparasitacion || null,
-        vacunas: newPatientData.vacunas || null,
-        vacunasActualizadas: newPatientData.vacunasActualizadas || false,
-        ultimaVacuna: newPatientData.ultimaVacuna || null,
+        desparasitacionExterna: toBoolean(newPatientData.desparasitacionExterna),
+        ultimaDesparasitacion: toDatetimeOrNull(newPatientData.ultimaDesparasitacion),
+        vacunasTexto: newPatientData.vacunas || null,
+        vacunasActualizadas: toBoolean(newPatientData.vacunasActualizadas),
+        ultimaVacuna: toDatetimeOrNull(newPatientData.ultimaVacuna),
         // Cirugías
-        esterilizado: newPatientData.esterilizado,
-        otrasCirugias: newPatientData.otrasCirugias,
+        esterilizado: toBoolean(newPatientData.esterilizado),
+        otrasCirugias: toBoolean(newPatientData.otrasCirugias),
         detalleCirugias: newPatientData.detalleCirugias || null,
         // Alimentación
         alimento: newPatientData.alimento || null,
@@ -706,47 +722,47 @@ function RecepcionDashboard() {
         alergias: newPatientData.alergias || null,
         enfermedadesCronicas: newPatientData.enfermedadesCronicas || null,
         // Reproducción
-        ultimoCelo: newPatientData.ultimoCelo || null,
-        cantidadPartos: newPatientData.cantidadPartos || null,
-        ultimoParto: newPatientData.ultimoParto || null,
+        ultimoCelo: toDatetimeOrNull(newPatientData.ultimoCelo),
+        cantidadPartos: newPatientData.cantidadPartos ? parseInt(newPatientData.cantidadPartos) : null,
+        ultimoParto: toDatetimeOrNull(newPatientData.ultimoParto),
         // Estilo de vida
-        conviveOtrasMascotas: newPatientData.conviveOtrasMascotas,
+        conviveOtrasMascotas: toBoolean(newPatientData.conviveOtrasMascotas),
         cualesMascotas: newPatientData.cualesMascotas || null,
-        actividadFisica: newPatientData.actividadFisica,
+        actividadFisica: toBoolean(newPatientData.actividadFisica),
         frecuenciaActividad: newPatientData.frecuenciaActividad || null,
-        saleViaPublica: newPatientData.saleViaPublica,
+        saleViaPublica: toBoolean(newPatientData.saleViaPublica),
         frecuenciaSalida: newPatientData.frecuenciaSalida || null,
         otrosDatos: newPatientData.otrosDatos || null,
       };
       
-      console.log('[handleSubmitNewPatient] Creando mascota:', petData);
+      console.log('[handleSubmitNewPatient] Creating pet:', petData);
       const pet = await createPet(petData);
-      console.log('[handleSubmitNewPatient] Mascota creada:', pet);
+      console.log('[handleSubmitNewPatient] Pet created:', pet);
       
       if (!pet || !pet.id) {
-        throw new Error('No se pudo crear la mascota');
+        throw new Error('Could not create pet');
       }
       
-      // 3. Hacer check-in automático (crear visita)
-      console.log('[handleSubmitNewPatient] Haciendo check-in para pet:', pet.id);
+      // 3. Auto check-in (create visit)
+      console.log('[handleSubmitNewPatient] Checking in pet:', pet.id);
       const visit = await checkInPet(pet.id);
-      console.log('[handleSubmitNewPatient] Visita creada:', visit);
+      console.log('[handleSubmitNewPatient] Visit created:', visit);
       
-      // 4. Refrescar datos
-      console.log('[handleSubmitNewPatient] Refrescando datos...');
+      // 4. Refresh data
+      console.log('[handleSubmitNewPatient] Refreshing data...');
       await refreshData();
-      console.log('[handleSubmitNewPatient] Datos refrescados. Visitas actuales:', todayVisits);
+      console.log('[handleSubmitNewPatient] Data refreshed. Current visits:', todayVisits);
       
-      alert(`✅ Paciente registrado exitosamente!\n\n` +
-            `Propietario: ${owner.nombre}\n` +
-            `Mascota: ${pet.nombre}\n` +
-            `Ficha: ${pet.numeroFicha || 'Generada'}\n\n` +
-            `El paciente aparece en "Recién Llegados" y está listo para triage.`);
+      alert(`✅ Patient registered successfully!\n\n` +
+            `Owner: ${owner.nombre}\n` +
+            `Pet: ${pet.nombre}\n` +
+            `Record: ${pet.numeroFicha || 'Generated'}\n\n` +
+            `Patient appears in "New Arrivals" and is ready for triage.`);
       
-      // Cerrar modal 
+      // Close modal 
       setShowNewPatientModal(false);
       
-      // Resetear formulario
+      // Reset form
       setNewPatientData({
         propietario: '',
         direccion: '',
@@ -756,9 +772,9 @@ function RecepcionDashboard() {
         fotoPreview: null,
         nombre: '',
         fechaNacimiento: '',
-        sexo: 'Macho',
+        sexo: 'Male',
         peso: '',
-        especie: 'Perro',
+        especie: 'Dog',
         raza: '',
         color: '',
         condicionCorporal: '3',
@@ -791,12 +807,12 @@ function RecepcionDashboard() {
       });
       setMascotaWizardStep(1);
       
-      // Cambiar a sección de triage para ver el nuevo paciente
+      // Switch to triage section to see the new patient
       setActiveSection('triage');
       
     } catch (error) {
-      console.error('Error registrando paciente:', error);
-      alert(`❌ Error: ${error.message || 'No se pudo registrar el paciente'}`);
+      console.error('Error registering patient:', error);
+      alert(`❌ Error: ${error.message || 'Could not register patient'}`);
     }
   };
 
@@ -822,29 +838,29 @@ function RecepcionDashboard() {
         dischargeNotes: dischargeData.notas || ''
       });
 
-      // Programar seguimiento si hay fecha (opcional - se puede crear cita)
+      // Schedule follow-up if date exists (optional - can create appointment)
       if (dischargeData.fechaSeguimiento) {
         try {
-          // Usar selectedPatient.id que es el petId
+          // Use selectedPatient.id which is the petId
           await createAppointment({
-            petId: selectedPatient.id, // Este es el ID de la mascota
+            petId: selectedPatient.id, // This is the pet ID
             fecha: dischargeData.fechaSeguimiento,
             hora: dischargeData.horaSeguimiento || '10:00',
             tipo: 'SEGUIMIENTO',
-            motivo: `Seguimiento de visita - ${selectedPatient.motivo || 'Consulta'}`
+            motivo: `Follow-up visit - ${selectedPatient.motivo || 'Consultation'}`
           });
         } catch (err) {
-          console.error('Error creando cita de seguimiento:', err);
-          // No fallar la operación principal por esto
+          console.error('Error creating follow-up appointment:', err);
+          // Don't fail main operation for this
         }
       }
 
-      alert('✅ Paciente dado de alta exitosamente');
+      alert('✅ Patient discharged successfully');
       setShowDischargeModal(false);
       setSelectedPatient(null);
       await refreshData();
     } catch (error) {
-      console.error('Error procesando alta:', error);
+      console.error('Error processing discharge:', error);
       alert('❌ Error: ' + error.message);
     }
   };
@@ -1114,7 +1130,7 @@ function RecepcionDashboard() {
                         <div key={pet.id} className="pet-item">
                           <div className="pet-info">
                             <span className="pet-icon">
-                              {pet.especie === 'Perro' ? '🐕' : '🐈'}
+                              {pet.especie === 'Dog' ? '🐕' : '🐈'}
                             </span>
                             <div>
                               <strong>{pet.nombre}</strong>
@@ -1195,7 +1211,7 @@ function RecepcionDashboard() {
             {/* Contenido del paso actual */}
             <div className="wizard-content">
               
-              {/* PASO 1: DATOS DEL PROPIETARIO */}
+              {/* STEP 1: OWNER DATA */}
               {mascotaWizardStep === 1 && (
                 <div className="form-card wizard-card">
                   <h3>👤 {t('recepcion.newPatient.ownerInfo')}</h3>
@@ -1242,16 +1258,16 @@ function RecepcionDashboard() {
                 </div>
               )}
 
-              {/* PASO 2: DATOS DEL PACIENTE */}
+              {/* STEP 2: PATIENT DATA */}
               {mascotaWizardStep === 2 && (
                 <div className="form-card wizard-card">
                   <h3>🐾 {t('recepcion.newPatient.petInfo')}</h3>
                   
-                  {/* Foto de la mascota */}
+                  {/* Pet photo */}
                   <div className="foto-upload-container">
                     <div className="foto-preview">
                       {newPatientData.fotoPreview ? (
-                        <img src={newPatientData.fotoPreview} alt="Foto mascota" />
+                        <img src={newPatientData.fotoPreview} alt="Pet photo" />
                       ) : (
                         <div className="foto-placeholder">
                           <span>📷</span>
@@ -1279,24 +1295,24 @@ function RecepcionDashboard() {
                             }
                           }}
                         />
-                        📷 Seleccionar foto
+                        📷 Select photo
                       </label>
                     </div>
                   </div>
 
                   <div className="form-grid">
                     <div className="form-group">
-                      <label>Nombre: *</label>
+                      <label>{t('recepcion.patient.name')}: *</label>
                       <input
                         type="text"
                         value={newPatientData.nombre}
                         onChange={(e) => setNewPatientData({...newPatientData, nombre: e.target.value})}
-                        placeholder="Nombre de la mascota"
+                        placeholder="Pet name"
                         required
                       />
                     </div>
                     <div className="form-group">
-                      <label>Fecha de nacimiento:</label>
+                      <label>{t('recepcion.patient.birthDate')}:</label>
                       <input
                         type="date"
                         value={newPatientData.fechaNacimiento}
@@ -1304,17 +1320,17 @@ function RecepcionDashboard() {
                       />
                     </div>
                     <div className="form-group">
-                      <label>Sexo: *</label>
+                      <label>{t('recepcion.patient.sex')}: *</label>
                       <select
                         value={newPatientData.sexo}
                         onChange={(e) => setNewPatientData({...newPatientData, sexo: e.target.value})}
                       >
-                        <option value="Macho">Macho</option>
-                        <option value="Hembra">Hembra</option>
+                        <option value="Male">{t('recepcion.patient.male')}</option>
+                        <option value="Female">{t('recepcion.patient.female')}</option>
                       </select>
                     </div>
                     <div className="form-group">
-                      <label>Peso (kg):</label>
+                      <label>{t('recepcion.patient.weight')} (kg):</label>
                       <input
                         type="number"
                         step="0.1"
@@ -1324,74 +1340,74 @@ function RecepcionDashboard() {
                       />
                     </div>
                     <div className="form-group">
-                      <label>Especie: *</label>
+                      <label>{t('recepcion.patient.species')}: *</label>
                       <select
                         value={newPatientData.especie}
                         onChange={(e) => setNewPatientData({...newPatientData, especie: e.target.value})}
                       >
-                        <option value="Perro">Perro</option>
-                        <option value="Gato">Gato</option>
-                        <option value="Ave">Ave</option>
-                        <option value="Roedor">Roedor</option>
-                        <option value="Reptil">Reptil</option>
-                        <option value="Otro">Otro</option>
+                        <option value="Dog">{t('recepcion.species.dog')}</option>
+                        <option value="Cat">{t('recepcion.species.cat')}</option>
+                        <option value="Bird">{t('recepcion.species.bird')}</option>
+                        <option value="Rodent">{t('recepcion.species.rodent')}</option>
+                        <option value="Reptile">{t('recepcion.species.reptile')}</option>
+                        <option value="Other">{t('recepcion.species.other')}</option>
                       </select>
                     </div>
                     <div className="form-group">
-                      <label>Raza:</label>
+                      <label>{t('recepcion.patient.breed')}:</label>
                       <input
                         type="text"
                         value={newPatientData.raza}
                         onChange={(e) => setNewPatientData({...newPatientData, raza: e.target.value})}
-                        placeholder="Raza o mestizo"
+                        placeholder="Breed or mixed"
                       />
                     </div>
                     <div className="form-group">
-                      <label>Color:</label>
+                      <label>{t('recepcion.patient.color')}:</label>
                       <input
                         type="text"
                         value={newPatientData.color}
                         onChange={(e) => setNewPatientData({...newPatientData, color: e.target.value})}
-                        placeholder="Color del pelaje"
+                        placeholder="Coat color"
                       />
                     </div>
                     <div className="form-group">
-                      <label>Condición Corporal (1-5):</label>
+                      <label>{t('recepcion.patient.bodyCondition')} (1-5):</label>
                       <select
                         value={newPatientData.condicionCorporal}
                         onChange={(e) => setNewPatientData({...newPatientData, condicionCorporal: e.target.value})}
                       >
-                        <option value="1">1 - Muy delgado</option>
-                        <option value="2">2 - Delgado</option>
+                        <option value="1">1 - Very thin</option>
+                        <option value="2">2 - Thin</option>
                         <option value="3">3 - Ideal</option>
-                        <option value="4">4 - Sobrepeso</option>
-                        <option value="5">5 - Obeso</option>
+                        <option value="4">4 - Overweight</option>
+                        <option value="5">5 - Obese</option>
                       </select>
                     </div>
                   </div>
                 </div>
               )}
 
-              {/* PASO 3: HISTORIAL MÉDICO */}
+              {/* STEP 3: MEDICAL HISTORY */}
               {mascotaWizardStep === 3 && (
                 <div className="form-card wizard-card">
-                  <h3>📋 Historial Médico</h3>
+                  <h3>📋 {t('recepcion.newPatient.medicalHistory')}</h3>
                   <div className="form-grid">
                     <div className="form-group full-width">
-                      <label>Snap Test:</label>
+                      <label>{t('recepcion.medicalHistory.snapTest')}:</label>
                       <input
                         type="text"
                         value={newPatientData.snapTest}
                         onChange={(e) => setNewPatientData({...newPatientData, snapTest: e.target.value})}
-                        placeholder="Resultados de Snap Test"
+                        placeholder="Snap Test results"
                       />
                     </div>
                     <div className="form-group full-width">
-                      <label>Análisis clínicos:</label>
+                      <label>{t('recepcion.medicalHistory.clinicalAnalysis')}:</label>
                       <textarea
                         value={newPatientData.analisisClinicos}
                         onChange={(e) => setNewPatientData({...newPatientData, analisisClinicos: e.target.value})}
-                        placeholder="Resultados de análisis clínicos previos"
+                        placeholder="Previous clinical analysis results"
                         rows={4}
                       />
                     </div>
@@ -1399,10 +1415,10 @@ function RecepcionDashboard() {
                 </div>
               )}
 
-              {/* PASO 4: DESPARASITACIONES Y VACUNAS */}
+              {/* STEP 4: DEWORMING AND VACCINES */}
               {mascotaWizardStep === 4 && (
                 <div className="form-card wizard-card">
-                  <h3>💉 Desparasitaciones y Vacunas</h3>
+                  <h3>💉 {t('recepcion.newPatient.vaccines')}</h3>
                   <div className="form-grid">
                     <div className="form-group checkbox-group">
                       <label className="checkbox-inline">
@@ -1411,11 +1427,11 @@ function RecepcionDashboard() {
                           checked={newPatientData.desparasitacionExterna}
                           onChange={(e) => setNewPatientData({...newPatientData, desparasitacionExterna: e.target.checked})}
                         />
-                        Desparasitación externa
+                        {t('recepcion.medicalHistory.externalDeworming')}
                       </label>
                     </div>
                     <div className="form-group">
-                      <label>Última aplicación:</label>
+                      <label>{t('recepcion.medicalHistory.lastDeworming')}:</label>
                       <input
                         type="date"
                         value={newPatientData.ultimaDesparasitacion}
@@ -1423,11 +1439,11 @@ function RecepcionDashboard() {
                       />
                     </div>
                     <div className="form-group full-width">
-                      <label>Vacunas:</label>
+                      <label>{t('recepcion.medicalHistory.vaccines')}:</label>
                       <textarea
                         value={newPatientData.vacunas}
                         onChange={(e) => setNewPatientData({...newPatientData, vacunas: e.target.value})}
-                        placeholder="Lista de vacunas aplicadas"
+                        placeholder="List of applied vaccines"
                         rows={3}
                       />
                     </div>
@@ -1438,11 +1454,11 @@ function RecepcionDashboard() {
                           checked={newPatientData.vacunasActualizadas}
                           onChange={(e) => setNewPatientData({...newPatientData, vacunasActualizadas: e.target.checked})}
                         />
-                        Vacunas al día
+                        {t('recepcion.medicalHistory.vaccinesUpToDate')}
                       </label>
                     </div>
                     <div className="form-group">
-                      <label>Última vacuna:</label>
+                      <label>{t('recepcion.medicalHistory.lastVaccine')}:</label>
                       <input
                         type="date"
                         value={newPatientData.ultimaVacuna}
@@ -1453,23 +1469,23 @@ function RecepcionDashboard() {
                 </div>
               )}
 
-              {/* PASO 5: CIRUGÍAS Y TRATAMIENTOS */}
+              {/* STEP 5: SURGERIES AND TREATMENTS */}
               {mascotaWizardStep === 5 && (
                 <div className="form-card wizard-card">
-                  <h3>🏥 Cirugías y Tratamientos</h3>
+                  <h3>🏥 {t('recepcion.newPatient.surgeries')}</h3>
                   <div className="form-grid">
                     <div className="form-group">
-                      <label>¿Esterilizado?</label>
+                      <label>{t('recepcion.surgeries.sterilized')}?</label>
                       <div className="radio-group">
                         <label className="radio-inline">
                           <input
                             type="radio"
                             name="esterilizado"
-                            value="Si"
-                            checked={newPatientData.esterilizado === 'Si'}
+                            value="Yes"
+                            checked={newPatientData.esterilizado === 'Yes'}
                             onChange={(e) => setNewPatientData({...newPatientData, esterilizado: e.target.value})}
                           />
-                          Sí
+                          {t('common.yes')}
                         </label>
                         <label className="radio-inline">
                           <input
@@ -1479,22 +1495,22 @@ function RecepcionDashboard() {
                             checked={newPatientData.esterilizado === 'No'}
                             onChange={(e) => setNewPatientData({...newPatientData, esterilizado: e.target.value})}
                           />
-                          No
+                          {t('common.no')}
                         </label>
                       </div>
                     </div>
                     <div className="form-group">
-                      <label>¿Otras cirugías?</label>
+                      <label>{t('recepcion.surgeries.otherSurgeries')}?</label>
                       <div className="radio-group">
                         <label className="radio-inline">
                           <input
                             type="radio"
                             name="otrasCirugias"
-                            value="Si"
-                            checked={newPatientData.otrasCirugias === 'Si'}
+                            value="Yes"
+                            checked={newPatientData.otrasCirugias === 'Yes'}
                             onChange={(e) => setNewPatientData({...newPatientData, otrasCirugias: e.target.value})}
                           />
-                          Sí
+                          {t('common.yes')}
                         </label>
                         <label className="radio-inline">
                           <input
@@ -1504,30 +1520,30 @@ function RecepcionDashboard() {
                             checked={newPatientData.otrasCirugias === 'No'}
                             onChange={(e) => setNewPatientData({...newPatientData, otrasCirugias: e.target.value})}
                           />
-                          No
+                          {t('common.no')}
                         </label>
                       </div>
                     </div>
-                    {newPatientData.otrasCirugias === 'Si' && (
+                    {newPatientData.otrasCirugias === 'Yes' && (
                       <div className="form-group full-width">
-                        <label>Detalle de cirugías:</label>
+                        <label>{t('recepcion.surgeries.surgeryDetails')}:</label>
                         <textarea
                           value={newPatientData.detalleCirugias}
                           onChange={(e) => setNewPatientData({...newPatientData, detalleCirugias: e.target.value})}
-                          placeholder="Describa las cirugías previas"
+                          placeholder="Describe previous surgeries"
                           rows={3}
                         />
                       </div>
                     )}
                   </div>
 
-                  {/* Info reproductiva solo para hembras */}
-                  {newPatientData.sexo === 'Hembra' && (
+                  {/* Reproductive info for females only */}
+                  {newPatientData.sexo === 'Female' && (
                     <>
-                      <h4 className="subsection-title">🎀 Información Reproductiva</h4>
+                      <h4 className="subsection-title">🎀 Reproductive Information</h4>
                       <div className="form-grid">
                         <div className="form-group">
-                          <label>Último celo:</label>
+                          <label>{t('recepcion.reproductive.lastHeat')}:</label>
                           <input
                             type="date"
                             value={newPatientData.ultimoCelo}
@@ -1535,7 +1551,7 @@ function RecepcionDashboard() {
                           />
                         </div>
                         <div className="form-group">
-                          <label>Cantidad de partos:</label>
+                          <label>{t('recepcion.reproductive.numberOfBirths')}:</label>
                           <input
                             type="number"
                             min="0"
@@ -1545,7 +1561,7 @@ function RecepcionDashboard() {
                           />
                         </div>
                         <div className="form-group">
-                          <label>Último parto:</label>
+                          <label>{t('recepcion.reproductive.lastBirth')}:</label>
                           <input
                             type="date"
                             value={newPatientData.ultimoParto}
@@ -1558,62 +1574,62 @@ function RecepcionDashboard() {
                 </div>
               )}
 
-              {/* PASO 6: ALIMENTACIÓN Y PATOLOGÍAS */}
+              {/* STEP 6: FEEDING AND PATHOLOGIES */}
               {mascotaWizardStep === 6 && (
                 <div className="form-card wizard-card">
-                  <h3>🍖 Alimentación y Patologías</h3>
+                  <h3>🍖 {t('recepcion.newPatient.feeding')} & {t('recepcion.allergies.title')}</h3>
                   <div className="form-grid">
                     <div className="form-group">
-                      <label>Alimento:</label>
+                      <label>{t('recepcion.feeding.food')}:</label>
                       <input
                         type="text"
                         value={newPatientData.alimento}
                         onChange={(e) => setNewPatientData({...newPatientData, alimento: e.target.value})}
-                        placeholder="Marca/tipo de alimento"
+                        placeholder="Brand/type of food"
                       />
                     </div>
                     <div className="form-group">
-                      <label>Porciones por día:</label>
+                      <label>{t('recepcion.feeding.portionsPerDay')}:</label>
                       <input
                         type="text"
                         value={newPatientData.porcionesPorDia}
                         onChange={(e) => setNewPatientData({...newPatientData, porcionesPorDia: e.target.value})}
-                        placeholder="Ej: 2 tazas"
+                        placeholder="e.g., 2 cups"
                       />
                     </div>
                     <div className="form-group">
-                      <label>Otros alimentos:</label>
+                      <label>{t('recepcion.feeding.otherFoods')}:</label>
                       <input
                         type="text"
                         value={newPatientData.otrosAlimentos}
                         onChange={(e) => setNewPatientData({...newPatientData, otrosAlimentos: e.target.value})}
-                        placeholder="Premios, sobras, etc."
+                        placeholder="Treats, scraps, etc."
                       />
                     </div>
                     <div className="form-group">
-                      <label>Frecuencia:</label>
+                      <label>{t('recepcion.feeding.frequency')}:</label>
                       <input
                         type="text"
                         value={newPatientData.frecuenciaOtrosAlimentos}
                         onChange={(e) => setNewPatientData({...newPatientData, frecuenciaOtrosAlimentos: e.target.value})}
-                        placeholder="Diario, semanal, etc."
+                        placeholder="Daily, weekly, etc."
                       />
                     </div>
                     <div className="form-group full-width">
-                      <label>Alergias:</label>
+                      <label>{t('recepcion.allergies.title')}:</label>
                       <input
                         type="text"
                         value={newPatientData.alergias}
                         onChange={(e) => setNewPatientData({...newPatientData, alergias: e.target.value})}
-                        placeholder="Alergias conocidas"
+                        placeholder="Known allergies"
                       />
                     </div>
                     <div className="form-group full-width">
-                      <label>Enfermedades crónicas:</label>
+                      <label>{t('recepcion.allergies.chronicDiseases')}:</label>
                       <textarea
                         value={newPatientData.enfermedadesCronicas}
                         onChange={(e) => setNewPatientData({...newPatientData, enfermedadesCronicas: e.target.value})}
-                        placeholder="Condiciones médicas crónicas"
+                        placeholder="Chronic medical conditions"
                         rows={3}
                       />
                     </div>
@@ -1621,23 +1637,23 @@ function RecepcionDashboard() {
                 </div>
               )}
 
-              {/* PASO 7: OTROS DATOS */}
+              {/* STEP 7: OTHER DATA */}
               {mascotaWizardStep === 7 && (
                 <div className="form-card wizard-card">
-                  <h3>📝 Otros Datos</h3>
+                  <h3>📝 {t('recepcion.lifestyle.otherData')}</h3>
                   <div className="form-grid">
                     <div className="form-group">
-                      <label>¿Convive con otras mascotas?</label>
+                      <label>{t('recepcion.lifestyle.livesWithOtherPets')}?</label>
                       <div className="radio-group">
                         <label className="radio-inline">
                           <input
                             type="radio"
                             name="conviveOtrasMascotas"
-                            value="Si"
-                            checked={newPatientData.conviveOtrasMascotas === 'Si'}
+                            value="Yes"
+                            checked={newPatientData.conviveOtrasMascotas === 'Yes'}
                             onChange={(e) => setNewPatientData({...newPatientData, conviveOtrasMascotas: e.target.value})}
                           />
-                          Sí
+                          {t('common.yes')}
                         </label>
                         <label className="radio-inline">
                           <input
@@ -1647,33 +1663,33 @@ function RecepcionDashboard() {
                             checked={newPatientData.conviveOtrasMascotas === 'No'}
                             onChange={(e) => setNewPatientData({...newPatientData, conviveOtrasMascotas: e.target.value})}
                           />
-                          No
+                          {t('common.no')}
                         </label>
                       </div>
                     </div>
-                    {newPatientData.conviveOtrasMascotas === 'Si' && (
+                    {newPatientData.conviveOtrasMascotas === 'Yes' && (
                       <div className="form-group">
-                        <label>¿Cuáles?</label>
+                        <label>{t('recepcion.lifestyle.whichPets')}</label>
                         <input
                           type="text"
                           value={newPatientData.cualesMascotas}
                           onChange={(e) => setNewPatientData({...newPatientData, cualesMascotas: e.target.value})}
-                          placeholder="Perros, gatos, etc."
+                          placeholder="Dogs, cats, etc."
                         />
                       </div>
                     )}
                     <div className="form-group">
-                      <label>¿Realiza actividad física?</label>
+                      <label>{t('recepcion.lifestyle.physicalActivity')}?</label>
                       <div className="radio-group">
                         <label className="radio-inline">
                           <input
                             type="radio"
                             name="actividadFisica"
-                            value="Si"
-                            checked={newPatientData.actividadFisica === 'Si'}
+                            value="Yes"
+                            checked={newPatientData.actividadFisica === 'Yes'}
                             onChange={(e) => setNewPatientData({...newPatientData, actividadFisica: e.target.value})}
                           />
-                          Sí
+                          {t('common.yes')}
                         </label>
                         <label className="radio-inline">
                           <input
@@ -1683,33 +1699,33 @@ function RecepcionDashboard() {
                             checked={newPatientData.actividadFisica === 'No'}
                             onChange={(e) => setNewPatientData({...newPatientData, actividadFisica: e.target.value})}
                           />
-                          No
+                          {t('common.no')}
                         </label>
                       </div>
                     </div>
-                    {newPatientData.actividadFisica === 'Si' && (
+                    {newPatientData.actividadFisica === 'Yes' && (
                       <div className="form-group">
-                        <label>Frecuencia:</label>
+                        <label>{t('recepcion.lifestyle.activityFrequency')}:</label>
                         <input
                           type="text"
                           value={newPatientData.frecuenciaActividad}
                           onChange={(e) => setNewPatientData({...newPatientData, frecuenciaActividad: e.target.value})}
-                          placeholder="Diario, 3 veces/semana, etc."
+                          placeholder="Daily, 3 times/week, etc."
                         />
                       </div>
                     )}
                     <div className="form-group">
-                      <label>¿Sale a la vía pública?</label>
+                      <label>{t('recepcion.lifestyle.goesOutside')}?</label>
                       <div className="radio-group">
                         <label className="radio-inline">
                           <input
                             type="radio"
                             name="saleViaPublica"
-                            value="Si"
-                            checked={newPatientData.saleViaPublica === 'Si'}
+                            value="Yes"
+                            checked={newPatientData.saleViaPublica === 'Yes'}
                             onChange={(e) => setNewPatientData({...newPatientData, saleViaPublica: e.target.value})}
                           />
-                          Sí
+                          {t('common.yes')}
                         </label>
                         <label className="radio-inline">
                           <input
@@ -1719,27 +1735,27 @@ function RecepcionDashboard() {
                             checked={newPatientData.saleViaPublica === 'No'}
                             onChange={(e) => setNewPatientData({...newPatientData, saleViaPublica: e.target.value})}
                           />
-                          No
+                          {t('common.no')}
                         </label>
                       </div>
                     </div>
-                    {newPatientData.saleViaPublica === 'Si' && (
+                    {newPatientData.saleViaPublica === 'Yes' && (
                       <div className="form-group">
-                        <label>Frecuencia:</label>
+                        <label>{t('recepcion.lifestyle.outingFrequency')}:</label>
                         <input
                           type="text"
                           value={newPatientData.frecuenciaSalida}
                           onChange={(e) => setNewPatientData({...newPatientData, frecuenciaSalida: e.target.value})}
-                          placeholder="Paseos diarios, etc."
+                          placeholder="Daily walks, etc."
                         />
                       </div>
                     )}
                     <div className="form-group full-width">
-                      <label>Otros datos/comentarios:</label>
+                      <label>{t('recepcion.lifestyle.otherData')}:</label>
                       <textarea
                         value={newPatientData.otrosDatos}
                         onChange={(e) => setNewPatientData({...newPatientData, otrosDatos: e.target.value})}
-                        placeholder="Información adicional relevante"
+                        placeholder="Additional relevant information"
                         rows={4}
                       />
                     </div>
@@ -1805,10 +1821,10 @@ function RecepcionDashboard() {
                         )}
                       </div>
                       <div className="appointment-body">
-                        <h4>{cita.pacienteNombre || cita.paciente || 'Sin nombre'}</h4>
-                        <p><strong>{t('recepcion.patient.owner')}:</strong> {cita.propietario || 'No especificado'}</p>
+                        <h4>{cita.pacienteNombre || cita.paciente || 'No name'}</h4>
+                        <p><strong>{t('recepcion.patient.owner')}:</strong> {cita.propietario || 'Not specified'}</p>
                         <p><strong>{t('recepcion.appointments.type')}:</strong> {(cita.tipo || 'CONSULTA_GENERAL').replace(/_/g, ' ')}</p>
-                        <p><strong>{t('recepcion.triage.reason')}:</strong> {cita.motivo || 'No especificado'}</p>
+                        <p><strong>{t('recepcion.triage.reason')}:</strong> {cita.motivo || 'Not specified'}</p>
                       </div>
                       <div className="appointment-actions">
                         <button className="btn-icon" title={t('recepcion.actions.call')} onClick={() => handleCallPatient(cita.telefono || '555-0000')}>📞</button>
@@ -1822,10 +1838,10 @@ function RecepcionDashboard() {
                               try {
                                 await checkInPet(cita.pacienteId);
                                 await refreshData();
-                                alert(`✅ Check-in realizado para ${cita.pacienteNombre}\nEl paciente está listo para triage.`);
+                                alert(`✅ Check-in completed for ${cita.pacienteNombre}\nThe patient is ready for triage.`);
                                 setActiveSection('triage');
                               } catch (err) {
-                                alert('Error en check-in: ' + (err.message || 'Intenta de nuevo'));
+                                alert('Check-in error: ' + (err.message || 'Please try again'));
                               }
                             }}
                           >
@@ -1874,7 +1890,7 @@ function RecepcionDashboard() {
                           {patient.fotoUrl ? (
                             <img src={patient.fotoUrl} alt={patient.nombre} className="patient-avatar-photo-small" />
                           ) : (
-                            patient.especie === 'PERRO' ? '🐕' : patient.especie === 'GATO' ? '🐈' : '🐾'
+                            patient.especie === 'DOG' ? '🐕' : patient.especie === 'CAT' ? '🐈' : '🐾'
                           )}
                         </div>
                         <div>
@@ -1905,12 +1921,12 @@ function RecepcionDashboard() {
                             <strong>{need.reason}</strong>
                             {need.lastDate && (
                               <span className="text-small need-date">
-                                Última: {new Date(need.lastDate).toLocaleDateString()}
+                                Last: {new Date(need.lastDate).toLocaleDateString()}
                               </span>
                             )}
                             {need.scheduledDate && (
                               <span className="text-small need-date scheduled">
-                                Programada: {new Date(need.scheduledDate).toLocaleDateString()}
+                                Scheduled: {new Date(need.scheduledDate).toLocaleDateString()}
                               </span>
                             )}
                           </li>
@@ -1923,9 +1939,9 @@ function RecepcionDashboard() {
                         className="btn-action"
                         onClick={() => window.open(`tel:${patient.telefono}`, '_self')}
                       >
-                        📞 Llamar
+                        📞 Call
                       </button>
-                      <button className="btn-action" onClick={() => handleViewExpediente(patient)}>📄 Expediente</button>
+                      <button className="btn-action" onClick={() => handleViewExpediente(patient)}>📄 Record</button>
                     </div>
                   </div>
                 ))}
@@ -1933,8 +1949,8 @@ function RecepcionDashboard() {
             ) : (
               <div className="empty-state">
                 <span className="empty-icon">✅</span>
-                <p>No hay pacientes con medicina preventiva pendiente</p>
-                <p className="text-small">Los pacientes con vacunas o desparasitaciones vencidas aparecerán aquí</p>
+                <p>No patients with pending preventive medicine</p>
+                <p className="text-small">Patients with expired vaccinations or dewormings will appear here</p>
               </div>
             )}
           </div>
@@ -1952,7 +1968,7 @@ function RecepcionDashboard() {
                           {patient.fotoUrl ? (
                             <img src={patient.fotoUrl} alt={patient.nombre} className="patient-avatar-photo-small" />
                           ) : (
-                            patient.especie === 'Perro' ? '🐕' : '🐈'
+                            patient.especie === 'Dog' ? '🐕' : '🐈'
                           )}
                         </div>
                         <div>
@@ -2003,7 +2019,7 @@ function RecepcionDashboard() {
               {filteredPatients.length === 0 ? (
                 <div className="empty-state">
                   <span className="empty-icon">🐾</span>
-                  <p>{t('recepcion.messages.noRecentArrivals', 'No hay pacientes registrados')}</p>
+                  <p>{t('recepcion.messages.noRecentArrivals', 'No registered patients')}</p>
                 </div>
               ) : (
                 filteredPatients.map(patient => (
@@ -2018,7 +2034,7 @@ function RecepcionDashboard() {
                           />
                         ) : (
                           <span className="patient-avatar-emoji">
-                            {patient.especie === 'Perro' ? '🐕' : patient.especie === 'Gato' ? '🐈' : '🐾'}
+                            {patient.especie === 'Dog' ? '🐕' : patient.especie === 'Cat' ? '🐈' : '🐾'}
                           </span>
                         )}
                         <span className={`status-dot ${patient.estado?.toLowerCase().replace(/_/g, '-')}`}></span>
@@ -2038,7 +2054,7 @@ function RecepcionDashboard() {
                         <button 
                           className="btn-card-action secondary"
                           onClick={() => handleEditPhoto(patient)}
-                          title="Editar Foto"
+                          title="Edit Photo"
                         >
                           📷
                         </button>
@@ -2046,7 +2062,7 @@ function RecepcionDashboard() {
                           <button 
                             className="btn-card-action warning"
                             onClick={() => handleStartTriage(patient)}
-                            title="Iniciar Triage"
+                            title="Start Triage"
                           >
                             🩺
                           </button>
@@ -2055,7 +2071,7 @@ function RecepcionDashboard() {
                           <button 
                             className="btn-card-action success"
                             onClick={() => handleStartDischarge(patient)}
-                            title="Procesar Alta"
+                            title="Process Discharge"
                           >
                             ✅
                           </button>
@@ -2066,7 +2082,7 @@ function RecepcionDashboard() {
                     <div className="patient-card-info">
                       <div className="info-item">
                         <span className="info-icon">🧬</span>
-                        <span className="info-text">{patient.raza || 'Sin raza'}</span>
+                        <span className="info-text">{patient.raza || 'No breed'}</span>
                       </div>
                       <div className="info-item">
                         <span className="info-icon">👤</span>
@@ -2112,7 +2128,7 @@ function RecepcionDashboard() {
                           {patient.fotoUrl ? (
                             <img src={patient.fotoUrl} alt={patient.nombre} className="patient-avatar-photo-small" />
                           ) : (
-                            patient.especie === 'Perro' ? '🐕' : '🐈'
+                            patient.especie === 'Dog' ? '🐕' : '🐈'
                           )}
                         </div>
                         <div>
@@ -2461,19 +2477,19 @@ function RecepcionDashboard() {
                 </div>
               )}
 
-              {/* HISTORIAL DE CONSULTAS DESDE LA API */}
+              {/* CONSULTATION HISTORY FROM API */}
               <div className="expediente-section historial-section">
-                <h3>📋 Historial de Consultas</h3>
+                <h3>📋 {t('recepcion.expediente.consultHistory')}</h3>
                 
                 {loadingHistorial ? (
                   <div className="loading-historial">
                     <div className="spinner"></div>
-                    <p>Cargando historial médico...</p>
+                    <p>{t('common.loading')}</p>
                   </div>
                 ) : getFormattedHistorial().length === 0 ? (
                   <div className="empty-historial">
                     <span>📭</span>
-                    <p>No hay consultas registradas para este paciente</p>
+                    <p>No consultations recorded for this patient</p>
                   </div>
                 ) : (
                   <div className="consultas-timeline">
@@ -2488,13 +2504,13 @@ function RecepcionDashboard() {
                           </div>
                           <div className="consulta-info">
                             <span className="consulta-tipo">
-                              {item.tipo === 'consulta' && 'Consulta'}
-                              {item.tipo === 'hospitalizacion' && 'Hospitalización'}
-                              {item.tipo === 'cirugia' && 'Cirugía'}
-                              {item.tipo === 'vacuna' && `Vacuna: ${item.nombre}`}
+                              {item.tipo === 'consulta' && 'Consultation'}
+                              {item.tipo === 'hospitalizacion' && 'Hospitalization'}
+                              {item.tipo === 'cirugia' && 'Surgery'}
+                              {item.tipo === 'vacuna' && `Vaccine: ${item.nombre}`}
                             </span>
                             <span className="consulta-fecha">
-                              {new Date(item.timestamp).toLocaleDateString('es-MX', { 
+                              {new Date(item.timestamp).toLocaleDateString('en-US', { 
                                 day: 'numeric', 
                                 month: 'short', 
                                 year: 'numeric',
@@ -2511,23 +2527,23 @@ function RecepcionDashboard() {
                             {/* SOAP Notes */}
                             {(item.soap?.subjetivo || item.soap?.objetivo || item.soap?.analisis || item.soap?.plan) && (
                               <div className="soap-section">
-                                <h5>Notas SOAP</h5>
+                                <h5>SOAP Notes</h5>
                                 <div className="soap-grid">
                                   {item.soap.subjetivo && (
                                     <div className="soap-item">
-                                      <span className="soap-label">S - Subjetivo:</span>
+                                      <span className="soap-label">S - Subjective:</span>
                                       <p>{item.soap.subjetivo}</p>
                                     </div>
                                   )}
                                   {item.soap.objetivo && (
                                     <div className="soap-item">
-                                      <span className="soap-label">O - Objetivo:</span>
+                                      <span className="soap-label">O - Objective:</span>
                                       <p>{item.soap.objetivo}</p>
                                     </div>
                                   )}
                                   {item.soap.analisis && (
                                     <div className="soap-item">
-                                      <span className="soap-label">A - Análisis:</span>
+                                      <span className="soap-label">A - Assessment:</span>
                                       <p>{item.soap.analisis}</p>
                                     </div>
                                   )}
@@ -2541,23 +2557,23 @@ function RecepcionDashboard() {
                               </div>
                             )}
                             
-                            {/* Signos Vitales */}
+                            {/* Vital Signs */}
                             {item.signosVitales && (
                               <div className="vitales-section">
-                                <h5>🌡️ Signos Vitales</h5>
+                                <h5>🌡️ Vital Signs</h5>
                                 <div className="vitales-grid">
                                   {item.signosVitales.temperatura && <span>Temp: {item.signosVitales.temperatura}°C</span>}
-                                  {item.signosVitales.frecuenciaCardiaca && <span>FC: {item.signosVitales.frecuenciaCardiaca} bpm</span>}
-                                  {item.signosVitales.frecuenciaRespiratoria && <span>FR: {item.signosVitales.frecuenciaRespiratoria} rpm</span>}
-                                  {item.signosVitales.peso && <span>Peso: {item.signosVitales.peso} kg</span>}
+                                  {item.signosVitales.frecuenciaCardiaca && <span>HR: {item.signosVitales.frecuenciaCardiaca} bpm</span>}
+                                  {item.signosVitales.frecuenciaRespiratoria && <span>RR: {item.signosVitales.frecuenciaRespiratoria} rpm</span>}
+                                  {item.signosVitales.peso && <span>Weight: {item.signosVitales.peso} kg</span>}
                                 </div>
                               </div>
                             )}
                             
-                            {/* Diagnósticos */}
+                            {/* Diagnoses */}
                             {item.diagnosticos && item.diagnosticos.length > 0 && (
                               <div className="diagnosticos-section">
-                                <h5>🔍 Diagnósticos</h5>
+                                <h5>🔍 Diagnoses</h5>
                                 <ul>
                                   {item.diagnosticos.map((d, i) => (
                                     <li key={i}>
@@ -2570,17 +2586,17 @@ function RecepcionDashboard() {
                               </div>
                             )}
                             
-                            {/* Recetas */}
+                            {/* Prescriptions */}
                             {item.recetas && item.recetas.length > 0 && (
                               <div className="recetas-section">
-                                <h5>💊 Medicamentos Recetados</h5>
+                                <h5>💊 Prescribed Medications</h5>
                                 {item.recetas.map((receta, ri) => (
                                   <ul key={ri}>
                                     {receta.items.map((med, mi) => (
                                       <li key={mi}>
                                         <strong>{med.medicamento}</strong> - {med.dosis}
-                                        {med.frecuencia && <span> cada {med.frecuencia}</span>}
-                                        {med.duracion && <span> por {med.duracion}</span>}
+                                        {med.frecuencia && <span> every {med.frecuencia}</span>}
+                                        {med.duracion && <span> for {med.duracion}</span>}
                                       </li>
                                     ))}
                                   </ul>
@@ -2588,10 +2604,10 @@ function RecepcionDashboard() {
                               </div>
                             )}
                             
-                            {/* Laboratorios */}
+                            {/* Laboratory Tests */}
                             {item.laboratorios && item.laboratorios.length > 0 && (
                               <div className="labs-section">
-                                <h5>🔬 Estudios de Laboratorio</h5>
+                                <h5>🔬 Laboratory Tests</h5>
                                 <ul>
                                   {item.laboratorios.map((lab, li) => (
                                     <li key={li}>
@@ -2608,22 +2624,22 @@ function RecepcionDashboard() {
                         
                         {item.tipo === 'hospitalizacion' && (
                           <div className="consulta-detalles">
-                            <p><strong>Motivo:</strong> {item.motivo}</p>
-                            {item.fechaAlta && <p><strong>Alta:</strong> {new Date(item.fechaAlta).toLocaleDateString()}</p>}
+                            <p><strong>Reason:</strong> {item.motivo}</p>
+                            {item.fechaAlta && <p><strong>Discharge:</strong> {new Date(item.fechaAlta).toLocaleDateString()}</p>}
                           </div>
                         )}
                         
                         {item.tipo === 'cirugia' && (
                           <div className="consulta-detalles">
-                            <p><strong>Procedimiento:</strong> {item.procedimiento}</p>
+                            <p><strong>Procedure:</strong> {item.procedimiento}</p>
                             <span className={`badge status-${item.status?.toLowerCase()}`}>{item.status}</span>
                           </div>
                         )}
                         
                         {item.tipo === 'vacuna' && (
                           <div className="consulta-detalles">
-                            {item.lote && <p><strong>Lote:</strong> {item.lote}</p>}
-                            {item.proximaDosis && <p><strong>Próxima dosis:</strong> {new Date(item.proximaDosis).toLocaleDateString()}</p>}
+                            {item.lote && <p><strong>Batch:</strong> {item.lote}</p>}
+                            {item.proximaDosis && <p><strong>Next dose:</strong> {new Date(item.proximaDosis).toLocaleDateString()}</p>}
                           </div>
                         )}
                       </div>
@@ -2651,13 +2667,13 @@ function RecepcionDashboard() {
               <div className="form-section">
                 <h3>{t('recepcion.appointments.patientInfo')}</h3>
                 
-                {/* Búsqueda por nombre de mascota */}
+                {/* Search by pet name */}
                 <div className="form-group">
-                  <label>🐾 Buscar mascota por nombre, ficha o propietario</label>
+                  <label>🐾 Search pet by name, record or owner</label>
                   <div className="search-row" style={{ display: 'flex', gap: '0.5rem' }}>
                     <input
                       type="text"
-                      placeholder="Ej: Max, Luna, Firulais..."
+                      placeholder="e.g., Max, Luna, Buddy..."
                       value={petSearchQuery}
                       onChange={(e) => handleSearchPets(e.target.value)}
                       style={{ flex: 1 }}
@@ -2698,11 +2714,11 @@ function RecepcionDashboard() {
                           <div>
                             <strong>{pet.nombre}</strong>
                             <span style={{ marginLeft: '0.5rem', color: '#666' }}>
-                              ({pet.especie} - {pet.raza || 'Sin raza'})
+                              ({pet.especie} - {pet.raza || 'No breed'})
                             </span>
                           </div>
                           <div style={{ fontSize: '0.85rem', color: '#888' }}>
-                            {pet.owner?.nombre || 'Sin propietario'} • {pet.numeroFicha || 'Sin ficha'}
+                            {pet.owner?.nombre || 'No owner'} • {pet.numeroFicha || 'No record'}
                           </div>
                         </div>
                       ))}
@@ -2711,24 +2727,24 @@ function RecepcionDashboard() {
                   
                   {petSearchQuery.length >= 2 && petSearchResults.length === 0 && (
                     <div style={{ padding: '0.5rem', color: '#666', fontStyle: 'italic' }}>
-                      No se encontraron mascotas con "{petSearchQuery}"
+                      No pets found with "{petSearchQuery}"
                     </div>
                   )}
                 </div>
 
                 <div style={{ display: 'flex', alignItems: 'center', margin: '1rem 0', color: '#888' }}>
                   <div style={{ flex: 1, borderBottom: '1px solid #ddd' }}></div>
-                  <span style={{ padding: '0 1rem' }}>o</span>
+                  <span style={{ padding: '0 1rem' }}>or</span>
                   <div style={{ flex: 1, borderBottom: '1px solid #ddd' }}></div>
                 </div>
 
-                {/* Búsqueda por teléfono */}
+                {/* Phone search */}
                 <div className="form-group">
-                  <label>📞 Buscar por teléfono del propietario</label>
+                  <label>📞 Search by owner phone</label>
                   <div className="search-row" style={{ display: 'flex', gap: '0.5rem' }}>
                     <input
                       type="tel"
-                      placeholder="Ingrese teléfono..."
+                      placeholder="Enter phone..."
                       value={newAppointmentData.telefonoBusqueda || ''}
                       onChange={(e) => setNewAppointmentData({
                         ...newAppointmentData, 
@@ -2742,22 +2758,22 @@ function RecepcionDashboard() {
                         if (newAppointmentData.telefonoBusqueda?.length >= 8) {
                           const result = await searchOwnerByPhone(newAppointmentData.telefonoBusqueda);
                           if (!result) {
-                            alert('No se encontró cliente con ese teléfono');
+                            alert('No client found with that phone number');
                           }
                         } else {
-                          alert('Ingrese al menos 8 dígitos');
+                          alert('Enter at least 8 digits');
                         }
                       }}
                     >
-                      Buscar
+                      {t('common.search')}
                     </button>
                   </div>
                 </div>
 
-                {/* Mostrar mascotas encontradas por teléfono */}
+                {/* Show pets found by phone */}
                 {foundOwner && ownerPets.length > 0 && (
                   <div className="form-group">
-                    <label>Mascotas de {foundOwner.nombre}:</label>
+                    <label>Pets of {foundOwner.nombre}:</label>
                     <select
                       value={newAppointmentData.pacienteId || ''}
                       onChange={(e) => {
@@ -2770,7 +2786,7 @@ function RecepcionDashboard() {
                       }}
                       required
                     >
-                      <option value="">-- Seleccione mascota --</option>
+                      <option value="">-- Select pet --</option>
                       {ownerPets.map(pet => (
                         <option key={pet.id} value={pet.id}>
                           {pet.nombre} ({pet.especie} - {pet.raza})
@@ -2790,7 +2806,7 @@ function RecepcionDashboard() {
                     justifyContent: 'space-between',
                     alignItems: 'center'
                   }}>
-                    <span>✅ Paciente seleccionado: <strong>{newAppointmentData.pacienteNombre}</strong></span>
+                    <span>✅ Selected patient: <strong>{newAppointmentData.pacienteNombre}</strong></span>
                     <button 
                       type="button"
                       onClick={() => setNewAppointmentData({
@@ -2805,7 +2821,7 @@ function RecepcionDashboard() {
                         color: '#d32f2f'
                       }}
                     >
-                      ✕ Cambiar
+                      ✕ Change
                     </button>
                   </div>
                 )}
@@ -2918,7 +2934,7 @@ function RecepcionDashboard() {
                         {patient.fotoUrl ? (
                           <img src={patient.fotoUrl} alt={patient.nombre} className="patient-avatar-photo-small" />
                         ) : (
-                          patient.especie === 'Perro' ? '🐕' : '🐈'
+                          patient.especie === 'Dog' ? '🐕' : '🐈'
                         )}
                       </div>
                       <div>
@@ -2976,12 +2992,12 @@ function RecepcionDashboard() {
         </div>
       )}
 
-      {/* MODAL: EDITAR FOTO DE MASCOTA */}
+      {/* MODAL: EDIT PET PHOTO */}
       {showEditPhotoModal && editingPet && (
         <div className="modal-overlay" onClick={() => !savingPhoto && setShowEditPhotoModal(false)}>
           <div className="modal-content modal-edit-photo" onClick={(e) => e.stopPropagation()}>
             <div className="modal-header">
-              <h3>📷 Foto de {editingPet.nombre}</h3>
+              <h3>📷 Photo of {editingPet.nombre}</h3>
               <button 
                 className="btn-close-modal" 
                 onClick={() => setShowEditPhotoModal(false)}
@@ -3002,16 +3018,16 @@ function RecepcionDashboard() {
                 ) : (
                   <div className="photo-placeholder-large">
                     <span className="placeholder-emoji">
-                      {editingPet.especie === 'Perro' ? '🐕' : editingPet.especie === 'Gato' ? '🐈' : '🐾'}
+                      {editingPet.especie === 'Dog' ? '🐕' : editingPet.especie === 'Cat' ? '🐈' : '🐾'}
                     </span>
-                    <p>Sin foto</p>
+                    <p>No photo</p>
                   </div>
                 )}
               </div>
 
               <div className="photo-upload-section">
                 <label className="btn-upload-photo">
-                  📷 Seleccionar Imagen
+                  📷 Select Image
                   <input
                     type="file"
                     accept="image/*"
@@ -3020,7 +3036,7 @@ function RecepcionDashboard() {
                     disabled={savingPhoto}
                   />
                 </label>
-                <p className="photo-hint">JPG, PNG o GIF • Máximo 5MB</p>
+                <p className="photo-hint">JPG, PNG or GIF • Max 5MB</p>
               </div>
             </div>
 
@@ -3031,7 +3047,7 @@ function RecepcionDashboard() {
                   onClick={handleRemovePhoto}
                   disabled={savingPhoto}
                 >
-                  🗑️ Eliminar
+                  🗑️ Delete
                 </button>
               )}
               <button 
@@ -3039,14 +3055,14 @@ function RecepcionDashboard() {
                 onClick={() => setShowEditPhotoModal(false)}
                 disabled={savingPhoto}
               >
-                Cancelar
+                Cancel
               </button>
               <button 
                 className="btn-primary"
                 onClick={handleSavePhoto}
                 disabled={savingPhoto || !editPhotoData}
               >
-                {savingPhoto ? '⏳ Guardando...' : '💾 Guardar'}
+                {savingPhoto ? '⏳ Saving...' : '💾 Save'}
               </button>
             </div>
           </div>

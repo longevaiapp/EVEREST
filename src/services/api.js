@@ -55,13 +55,13 @@ api.interceptors.response.use(
       }
     }
     
-    // Error de red
+    // Network error
     if (error.code === 'ECONNABORTED') {
-      throw new Error('La conexión tardó demasiado. Intenta de nuevo.');
+      throw new Error('Connection timed out. Please try again.');
     }
     
     if (!error.response) {
-      throw new Error('Error de conexión. Verifica tu internet.');
+      throw new Error('Connection error. Please check your internet.');
     }
     
     throw error;

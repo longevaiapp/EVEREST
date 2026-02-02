@@ -46,8 +46,8 @@ function AdminDashboard() {
   };
 
   const handleDeleteUser = (user) => {
-    if (window.confirm(`¿Estás seguro de eliminar al usuario ${user.nombre}?`)) {
-      alert('Usuario eliminado (función demo)');
+    if (window.confirm(`Are you sure you want to delete user ${user.nombre}?`)) {
+      alert('User deleted (demo function)');
     }
   };
 
@@ -120,11 +120,11 @@ function AdminDashboard() {
               {activeSection === 'dashboard' && t('admin.title')}
               {activeSection === 'usuarios' && t('admin.userManagement')}
               {activeSection === 'pacientes' && t('admin.patientDatabase')}
-              {activeSection === 'reportes' && 'Reportes del Sistema'}
-              {activeSection === 'auditoria' && 'Auditoría del Sistema'}
-              {activeSection === 'configuracion' && 'Configuración del Sistema'}
+              {activeSection === 'reportes' && 'System Reports'}
+              {activeSection === 'auditoria' && 'System Audit'}
+              {activeSection === 'configuracion' && 'System Configuration'}
             </h1>
-            <p>{currentUser.nombre} - Administrador del Sistema</p>
+            <p>{currentUser.nombre} - System Administrator</p>
           </div>
         </div>
 
@@ -136,39 +136,39 @@ function AdminDashboard() {
                 <div className="stat-icon" style={{background: '#2196f3'}}>👥</div>
                 <div className="stat-content">
                   <h3>{stats.totalUsers}</h3>
-                  <p>Usuarios del Sistema</p>
+                  <p>System Users</p>
                 </div>
               </div>
               <div className="stat-card">
                 <div className="stat-icon" style={{background: '#4caf50'}}>🐾</div>
                 <div className="stat-content">
                   <h3>{stats.totalPatients}</h3>
-                  <p>Pacientes Registrados</p>
+                  <p>Registered Patients</p>
                 </div>
               </div>
               <div className="stat-card">
                 <div className="stat-icon" style={{background: '#ff9800'}}>📋</div>
                 <div className="stat-content">
                   <h3>{stats.pendingTasks}</h3>
-                  <p>Tareas Pendientes</p>
+                  <p>Pending Tasks</p>
                 </div>
               </div>
               <div className="stat-card">
                 <div className="stat-icon" style={{background: '#9c27b0'}}>📅</div>
                 <div className="stat-content">
                   <h3>{stats.todayAppointments}</h3>
-                  <p>Citas del Día</p>
+                  <p>Today's Appointments</p>
                 </div>
               </div>
             </div>
 
             <div className="dashboard-content">
               <div className="content-section">
-                <h2>Usuarios por Rol</h2>
+                <h2>Users by Role</h2>
                 <div className="roles-grid">
                   <div className="role-card recepcion">
                     <div className="role-icon">👩‍💼</div>
-                    <h3>Recepción</h3>
+                    <h3>Reception</h3>
                     <p className="role-count">{usersByRole.RECEPCION.length}</p>
                     <div className="role-users">
                       {usersByRole.RECEPCION.map(u => (
@@ -179,7 +179,7 @@ function AdminDashboard() {
 
                   <div className="role-card medico">
                     <div className="role-icon">👨‍⚕️</div>
-                    <h3>Médicos</h3>
+                    <h3>Doctors</h3>
                     <p className="role-count">{usersByRole.MEDICO.length}</p>
                     <div className="role-users">
                       {usersByRole.MEDICO.map(u => (
@@ -190,7 +190,7 @@ function AdminDashboard() {
 
                   <div className="role-card farmacia">
                     <div className="role-icon">👩‍🔬</div>
-                    <h3>Farmacia</h3>
+                    <h3>Pharmacy</h3>
                     <p className="role-count">{usersByRole.FARMACIA.length}</p>
                     <div className="role-users">
                       {usersByRole.FARMACIA.map(u => (
@@ -201,7 +201,7 @@ function AdminDashboard() {
 
                   <div className="role-card admin">
                     <div className="role-icon">👨‍💼</div>
-                    <h3>Administradores</h3>
+                    <h3>Administrators</h3>
                     <p className="role-count">{usersByRole.ADMIN.length}</p>
                     <div className="role-users">
                       {usersByRole.ADMIN.map(u => (
@@ -213,38 +213,38 @@ function AdminDashboard() {
               </div>
 
               <div className="content-section">
-                <h2>Actividad del Sistema</h2>
+                <h2>System Activity</h2>
                 <div className="activity-list">
                   <div className="activity-item">
                     <div className="activity-icon success">✅</div>
                     <div className="activity-content">
-                      <strong>Nueva consulta completada</strong>
-                      <p>Dr. Carlos Martínez completó consulta para Max</p>
-                      <span className="activity-time">Hace 15 min</span>
+                      <strong>New consultation completed</strong>
+                      <p>Dr. Carlos Martínez completed consultation for Max</p>
+                      <span className="activity-time">15 min ago</span>
                     </div>
                   </div>
                   <div className="activity-item">
                     <div className="activity-icon info">👤</div>
                     <div className="activity-content">
-                      <strong>Nuevo paciente registrado</strong>
-                      <p>María González registró a Luna (Gato Siamés)</p>
-                      <span className="activity-time">Hace 32 min</span>
+                      <strong>New patient registered</strong>
+                      <p>María González registered Luna (Siamese Cat)</p>
+                      <span className="activity-time">32 min ago</span>
                     </div>
                   </div>
                   <div className="activity-item">
                     <div className="activity-icon warning">💊</div>
                     <div className="activity-content">
-                      <strong>Alerta de stock bajo</strong>
-                      <p>Tramadol 50mg requiere reabastecimiento</p>
-                      <span className="activity-time">Hace 1 hora</span>
+                      <strong>Low stock alert</strong>
+                      <p>Tramadol 50mg requires restocking</p>
+                      <span className="activity-time">1 hour ago</span>
                     </div>
                   </div>
                   <div className="activity-item">
                     <div className="activity-icon success">📦</div>
                     <div className="activity-content">
-                      <strong>Medicamentos dispensados</strong>
-                      <p>Ana López dispensó medicamentos para Bobby</p>
-                      <span className="activity-time">Hace 2 horas</span>
+                      <strong>Medications dispensed</strong>
+                      <p>Ana López dispensed medications for Bobby</p>
+                      <span className="activity-time">2 hours ago</span>
                     </div>
                   </div>
                 </div>
@@ -258,13 +258,13 @@ function AdminDashboard() {
           <div className="dashboard-content">
             <div className="content-section full-width">
               <div className="section-header">
-                <h2>Gestión de Usuarios</h2>
+                <h2>User Management</h2>
                 <div className="section-actions">
                   <div className="search-bar">
                     <input
                       type="text"
                       className="search-input"
-                      placeholder="Buscar usuario por nombre, username o rol..."
+                      placeholder="Search user by name, username or role..."
                       value={searchQuery}
                       onChange={(e) => setSearchQuery(e.target.value)}
                     />
@@ -278,7 +278,7 @@ function AdminDashboard() {
                     className="btn-primary"
                     onClick={() => setShowNewUserModal(true)}
                   >
-                    + Nuevo Usuario
+                    + New User
                   </button>
                 </div>
               </div>
@@ -288,19 +288,19 @@ function AdminDashboard() {
                   <thead>
                     <tr>
                       <th>ID</th>
-                      <th>Usuario</th>
-                      <th>Nombre</th>
-                      <th>Rol</th>
-                      <th>Especialidad</th>
-                      <th>Estado</th>
-                      <th>Acciones</th>
+                      <th>User</th>
+                      <th>Name</th>
+                      <th>Role</th>
+                      <th>Specialty</th>
+                      <th>Status</th>
+                      <th>Actions</th>
                     </tr>
                   </thead>
                   <tbody>
                     {filteredUsers.length === 0 ? (
                       <tr>
                         <td colSpan="7" className="empty-row">
-                          {searchQuery ? 'No se encontraron usuarios' : 'No hay usuarios registrados'}
+                          {searchQuery ? 'No users found' : 'No registered users'}
                         </td>
                       </tr>
                     ) : (
@@ -321,20 +321,20 @@ function AdminDashboard() {
                           </td>
                           <td>{user.especialidad || '-'}</td>
                           <td>
-                            <span className="status-badge success">Activo</span>
+                            <span className="status-badge success">Active</span>
                           </td>
                           <td>
                             <div className="table-actions">
                               <button
                                 className="btn-icon"
-                                title="Editar"
+                                title="Edit"
                                 onClick={() => handleEditUser(user)}
                               >
                                 ✏️
                               </button>
                               <button
                                 className="btn-icon danger"
-                                title="Eliminar"
+                                title="Delete"
                                 onClick={() => handleDeleteUser(user)}
                               >
                                 🗑️
@@ -355,19 +355,19 @@ function AdminDashboard() {
         {activeSection === 'pacientes' && (
           <div className="dashboard-content">
             <div className="content-section full-width">
-              <h2>Base de Datos de Pacientes</h2>
+              <h2>Patient Database</h2>
               <div className="table-container">
                 <table className="data-table">
                   <thead>
                     <tr>
-                      <th>Ficha</th>
-                      <th>Paciente</th>
-                      <th>Especie/Raza</th>
-                      <th>Edad</th>
-                      <th>Propietario</th>
-                      <th>Teléfono</th>
-                      <th>Estado</th>
-                      <th>Acciones</th>
+                      <th>File #</th>
+                      <th>Patient</th>
+                      <th>Species/Breed</th>
+                      <th>Age</th>
+                      <th>Owner</th>
+                      <th>Phone</th>
+                      <th>Status</th>
+                      <th>Actions</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -402,8 +402,8 @@ function AdminDashboard() {
                         </td>
                         <td>
                           <div className="table-actions">
-                            <button className="btn-icon" title="Ver Expediente">📋</button>
-                            <button className="btn-icon" title="Editar">✏️</button>
+                            <button className="btn-icon" title="View File">📋</button>
+                            <button className="btn-icon" title="Edit">✏️</button>
                           </div>
                         </td>
                       </tr>
@@ -419,11 +419,11 @@ function AdminDashboard() {
         {activeSection === 'reportes' && (
           <div className="dashboard-content">
             <div className="content-section full-width">
-              <h2>Reportes del Sistema</h2>
+              <h2>System Reports</h2>
               
               <div className="reports-grid">
                 <div className="report-card">
-                  <h3>📊 Consultas por Médico</h3>
+                  <h3>📊 Consultations by Doctor</h3>
                   <div className="report-chart">
                     <div className="chart-bar">
                       <span>Dr. Carlos Martínez</span>
@@ -450,43 +450,43 @@ function AdminDashboard() {
                 </div>
 
                 <div className="report-card">
-                  <h3>💰 Ingresos Mensuales</h3>
+                  <h3>💰 Monthly Revenue</h3>
                   <div className="revenue-stats">
                     <div className="revenue-item">
-                      <span className="revenue-month">Diciembre</span>
+                      <span className="revenue-month">December</span>
                       <span className="revenue-amount">$28,450</span>
                     </div>
                     <div className="revenue-item">
-                      <span className="revenue-month">Noviembre</span>
+                      <span className="revenue-month">November</span>
                       <span className="revenue-amount">$24,230</span>
                     </div>
                     <div className="revenue-item">
-                      <span className="revenue-month">Octubre</span>
+                      <span className="revenue-month">October</span>
                       <span className="revenue-amount">$26,780</span>
                     </div>
                     <div className="revenue-total">
-                      <strong>Total Trimestre</strong>
+                      <strong>Quarter Total</strong>
                       <strong className="total-amount">$79,460</strong>
                     </div>
                   </div>
                 </div>
 
                 <div className="report-card">
-                  <h3>🐾 Pacientes por Especie</h3>
+                  <h3>🐾 Patients by Species</h3>
                   <div className="species-stats">
                     <div className="species-item">
                       <span className="species-icon">🐕</span>
                       <div className="species-info">
-                        <strong>Perros</strong>
-                        <p>{systemState.pacientes.filter(p => p.especie === 'Perro').length} pacientes</p>
+                        <strong>Dogs</strong>
+                        <p>{systemState.pacientes.filter(p => p.especie === 'Perro').length} patients</p>
                       </div>
                       <span className="percentage">65%</span>
                     </div>
                     <div className="species-item">
                       <span className="species-icon">🐈</span>
                       <div className="species-info">
-                        <strong>Gatos</strong>
-                        <p>{systemState.pacientes.filter(p => p.especie === 'Gato').length} pacientes</p>
+                        <strong>Cats</strong>
+                        <p>{systemState.pacientes.filter(p => p.especie === 'Gato').length} patients</p>
                       </div>
                       <span className="percentage">35%</span>
                     </div>
@@ -494,22 +494,22 @@ function AdminDashboard() {
                 </div>
 
                 <div className="report-card">
-                  <h3>📅 Citas por Estado</h3>
+                  <h3>📅 Appointments by Status</h3>
                   <div className="appointments-stats">
                     <div className="stat-row">
-                      <span>Completadas</span>
+                      <span>Completed</span>
                       <strong className="text-success">145</strong>
                     </div>
                     <div className="stat-row">
-                      <span>Programadas</span>
+                      <span>Scheduled</span>
                       <strong className="text-info">23</strong>
                     </div>
                     <div className="stat-row">
-                      <span>Canceladas</span>
+                      <span>Cancelled</span>
                       <strong className="text-warning">8</strong>
                     </div>
                     <div className="stat-row">
-                      <span>No asistió</span>
+                      <span>No Show</span>
                       <strong className="text-danger">5</strong>
                     </div>
                   </div>
@@ -523,45 +523,45 @@ function AdminDashboard() {
         {activeSection === 'auditoria' && (
           <div className="dashboard-content">
             <div className="content-section full-width">
-              <h2>Registro de Auditoría</h2>
+              <h2>Audit Log</h2>
               <div className="audit-log">
                 <div className="audit-entry">
                   <div className="audit-icon user">👤</div>
                   <div className="audit-details">
-                    <strong>Inicio de sesión</strong>
-                    <p>María González (Recepción) inició sesión</p>
+                    <strong>Login</strong>
+                    <p>María González (Reception) logged in</p>
                     <span className="audit-time">12/12/2025 08:30:15</span>
                   </div>
                 </div>
                 <div className="audit-entry">
                   <div className="audit-icon create">➕</div>
                   <div className="audit-details">
-                    <strong>Nuevo registro</strong>
-                    <p>María González registró nuevo paciente: Luna (Ficha #001234)</p>
+                    <strong>New record</strong>
+                    <p>María González registered new patient: Luna (File #001234)</p>
                     <span className="audit-time">12/12/2025 08:45:22</span>
                   </div>
                 </div>
                 <div className="audit-entry">
                   <div className="audit-icon update">✏️</div>
                   <div className="audit-details">
-                    <strong>Actualización</strong>
-                    <p>Dr. Carlos Martínez actualizó expediente de Max</p>
+                    <strong>Update</strong>
+                    <p>Dr. Carlos Martínez updated Max's file</p>
                     <span className="audit-time">12/12/2025 09:15:08</span>
                   </div>
                 </div>
                 <div className="audit-entry">
                   <div className="audit-icon warning">⚠️</div>
                   <div className="audit-details">
-                    <strong>Alerta del sistema</strong>
-                    <p>Stock bajo detectado: Tramadol 50mg (25 unidades)</p>
+                    <strong>System alert</strong>
+                    <p>Low stock detected: Tramadol 50mg (25 units)</p>
                     <span className="audit-time">12/12/2025 10:00:00</span>
                   </div>
                 </div>
                 <div className="audit-entry">
                   <div className="audit-icon success">✅</div>
                   <div className="audit-details">
-                    <strong>Tarea completada</strong>
-                    <p>Ana López dispensó medicamentos para Bobby</p>
+                    <strong>Task completed</strong>
+                    <p>Ana López dispensed medications for Bobby</p>
                     <span className="audit-time">12/12/2025 10:30:45</span>
                   </div>
                 </div>
@@ -574,91 +574,91 @@ function AdminDashboard() {
         {activeSection === 'configuracion' && (
           <div className="dashboard-content">
             <div className="content-section full-width">
-              <h2>Configuración del Sistema</h2>
+              <h2>System Configuration</h2>
               
               <div className="config-sections">
                 <div className="config-card">
-                  <h3>⚙️ Configuración General</h3>
+                  <h3>⚙️ General Settings</h3>
                   <div className="config-item">
-                    <label>Nombre de la Clínica</label>
+                    <label>Clinic Name</label>
                     <input type="text" className="form-control" defaultValue="Clínica Veterinaria San Francisco" />
                   </div>
                   <div className="config-item">
-                    <label>Dirección</label>
+                    <label>Address</label>
                     <input type="text" className="form-control" defaultValue="Av. Principal #123" />
                   </div>
                   <div className="config-item">
-                    <label>Teléfono</label>
+                    <label>Phone</label>
                     <input type="tel" className="form-control" defaultValue="555-1234" />
                   </div>
-                  <button className="btn-primary">Guardar Cambios</button>
+                  <button className="btn-primary">Save Changes</button>
                 </div>
 
                 <div className="config-card">
-                  <h3>🔔 Notificaciones</h3>
+                  <h3>🔔 Notifications</h3>
                   <div className="config-toggle">
                     <label>
                       <input type="checkbox" defaultChecked />
-                      <span>Alertas de stock bajo</span>
+                      <span>Low stock alerts</span>
                     </label>
                   </div>
                   <div className="config-toggle">
                     <label>
                       <input type="checkbox" defaultChecked />
-                      <span>Recordatorios de citas</span>
+                      <span>Appointment reminders</span>
                     </label>
                   </div>
                   <div className="config-toggle">
                     <label>
                       <input type="checkbox" />
-                      <span>Notificaciones por email</span>
+                      <span>Email notifications</span>
                     </label>
                   </div>
                   <div className="config-toggle">
                     <label>
                       <input type="checkbox" defaultChecked />
-                      <span>Auditoría automática</span>
+                      <span>Automatic auditing</span>
                     </label>
                   </div>
-                  <button className="btn-primary">Guardar Configuración</button>
+                  <button className="btn-primary">Save Configuration</button>
                 </div>
 
                 <div className="config-card">
-                  <h3>🔒 Seguridad</h3>
+                  <h3>🔒 Security</h3>
                   <div className="config-item">
-                    <label>Tiempo de sesión (minutos)</label>
+                    <label>Session timeout (minutes)</label>
                     <input type="number" className="form-control" defaultValue="60" />
                   </div>
                   <div className="config-toggle">
                     <label>
                       <input type="checkbox" defaultChecked />
-                      <span>Requerir contraseñas seguras</span>
+                      <span>Require strong passwords</span>
                     </label>
                   </div>
                   <div className="config-toggle">
                     <label>
                       <input type="checkbox" />
-                      <span>Autenticación de dos factores</span>
+                      <span>Two-factor authentication</span>
                     </label>
                   </div>
-                  <button className="btn-primary">Actualizar Seguridad</button>
+                  <button className="btn-primary">Update Security</button>
                 </div>
 
                 <div className="config-card">
-                  <h3>💾 Respaldo de Datos</h3>
+                  <h3>💾 Data Backup</h3>
                   <p className="config-description">
-                    Último respaldo: 11/12/2025 23:00
+                    Last backup: 11/12/2025 23:00
                   </p>
                   <button className="btn-secondary" style={{marginRight: '0.5rem'}}>
-                    Crear Respaldo Ahora
+                    Create Backup Now
                   </button>
                   <button className="btn-info">
-                    Restaurar desde Respaldo
+                    Restore from Backup
                   </button>
                   <div className="config-toggle" style={{marginTop: '1rem'}}>
                     <label>
                       <input type="checkbox" defaultChecked />
-                      <span>Respaldo automático diario</span>
+                      <span>Automatic daily backup</span>
                     </label>
                   </div>
                 </div>
@@ -667,69 +667,69 @@ function AdminDashboard() {
           </div>
         )}
 
-        {/* MODAL NUEVO USUARIO */}
+        {/* NEW USER MODAL */}
         {showNewUserModal && (
           <div className="modal-overlay" onClick={() => setShowNewUserModal(false)}>
             <div className="modal-content" onClick={e => e.stopPropagation()}>
-              <h2>➕ Agregar Nuevo Usuario</h2>
+              <h2>➕ Add New User</h2>
               
               <div className="form-group">
-                <label>Nombre Completo</label>
-                <input type="text" className="form-control" placeholder="Ej: Juan Pérez" />
+                <label>Full Name</label>
+                <input type="text" className="form-control" placeholder="E.g.: Juan Pérez" />
               </div>
 
               <div className="form-group">
                 <label>Username</label>
-                <input type="text" className="form-control" placeholder="Ej: jperez" />
+                <input type="text" className="form-control" placeholder="E.g.: jperez" />
               </div>
 
               <div className="form-group">
-                <label>Contraseña</label>
+                <label>Password</label>
                 <input type="password" className="form-control" placeholder="••••••••" />
               </div>
 
               <div className="form-group">
-                <label>Rol</label>
+                <label>Role</label>
                 <select className="form-control">
-                  <option value="">Selecciona un rol</option>
-                  <option value="RECEPCION">Recepción</option>
-                  <option value="MEDICO">Médico</option>
-                  <option value="FARMACIA">Farmacia</option>
-                  <option value="ADMIN">Administrador</option>
+                  <option value="">Select a role</option>
+                  <option value="RECEPCION">Reception</option>
+                  <option value="MEDICO">Doctor</option>
+                  <option value="FARMACIA">Pharmacy</option>
+                  <option value="ADMIN">Administrator</option>
                 </select>
               </div>
 
               <div className="form-group">
-                <label>Especialidad (opcional)</label>
-                <input type="text" className="form-control" placeholder="Solo para médicos" />
+                <label>Specialty (optional)</label>
+                <input type="text" className="form-control" placeholder="For doctors only" />
               </div>
 
               <div className="modal-actions">
                 <button className="btn-close" onClick={() => setShowNewUserModal(false)}>
-                  Cancelar
+                  Cancel
                 </button>
                 <button 
                   className="btn-success"
                   onClick={() => {
-                    alert('Usuario creado (función demo)');
+                    alert('User created (demo function)');
                     setShowNewUserModal(false);
                   }}
                 >
-                  Crear Usuario
+                  Create User
                 </button>
               </div>
             </div>
           </div>
         )}
 
-        {/* MODAL EDITAR USUARIO */}
+        {/* EDIT USER MODAL */}
         {showEditUserModal && selectedUser && (
           <div className="modal-overlay" onClick={() => setShowEditUserModal(false)}>
             <div className="modal-content" onClick={e => e.stopPropagation()}>
-              <h2>✏️ Editar Usuario</h2>
+              <h2>✏️ Edit User</h2>
               
               <div className="form-group">
-                <label>Nombre Completo</label>
+                <label>Full Name</label>
                 <input type="text" className="form-control" defaultValue={selectedUser.nombre} />
               </div>
 
@@ -739,32 +739,32 @@ function AdminDashboard() {
               </div>
 
               <div className="form-group">
-                <label>Rol</label>
+                <label>Role</label>
                 <select className="form-control" defaultValue={selectedUser.rol}>
-                  <option value="RECEPCION">Recepción</option>
-                  <option value="MEDICO">Médico</option>
-                  <option value="FARMACIA">Farmacia</option>
-                  <option value="ADMIN">Administrador</option>
+                  <option value="RECEPCION">Reception</option>
+                  <option value="MEDICO">Doctor</option>
+                  <option value="FARMACIA">Pharmacy</option>
+                  <option value="ADMIN">Administrator</option>
                 </select>
               </div>
 
               <div className="form-group">
-                <label>Especialidad (opcional)</label>
+                <label>Specialty (optional)</label>
                 <input type="text" className="form-control" defaultValue={selectedUser.especialidad || ''} />
               </div>
 
               <div className="modal-actions">
                 <button className="btn-close" onClick={() => setShowEditUserModal(false)}>
-                  Cancelar
+                  Cancel
                 </button>
                 <button 
                   className="btn-success"
                   onClick={() => {
-                    alert('Usuario actualizado (función demo)');
+                    alert('User updated (demo function)');
                     setShowEditUserModal(false);
                   }}
                 >
-                  Guardar Cambios
+                  Save Changes
                 </button>
               </div>
             </div>

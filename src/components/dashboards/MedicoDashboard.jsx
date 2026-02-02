@@ -131,18 +131,18 @@ function MedicoDashboard() {
     }
   }, [error, clearError]);
 
-  // Opciones de estudios (enums del backend)
+  // Studies options (backend enums)
   const studiesOptions = [
-    { id: 'HEMOGRAMA', name: t('medico.studies.hemograma', 'Hemograma Completo') },
-    { id: 'QUIMICA_SANGUINEA', name: t('medico.studies.bioquimica', 'Química Sanguínea') },
-    { id: 'URINALISIS', name: t('medico.studies.urinalisis', 'Uroanálisis') },
-    { id: 'COPROLOGIA', name: t('medico.studies.coprologico', 'Coproparasitoscópico') },
-    { id: 'RAYOS_X', name: t('medico.studies.radiografia', 'Radiografía') },
-    { id: 'ULTRASONIDO', name: t('medico.studies.ecografia', 'Ecografía') },
-    { id: 'ELECTROCARDIOGRAMA', name: t('medico.studies.electrocardiograma', 'Electrocardiograma') },
-    { id: 'PERFIL_TIROIDEO', name: t('medico.studies.tiroideo', 'Perfil Tiroideo') },
-    { id: 'CITOLOGIA', name: t('medico.studies.citologia', 'Citología') },
-    { id: 'BIOPSIA', name: t('medico.studies.biopsia', 'Biopsia') }
+    { id: 'HEMOGRAMA', name: t('medico.studies.hemograma', 'Complete Blood Count') },
+    { id: 'QUIMICA_SANGUINEA', name: t('medico.studies.bioquimica', 'Blood Chemistry') },
+    { id: 'URINALISIS', name: t('medico.studies.urinalisis', 'Urinalysis') },
+    { id: 'COPROLOGIA', name: t('medico.studies.coprologico', 'Stool Analysis') },
+    { id: 'RAYOS_X', name: t('medico.studies.radiografia', 'X-Ray') },
+    { id: 'ULTRASONIDO', name: t('medico.studies.ecografia', 'Ultrasound') },
+    { id: 'ELECTROCARDIOGRAMA', name: t('medico.studies.electrocardiograma', 'Electrocardiogram') },
+    { id: 'PERFIL_TIROIDEO', name: t('medico.studies.tiroideo', 'Thyroid Panel') },
+    { id: 'CITOLOGIA', name: t('medico.studies.citologia', 'Cytology') },
+    { id: 'BIOPSIA', name: t('medico.studies.biopsia', 'Biopsy') }
   ];
 
   const commonMedications = [
@@ -200,7 +200,7 @@ function MedicoDashboard() {
   const handleStartConsultation = useCallback(async (patient) => {
     console.log('[handleStartConsultation] patient:', patient);
     if (!patient.visitId) {
-      setLocalError(t('medico.errors.noVisitId', 'El paciente no tiene una visita activa'));
+      setLocalError(t('medico.errors.noVisitId', 'Patient does not have an active visit'));
       return;
     }
     
@@ -236,7 +236,7 @@ function MedicoDashboard() {
       }
     } catch (err) {
       console.error('[handleStartConsultation] Error:', err);
-      setLocalError(err.message || t('medico.errors.startConsultation', 'Error al iniciar consulta'));
+      setLocalError(err.message || t('medico.errors.startConsultation', 'Error starting consultation'));
     } finally {
       setLocalLoading(false);
     }
@@ -244,15 +244,15 @@ function MedicoDashboard() {
 
   const handleEndConsultation = useCallback(async () => {
     if (!selectedPatient || !activeConsultation?.id) {
-      setLocalError(t('medico.errors.noActiveConsultation', 'No hay consulta activa'));
+      setLocalError(t('medico.errors.noActiveConsultation', 'No active consultation'));
       return;
     }
     
     setLocalLoading(true);
     try {
       await completarConsulta(activeConsultation.id, {
-        diagnosis: consultationNotes.analisis || 'Consulta completada',
-        soapPlan: consultationNotes.plan || 'Seguimiento según indicaciones',
+        diagnosis: consultationNotes.analisis || 'Consultation completed',
+        soapPlan: consultationNotes.plan || 'Follow-up as indicated',
       });
       
       setActiveConsultation(null);
@@ -260,22 +260,22 @@ function MedicoDashboard() {
       setConsultationNotes({ subjetivo: '', objetivo: '', analisis: '', plan: '' });
       setSavedSections({ subjetivo: false, objetivo: false, analisis: false, plan: false });
     } catch (err) {
-      setLocalError(err.message || t('medico.errors.endConsultation', 'Error al finalizar consulta'));
+      setLocalError(err.message || t('medico.errors.endConsultation', 'Error ending consultation'));
     } finally {
       setLocalLoading(false);
     }
   }, [selectedPatient, activeConsultation, consultationNotes, completarConsulta, t]);
 
-  // Guardar sección SOAP individual
+  // Save individual SOAP section
   const handleSaveSOAPSection = useCallback(async (section) => {
     if (!activeConsultation?.id) {
-      setLocalError(t('medico.errors.noActiveConsultation', 'No hay consulta activa'));
+      setLocalError(t('medico.errors.noActiveConsultation', 'No active consultation'));
       return;
     }
     
     const value = consultationNotes[section];
     if (!value || value.trim() === '') {
-      return; // No guardar si está vacío
+      return; // Don't save if empty
     }
     
     setLocalLoading(true);
@@ -296,7 +296,7 @@ function MedicoDashboard() {
       setSavedSections(prev => ({ ...prev, [section]: true }));
     } catch (err) {
       console.error(`Error guardando ${section}:`, err);
-      setLocalError(err.message || t('medico.errors.saveSOAP', 'Error al guardar notas'));
+      setLocalError(err.message || t('medico.errors.saveSOAP', 'Error saving notes'));
     } finally {
       setLocalLoading(false);
     }
@@ -304,7 +304,7 @@ function MedicoDashboard() {
 
   const handleSaveVitals = useCallback(async () => {
     if (!activeConsultation) {
-      setLocalError(t('medico.errors.noActiveConsultation', 'No hay consulta activa'));
+      setLocalError(t('medico.errors.noActiveConsultation', 'No active consultation'));
       return;
     }
     
@@ -330,7 +330,7 @@ function MedicoDashboard() {
         escalaDolor: '0'
       });
     } catch (err) {
-      setLocalError(err.message || t('medico.errors.saveVitals', 'Error al guardar signos vitales'));
+      setLocalError(err.message || t('medico.errors.saveVitals', 'Error saving vital signs'));
     } finally {
       setLocalLoading(false);
     }
@@ -338,7 +338,7 @@ function MedicoDashboard() {
 
   const handleAddDiagnosis = useCallback(async () => {
     if (!activeConsultation || !diagnosisForm.descripcion) {
-      setLocalError(t('medico.errors.diagnosisRequired', 'Descripción del diagnóstico requerida'));
+      setLocalError(t('medico.errors.diagnosisRequired', 'Diagnosis description required'));
       return;
     }
     
@@ -362,7 +362,7 @@ function MedicoDashboard() {
         notas: ''
       });
     } catch (err) {
-      setLocalError(err.message || t('medico.errors.addDiagnosis', 'Error al agregar diagnóstico'));
+      setLocalError(err.message || t('medico.errors.addDiagnosis', 'Error adding diagnosis'));
     } finally {
       setLocalLoading(false);
     }
@@ -398,11 +398,11 @@ function MedicoDashboard() {
     console.log('[handleCreatePrescription] selectedPatient:', selectedPatient);
     
     if (!activeConsultation || prescriptionForm.medicamentos.length === 0) {
-      setLocalError(t('medico.errors.noMedications', 'Debe agregar al menos un medicamento'));
+      setLocalError(t('medico.errors.noMedications', 'Must add at least one medication'));
       return;
     }
     if (!selectedPatient?.id) {
-      setLocalError(t('medico.errors.noPatient', 'No hay paciente seleccionado'));
+      setLocalError(t('medico.errors.noPatient', 'No patient selected'));
       return;
     }
     
@@ -415,7 +415,7 @@ function MedicoDashboard() {
           nombre: m.nombre,
           dosis: m.dosis,
           frecuencia: m.frecuencia,
-          duracion: m.duracion || '7 días',
+          duracion: m.duracion || '7 days',
           cantidad: 1
         })),
         instruccionesGenerales: prescriptionForm.instrucciones || undefined
@@ -424,7 +424,7 @@ function MedicoDashboard() {
       setShowPrescriptionModal(false);
       setPrescriptionForm({ medicamentos: [], instrucciones: '', duracion: '' });
     } catch (err) {
-      setLocalError(err.message || t('medico.errors.createPrescription', 'Error al crear receta'));
+      setLocalError(err.message || t('medico.errors.createPrescription', 'Error creating prescription'));
     } finally {
       setLocalLoading(false);
     }
@@ -441,11 +441,11 @@ function MedicoDashboard() {
 
   const handleCreateLabOrder = useCallback(async () => {
     if (!activeConsultation || labOrderForm.estudios.length === 0) {
-      setLocalError(t('medico.errors.noStudies', 'Debe seleccionar al menos un estudio'));
+      setLocalError(t('medico.errors.noStudies', 'Must select at least one study'));
       return;
     }
     if (!selectedPatient?.id) {
-      setLocalError(t('medico.errors.noPatient', 'No hay paciente seleccionado'));
+      setLocalError(t('medico.errors.noPatient', 'No patient selected'));
       return;
     }
     
@@ -462,7 +462,7 @@ function MedicoDashboard() {
       setShowLabOrderModal(false);
       setLabOrderForm({ estudios: [], prioridad: 'NORMAL', indicaciones: '' });
     } catch (err) {
-      setLocalError(err.message || t('medico.errors.createLabOrder', 'Error al crear orden de laboratorio'));
+      setLocalError(err.message || t('medico.errors.createLabOrder', 'Error creating lab order'));
     } finally {
       setLocalLoading(false);
     }
@@ -470,11 +470,11 @@ function MedicoDashboard() {
 
   const handleCreateHospitalization = useCallback(async () => {
     if (!activeConsultation || !hospitalizationForm.motivo) {
-      setLocalError(t('medico.errors.hospitalizationReasonRequired', 'Motivo de hospitalización requerido'));
+      setLocalError(t('medico.errors.hospitalizationReasonRequired', 'Hospitalization reason required'));
       return;
     }
     if (!selectedPatient?.id) {
-      setLocalError(t('medico.errors.noPatient', 'No hay paciente seleccionado'));
+      setLocalError(t('medico.errors.noPatient', 'No patient selected'));
       return;
     }
     
@@ -498,7 +498,7 @@ function MedicoDashboard() {
       setActiveConsultation(null);
       setSelectedPatient(null);
     } catch (err) {
-      setLocalError(err.message || t('medico.errors.hospitalize', 'Error al hospitalizar paciente'));
+      setLocalError(err.message || t('medico.errors.hospitalize', 'Error hospitalizing patient'));
     } finally {
       setLocalLoading(false);
     }
@@ -608,22 +608,22 @@ function MedicoDashboard() {
         history.push({
           timestamp: consulta.startTime,
           endTime: consulta.endTime,
-          accion: `Consulta${consulta.status === 'COMPLETADA' ? ' Completada' : ''}`,
+          accion: `Consultation${consulta.status === 'COMPLETADA' ? ' Completed' : ''}`,
           tipo: 'consulta',
           status: consulta.status,
           detalles: detalles,
-          doctor: consulta.doctor?.nombre || 'Médico',
+          doctor: consulta.doctor?.nombre || 'Doctor',
           duracion: consulta.duration ? `${consulta.duration} min` : null
         });
       });
     }
     
-    // Agregar hospitalizaciones con detalles
+    // Add hospitalizations with details
     if (hospitalizaciones && Array.isArray(hospitalizaciones)) {
       hospitalizaciones.forEach(hosp => {
         history.push({
           timestamp: hosp.admittedAt,
-          accion: `Hospitalización${hosp.status === 'ALTA' ? ' (Alta)' : ''}`,
+          accion: `Hospitalization${hosp.status === 'ALTA' ? ' (Discharged)' : ''}`,
           tipo: 'hospitalizacion',
           status: hosp.status,
           detalles: {
@@ -644,17 +644,17 @@ function MedicoDashboard() {
               estado: m.status
             })) || []
           },
-          doctor: hosp.admittedBy?.nombre || 'Médico'
+          doctor: hosp.admittedBy?.nombre || 'Doctor'
         });
       });
     }
     
-    // Agregar cirugías
+    // Add surgeries
     if (cirugias && Array.isArray(cirugias)) {
       cirugias.forEach(surgery => {
         history.push({
           timestamp: surgery.scheduledDate,
-          accion: `Cirugía - ${surgery.type || surgery.procedureName || 'Procedimiento'}`,
+          accion: `Surgery - ${surgery.type || surgery.procedureName || 'Procedure'}`,
           tipo: 'cirugia',
           status: surgery.status,
           detalles: {
@@ -666,17 +666,17 @@ function MedicoDashboard() {
             anestesia: surgery.anesthesiaType,
             duracion: surgery.duration
           },
-          doctor: surgery.surgeon?.nombre || 'Cirujano'
+          doctor: surgery.surgeon?.nombre || 'Surgeon'
         });
       });
     }
     
-    // Agregar vacunas
+    // Add vaccines
     if (vacunas && Array.isArray(vacunas)) {
       vacunas.forEach(vacuna => {
         history.push({
           timestamp: vacuna.fecha,
-          accion: `Vacuna - ${vacuna.nombre || vacuna.tipo}`,
+          accion: `Vaccine - ${vacuna.nombre || vacuna.tipo}`,
           tipo: 'vacuna',
           detalles: {
             nombre: vacuna.nombre,
@@ -778,24 +778,24 @@ function MedicoDashboard() {
         history.push({
           timestamp: consulta.startTime,
           endTime: consulta.endTime,
-          accion: `Consulta${consulta.status === 'COMPLETADA' ? ' Completada' : ' en curso'}`,
+          accion: `Consultation${consulta.status === 'COMPLETADA' ? ' Completed' : ' in progress'}`,
           tipo: 'consulta',
           status: consulta.status,
           detalles: detalles,
-          doctor: consulta.doctor?.nombre || 'Médico',
+          doctor: consulta.doctor?.nombre || 'Doctor',
           duracion: consulta.duration ? `${consulta.duration} min` : null
         });
       });
     }
     
-    // Agregar visitas sin consulta
+    // Add visits without consultation
     if (selectedPatient.visits && Array.isArray(selectedPatient.visits)) {
       selectedPatient.visits.forEach(visit => {
-        // Solo agregar si no tiene consulta (para evitar duplicados)
+        // Only add if no consultation (to avoid duplicates)
         if (!visit.consultation) {
           history.push({
             timestamp: visit.arrivalTime,
-            accion: `Visita - ${visit.tipoVisita || 'Consulta'} (${visit.status})`,
+            accion: `Visit - ${visit.tipoVisita || 'Consultation'} (${visit.status})`,
             tipo: 'visita',
             detalles: { 
               motivo: visit.motivo,
@@ -808,12 +808,12 @@ function MedicoDashboard() {
       });
     }
     
-    // Agregar hospitalizaciones con detalles
+    // Add hospitalizations with details
     if (selectedPatient.hospitalizations && Array.isArray(selectedPatient.hospitalizations)) {
       selectedPatient.hospitalizations.forEach(hosp => {
         history.push({
           timestamp: hosp.admittedAt,
-          accion: `Hospitalización${hosp.status === 'ALTA' ? ' (Alta)' : ' (Activa)'}`,
+          accion: `Hospitalization${hosp.status === 'ALTA' ? ' (Discharged)' : ' (Active)'}`,
           tipo: 'hospitalizacion',
           status: hosp.status,
           detalles: {
@@ -834,17 +834,17 @@ function MedicoDashboard() {
               estado: m.status
             })) || []
           },
-          doctor: hosp.admittedBy?.nombre || 'Médico'
+          doctor: hosp.admittedBy?.nombre || 'Doctor'
         });
       });
     }
     
-    // Agregar cirugías
+    // Add surgeries
     if (selectedPatient.surgeries && Array.isArray(selectedPatient.surgeries)) {
       selectedPatient.surgeries.forEach(surgery => {
         history.push({
           timestamp: surgery.scheduledDate,
-          accion: `Cirugía - ${surgery.type || surgery.procedureName || 'Procedimiento'}`,
+          accion: `Surgery - ${surgery.type || surgery.procedureName || 'Procedure'}`,
           tipo: 'cirugia',
           status: surgery.status,
           detalles: {
@@ -856,12 +856,12 @@ function MedicoDashboard() {
             anestesia: surgery.anesthesiaType,
             duracion: surgery.duration
           },
-          doctor: surgery.surgeon?.nombre || 'Cirujano'
+          doctor: surgery.surgeon?.nombre || 'Surgeon'
         });
       });
     }
     
-    // Ordenar por fecha descendente
+    // Sort by date descending
     return history.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
   }, [selectedPatient]);
 
@@ -880,12 +880,12 @@ function MedicoDashboard() {
 
   const getAppointmentStatusLabel = (status) => {
     const labels = {
-      'PENDIENTE': t('medico.status.pending', 'Pendiente'),
-      'CONFIRMADA': t('medico.status.confirmed', 'Confirmada'),
-      'EN_CONSULTA': t('medico.status.inConsultation', 'En Consulta'),
-      'COMPLETADA': t('medico.status.completed', 'Completada'),
-      'NO_ASISTIO': t('medico.status.noShow', 'No Asistió'),
-      'CANCELADA': t('medico.status.cancelled', 'Cancelada')
+      'PENDIENTE': t('medico.status.pending', 'Pending'),
+      'CONFIRMADA': t('medico.status.confirmed', 'Confirmed'),
+      'EN_CONSULTA': t('medico.status.inConsultation', 'In Consultation'),
+      'COMPLETADA': t('medico.status.completed', 'Completed'),
+      'NO_ASISTIO': t('medico.status.noShow', 'No Show'),
+      'CANCELADA': t('medico.status.cancelled', 'Cancelled')
     };
     return labels[status] || status;
   };
@@ -895,7 +895,7 @@ function MedicoDashboard() {
       <div className="dashboard medico-dashboard">
         <div className="loading-overlay">
           <div className="loading-spinner"></div>
-          <p>{t('common.loading', 'Cargando...')}</p>
+          <p>{t('common.loading', 'Loading...')}</p>
         </div>
       </div>
     );
@@ -1008,7 +1008,7 @@ function MedicoDashboard() {
                         )}
                         {patient?.nombre || 'Paciente'}
                       </div>
-                      <div className="patient-details-small">{cita.tipo} • {patient?.propietario?.nombre || 'Propietario'}</div>
+                      <div className="patient-details-small">{cita.tipo} • {patient?.propietario?.nombre || 'Owner'}</div>
                       <div className="appointment-reason">{cita.motivo}</div>
                     </div>
                     <span className={`status-badge ${getStatusBadgeClass(cita.estado || 'PENDIENTE')}`}>
@@ -1065,7 +1065,7 @@ function MedicoDashboard() {
           <h2>
             {activeConsultation 
               ? `🏥 ${t('medico.activeConsultation', 'Consulta Activa')}`
-              : `👨‍⚕️ ${t('medico.consultationWorkspace', 'Área de Consulta')}`
+              : `👨‍⚕️ ${t('medico.consultationWorkspace', 'Consultation Area')}`
             }
           </h2>
           <p>{t('medico.doctor', 'Dr.')} {user?.nombre} - {user?.especialidad || t('medico.generalPractice', 'Medicina General')}</p>
@@ -1075,8 +1075,8 @@ function MedicoDashboard() {
           <div className="consultation-empty">
             <div className="empty-consultation-content">
               <span className="empty-icon-large">👨‍⚕️</span>
-              <h3>{t('medico.selectPatient', 'Selecciona un paciente')}</h3>
-              <p>{t('medico.selectPatientDesc', 'Selecciona un paciente del panel izquierdo para iniciar una consulta')}</p>
+              <h3>{t('medico.selectPatient', 'Select a patient')}</h3>
+              <p>{t('medico.selectPatientDesc', 'Select a patient from the left panel to start a consultation')}</p>
             </div>
             
             <div className="consultation-stats">
@@ -1115,21 +1115,21 @@ function MedicoDashboard() {
               </div>
             </div>
             
-            {/* Sección: Visita Actual */}
+            {/* Section: Current Visit */}
             <div className="info-section">
-              <h4 className="section-label">🏥 Visita Actual</h4>
+              <h4 className="section-label">🏥 Current Visit</h4>
               <div className="preview-details-grid">
                 <div className="detail-card highlight">
                   <span className="detail-icon">📝</span>
                   <div className="detail-content">
-                    <span className="detail-label">Motivo de Consulta</span>
-                    <span className="detail-value">{selectedPatient.motivo || 'No especificado'}</span>
+                    <span className="detail-label">Reason for Visit</span>
+                    <span className="detail-value">{selectedPatient.motivo || 'Not specified'}</span>
                   </div>
                 </div>
                 <div className="detail-card">
                   <span className="detail-icon">🎯</span>
                   <div className="detail-content">
-                    <span className="detail-label">Prioridad</span>
+                    <span className="detail-label">Priority</span>
                     <span className={`priority-badge ${selectedPatient.prioridad?.toLowerCase() || 'media'}`}>
                       {selectedPatient.prioridad || 'MEDIA'}
                     </span>
@@ -1138,49 +1138,49 @@ function MedicoDashboard() {
                 <div className="detail-card">
                   <span className="detail-icon">⚖️</span>
                   <div className="detail-content">
-                    <span className="detail-label">Peso Actual</span>
-                    <span className="detail-value">{selectedPatient.peso ? `${selectedPatient.peso} kg` : 'No registrado'}</span>
+                    <span className="detail-label">Current Weight</span>
+                    <span className="detail-value">{selectedPatient.peso ? `${selectedPatient.peso} kg` : 'Not recorded'}</span>
                   </div>
                 </div>
                 <div className="detail-card">
                   <span className="detail-icon">🌡️</span>
                   <div className="detail-content">
-                    <span className="detail-label">Temperatura</span>
-                    <span className="detail-value">{selectedPatient.temperatura ? `${selectedPatient.temperatura}°C` : 'No registrada'}</span>
+                    <span className="detail-label">Temperature</span>
+                    <span className="detail-value">{selectedPatient.temperatura ? `${selectedPatient.temperatura}°C` : 'Not recorded'}</span>
                   </div>
                 </div>
               </div>
             </div>
 
-            {/* Sección: Datos del Paciente */}
+            {/* Section: Patient Data */}
             <div className="info-section">
-              <h4 className="section-label">🐾 Datos del Paciente</h4>
+              <h4 className="section-label">🐾 Patient Data</h4>
               <div className="preview-details-grid three-cols">
                 <div className="detail-card compact">
                   <span className="detail-icon-small">🏷️</span>
                   <div className="detail-content">
-                    <span className="detail-label">Especie</span>
+                    <span className="detail-label">Species</span>
                     <span className="detail-value">{selectedPatient.especie}</span>
                   </div>
                 </div>
                 <div className="detail-card compact">
                   <span className="detail-icon-small">🐕</span>
                   <div className="detail-content">
-                    <span className="detail-label">Raza</span>
-                    <span className="detail-value">{selectedPatient.raza || 'Sin especificar'}</span>
+                    <span className="detail-label">Breed</span>
+                    <span className="detail-value">{selectedPatient.raza || 'Not specified'}</span>
                   </div>
                 </div>
                 <div className="detail-card compact">
                   <span className="detail-icon-small">📅</span>
                   <div className="detail-content">
-                    <span className="detail-label">Edad</span>
-                    <span className="detail-value">{selectedPatient.edad || 'No registrada'}</span>
+                    <span className="detail-label">Age</span>
+                    <span className="detail-value">{selectedPatient.edad || 'Not recorded'}</span>
                   </div>
                 </div>
                 <div className="detail-card compact">
                   <span className="detail-icon-small">⚧</span>
                   <div className="detail-content">
-                    <span className="detail-label">Sexo</span>
+                    <span className="detail-label">Sex</span>
                     <span className="detail-value">{selectedPatient.sexo}</span>
                   </div>
                 </div>
@@ -1188,44 +1188,44 @@ function MedicoDashboard() {
                   <span className="detail-icon-small">🎨</span>
                   <div className="detail-content">
                     <span className="detail-label">Color</span>
-                    <span className="detail-value">{selectedPatient.color || 'No especificado'}</span>
+                    <span className="detail-value">{selectedPatient.color || 'Not specified'}</span>
                   </div>
                 </div>
                 <div className="detail-card compact">
                   <span className="detail-icon-small">💉</span>
                   <div className="detail-content">
-                    <span className="detail-label">Esterilizado</span>
-                    <span className="detail-value">{selectedPatient.esterilizado ? 'Sí' : 'No'}</span>
+                    <span className="detail-label">Spayed/Neutered</span>
+                    <span className="detail-value">{selectedPatient.esterilizado ? 'Yes' : 'No'}</span>
                   </div>
                 </div>
               </div>
             </div>
 
-            {/* Sección: Propietario */}
+            {/* Section: Owner */}
             <div className="info-section">
-              <h4 className="section-label">👤 Propietario</h4>
+              <h4 className="section-label">👤 Owner</h4>
               <div className="preview-details-grid">
                 <div className="detail-card">
                   <span className="detail-icon">👤</span>
                   <div className="detail-content">
-                    <span className="detail-label">Nombre</span>
+                    <span className="detail-label">Name</span>
                     <span className="detail-value">{selectedPatient.propietario}</span>
                   </div>
                 </div>
                 <div className="detail-card">
                   <span className="detail-icon">📱</span>
                   <div className="detail-content">
-                    <span className="detail-label">Teléfono</span>
-                    <span className="detail-value clickable">{selectedPatient.telefono || 'No registrado'}</span>
+                    <span className="detail-label">Phone</span>
+                    <span className="detail-value clickable">{selectedPatient.telefono || 'Not registered'}</span>
                   </div>
                 </div>
               </div>
             </div>
 
-            {/* Notas/Antecedentes si existen */}
+            {/* Notes/History if exists */}
             {selectedPatient.antecedentes && (
               <div className="info-section">
-                <h4 className="section-label">📋 Antecedentes</h4>
+                <h4 className="section-label">📋 Background</h4>
                 <div className="notes-box">
                   {selectedPatient.antecedentes}
                 </div>
@@ -1271,13 +1271,13 @@ function MedicoDashboard() {
                     className={`soap-save-btn ${savedSections.subjetivo ? 'saved' : ''}`}
                     onClick={() => handleSaveSOAPSection('subjetivo')}
                     disabled={!consultationNotes.subjetivo || localLoading}
-                    title={savedSections.subjetivo ? 'Guardado' : 'Guardar'}
+                    title={savedSections.subjetivo ? 'Saved' : 'Save'}
                   >
                     {savedSections.subjetivo ? '✓' : '💾'}
                   </button>
                 </div>
                 <textarea
-                  placeholder={t('medico.subjectivePlaceholder', 'Historia clínica, síntomas reportados por el dueño...')}
+                  placeholder={t('medico.subjectivePlaceholder', 'Clinical history, symptoms reported by the owner...')}
                   value={consultationNotes.subjetivo}
                   onChange={(e) => {
                     setConsultationNotes(prev => ({ ...prev, subjetivo: e.target.value }));
@@ -1289,18 +1289,18 @@ function MedicoDashboard() {
               
               <div className="soap-section">
                 <div className="soap-header">
-                  <label><span className="soap-letter">O</span>{t('medico.objective', 'Objetivo')}</label>
+                  <label><span className="soap-letter">O</span>{t('medico.objective', 'Objective')}</label>
                   <button 
                     className={`soap-save-btn ${savedSections.objetivo ? 'saved' : ''}`}
                     onClick={() => handleSaveSOAPSection('objetivo')}
                     disabled={!consultationNotes.objetivo || localLoading}
-                    title={savedSections.objetivo ? 'Guardado' : 'Guardar'}
+                    title={savedSections.objetivo ? 'Saved' : 'Save'}
                   >
                     {savedSections.objetivo ? '✓' : '💾'}
                   </button>
                 </div>
                 <textarea
-                  placeholder={t('medico.objectivePlaceholder', 'Hallazgos del examen físico, signos vitales...')}
+                  placeholder={t('medico.objectivePlaceholder', 'Physical exam findings, vital signs...')}
                   value={consultationNotes.objetivo}
                   onChange={(e) => {
                     setConsultationNotes(prev => ({ ...prev, objetivo: e.target.value }));
@@ -1312,18 +1312,18 @@ function MedicoDashboard() {
               
               <div className="soap-section">
                 <div className="soap-header">
-                  <label><span className="soap-letter">A</span>{t('medico.assessment', 'Análisis')}</label>
+                  <label><span className="soap-letter">A</span>{t('medico.assessment', 'Assessment')}</label>
                   <button 
                     className={`soap-save-btn ${savedSections.analisis ? 'saved' : ''}`}
                     onClick={() => handleSaveSOAPSection('analisis')}
                     disabled={!consultationNotes.analisis || localLoading}
-                    title={savedSections.analisis ? 'Guardado' : 'Guardar'}
+                    title={savedSections.analisis ? 'Saved' : 'Save'}
                   >
                     {savedSections.analisis ? '✓' : '💾'}
                   </button>
                 </div>
                 <textarea
-                  placeholder={t('medico.assessmentPlaceholder', 'Diagnóstico diferencial, interpretación...')}
+                  placeholder={t('medico.assessmentPlaceholder', 'Differential diagnosis, interpretation...')}
                   value={consultationNotes.analisis}
                   onChange={(e) => {
                     setConsultationNotes(prev => ({ ...prev, analisis: e.target.value }));
@@ -1340,13 +1340,13 @@ function MedicoDashboard() {
                     className={`soap-save-btn ${savedSections.plan ? 'saved' : ''}`}
                     onClick={() => handleSaveSOAPSection('plan')}
                     disabled={!consultationNotes.plan || localLoading}
-                    title={savedSections.plan ? 'Guardado' : 'Guardar'}
+                    title={savedSections.plan ? 'Saved' : 'Save'}
                   >
                     {savedSections.plan ? '✓' : '💾'}
                   </button>
                 </div>
                 <textarea
-                  placeholder={t('medico.planPlaceholder', 'Plan de tratamiento, seguimiento...')}
+                  placeholder={t('medico.planPlaceholder', 'Treatment plan, follow-up...')}
                   value={consultationNotes.plan}
                   onChange={(e) => {
                     setConsultationNotes(prev => ({ ...prev, plan: e.target.value }));
@@ -1362,7 +1362,7 @@ function MedicoDashboard() {
                 🌡️ {t('medico.recordVitals', 'Signos Vitales')}
               </button>
               <button className="action-btn diagnosis" onClick={() => setShowDiagnosisModal(true)}>
-                🔍 {t('medico.addDiagnosis', 'Diagnóstico')}
+                🔍 {t('medico.addDiagnosis', 'Diagnosis')}
               </button>
               <button className="action-btn prescription" onClick={() => setShowPrescriptionModal(true)}>
                 💊 {t('medico.createPrescription', 'Receta')}
@@ -1377,10 +1377,10 @@ function MedicoDashboard() {
 
             <div className="consultation-footer">
               <button className="btn-secondary" onClick={() => { setActiveConsultation(null); setSelectedPatient(null); }}>
-                {t('common.cancel', 'Cancelar')}
+                {t('common.cancel', 'Cancel')}
               </button>
               <button className="btn-end-consultation" onClick={handleEndConsultation}>
-                ✅ {t('medico.endConsultation', 'Finalizar Consulta')}
+                ✅ {t('medico.endConsultation', 'End Consultation')}
               </button>
             </div>
           </div>
@@ -1390,48 +1390,48 @@ function MedicoDashboard() {
       {/* RIGHT PANEL - Patient Information */}
       <aside className="right-panel">
         <div className="panel-header">
-          <h3>📋 {t('medico.patientInfo', 'Información del Paciente')}</h3>
+          <h3>📋 {t('medico.patientInfo', 'Patient Information')}</h3>
         </div>
 
         {!selectedPatient ? (
           <div className="patient-info-empty">
             <span className="empty-icon">🐾</span>
-            <p>{t('medico.noPatientSelected', 'Selecciona un paciente para ver su información')}</p>
+            <p>{t('medico.noPatientSelected', 'Select a patient to view their information')}</p>
           </div>
         ) : (
           <div className="patient-info-content">
             <div className="info-card">
-              <h4>{t('medico.patientDetails', 'Datos del Paciente')}</h4>
+              <h4>{t('medico.patientDetails', 'Patient Details')}</h4>
               <div className="info-grid">
                 <div className="info-item">
-                  <span className="info-label">{t('medico.species', 'Especie')}</span>
+                  <span className="info-label">{t('medico.species', 'Species')}</span>
                   <span className="info-value">{selectedPatient.especie}</span>
                 </div>
                 <div className="info-item">
-                  <span className="info-label">{t('medico.breed', 'Raza')}</span>
+                  <span className="info-label">{t('medico.breed', 'Breed')}</span>
                   <span className="info-value">{selectedPatient.raza}</span>
                 </div>
                 <div className="info-item">
-                  <span className="info-label">{t('medico.age', 'Edad')}</span>
+                  <span className="info-label">{t('medico.age', 'Age')}</span>
                   <span className="info-value">{selectedPatient.edad}</span>
                 </div>
                 <div className="info-item">
-                  <span className="info-label">{t('medico.sex', 'Sexo')}</span>
+                  <span className="info-label">{t('medico.sex', 'Sex')}</span>
                   <span className="info-value">{selectedPatient.sexo}</span>
                 </div>
                 <div className="info-item">
-                  <span className="info-label">{t('medico.weight', 'Peso')}</span>
+                  <span className="info-label">{t('medico.weight', 'Weight')}</span>
                   <span className="info-value">{selectedPatient.peso}</span>
                 </div>
                 <div className="info-item">
-                  <span className="info-label">{t('medico.fileNumber', 'Ficha')}</span>
+                  <span className="info-label">{t('medico.fileNumber', 'File #')}</span>
                   <span className="info-value ficha">{selectedPatient.numeroFicha}</span>
                 </div>
               </div>
             </div>
 
             <div className="info-card">
-              <h4>{t('medico.ownerDetails', 'Datos del Propietario')}</h4>
+              <h4>{t('medico.ownerDetails', 'Owner Details')}</h4>
               <div className="owner-info">
                 <p className="owner-name">{selectedPatient.propietario}</p>
                 <a href={`tel:${selectedPatient.telefono}`} className="owner-phone">📞 {selectedPatient.telefono}</a>
@@ -1439,21 +1439,21 @@ function MedicoDashboard() {
             </div>
 
             <div className="info-card">
-              <h4>{t('medico.currentVisit', 'Visita Actual')}</h4>
+              <h4>{t('medico.currentVisit', 'Current Visit')}</h4>
               <div className="visit-info">
                 <div className="visit-item">
-                  <span className="visit-label">{t('medico.reason', 'Motivo')}</span>
+                  <span className="visit-label">{t('medico.reason', 'Reason')}</span>
                   <span className="visit-value">{selectedPatient.motivo || '-'}</span>
                 </div>
                 <div className="visit-item">
-                  <span className="visit-label">{t('medico.priority', 'Prioridad')}</span>
+                  <span className="visit-label">{t('medico.priority', 'Priority')}</span>
                   <span className={`priority-badge ${selectedPatient.prioridad?.toLowerCase() || 'normal'}`}>
                     {selectedPatient.prioridad || 'Normal'}
                   </span>
                 </div>
                 {selectedPatient.antecedentes && (
                   <div className="visit-item full">
-                    <span className="visit-label">{t('medico.history', 'Antecedentes')}</span>
+                    <span className="visit-label">{t('medico.history', 'History')}</span>
                     <span className="visit-value">{selectedPatient.antecedentes}</span>
                   </div>
                 )}
@@ -1461,19 +1461,19 @@ function MedicoDashboard() {
             </div>
 
             <div className="info-card actions">
-              <h4>{t('medico.quickActions', 'Acciones Rápidas')}</h4>
+              <h4>{t('medico.quickActions', 'Quick Actions')}</h4>
               <div className="quick-action-buttons">
                 <button className="quick-action-btn" onClick={handleOpenHistory}>
-                  📋 {t('medico.viewFullHistory', 'Ver Historial Completo')}
+                  📋 {t('medico.viewFullHistory', 'View Full History')}
                 </button>
                 {selectedPatient.estado === 'HOSPITALIZADO' && (
                   <button className="quick-action-btn" onClick={() => setShowVitalsModal(true)}>
-                    📝 {t('medico.recordMonitoring', 'Registrar Monitoreo')}
+                    📝 {t('medico.recordMonitoring', 'Record Monitoring')}
                   </button>
                 )}
                 {!activeConsultation && selectedPatient.estado !== 'HOSPITALIZADO' && (
                   <button className="quick-action-btn primary" onClick={() => handleStartConsultation(selectedPatient)}>
-                    🏥 {t('medico.startConsultation', 'Iniciar Consulta')}
+                    🏥 {t('medico.startConsultation', 'Start Consultation')}
                   </button>
                 )}
               </div>
@@ -1489,7 +1489,7 @@ function MedicoDashboard() {
                   </div>
                 ))}
                 {getPatientHistory(selectedPatient.id).length === 0 && (
-                  <p className="no-history">{t('medico.noRecentHistory', 'Sin historial reciente')}</p>
+                  <p className="no-history">{t('medico.noRecentHistory', 'No recent history')}</p>
                 )}
               </div>
             </div>
@@ -1501,47 +1501,47 @@ function MedicoDashboard() {
       {showVitalsModal && (
         <div className="modal-overlay" onClick={() => setShowVitalsModal(false)}>
           <div className="modal-content" onClick={e => e.stopPropagation()}>
-            <h2>🌡️ {t('medico.recordVitalSigns', 'Registrar Signos Vitales')}</h2>
+            <h2>🌡️ {t('medico.recordVitalSigns', 'Record Vital Signs')}</h2>
             <div className="form-grid">
               <div className="form-group">
-                <label>🌡️ {t('medico.temperature', 'Temperatura')} (°C)</label>
+                <label>🌡️ {t('medico.temperature', 'Temperature')} (°C)</label>
                 <input type="number" step="0.1" className="form-control" placeholder="38.5" value={vitalsForm.temperatura} onChange={(e) => setVitalsForm(prev => ({ ...prev, temperatura: e.target.value }))} />
               </div>
               <div className="form-group">
-                <label>❤️ {t('medico.heartRate', 'Frecuencia Cardíaca')} (lpm)</label>
+                <label>❤️ {t('medico.heartRate', 'Heart Rate')} (bpm)</label>
                 <input type="number" className="form-control" placeholder="80" value={vitalsForm.frecuenciaCardiaca} onChange={(e) => setVitalsForm(prev => ({ ...prev, frecuenciaCardiaca: e.target.value }))} />
               </div>
               <div className="form-group">
-                <label>🫁 {t('medico.respiratoryRate', 'Frecuencia Respiratoria')} (rpm)</label>
+                <label>🫁 {t('medico.respiratoryRate', 'Respiratory Rate')} (rpm)</label>
                 <input type="number" className="form-control" placeholder="20" value={vitalsForm.frecuenciaRespiratoria} onChange={(e) => setVitalsForm(prev => ({ ...prev, frecuenciaRespiratoria: e.target.value }))} />
               </div>
               <div className="form-group">
-                <label>🩺 {t('medico.bloodPressure', 'Presión Arterial')} (mmHg)</label>
+                <label>🩺 {t('medico.bloodPressure', 'Blood Pressure')} (mmHg)</label>
                 <input type="text" className="form-control" placeholder="120/80" value={vitalsForm.presionArterial} onChange={(e) => setVitalsForm(prev => ({ ...prev, presionArterial: e.target.value }))} />
               </div>
               <div className="form-group">
-                <label>⚖️ {t('medico.weight', 'Peso')} (kg)</label>
+                <label>⚖️ {t('medico.weight', 'Weight')} (kg)</label>
                 <input type="number" step="0.1" className="form-control" placeholder="15.5" value={vitalsForm.peso} onChange={(e) => setVitalsForm(prev => ({ ...prev, peso: e.target.value }))} />
               </div>
               <div className="form-group">
-                <label>🧠 {t('medico.consciousnessLevel', 'Nivel de Conciencia')}</label>
+                <label>🧠 {t('medico.consciousnessLevel', 'Consciousness Level')}</label>
                 <select className="form-control" value={vitalsForm.nivelConciencia} onChange={(e) => setVitalsForm(prev => ({ ...prev, nivelConciencia: e.target.value }))}>
-                  <option value="Alerta">Alerta</option>
-                  <option value="Somnoliento">Somnoliento</option>
-                  <option value="Desorientado">Desorientado</option>
-                  <option value="Estuporoso">Estuporoso</option>
-                  <option value="Inconsciente">Inconsciente</option>
+                  <option value="Alerta">Alert</option>
+                  <option value="Somnoliento">Drowsy</option>
+                  <option value="Desorientado">Disoriented</option>
+                  <option value="Estuporoso">Stuporous</option>
+                  <option value="Inconsciente">Unconscious</option>
                 </select>
               </div>
               <div className="form-group full-width">
-                <label>😣 {t('medico.painScale', 'Escala de Dolor')} (0-10)</label>
+                <label>😣 {t('medico.painScale', 'Pain Scale')} (0-10)</label>
                 <input type="range" min="0" max="10" className="pain-scale-input" value={vitalsForm.escalaDolor} onChange={(e) => setVitalsForm(prev => ({ ...prev, escalaDolor: e.target.value }))} />
                 <span className="pain-value">{vitalsForm.escalaDolor}/10</span>
               </div>
             </div>
             <div className="modal-actions">
-              <button className="btn-secondary" onClick={() => setShowVitalsModal(false)}>{t('common.cancel', 'Cancelar')}</button>
-              <button className="btn-primary" onClick={handleSaveVitals} disabled={!vitalsForm.temperatura || !vitalsForm.frecuenciaCardiaca}>{t('common.save', 'Guardar')}</button>
+              <button className="btn-secondary" onClick={() => setShowVitalsModal(false)}>{t('common.cancel', 'Cancel')}</button>
+              <button className="btn-primary" onClick={handleSaveVitals} disabled={!vitalsForm.temperatura || !vitalsForm.frecuenciaCardiaca}>{t('common.save', 'Save')}</button>
             </div>
           </div>
         </div>
@@ -1551,41 +1551,41 @@ function MedicoDashboard() {
       {showDiagnosisModal && (
         <div className="modal-overlay" onClick={() => setShowDiagnosisModal(false)}>
           <div className="modal-content" onClick={e => e.stopPropagation()}>
-            <h2>🔍 {t('medico.addDiagnosis', 'Agregar Diagnóstico')}</h2>
+            <h2>🔍 {t('medico.addDiagnosis', 'Add Diagnosis')}</h2>
             <div className="form-group">
-              <label>{t('medico.diagnosisCode', 'Código (CIE-10)')}</label>
-              <input type="text" className="form-control" placeholder="Ej: J06.9" value={diagnosisForm.codigo} onChange={(e) => setDiagnosisForm(prev => ({ ...prev, codigo: e.target.value }))} />
+              <label>{t('medico.diagnosisCode', 'Code (ICD-10)')}</label>
+              <input type="text" className="form-control" placeholder="e.g: J06.9" value={diagnosisForm.codigo} onChange={(e) => setDiagnosisForm(prev => ({ ...prev, codigo: e.target.value }))} />
             </div>
             <div className="form-group">
-              <label>{t('medico.diagnosisDescription', 'Descripción')} *</label>
-              <textarea className="form-control" placeholder={t('medico.diagnosisDescPlaceholder', 'Describa el diagnóstico...')} rows="3" value={diagnosisForm.descripcion} onChange={(e) => setDiagnosisForm(prev => ({ ...prev, descripcion: e.target.value }))} />
+              <label>{t('medico.diagnosisDescription', 'Description')} *</label>
+              <textarea className="form-control" placeholder={t('medico.diagnosisDescPlaceholder', 'Describe the diagnosis...')} rows="3" value={diagnosisForm.descripcion} onChange={(e) => setDiagnosisForm(prev => ({ ...prev, descripcion: e.target.value }))} />
             </div>
             <div className="form-row">
               <div className="form-group">
-                <label>{t('medico.diagnosisType', 'Tipo')}</label>
+                <label>{t('medico.diagnosisType', 'Type')}</label>
                 <select className="form-control" value={diagnosisForm.tipo} onChange={(e) => setDiagnosisForm(prev => ({ ...prev, tipo: e.target.value }))}>
-                  <option value="PRESUNTIVO">{t('medico.presumptive', 'Presuntivo')}</option>
-                  <option value="DEFINITIVO">{t('medico.definitive', 'Definitivo')}</option>
-                  <option value="DIFERENCIAL">{t('medico.differential', 'Diferencial')}</option>
+                  <option value="PRESUNTIVO">{t('medico.presumptive', 'Presumptive')}</option>
+                  <option value="DEFINITIVO">{t('medico.definitive', 'Definitive')}</option>
+                  <option value="DIFERENCIAL">{t('medico.differential', 'Differential')}</option>
                 </select>
               </div>
               <div className="form-group">
-                <label>{t('medico.severity', 'Severidad')}</label>
+                <label>{t('medico.severity', 'Severity')}</label>
                 <select className="form-control" value={diagnosisForm.severidad} onChange={(e) => setDiagnosisForm(prev => ({ ...prev, severidad: e.target.value }))}>
-                  <option value="LEVE">{t('medico.mild', 'Leve')}</option>
-                  <option value="MODERADO">{t('medico.moderate', 'Moderado')}</option>
-                  <option value="SEVERO">{t('medico.severe', 'Severo')}</option>
-                  <option value="CRITICO">{t('medico.critical', 'Crítico')}</option>
+                  <option value="LEVE">{t('medico.mild', 'Mild')}</option>
+                  <option value="MODERADO">{t('medico.moderate', 'Moderate')}</option>
+                  <option value="SEVERO">{t('medico.severe', 'Severe')}</option>
+                  <option value="CRITICO">{t('medico.critical', 'Critical')}</option>
                 </select>
               </div>
             </div>
             <div className="form-group">
-              <label>{t('medico.additionalNotes', 'Notas adicionales')}</label>
-              <textarea className="form-control" placeholder={t('medico.additionalNotesPlaceholder', 'Observaciones adicionales...')} rows="2" value={diagnosisForm.notas} onChange={(e) => setDiagnosisForm(prev => ({ ...prev, notas: e.target.value }))} />
+              <label>{t('medico.additionalNotes', 'Additional Notes')}</label>
+              <textarea className="form-control" placeholder={t('medico.additionalNotesPlaceholder', 'Additional observations...')} rows="2" value={diagnosisForm.notas} onChange={(e) => setDiagnosisForm(prev => ({ ...prev, notas: e.target.value }))} />
             </div>
             <div className="modal-actions">
-              <button className="btn-secondary" onClick={() => setShowDiagnosisModal(false)}>{t('common.cancel', 'Cancelar')}</button>
-              <button className="btn-primary" onClick={handleAddDiagnosis} disabled={!diagnosisForm.descripcion}>{t('medico.addDiagnosis', 'Agregar Diagnóstico')}</button>
+              <button className="btn-secondary" onClick={() => setShowDiagnosisModal(false)}>{t('common.cancel', 'Cancel')}</button>
+              <button className="btn-primary" onClick={handleAddDiagnosis} disabled={!diagnosisForm.descripcion}>{t('medico.addDiagnosis', 'Add Diagnosis')}</button>
             </div>
           </div>
         </div>
@@ -1595,9 +1595,9 @@ function MedicoDashboard() {
       {showPrescriptionModal && (
         <div className="modal-overlay" onClick={() => setShowPrescriptionModal(false)}>
           <div className="modal-content large" onClick={e => e.stopPropagation()}>
-            <h2>💊 {t('medico.createPrescription', 'Crear Receta')}</h2>
+            <h2>💊 {t('medico.createPrescription', 'Create Prescription')}</h2>
             <div className="quick-medications">
-              <p>{t('medico.commonMedications', 'Medicamentos comunes')}:</p>
+              <p>{t('medico.commonMedications', 'Common medications')}:</p>
               <div className="med-chips">
                 {commonMedications.map(med => (
                   <button key={med} className="med-chip" onClick={() => setCurrentMedication(prev => ({ ...prev, nombre: med }))}>+ {med}</button>
@@ -1607,45 +1607,45 @@ function MedicoDashboard() {
             <div className="add-medication-form">
               <div className="form-row">
                 <div className="form-group">
-                  <label>{t('medico.medicationName', 'Medicamento')}</label>
-                  <input type="text" className="form-control" placeholder={t('medico.medicationNamePlaceholder', 'Nombre del medicamento')} value={currentMedication.nombre} onChange={(e) => setCurrentMedication(prev => ({ ...prev, nombre: e.target.value }))} />
+                  <label>{t('medico.medicationName', 'Medication')}</label>
+                  <input type="text" className="form-control" placeholder={t('medico.medicationNamePlaceholder', 'Medication name')} value={currentMedication.nombre} onChange={(e) => setCurrentMedication(prev => ({ ...prev, nombre: e.target.value }))} />
                 </div>
                 <div className="form-group">
-                  <label>{t('medico.dose', 'Dosis')}</label>
-                  <input type="text" className="form-control" placeholder="Ej: 500mg" value={currentMedication.dosis} onChange={(e) => setCurrentMedication(prev => ({ ...prev, dosis: e.target.value }))} />
+                  <label>{t('medico.dose', 'Dose')}</label>
+                  <input type="text" className="form-control" placeholder="e.g: 500mg" value={currentMedication.dosis} onChange={(e) => setCurrentMedication(prev => ({ ...prev, dosis: e.target.value }))} />
                 </div>
               </div>
               <div className="form-row">
                 <div className="form-group">
-                  <label>{t('medico.frequency', 'Frecuencia')}</label>
-                  <input type="text" className="form-control" placeholder="Ej: Cada 8 horas" value={currentMedication.frecuencia} onChange={(e) => setCurrentMedication(prev => ({ ...prev, frecuencia: e.target.value }))} />
+                  <label>{t('medico.frequency', 'Frequency')}</label>
+                  <input type="text" className="form-control" placeholder="e.g: Every 8 hours" value={currentMedication.frecuencia} onChange={(e) => setCurrentMedication(prev => ({ ...prev, frecuencia: e.target.value }))} />
                 </div>
                 <div className="form-group">
-                  <label>{t('medico.route', 'Vía')}</label>
+                  <label>{t('medico.route', 'Route')}</label>
                   <select className="form-control" value={currentMedication.via} onChange={(e) => setCurrentMedication(prev => ({ ...prev, via: e.target.value }))}>
                     <option value="ORAL">Oral</option>
-                    <option value="INYECTABLE">Inyectable</option>
-                    <option value="TOPICO">Tópico</option>
-                    <option value="OFTALMICA">Oftálmica</option>
-                    <option value="OTICA">Ótica</option>
+                    <option value="INYECTABLE">Injectable</option>
+                    <option value="TOPICO">Topical</option>
+                    <option value="OFTALMICA">Ophthalmic</option>
+                    <option value="OTICA">Otic</option>
                   </select>
                 </div>
                 <div className="form-group">
-                  <label>{t('medico.duration', 'Duración')}</label>
-                  <input type="text" className="form-control" placeholder="Ej: 7 días" value={currentMedication.duracion} onChange={(e) => setCurrentMedication(prev => ({ ...prev, duracion: e.target.value }))} />
+                  <label>{t('medico.duration', 'Duration')}</label>
+                  <input type="text" className="form-control" placeholder="e.g: 7 days" value={currentMedication.duracion} onChange={(e) => setCurrentMedication(prev => ({ ...prev, duracion: e.target.value }))} />
                 </div>
               </div>
-              <button className="btn-add-medication" onClick={handleAddMedication} disabled={!currentMedication.nombre || !currentMedication.dosis}>+ {t('medico.addMedication', 'Agregar Medicamento')}</button>
+              <button className="btn-add-medication" onClick={handleAddMedication} disabled={!currentMedication.nombre || !currentMedication.dosis}>+ {t('medico.addMedication', 'Add Medication')}</button>
             </div>
             {prescriptionForm.medicamentos.length > 0 && (
               <div className="medications-list">
-                <h4>{t('medico.prescribedMedications', 'Medicamentos en la receta')}:</h4>
+                <h4>{t('medico.prescribedMedications', 'Prescription medications')}:</h4>
                 {prescriptionForm.medicamentos.map(med => (
                   <div key={med.id} className="medication-item">
                     <div className="medication-info">
                       <strong>{med.nombre}</strong>
                       <span>{med.dosis} - {med.frecuencia} ({med.via})</span>
-                      {med.duracion && <span>{t('medico.duration', 'Duración')}: {med.duracion}</span>}
+                      {med.duracion && <span>{t('medico.duration', 'Duration')}: {med.duracion}</span>}
                     </div>
                     <button className="btn-remove" onClick={() => handleRemoveMedication(med.id)}>✕</button>
                   </div>
@@ -1653,12 +1653,12 @@ function MedicoDashboard() {
               </div>
             )}
             <div className="form-group">
-              <label>{t('medico.generalInstructions', 'Instrucciones generales')}</label>
-              <textarea className="form-control" placeholder={t('medico.instructionsPlaceholder', 'Instrucciones adicionales para el propietario...')} rows="2" value={prescriptionForm.instrucciones} onChange={(e) => setPrescriptionForm(prev => ({ ...prev, instrucciones: e.target.value }))} />
+              <label>{t('medico.generalInstructions', 'General instructions')}</label>
+              <textarea className="form-control" placeholder={t('medico.instructionsPlaceholder', 'Additional instructions for the owner...')} rows="2" value={prescriptionForm.instrucciones} onChange={(e) => setPrescriptionForm(prev => ({ ...prev, instrucciones: e.target.value }))} />
             </div>
             <div className="modal-actions">
-              <button className="btn-secondary" onClick={() => setShowPrescriptionModal(false)}>{t('common.cancel', 'Cancelar')}</button>
-              <button className="btn-primary" onClick={handleCreatePrescription} disabled={prescriptionForm.medicamentos.length === 0}>💊 {t('medico.sendToPharmacy', 'Enviar a Farmacia')}</button>
+              <button className="btn-secondary" onClick={() => setShowPrescriptionModal(false)}>{t('common.cancel', 'Cancel')}</button>
+              <button className="btn-primary" onClick={handleCreatePrescription} disabled={prescriptionForm.medicamentos.length === 0}>💊 {t('medico.sendToPharmacy', 'Send to Pharmacy')}</button>
             </div>
           </div>
         </div>
@@ -1668,9 +1668,9 @@ function MedicoDashboard() {
       {showLabOrderModal && (
         <div className="modal-overlay" onClick={() => setShowLabOrderModal(false)}>
           <div className="modal-content" onClick={e => e.stopPropagation()}>
-            <h2>🔬 {t('medico.createLabOrder', 'Orden de Laboratorio')}</h2>
+            <h2>🔬 {t('medico.createLabOrder', 'Lab Order')}</h2>
             <div className="studies-selection">
-              <label>{t('medico.selectStudies', 'Selecciona los estudios')}:</label>
+              <label>{t('medico.selectStudies', 'Select studies')}:</label>
               <div className="studies-grid">
                 {studiesOptions.map(study => (
                   <label key={study.id} className={`study-checkbox ${labOrderForm.estudios.includes(study.id) ? 'selected' : ''}`}>
@@ -1681,20 +1681,20 @@ function MedicoDashboard() {
               </div>
             </div>
             <div className="form-group">
-              <label>{t('medico.priority', 'Prioridad')}</label>
+              <label>{t('medico.priority', 'Priority')}</label>
               <select className="form-control" value={labOrderForm.prioridad} onChange={(e) => setLabOrderForm(prev => ({ ...prev, prioridad: e.target.value }))}>
                 <option value="NORMAL">{t('medico.normal', 'Normal')}</option>
-                <option value="URGENTE">{t('medico.urgent', 'Urgente')}</option>
+                <option value="URGENTE">{t('medico.urgent', 'Urgent')}</option>
                 <option value="STAT">{t('medico.stat', 'STAT')}</option>
               </select>
             </div>
             <div className="form-group">
-              <label>{t('medico.clinicalIndications', 'Indicaciones clínicas')}</label>
-              <textarea className="form-control" placeholder={t('medico.indicationsPlaceholder', 'Diagnóstico presuntivo, razón del estudio...')} rows="3" value={labOrderForm.indicaciones} onChange={(e) => setLabOrderForm(prev => ({ ...prev, indicaciones: e.target.value }))} />
+              <label>{t('medico.clinicalIndications', 'Clinical Indications')}</label>
+              <textarea className="form-control" placeholder={t('medico.indicationsPlaceholder', 'Presumptive diagnosis, reason for study...')} rows="3" value={labOrderForm.indicaciones} onChange={(e) => setLabOrderForm(prev => ({ ...prev, indicaciones: e.target.value }))} />
             </div>
             <div className="modal-actions">
-              <button className="btn-secondary" onClick={() => setShowLabOrderModal(false)}>{t('common.cancel', 'Cancelar')}</button>
-              <button className="btn-primary" onClick={handleCreateLabOrder} disabled={labOrderForm.estudios.length === 0}>🔬 {t('medico.sendToLab', 'Enviar a Laboratorio')}</button>
+              <button className="btn-secondary" onClick={() => setShowLabOrderModal(false)}>{t('common.cancel', 'Cancel')}</button>
+              <button className="btn-primary" onClick={handleCreateLabOrder} disabled={labOrderForm.estudios.length === 0}>🔬 {t('medico.sendToLab', 'Send to Laboratory')}</button>
             </div>
           </div>
         </div>
@@ -1704,45 +1704,45 @@ function MedicoDashboard() {
       {showHospitalizationModal && (
         <div className="modal-overlay" onClick={() => setShowHospitalizationModal(false)}>
           <div className="modal-content" onClick={e => e.stopPropagation()}>
-            <h2>🏥 {t('medico.hospitalizePatient', 'Hospitalizar Paciente')}</h2>
+            <h2>🏥 {t('medico.hospitalizePatient', 'Hospitalize Patient')}</h2>
             <div className="form-group">
-              <label>{t('medico.hospitalizationReason', 'Motivo de hospitalización')} *</label>
-              <textarea className="form-control" placeholder={t('medico.hospitalizationReasonPlaceholder', 'Razón para hospitalizar al paciente...')} rows="3" value={hospitalizationForm.motivo} onChange={(e) => setHospitalizationForm(prev => ({ ...prev, motivo: e.target.value }))} />
+              <label>{t('medico.hospitalizationReason', 'Hospitalization Reason')} *</label>
+              <textarea className="form-control" placeholder={t('medico.hospitalizationReasonPlaceholder', 'Reason for hospitalizing the patient...')} rows="3" value={hospitalizationForm.motivo} onChange={(e) => setHospitalizationForm(prev => ({ ...prev, motivo: e.target.value }))} />
             </div>
             <div className="form-row">
               <div className="form-group">
-                <label>{t('medico.monitoringFrequency', 'Frecuencia de monitoreo')}</label>
+                <label>{t('medico.monitoringFrequency', 'Monitoring Frequency')}</label>
                 <select className="form-control" value={hospitalizationForm.frecuenciaMonitoreo} onChange={(e) => setHospitalizationForm(prev => ({ ...prev, frecuenciaMonitoreo: e.target.value }))}>
-                  <option value="1h">{t('medico.every1Hour', 'Cada 1 hora')}</option>
-                  <option value="2h">{t('medico.every2Hours', 'Cada 2 horas')}</option>
-                  <option value="4h">{t('medico.every4Hours', 'Cada 4 horas')}</option>
-                  <option value="6h">{t('medico.every6Hours', 'Cada 6 horas')}</option>
-                  <option value="8h">{t('medico.every8Hours', 'Cada 8 horas')}</option>
+                  <option value="1h">{t('medico.every1Hour', 'Every 1 hour')}</option>
+                  <option value="2h">{t('medico.every2Hours', 'Every 2 hours')}</option>
+                  <option value="4h">{t('medico.every4Hours', 'Every 4 hours')}</option>
+                  <option value="6h">{t('medico.every6Hours', 'Every 6 hours')}</option>
+                  <option value="8h">{t('medico.every8Hours', 'Every 8 hours')}</option>
                 </select>
               </div>
               <div className="form-group">
-                <label>{t('medico.estimatedDays', 'Días estimados')}</label>
+                <label>{t('medico.estimatedDays', 'Estimated Days')}</label>
                 <input type="number" className="form-control" placeholder="3" min="1" value={hospitalizationForm.estimacionDias} onChange={(e) => setHospitalizationForm(prev => ({ ...prev, estimacionDias: e.target.value }))} />
               </div>
             </div>
             <div className="form-group">
-              <label>{t('medico.specialCare', 'Cuidados especiales')}</label>
-              <textarea className="form-control" placeholder={t('medico.specialCarePlaceholder', 'Instrucciones especiales de cuidado...')} rows="3" value={hospitalizationForm.cuidadosEspeciales} onChange={(e) => setHospitalizationForm(prev => ({ ...prev, cuidadosEspeciales: e.target.value }))} />
+              <label>{t('medico.specialCare', 'Special Care')}</label>
+              <textarea className="form-control" placeholder={t('medico.specialCarePlaceholder', 'Special care instructions...')} rows="3" value={hospitalizationForm.cuidadosEspeciales} onChange={(e) => setHospitalizationForm(prev => ({ ...prev, cuidadosEspeciales: e.target.value }))} />
             </div>
             <div className="modal-actions">
-              <button className="btn-secondary" onClick={() => setShowHospitalizationModal(false)}>{t('common.cancel', 'Cancelar')}</button>
-              <button className="btn-warning" onClick={handleCreateHospitalization} disabled={!hospitalizationForm.motivo}>🏥 {t('medico.confirmHospitalization', 'Confirmar Hospitalización')}</button>
+              <button className="btn-secondary" onClick={() => setShowHospitalizationModal(false)}>{t('common.cancel', 'Cancel')}</button>
+              <button className="btn-warning" onClick={handleCreateHospitalization} disabled={!hospitalizationForm.motivo}>🏥 {t('medico.confirmHospitalization', 'Confirm Hospitalization')}</button>
             </div>
           </div>
         </div>
       )}
 
-      {/* History Modal - Historial Médico Completo */}
+      {/* History Modal - Complete Medical History */}
       {showHistoryModal && selectedPatient && (
         <div className="modal-overlay" onClick={() => setShowHistoryModal(false)}>
           <div className="modal-content history-modal" onClick={e => e.stopPropagation()}>
             <div className="history-modal-header">
-              <h2>📋 {t('medico.medicalHistory', 'Historial Médico')}</h2>
+              <h2>📋 {t('medico.medicalHistory', 'Medical History')}</h2>
               <button className="close-btn" onClick={() => setShowHistoryModal(false)}>✕</button>
             </div>
             
@@ -1760,8 +1760,8 @@ function MedicoDashboard() {
                 <span className="ficha-badge">{selectedPatient.numeroFicha}</span>
               </div>
               <div className="patient-owner-history">
-                <p><strong>Propietario:</strong> {selectedPatient.propietario || historialData?.paciente?.owner?.nombre}</p>
-                <p><strong>Teléfono:</strong> {selectedPatient.telefono || historialData?.paciente?.owner?.telefono}</p>
+                <p><strong>Owner:</strong> {selectedPatient.propietario || historialData?.paciente?.owner?.nombre}</p>
+                <p><strong>Phone:</strong> {selectedPatient.telefono || historialData?.paciente?.owner?.telefono}</p>
               </div>
             </div>
 
@@ -1769,13 +1769,13 @@ function MedicoDashboard() {
               {loadingHistorial ? (
                 <div className="loading-history">
                   <div className="loading-spinner"></div>
-                  <p>Cargando historial...</p>
+                  <p>Loading history...</p>
                 </div>
               ) : getFormattedHistory().length === 0 ? (
                 <div className="empty-history">
                   <span className="empty-icon">📭</span>
-                  <p>{t('medico.noHistoryFound', 'No se encontró historial para este paciente')}</p>
-                  <p className="empty-sub">Las consultas y procedimientos aparecerán aquí</p>
+                  <p>{t('medico.noHistoryFound', 'No history found for this patient')}</p>
+                  <p className="empty-sub">Consultations and procedures will appear here</p>
                 </div>
               ) : (
                 getFormattedHistory().map((entry, idx) => (
@@ -1815,13 +1815,13 @@ function MedicoDashboard() {
                         {/* SOAP Notes */}
                         {entry.detalles.soap && Object.keys(entry.detalles.soap).length > 0 && (
                           <div className="history-section soap-section">
-                            <h5>📝 Notas SOAP</h5>
+                            <h5>📝 SOAP Notes</h5>
                             <div className="soap-grid">
                               {entry.detalles.soap.subjetivo && (
                                 <div className="soap-item">
                                   <span className="soap-letter">S</span>
                                   <div>
-                                    <strong>Subjetivo</strong>
+                                    <strong>Subjective</strong>
                                     <p>{entry.detalles.soap.subjetivo}</p>
                                   </div>
                                 </div>
@@ -1830,7 +1830,7 @@ function MedicoDashboard() {
                                 <div className="soap-item">
                                   <span className="soap-letter">O</span>
                                   <div>
-                                    <strong>Objetivo</strong>
+                                    <strong>Objective</strong>
                                     <p>{entry.detalles.soap.objetivo}</p>
                                   </div>
                                 </div>
@@ -1839,7 +1839,7 @@ function MedicoDashboard() {
                                 <div className="soap-item">
                                   <span className="soap-letter">A</span>
                                   <div>
-                                    <strong>Análisis</strong>
+                                    <strong>Assessment</strong>
                                     <p>{entry.detalles.soap.analisis}</p>
                                   </div>
                                 </div>
@@ -1857,10 +1857,10 @@ function MedicoDashboard() {
                           </div>
                         )}
                         
-                        {/* Signos Vitales */}
+                        {/* Vital Signs */}
                         {entry.detalles.signosVitales && (
                           <div className="history-section vitals-section">
-                            <h5>🌡️ Signos Vitales</h5>
+                            <h5>🌡️ Vital Signs</h5>
                             <div className="vitals-grid">
                               {entry.detalles.signosVitales.temperatura && (
                                 <div className="vital-item">
@@ -1887,7 +1887,7 @@ function MedicoDashboard() {
                                 <div className="vital-item">
                                   <span className="vital-icon">⚖️</span>
                                   <span className="vital-value">{entry.detalles.signosVitales.peso} kg</span>
-                                  <span className="vital-label">Peso</span>
+                                  <span className="vital-label">Weight</span>
                                 </div>
                               )}
                               {(entry.detalles.signosVitales.presionSistolica || entry.detalles.signosVitales.presionDiastolica) && (
@@ -1903,10 +1903,10 @@ function MedicoDashboard() {
                           </div>
                         )}
                         
-                        {/* Diagnósticos */}
+                        {/* Diagnoses */}
                         {entry.detalles.diagnosticos && entry.detalles.diagnosticos.length > 0 && (
                           <div className="history-section diagnosis-section">
-                            <h5>🔍 Diagnósticos</h5>
+                            <h5>🔍 Diagnoses</h5>
                             <div className="diagnosis-list">
                               {entry.detalles.diagnosticos.map((d, i) => (
                                 <div key={i} className="diagnosis-item">
@@ -1922,10 +1922,10 @@ function MedicoDashboard() {
                           </div>
                         )}
                         
-                        {/* Recetas/Prescripciones */}
+                        {/* Prescriptions */}
                         {entry.detalles.recetas && entry.detalles.recetas.length > 0 && (
                           <div className="history-section prescription-section">
-                            <h5>💊 Recetas</h5>
+                            <h5>💊 Prescriptions</h5>
                             {entry.detalles.recetas.map((receta, ri) => (
                               <div key={ri} className="prescription-card">
                                 {receta.items.map((item, ii) => (
@@ -1935,7 +1935,7 @@ function MedicoDashboard() {
                                       {item.dosis && <span>📏 {item.dosis}</span>}
                                       {item.frecuencia && <span>⏰ {item.frecuencia}</span>}
                                       {item.duracion && <span>📅 {item.duracion}</span>}
-                                      {item.via && <span>💉 Vía: {item.via}</span>}
+                                      {item.via && <span>💉 Route: {item.via}</span>}
                                     </div>
                                     {item.instrucciones && (
                                       <div className="med-instructions">📝 {item.instrucciones}</div>
@@ -1947,10 +1947,10 @@ function MedicoDashboard() {
                           </div>
                         )}
                         
-                        {/* Laboratorios */}
+                        {/* Laboratory Studies */}
                         {entry.detalles.laboratorios && entry.detalles.laboratorios.length > 0 && (
                           <div className="history-section lab-section">
-                            <h5>🔬 Estudios de Laboratorio</h5>
+                            <h5>🔬 Laboratory Studies</h5>
                             <div className="lab-list">
                               {entry.detalles.laboratorios.map((lab, li) => (
                                 <div key={li} className={`lab-item status-${lab.estado?.toLowerCase()}`}>
@@ -1961,7 +1961,7 @@ function MedicoDashboard() {
                                   {lab.notas && <p className="lab-notes">{lab.notas}</p>}
                                   {lab.resultados && (
                                     <div className="lab-results">
-                                      <strong>Resultados:</strong> {lab.resultados}
+                                      <strong>Results:</strong> {lab.resultados}
                                     </div>
                                   )}
                                 </div>
@@ -1970,24 +1970,24 @@ function MedicoDashboard() {
                           </div>
                         )}
                         
-                        {/* Hospitalización detalles */}
+                        {/* Hospitalization details */}
                         {entry.tipo === 'hospitalizacion' && (
                           <div className="history-section hosp-section">
                             {entry.detalles.motivo && (
-                              <p><strong>📝 Motivo:</strong> {entry.detalles.motivo}</p>
+                              <p><strong>📝 Reason:</strong> {entry.detalles.motivo}</p>
                             )}
                             {entry.detalles.ubicacion && (
-                              <p><strong>📍 Ubicación:</strong> {entry.detalles.ubicacion}</p>
+                              <p><strong>📍 Location:</strong> {entry.detalles.ubicacion}</p>
                             )}
                             {entry.detalles.cuidadosEspeciales && (
-                              <p><strong>⚠️ Cuidados:</strong> {entry.detalles.cuidadosEspeciales}</p>
+                              <p><strong>⚠️ Special Care:</strong> {entry.detalles.cuidadosEspeciales}</p>
                             )}
                             {entry.detalles.dieta && (
-                              <p><strong>🍽️ Dieta:</strong> {entry.detalles.dieta}</p>
+                              <p><strong>🍽️ Diet:</strong> {entry.detalles.dieta}</p>
                             )}
                             {entry.detalles.monitoreos && entry.detalles.monitoreos.length > 0 && (
                               <div className="monitoring-history">
-                                <h6>📊 Monitoreos ({entry.detalles.monitoreos.length})</h6>
+                                <h6>📊 Monitoring ({entry.detalles.monitoreos.length})</h6>
                                 <div className="monitoring-list">
                                   {entry.detalles.monitoreos.slice(-3).map((m, mi) => (
                                     <div key={mi} className="monitoring-item">
@@ -2013,20 +2013,20 @@ function MedicoDashboard() {
                           </div>
                         )}
                         
-                        {/* Cirugía detalles */}
+                        {/* Surgery details */}
                         {entry.tipo === 'cirugia' && entry.detalles && (
                           <div className="history-section surgery-section">
                             {entry.detalles.anestesia && (
-                              <p><strong>💉 Anestesia:</strong> {entry.detalles.anestesia}</p>
+                              <p><strong>💉 Anesthesia:</strong> {entry.detalles.anestesia}</p>
                             )}
                             {entry.detalles.duracion && (
-                              <p><strong>⏱️ Duración:</strong> {entry.detalles.duracion} min</p>
+                              <p><strong>⏱️ Duration:</strong> {entry.detalles.duracion} min</p>
                             )}
                             {entry.detalles.notasPreOp && (
                               <p><strong>📋 Pre-Op:</strong> {entry.detalles.notasPreOp}</p>
                             )}
                             {entry.detalles.notas && (
-                              <p><strong>📝 Notas:</strong> {entry.detalles.notas}</p>
+                              <p><strong>📝 Notes:</strong> {entry.detalles.notas}</p>
                             )}
                             {entry.detalles.notasPostOp && (
                               <p><strong>✅ Post-Op:</strong> {entry.detalles.notasPostOp}</p>

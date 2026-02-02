@@ -308,11 +308,11 @@ const LaboratorioDashboard = () => {
     return (
       <div className="lab-section-content">
         <div className="section-header">
-          <h2>🔬 Estudios en Proceso</h2>
+          <h2>🔬 Studies in Progress</h2>
           <div className="search-bar">
             <input
               type="text"
-              placeholder="Buscar..."
+              placeholder="Search..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
             />
@@ -332,20 +332,20 @@ const LaboratorioDashboard = () => {
                     <h3>{patient?.nombre}</h3>
                     <p>{patient?.especie} - {patient?.raza}</p>
                   </div>
-                  <span className="status-badge processing">En Proceso</span>
+                  <span className="status-badge processing">In Progress</span>
                 </div>
                 <div className="study-card-body">
                   <div className="study-detail">
-                    <span className="label">Tipo:</span>
+                    <span className="label">Type:</span>
                     <span className="value">{study.tipo}</span>
                   </div>
                   <div className="study-detail">
-                    <span className="label">Iniciado:</span>
+                    <span className="label">Started:</span>
                     <span className="value">{new Date(study.fechaActualizacion).toLocaleString()}</span>
                   </div>
                   {study.sedacionAutorizada && (
                     <div className="study-detail">
-                      <span className="label">⚠️ Sedación Autorizada</span>
+                      <span className="label">⚠️ Sedation Authorized</span>
                     </div>
                   )}
                 </div>
@@ -354,14 +354,14 @@ const LaboratorioDashboard = () => {
                     className="btn-success"
                     onClick={() => handleUploadResults(study)}
                   >
-                    Subir Resultados
+                    Upload Results
                   </button>
                 </div>
               </div>
             );
           })}
           {filtered.length === 0 && (
-            <p className="empty-message">No hay estudios en proceso</p>
+            <p className="empty-message">No studies in progress</p>
           )}
         </div>
       </div>
@@ -374,11 +374,11 @@ const LaboratorioDashboard = () => {
     return (
       <div className="lab-section-content">
         <div className="section-header">
-          <h2>✅ Estudios Completados</h2>
+          <h2>✅ Completed Studies</h2>
           <div className="search-bar">
             <input
               type="text"
-              placeholder="Buscar..."
+              placeholder="Search..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
             />
@@ -398,36 +398,36 @@ const LaboratorioDashboard = () => {
                     <h3>{patient?.nombre}</h3>
                     <p>{patient?.especie} - {patient?.raza}</p>
                   </div>
-                  <span className="status-badge completed">Completado</span>
+                  <span className="status-badge completed">Completed</span>
                 </div>
                 <div className="study-card-body">
                   <div className="study-detail">
-                    <span className="label">Tipo:</span>
+                    <span className="label">Type:</span>
                     <span className="value">{study.tipo}</span>
                   </div>
                   <div className="study-detail">
-                    <span className="label">Completado:</span>
+                    <span className="label">Completed:</span>
                     <span className="value">{new Date(study.fechaActualizacion).toLocaleString()}</span>
                   </div>
                   <div className="study-detail">
-                    <span className="label">Procesado por:</span>
+                    <span className="label">Processed by:</span>
                     <span className="value">{study.procesadoPor}</span>
                   </div>
                   {study.resultados && (
                     <div className="study-results">
-                      <strong>Resultados:</strong>
+                      <strong>Results:</strong>
                       <p>{study.resultados}</p>
                     </div>
                   )}
                   {study.observaciones && (
                     <div className="study-observations">
-                      <strong>Observaciones:</strong>
+                      <strong>Observations:</strong>
                       <p>{study.observaciones}</p>
                     </div>
                   )}
                   {study.archivos && study.archivos.length > 0 && (
                     <div className="study-files">
-                      <strong>Archivos:</strong>
+                      <strong>Files:</strong>
                       <ul>
                         {study.archivos.map((file, idx) => (
                           <li key={idx}>📎 {file}</li>
@@ -440,7 +440,7 @@ const LaboratorioDashboard = () => {
             );
           })}
           {filtered.length === 0 && (
-            <p className="empty-message">No hay estudios completados</p>
+            <p className="empty-message">No completed studies</p>
           )}
         </div>
       </div>
@@ -456,11 +456,11 @@ const LaboratorioDashboard = () => {
     return (
       <div className="lab-section-content">
         <div className="section-header">
-          <h2>📚 Historial Completo</h2>
+          <h2>📚 Complete History</h2>
           <div className="search-bar">
             <input
               type="text"
-              placeholder="Buscar..."
+              placeholder="Search..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
             />
@@ -474,11 +474,11 @@ const LaboratorioDashboard = () => {
           <table>
             <thead>
               <tr>
-                <th>Fecha</th>
-                <th>Paciente</th>
-                <th>Tipo de Estudio</th>
-                <th>Estado</th>
-                <th>Procesado por</th>
+                <th>Date</th>
+                <th>Patient</th>
+                <th>Study Type</th>
+                <th>Status</th>
+                <th>Processed by</th>
               </tr>
             </thead>
             <tbody>

@@ -11,17 +11,25 @@ const router = Router();
 
 // GET /dispenses - List dispenses
 router.get('/', authenticate, async (req, res) => {
-  const { fecha, prescriptionId } = req.query;
+  const { fecha, date, startDate, endDate, prescriptionId } = req.query;
 
   const where: any = {};
   
   if (prescriptionId) where.prescriptionId = prescriptionId as string;
   
-  if (fecha) {
-    const date = new Date(fecha as string);
-    const nextDay = new Date(date);
-    nextDay.setDate(nextDay.getDate() + 1);
-    where.createdAt = { gte: date, lt: nextDay };
+  // Support both 'fecha' and 'date' parameters for single date filter
+  const singleDate = fecha || date;
+  if (singleDate) {
+    // Parse date as UTC to avoid timezone issues
+    const dateStr = singleDate as string;
+    const startOfDay = new Date(`${dateStr}T00:00:00.000Z`);
+    const endOfDay = new Date(`${dateStr}T23:59:59.999Z`);
+    where.createdAt = { gte: startOfDay, lte: endOfDay };
+  } else if (startDate && endDate) {
+    // Date range filter - parse as UTC
+    const start = new Date(`${startDate as string}T00:00:00.000Z`);
+    const end = new Date(`${endDate as string}T23:59:59.999Z`);
+    where.createdAt = { gte: start, lte: end };
   }
 
   const dispenses = await prisma.dispense.findMany({
@@ -209,6 +217,15 @@ router.post('/', authenticate, isFarmacia, async (req, res) => {
   if (pendingPrescriptions.length === 0) {
     const consultation = await prisma.consultation.findUnique({
       where: { id: prescription.consultationId },
+      include: {
+        visit: {
+          include: {
+            pet: {
+              include: { owner: true },
+            },
+          },
+        },
+      },
     });
 
     if (consultation) {
@@ -216,6 +233,30 @@ router.post('/', authenticate, isFarmacia, async (req, res) => {
         where: { id: consultation.visitId },
         data: { status: 'LISTO_PARA_ALTA' },
       });
+
+      // Notify reception staff that patient is ready for checkout
+      const receptionUsers = await prisma.user.findMany({
+        where: { rol: 'RECEPCION', activo: true },
+      });
+
+      const petName = consultation.visit?.pet?.nombre || 'Paciente';
+      const ownerName = consultation.visit?.pet?.owner?.nombre || 'Propietario';
+
+      for (const receptionist of receptionUsers) {
+        await prisma.notification.create({
+          data: {
+            userId: receptionist.id,
+            tipo: 'MEDICAMENTOS_LISTOS',
+            titulo: 'Paciente Listo para Alta',
+            mensaje: `${petName} (propietario: ${ownerName}) ha recibido todos sus medicamentos y está listo para el alta.`,
+            data: {
+              visitId: consultation.visitId,
+              petName,
+              ownerName,
+            },
+          },
+        });
+      }
     }
   }
 

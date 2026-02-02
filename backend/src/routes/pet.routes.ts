@@ -346,7 +346,7 @@ router.get('/preventive-calendar', authenticate, async (req, res) => {
       const nextVaccine = pet.vaccineRecords[0];
       needs.push({
         type: 'VACUNA_PROGRAMADA',
-        reason: `${nextVaccine.vacuna} programada`,
+        reason: `${nextVaccine.nombre} programada`,
         scheduledDate: nextVaccine.proximaDosis,
         priority: 'alta',
       });

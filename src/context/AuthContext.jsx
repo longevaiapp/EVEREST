@@ -50,7 +50,7 @@ export const AuthProvider = ({ children }) => {
       setUser(userData);
       return userData;
     } catch (err) {
-      const message = err.message || 'Error al iniciar sesión';
+      const message = err.message || 'Login error';
       setError(message);
       throw new Error(message);
     } finally {

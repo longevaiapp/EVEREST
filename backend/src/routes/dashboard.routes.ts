@@ -128,47 +128,124 @@ router.get('/medico', authenticate, async (req, res) => {
 
 // GET /dashboard/farmacia - Pharmacy dashboard stats
 router.get('/farmacia', authenticate, async (req, res) => {
-  // Pending prescriptions
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const tomorrow = new Date(today);
+  tomorrow.setDate(tomorrow.getDate() + 1);
+
+  // 30 days ago for monthly stats
+  const thirtyDaysAgo = new Date();
+  thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+
+  // ========== TODAY STATS ==========
+  const dispensesToday = await prisma.dispense.findMany({
+    where: {
+      createdAt: { gte: today, lt: tomorrow },
+    },
+    include: {
+      items: true,
+    },
+  });
+
+  const todayStats = {
+    totalDispenses: dispensesToday.length,
+    totalRevenue: dispensesToday.reduce((sum, d) => 
+      sum + d.items.reduce((itemSum, item) => itemSum + Number(item.subtotal || 0), 0), 0),
+    productsDispensed: dispensesToday.reduce((sum, d) => sum + (d.items?.length || 0), 0),
+  };
+
+  // ========== PENDING PRESCRIPTIONS ==========
   const pendingPrescriptions = await prisma.prescription.count({
     where: { status: { in: ['PENDIENTE', 'PARCIAL'] } },
   });
 
-  // Low stock medications
+  // ========== STOCK ALERTS ==========
   const allMeds = await prisma.medication.findMany({
     where: { activo: true },
-    select: { currentStock: true, minStock: true },
+    select: { currentStock: true, minStock: true, expirationDate: true },
   });
-  const lowStockCount = allMeds.filter(m => m.currentStock <= m.minStock).length;
+
+  const lowStockCount = allMeds.filter(m => m.currentStock <= m.minStock && m.currentStock > 0).length;
+  const outOfStockCount = allMeds.filter(m => m.currentStock === 0).length;
 
   // Expiring soon (30 days)
   const thirtyDaysFromNow = new Date();
   thirtyDaysFromNow.setDate(thirtyDaysFromNow.getDate() + 30);
-
-  const expiringCount = await prisma.medication.count({
-    where: {
-      expirationDate: { lte: thirtyDaysFromNow },
-      activo: true,
-    },
-  });
+  const expiringCount = allMeds.filter(m => 
+    m.expirationDate && new Date(m.expirationDate) <= thirtyDaysFromNow
+  ).length;
 
   // Unresolved alerts
   const unresolvedAlerts = await prisma.stockAlert.count({
     where: { status: 'ACTIVA' },
   });
 
-  // Dispenses today
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
-  const tomorrow = new Date(today);
-  tomorrow.setDate(tomorrow.getDate() + 1);
-
-  const dispensesToday = await prisma.dispense.count({
+  // ========== TOP MEDICATIONS (30 days) ==========
+  const dispenseItems = await prisma.dispenseItem.findMany({
     where: {
-      createdAt: { gte: today, lt: tomorrow },
+      dispense: {
+        createdAt: { gte: thirtyDaysAgo },
+      },
+    },
+    include: {
+      medication: {
+        select: { id: true, name: true, category: true },
+      },
     },
   });
 
-  // Controlled medications requiring attention
+  // Group by medication and count
+  const medicationCounts: Record<string, { id: string; name: string; category: string; quantity: number; revenue: number }> = {};
+  for (const item of dispenseItems) {
+    const medId = item.medicationId;
+    if (!medicationCounts[medId]) {
+      medicationCounts[medId] = {
+        id: medId,
+        name: item.medication?.name || 'Unknown',
+        category: item.medication?.category || 'OTRO',
+        quantity: 0,
+        revenue: 0,
+      };
+    }
+    medicationCounts[medId].quantity += item.dispensedQty;
+    medicationCounts[medId].revenue += Number(item.subtotal) || 0;
+  }
+
+  const topMedications = Object.values(medicationCounts)
+    .sort((a, b) => b.quantity - a.quantity)
+    .slice(0, 5);
+
+  // ========== REVENUE BY CATEGORY ==========
+  const revenueByCategory: Record<string, number> = {};
+  for (const item of dispenseItems) {
+    const category = item.medication?.category || 'OTRO';
+    revenueByCategory[category] = (revenueByCategory[category] || 0) + Number(item.subtotal || 0);
+  }
+
+  // ========== MONTHLY STATS ==========
+  const monthlyDispenses = await prisma.dispense.findMany({
+    where: {
+      createdAt: { gte: thirtyDaysAgo },
+    },
+    include: {
+      items: {
+        select: { subtotal: true },
+      },
+    },
+  });
+
+  const monthlyStats = {
+    totalDispenses: monthlyDispenses.length,
+    totalRevenue: monthlyDispenses.reduce((sum, d) => 
+      sum + d.items.reduce((itemSum, item) => itemSum + (Number(item.subtotal) || 0), 0), 0),
+    averagePerDay: monthlyDispenses.length / 30,
+    averageTicket: monthlyDispenses.length > 0 
+      ? monthlyDispenses.reduce((sum, d) => 
+          sum + d.items.reduce((itemSum, item) => itemSum + (Number(item.subtotal) || 0), 0), 0) / monthlyDispenses.length 
+      : 0,
+  };
+
+  // ========== CONTROLLED MEDICATIONS ==========
   const controlledMeds = await prisma.medication.findMany({
     where: {
       isControlled: true,
@@ -181,12 +258,21 @@ router.get('/farmacia', authenticate, async (req, res) => {
   res.json({
     status: 'success',
     data: {
+      todayStats,
       pendingPrescriptions,
-      lowStockCount,
-      expiringCount,
-      unresolvedAlerts,
-      dispensesToday,
-      controlledLowStock,
+      alerts: {
+        lowStockCount,
+        outOfStockCount,
+        expiringCount,
+        unresolvedAlerts,
+        controlledLowStock,
+      },
+      topMedications,
+      revenueByCategory: Object.entries(revenueByCategory).map(([category, revenue]) => ({
+        category,
+        revenue,
+      })),
+      monthlyStats,
     },
   });
 });

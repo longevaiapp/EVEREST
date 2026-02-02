@@ -1,6 +1,7 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { AppProvider } from './context/AppContext';
+import { ToastProvider } from './components/Toast';
 import ProtectedRoute from './components/ProtectedRoute';
 import Login from './components/Login';
 import Navbar from './components/Navbar';
@@ -46,6 +47,7 @@ function App() {
     <BrowserRouter>
       <AuthProvider>
         <AppProvider>
+          <ToastProvider>
           <Routes>
             {/* Ruta pública - Login */}
             <Route path="/login" element={<Login />} />
@@ -103,6 +105,7 @@ function App() {
             {/* Ruta por defecto - 404 */}
             <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>
+          </ToastProvider>
         </AppProvider>
       </AuthProvider>
     </BrowserRouter>

@@ -19,7 +19,8 @@ i18n
   .use(initReactI18next) // Integración con React
   .init({
     resources,
-    fallbackLng: 'es', // Idioma por defecto
+    lng: 'en', // Force English as default language
+    fallbackLng: 'en', // Fallback to English
     debug: false,
     
     interpolation: {

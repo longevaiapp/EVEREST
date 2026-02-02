@@ -36,7 +36,7 @@ const RegistroCliente = () => {
       raza: '',
       sexo: '',
       edad: '',
-      unidadEdad: 'años',
+      unidadEdad: 'years',
       peso: '',
       color: '',
       esterilizado: '',
@@ -83,11 +83,11 @@ const RegistroCliente = () => {
   });
 
   const sintomasOpciones = [
-    'Vómito', 'Diarrea', 'Pérdida de apetito', 'Letargia',
-    'Tos', 'Estornudos', 'Secreción nasal', 'Secreción ocular',
-    'Cojera', 'Rascado excesivo', 'Pérdida de pelo', 'Bultos/masas',
-    'Dificultad para respirar', 'Dificultad para orinar', 'Sangrado',
-    'Convulsiones', 'Fiebre', 'Otro'
+    'Vomiting', 'Diarrhea', 'Loss of appetite', 'Lethargy',
+    'Cough', 'Sneezing', 'Nasal discharge', 'Eye discharge',
+    'Limping', 'Excessive scratching', 'Hair loss', 'Lumps/masses',
+    'Difficulty breathing', 'Difficulty urinating', 'Bleeding',
+    'Seizures', 'Fever', 'Other'
   ];
 
   const handleInputChange = (section, field, value) => {
@@ -151,20 +151,20 @@ const RegistroCliente = () => {
     }
   };
 
-  // Función para calcular edad
+  // Function to calculate age
   const calcularEdad = (fechaNacimiento) => {
     const hoy = new Date();
     const nacimiento = new Date(fechaNacimiento);
-    const años = hoy.getFullYear() - nacimiento.getFullYear();
+    const years = hoy.getFullYear() - nacimiento.getFullYear();
     const meses = hoy.getMonth() - nacimiento.getMonth();
     
-    if (años > 0) {
-      return `${años} año${años > 1 ? 's' : ''}`;
+    if (years > 0) {
+      return `${years} year${years > 1 ? 's' : ''}`;
     } else if (meses > 0) {
-      return `${meses} mes${meses > 1 ? 'es' : ''}`;
+      return `${meses} month${meses > 1 ? 's' : ''}`;
     } else {
       const dias = Math.floor((hoy - nacimiento) / (1000 * 60 * 60 * 24));
-      return `${dias} día${dias > 1 ? 's' : ''}`;
+      return `${dias} day${dias > 1 ? 's' : ''}`;
     }
   };
 
@@ -286,11 +286,11 @@ const RegistroCliente = () => {
             {currentStep > step ? '✓' : step}
           </div>
           <div className="step-label">
-            {step === 1 && 'Propietario'}
-            {step === 2 && 'Mascota'}
-            {step === 3 && 'Historial'}
-            {step === 4 && 'Consulta'}
-            {step === 5 && 'Confirmar'}
+            {step === 1 && 'Owner'}
+            {step === 2 && 'Pet'}
+            {step === 3 && 'History'}
+            {step === 4 && 'Consultation'}
+            {step === 5 && 'Confirm'}
           </div>
         </div>
       ))}
@@ -301,8 +301,8 @@ const RegistroCliente = () => {
     <div className="initial-choice">
       <div className="logo-header">
         <span className="logo-icon">🏥</span>
-        <h1>Clínica Veterinaria</h1>
-        <p>Declaración de Antecedentes Clínicos</p>
+        <h1>Veterinary Clinic</h1>
+        <p>Clinical History Declaration</p>
       </div>
       
       <div className="choice-cards">
@@ -311,8 +311,8 @@ const RegistroCliente = () => {
           onClick={() => setIsExistingClient(false)}
         >
           <span className="choice-icon">🐾</span>
-          <h3>Soy nuevo cliente</h3>
-          <p>Primera vez en la clínica</p>
+          <h3>I'm a new client</h3>
+          <p>First time at the clinic</p>
         </div>
         
         <div 
@@ -320,8 +320,8 @@ const RegistroCliente = () => {
           onClick={() => setIsExistingClient(true)}
         >
           <span className="choice-icon">👤</span>
-          <h3>Ya soy cliente</h3>
-          <p>Tengo citas previas</p>
+          <h3>I'm already a client</h3>
+          <p>I have previous appointments</p>
         </div>
       </div>
     </div>
@@ -330,25 +330,25 @@ const RegistroCliente = () => {
   const renderExistingClientSearch = () => (
     <div className="existing-client-search">
       <button className="back-button" onClick={() => setIsExistingClient(null)}>
-        ← Volver
+        ← Back
       </button>
       
-      <h2>🔍 Buscar mi registro</h2>
-      <p>Ingresa tu número de teléfono para encontrar tus mascotas registradas</p>
+      <h2>🔍 Search my record</h2>
+      <p>Enter your phone number to find your registered pets</p>
       
       <div className="search-box">
         <input
           type="tel"
-          placeholder="Número de teléfono"
+          placeholder="Phone number"
           value={searchPhone}
           onChange={(e) => setSearchPhone(e.target.value)}
         />
-        <button onClick={handleSearchExisting}>Buscar</button>
+        <button onClick={handleSearchExisting}>Search</button>
       </div>
       
       {foundPatients.length > 0 && (
         <div className="found-patients">
-          <h3>Mascotas encontradas:</h3>
+          <h3>Pets found:</h3>
           {foundPatients.map(patient => (
             <div 
               key={patient.id} 
@@ -377,9 +377,9 @@ const RegistroCliente = () => {
                 }
               }));
               setIsExistingClient(false);
-              setCurrentStep(2); // Ir a datos de mascota
+              setCurrentStep(2); // Go to pet data
             }}>
-              + Registrar nueva mascota
+              + Register new pet
             </button>
           </div>
         </div>
@@ -387,9 +387,9 @@ const RegistroCliente = () => {
       
       {searchPhone.length >= 8 && foundPatients.length === 0 && (
         <div className="no-results">
-          <p>No encontramos registros con ese número</p>
+          <p>No records found with that number</p>
           <button onClick={() => setIsExistingClient(false)}>
-            Registrarme como nuevo cliente
+            Register as new client
           </button>
         </div>
       )}
@@ -398,26 +398,26 @@ const RegistroCliente = () => {
 
   const renderStep1 = () => (
     <div className="form-step">
-      <h2>👤 Datos del Propietario</h2>
+      <h2>👤 Owner Information</h2>
       
       <div className="form-group">
-        <label>Nombre completo *</label>
+        <label>Full name *</label>
         <input
           type="text"
           value={formData.propietario.nombre}
           onChange={(e) => handleInputChange('propietario', 'nombre', e.target.value)}
-          placeholder="Nombre y apellidos"
+          placeholder="First and last name"
         />
       </div>
       
       <div className="form-row">
         <div className="form-group">
-          <label>Teléfono *</label>
+          <label>Phone *</label>
           <input
             type="tel"
             value={formData.propietario.telefono}
             onChange={(e) => handleInputChange('propietario', 'telefono', e.target.value)}
-            placeholder="10 dígitos"
+            placeholder="10 digits"
           />
         </div>
         
@@ -427,24 +427,24 @@ const RegistroCliente = () => {
             type="email"
             value={formData.propietario.email}
             onChange={(e) => handleInputChange('propietario', 'email', e.target.value)}
-            placeholder="correo@ejemplo.com"
+            placeholder="email@example.com"
           />
         </div>
       </div>
       
       <div className="form-group">
-        <label>Dirección</label>
+        <label>Address</label>
         <input
           type="text"
           value={formData.propietario.direccion}
           onChange={(e) => handleInputChange('propietario', 'direccion', e.target.value)}
-          placeholder="Calle, número, colonia"
+          placeholder="Street, number, neighborhood"
         />
       </div>
       
       <div className="form-row">
         <div className="form-group">
-          <label>Ciudad</label>
+          <label>City</label>
           <input
             type="text"
             value={formData.propietario.ciudad}
@@ -453,7 +453,7 @@ const RegistroCliente = () => {
         </div>
         
         <div className="form-group">
-          <label>Código Postal</label>
+          <label>Postal Code</label>
           <input
             type="text"
             value={formData.propietario.codigoPostal}
@@ -466,69 +466,69 @@ const RegistroCliente = () => {
 
   const renderStep2 = () => (
     <div className="form-step">
-      <h2>🐾 Datos de la Mascota</h2>
+      <h2>🐾 Pet Information</h2>
       
       <div className="form-group">
-        <label>Nombre de la mascota *</label>
+        <label>Pet name *</label>
         <input
           type="text"
           value={formData.paciente.nombre}
           onChange={(e) => handleInputChange('paciente', 'nombre', e.target.value)}
-          placeholder="¿Cómo se llama?"
+          placeholder="What's their name?"
         />
       </div>
       
       <div className="form-row">
         <div className="form-group">
-          <label>Especie *</label>
+          <label>Species *</label>
           <select
             value={formData.paciente.especie}
             onChange={(e) => handleInputChange('paciente', 'especie', e.target.value)}
           >
-            <option value="">Seleccionar</option>
-            <option value="Canino">Perro</option>
-            <option value="Felino">Gato</option>
-            <option value="Ave">Ave</option>
-            <option value="Roedor">Roedor</option>
-            <option value="Reptil">Reptil</option>
-            <option value="Otro">Otro</option>
+            <option value="">Select</option>
+            <option value="Canino">Dog</option>
+            <option value="Felino">Cat</option>
+            <option value="Ave">Bird</option>
+            <option value="Roedor">Rodent</option>
+            <option value="Reptil">Reptile</option>
+            <option value="Otro">Other</option>
           </select>
         </div>
         
         <div className="form-group">
-          <label>Raza</label>
+          <label>Breed</label>
           <input
             type="text"
             value={formData.paciente.raza}
             onChange={(e) => handleInputChange('paciente', 'raza', e.target.value)}
-            placeholder="Raza o mestizo"
+            placeholder="Breed or mixed"
           />
         </div>
       </div>
       
       <div className="form-row">
         <div className="form-group">
-          <label>Sexo *</label>
+          <label>Sex *</label>
           <select
             value={formData.paciente.sexo}
             onChange={(e) => handleInputChange('paciente', 'sexo', e.target.value)}
           >
-            <option value="">Seleccionar</option>
-            <option value="Macho">Macho</option>
-            <option value="Hembra">Hembra</option>
+            <option value="">Select</option>
+            <option value="Macho">Male</option>
+            <option value="Hembra">Female</option>
           </select>
         </div>
         
         <div className="form-group">
-          <label>¿Está esterilizado/a?</label>
+          <label>Is spayed/neutered?</label>
           <select
             value={formData.paciente.esterilizado}
             onChange={(e) => handleInputChange('paciente', 'esterilizado', e.target.value)}
           >
-            <option value="">Seleccionar</option>
-            <option value="Si">Sí</option>
+            <option value="">Select</option>
+            <option value="Si">Yes</option>
             <option value="No">No</option>
-            <option value="No se">No sé</option>
+            <option value="No se">Don't know</option>
           </select>
         </div>
       </div>
@@ -548,62 +548,62 @@ const RegistroCliente = () => {
             value={formData.paciente.unidadEdad}
             onChange={(e) => handleInputChange('paciente', 'unidadEdad', e.target.value)}
           >
-            <option value="años">años</option>
-            <option value="meses">meses</option>
+            <option value="years">years</option>
+            <option value="meses">months</option>
           </select>
         </div>
         
         <div className="form-group">
-          <label>Peso (kg)</label>
+          <label>Weight (kg)</label>
           <input
             type="number"
             step="0.1"
             value={formData.paciente.peso}
             onChange={(e) => handleInputChange('paciente', 'peso', e.target.value)}
-            placeholder="Peso aproximado"
+            placeholder="Approximate weight"
           />
         </div>
       </div>
       
       <div className="form-row">
         <div className="form-group">
-          <label>Color/Pelaje</label>
+          <label>Color/Coat</label>
           <input
             type="text"
             value={formData.paciente.color}
             onChange={(e) => handleInputChange('paciente', 'color', e.target.value)}
-            placeholder="Color del pelaje"
+            placeholder="Coat color"
           />
         </div>
         
         <div className="form-group">
-          <label>Número de microchip</label>
+          <label>Microchip number</label>
           <input
             type="text"
             value={formData.paciente.microchip}
             onChange={(e) => handleInputChange('paciente', 'microchip', e.target.value)}
-            placeholder="Si tiene"
+            placeholder="If applicable"
           />
         </div>
       </div>
 
-      {/* Foto de la mascota */}
+      {/* Pet photo */}
       <div className="form-group foto-upload-section">
-        <label>📷 Foto de la mascota (opcional)</label>
+        <label>📷 Pet photo (optional)</label>
         <div className="foto-upload-container-qr">
           <div className="foto-preview-qr">
             {formData.paciente.fotoPreview ? (
-              <img src={formData.paciente.fotoPreview} alt="Foto mascota" />
+              <img src={formData.paciente.fotoPreview} alt="Pet photo" />
             ) : (
               <div className="foto-placeholder-qr">
                 <span>🐾</span>
-                <p>Sin foto</p>
+                <p>No photo</p>
               </div>
             )}
           </div>
           <div className="foto-actions-qr">
             <label className="btn-upload-foto">
-              📷 Tomar / Seleccionar foto
+              📷 Take / Select photo
               <input
                 type="file"
                 accept="image/*"
@@ -661,7 +661,7 @@ const RegistroCliente = () => {
                   paciente: { ...prev.paciente, foto: null, fotoPreview: null }
                 }))}
               >
-                ❌ Quitar foto
+                ❌ Remove photo
               </button>
             )}
           </div>
@@ -672,26 +672,26 @@ const RegistroCliente = () => {
 
   const renderStep3 = () => (
     <div className="form-step">
-      <h2>📋 Historial Médico</h2>
+      <h2>📋 Medical History</h2>
       
       <div className="form-section">
-        <h3>Vacunación</h3>
+        <h3>Vaccination</h3>
         <div className="form-row">
           <div className="form-group">
-            <label>¿Vacunas al día?</label>
+            <label>Vaccines up to date?</label>
             <select
               value={formData.historial.vacunasAlDia}
               onChange={(e) => handleInputChange('historial', 'vacunasAlDia', e.target.value)}
             >
-              <option value="">Seleccionar</option>
-              <option value="Si">Sí</option>
+              <option value="">Select</option>
+              <option value="Si">Yes</option>
               <option value="No">No</option>
-              <option value="No se">No sé</option>
+              <option value="No se">Don't know</option>
             </select>
           </div>
           
           <div className="form-group">
-            <label>Última vacuna</label>
+            <label>Last vaccine</label>
             <input
               type="date"
               value={formData.historial.ultimaVacuna}
@@ -702,23 +702,23 @@ const RegistroCliente = () => {
       </div>
       
       <div className="form-section">
-        <h3>Desparasitación</h3>
+        <h3>Deworming</h3>
         <div className="form-row">
           <div className="form-group">
-            <label>Desparasitación interna</label>
+            <label>Internal deworming</label>
             <select
               value={formData.historial.desparasitacionInterna}
               onChange={(e) => handleInputChange('historial', 'desparasitacionInterna', e.target.value)}
             >
-              <option value="">Seleccionar</option>
-              <option value="Si">Sí</option>
+              <option value="">Select</option>
+              <option value="Si">Yes</option>
               <option value="No">No</option>
-              <option value="No se">No sé</option>
+              <option value="No se">Don't know</option>
             </select>
           </div>
           
           <div className="form-group">
-            <label>Fecha</label>
+            <label>Date</label>
             <input
               type="date"
               value={formData.historial.fechaDesparasitacionInt}
@@ -729,20 +729,20 @@ const RegistroCliente = () => {
         
         <div className="form-row">
           <div className="form-group">
-            <label>Desparasitación externa</label>
+            <label>External deworming</label>
             <select
               value={formData.historial.desparasitacionExterna}
               onChange={(e) => handleInputChange('historial', 'desparasitacionExterna', e.target.value)}
             >
-              <option value="">Seleccionar</option>
-              <option value="Si">Sí</option>
+              <option value="">Select</option>
+              <option value="Si">Yes</option>
               <option value="No">No</option>
-              <option value="No se">No sé</option>
+              <option value="No se">Don't know</option>
             </select>
           </div>
           
           <div className="form-group">
-            <label>Fecha</label>
+            <label>Date</label>
             <input
               type="date"
               value={formData.historial.fechaDesparasitacionExt}
@@ -753,93 +753,93 @@ const RegistroCliente = () => {
       </div>
       
       <div className="form-section">
-        <h3>Antecedentes</h3>
+        <h3>Medical Background</h3>
         
         <div className="form-group">
-          <label>¿Ha tenido enfermedades previas?</label>
+          <label>Has had previous illnesses?</label>
           <select
             value={formData.historial.enfermedadesPrevias}
             onChange={(e) => handleInputChange('historial', 'enfermedadesPrevias', e.target.value)}
           >
-            <option value="">Seleccionar</option>
-            <option value="Si">Sí</option>
+            <option value="">Select</option>
+            <option value="Si">Yes</option>
             <option value="No">No</option>
           </select>
         </div>
         {formData.historial.enfermedadesPrevias === 'Si' && (
           <div className="form-group">
-            <label>Describa cuáles:</label>
+            <label>Describe which:</label>
             <textarea
               value={formData.historial.detalleEnfermedades}
               onChange={(e) => handleInputChange('historial', 'detalleEnfermedades', e.target.value)}
-              placeholder="Describa las enfermedades previas"
+              placeholder="Describe previous illnesses"
             />
           </div>
         )}
         
         <div className="form-group">
-          <label>¿Ha tenido cirugías previas?</label>
+          <label>Has had previous surgeries?</label>
           <select
             value={formData.historial.cirugiasPrevias}
             onChange={(e) => handleInputChange('historial', 'cirugiasPrevias', e.target.value)}
           >
-            <option value="">Seleccionar</option>
-            <option value="Si">Sí</option>
+            <option value="">Select</option>
+            <option value="Si">Yes</option>
             <option value="No">No</option>
           </select>
         </div>
         {formData.historial.cirugiasPrevias === 'Si' && (
           <div className="form-group">
-            <label>Describa cuáles:</label>
+            <label>Describe which:</label>
             <textarea
               value={formData.historial.detalleCirugias}
               onChange={(e) => handleInputChange('historial', 'detalleCirugias', e.target.value)}
-              placeholder="Describa las cirugías previas"
+              placeholder="Describe previous surgeries"
             />
           </div>
         )}
         
         <div className="form-group">
-          <label>¿Tiene alergias conocidas?</label>
+          <label>Has known allergies?</label>
           <select
             value={formData.historial.alergias}
             onChange={(e) => handleInputChange('historial', 'alergias', e.target.value)}
           >
-            <option value="">Seleccionar</option>
-            <option value="Si">Sí</option>
+            <option value="">Select</option>
+            <option value="Si">Yes</option>
             <option value="No">No</option>
-            <option value="No se">No sé</option>
+            <option value="No se">Don't know</option>
           </select>
         </div>
         {formData.historial.alergias === 'Si' && (
           <div className="form-group">
-            <label>Describa cuáles:</label>
+            <label>Describe which:</label>
             <textarea
               value={formData.historial.detalleAlergias}
               onChange={(e) => handleInputChange('historial', 'detalleAlergias', e.target.value)}
-              placeholder="Describa las alergias"
+              placeholder="Describe the allergies"
             />
           </div>
         )}
         
         <div className="form-group">
-          <label>¿Toma medicamentos actualmente?</label>
+          <label>Currently taking medications?</label>
           <select
             value={formData.historial.medicamentosActuales}
             onChange={(e) => handleInputChange('historial', 'medicamentosActuales', e.target.value)}
           >
-            <option value="">Seleccionar</option>
-            <option value="Si">Sí</option>
+            <option value="">Select</option>
+            <option value="Si">Yes</option>
             <option value="No">No</option>
           </select>
         </div>
         {formData.historial.medicamentosActuales === 'Si' && (
           <div className="form-group">
-            <label>¿Cuáles medicamentos?</label>
+            <label>Which medications?</label>
             <textarea
               value={formData.historial.detalleMedicamentos}
               onChange={(e) => handleInputChange('historial', 'detalleMedicamentos', e.target.value)}
-              placeholder="Liste los medicamentos y dosis"
+              placeholder="List medications and doses"
             />
           </div>
         )}
@@ -849,27 +849,27 @@ const RegistroCliente = () => {
 
   const renderStep4 = () => (
     <div className="form-step">
-      <h2>🩺 Motivo de Consulta</h2>
+      <h2>🩺 Reason for Visit</h2>
       
       {selectedPatient && (
         <div className="selected-patient-banner">
-          <span>Paciente: <strong>{selectedPatient.nombre}</strong></span>
+          <span>Patient: <strong>{selectedPatient.nombre}</strong></span>
           <span>{selectedPatient.especie} • {selectedPatient.raza}</span>
         </div>
       )}
       
       <div className="form-group">
-        <label>¿Cuál es el motivo de la consulta? *</label>
+        <label>What is the reason for the visit? *</label>
         <textarea
           value={formData.consulta.motivoConsulta}
           onChange={(e) => handleInputChange('consulta', 'motivoConsulta', e.target.value)}
-          placeholder="Describa brevemente el motivo de su visita"
+          placeholder="Briefly describe the reason for your visit"
           rows={3}
         />
       </div>
       
       <div className="form-group">
-        <label>Síntomas observados (seleccione todos los que apliquen)</label>
+        <label>Observed symptoms (select all that apply)</label>
         <div className="sintomas-grid">
           {sintomasOpciones.map(sintoma => (
             <label key={sintoma} className="checkbox-label">
@@ -885,100 +885,100 @@ const RegistroCliente = () => {
       </div>
       
       <div className="form-group">
-        <label>¿Desde cuándo presenta los síntomas?</label>
+        <label>How long have the symptoms been present?</label>
         <input
           type="text"
           value={formData.consulta.duracionSintomas}
           onChange={(e) => handleInputChange('consulta', 'duracionSintomas', e.target.value)}
-          placeholder="Ej: Desde hace 3 días"
+          placeholder="e.g.: For the past 3 days"
         />
       </div>
       
       <div className="form-section">
-        <h3>Estado general</h3>
+        <h3>General condition</h3>
         <div className="form-row">
           <div className="form-group">
-            <label>Comportamiento</label>
+            <label>Behavior</label>
             <select
               value={formData.consulta.comportamiento}
               onChange={(e) => handleInputChange('consulta', 'comportamiento', e.target.value)}
             >
-              <option value="">Seleccionar</option>
+              <option value="">Select</option>
               <option value="Normal">Normal</option>
-              <option value="Decaído">Decaído</option>
-              <option value="Agresivo">Más agresivo</option>
-              <option value="Ansioso">Ansioso</option>
-              <option value="Otro">Otro</option>
+              <option value="Decaído">Lethargic</option>
+              <option value="Agresivo">More aggressive</option>
+              <option value="Ansioso">Anxious</option>
+              <option value="Otro">Other</option>
             </select>
           </div>
           
           <div className="form-group">
-            <label>Apetito</label>
+            <label>Appetite</label>
             <select
               value={formData.consulta.apetito}
               onChange={(e) => handleInputChange('consulta', 'apetito', e.target.value)}
             >
-              <option value="">Seleccionar</option>
+              <option value="">Select</option>
               <option value="Normal">Normal</option>
-              <option value="Aumentado">Aumentado</option>
-              <option value="Disminuido">Disminuido</option>
-              <option value="Nulo">No come</option>
+              <option value="Aumentado">Increased</option>
+              <option value="Disminuido">Decreased</option>
+              <option value="Nulo">Not eating</option>
             </select>
           </div>
         </div>
         
         <div className="form-row">
           <div className="form-group">
-            <label>Consumo de agua</label>
+            <label>Water intake</label>
             <select
               value={formData.consulta.agua}
               onChange={(e) => handleInputChange('consulta', 'agua', e.target.value)}
             >
-              <option value="">Seleccionar</option>
+              <option value="">Select</option>
               <option value="Normal">Normal</option>
-              <option value="Aumentado">Aumentado</option>
-              <option value="Disminuido">Disminuido</option>
+              <option value="Aumentado">Increased</option>
+              <option value="Disminuido">Decreased</option>
             </select>
           </div>
           
           <div className="form-group">
-            <label>Orina</label>
+            <label>Urination</label>
             <select
               value={formData.consulta.orina}
               onChange={(e) => handleInputChange('consulta', 'orina', e.target.value)}
             >
-              <option value="">Seleccionar</option>
+              <option value="">Select</option>
               <option value="Normal">Normal</option>
-              <option value="Frecuente">Más frecuente</option>
-              <option value="Escasa">Escasa</option>
-              <option value="ConSangre">Con sangre</option>
-              <option value="Dificultad">Con dificultad</option>
+              <option value="Frecuente">More frequent</option>
+              <option value="Escasa">Infrequent</option>
+              <option value="ConSangre">With blood</option>
+              <option value="Dificultad">Difficulty</option>
             </select>
           </div>
         </div>
         
         <div className="form-group">
-          <label>Heces</label>
+          <label>Stools</label>
           <select
             value={formData.consulta.heces}
             onChange={(e) => handleInputChange('consulta', 'heces', e.target.value)}
           >
-            <option value="">Seleccionar</option>
+            <option value="">Select</option>
             <option value="Normal">Normal</option>
-            <option value="Diarrea">Diarrea</option>
-            <option value="Estrenimiento">Estreñimiento</option>
-            <option value="ConSangre">Con sangre</option>
-            <option value="ConMoco">Con moco</option>
+            <option value="Diarrea">Diarrhea</option>
+            <option value="Estrenimiento">Constipation</option>
+            <option value="ConSangre">With blood</option>
+            <option value="ConMoco">With mucus</option>
           </select>
         </div>
       </div>
       
       <div className="form-group">
-        <label>Otros detalles importantes</label>
+        <label>Other important details</label>
         <textarea
           value={formData.consulta.otrosDetalles}
           onChange={(e) => handleInputChange('consulta', 'otrosDetalles', e.target.value)}
-          placeholder="Cualquier otra información que considere relevante"
+          placeholder="Any other information you consider relevant"
           rows={3}
         />
       </div>
@@ -987,35 +987,35 @@ const RegistroCliente = () => {
 
   const renderStep5 = () => (
     <div className="form-step">
-      <h2>✅ Confirmación y Consentimiento</h2>
+      <h2>✅ Confirmation and Consent</h2>
       
       <div className="summary-section">
-        <h3>Resumen de la información</h3>
+        <h3>Information Summary</h3>
         
         <div className="summary-card">
-          <h4>Propietario</h4>
+          <h4>Owner</h4>
           <p><strong>{formData.propietario.nombre || selectedPatient?.propietario}</strong></p>
           <p>📞 {formData.propietario.telefono || selectedPatient?.telefono}</p>
         </div>
         
         <div className="summary-card">
-          <h4>Mascota</h4>
+          <h4>Pet</h4>
           <p><strong>{formData.paciente.nombre || selectedPatient?.nombre}</strong></p>
           <p>{formData.paciente.especie || selectedPatient?.especie} • {formData.paciente.raza || selectedPatient?.raza}</p>
           <p>{formData.paciente.edad || selectedPatient?.edad} {formData.paciente.unidadEdad}</p>
         </div>
         
         <div className="summary-card">
-          <h4>Motivo de consulta</h4>
+          <h4>Reason for visit</h4>
           <p>{formData.consulta.motivoConsulta}</p>
           {formData.consulta.sintomas.length > 0 && (
-            <p><small>Síntomas: {formData.consulta.sintomas.join(', ')}</small></p>
+            <p><small>Symptoms: {formData.consulta.sintomas.join(', ')}</small></p>
           )}
         </div>
       </div>
       
       <div className="consent-section">
-        <h3>Consentimiento informado</h3>
+        <h3>Informed Consent</h3>
         
         <label className="consent-checkbox">
           <input
@@ -1023,7 +1023,7 @@ const RegistroCliente = () => {
             checked={formData.consentimiento.autorizaTratamiento}
             onChange={(e) => handleInputChange('consentimiento', 'autorizaTratamiento', e.target.checked)}
           />
-          <span>Autorizo al médico veterinario a realizar la exploración física y los procedimientos diagnósticos necesarios para mi mascota.</span>
+          <span>I authorize the veterinarian to perform the physical examination and necessary diagnostic procedures for my pet.</span>
         </label>
         
         <label className="consent-checkbox">
@@ -1032,7 +1032,7 @@ const RegistroCliente = () => {
             checked={formData.consentimiento.autorizaEmergencia}
             onChange={(e) => handleInputChange('consentimiento', 'autorizaEmergencia', e.target.checked)}
           />
-          <span>En caso de emergencia, autorizo la realización de procedimientos de urgencia necesarios para preservar la vida de mi mascota.</span>
+          <span>In case of emergency, I authorize the performance of urgent procedures necessary to preserve my pet's life.</span>
         </label>
         
         <label className="consent-checkbox">
@@ -1041,17 +1041,17 @@ const RegistroCliente = () => {
             checked={formData.consentimiento.aceptaTerminos}
             onChange={(e) => handleInputChange('consentimiento', 'aceptaTerminos', e.target.checked)}
           />
-          <span>Declaro que la información proporcionada es verídica y acepto los términos y condiciones del servicio.</span>
+          <span>I declare that the information provided is truthful and I accept the terms and conditions of service.</span>
         </label>
       </div>
       
       <div className="form-group">
-        <label>Nombre completo (como firma electrónica) *</label>
+        <label>Full name (as electronic signature) *</label>
         <input
           type="text"
           value={formData.consentimiento.firma}
           onChange={(e) => handleInputChange('consentimiento', 'firma', e.target.value)}
-          placeholder="Escriba su nombre completo"
+          placeholder="Write your full name"
           className="signature-input"
         />
       </div>
@@ -1062,14 +1062,14 @@ const RegistroCliente = () => {
     <div className="success-screen">
       <div className="success-content">
         <span className="success-icon">✅</span>
-        <h2>¡Registro completado!</h2>
-        <p>Tu información ha sido recibida correctamente.</p>
+        <h2>Registration Complete!</h2>
+        <p>Your information has been received successfully.</p>
         <div className="success-info">
-          <p>📍 Por favor, acércate a recepción para completar tu check-in.</p>
-          <p>🕐 Un momento, serás atendido pronto.</p>
+          <p>📍 Please approach reception to complete your check-in.</p>
+          <p>🕐 Please wait, you will be attended to shortly.</p>
         </div>
         <div className="turno-box">
-          <span>Tu número de registro:</span>
+          <span>Your registration number:</span>
           <strong>{selectedPatient?.id || `PAC-${Date.now().toString().slice(-6)}`}</strong>
         </div>
       </div>
@@ -1096,7 +1096,7 @@ const RegistroCliente = () => {
               setSelectedPatient(null);
             }
           }}>
-            ← Volver
+            ← Back
           </button>
           
           {renderStepIndicator()}
@@ -1112,13 +1112,13 @@ const RegistroCliente = () => {
           <div className="navigation-buttons">
             {currentStep > 1 && (
               <button className="btn-secondary" onClick={prevStep}>
-                Anterior
+                Previous
               </button>
             )}
             
             {currentStep < totalSteps ? (
               <button className="btn-primary" onClick={nextStep}>
-                Siguiente
+                Next
               </button>
             ) : (
               <button 
@@ -1126,7 +1126,7 @@ const RegistroCliente = () => {
                 onClick={handleSubmit}
                 disabled={!formData.consentimiento.aceptaTerminos || !formData.consentimiento.firma}
               >
-                Enviar registro
+                Submit registration
               </button>
             )}
           </div>
