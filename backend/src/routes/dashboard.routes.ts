@@ -128,14 +128,42 @@ router.get('/medico', authenticate, async (req, res) => {
 
 // GET /dashboard/farmacia - Pharmacy dashboard stats
 router.get('/farmacia', authenticate, async (req, res) => {
+  // Parse date range from query params
+  const { startDate, endDate } = req.query;
+  
+  console.log('[Farmacia Stats] Query params:', { startDate, endDate });
+  
   const today = new Date();
   today.setHours(0, 0, 0, 0);
   const tomorrow = new Date(today);
   tomorrow.setDate(tomorrow.getDate() + 1);
 
-  // 30 days ago for monthly stats
-  const thirtyDaysAgo = new Date();
-  thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+  // Use provided date range or default to 30 days
+  // Parse dates as UTC to avoid timezone issues
+  let rangeStart: Date;
+  let rangeEnd: Date;
+  
+  if (startDate && typeof startDate === 'string') {
+    // Parse as UTC start of day
+    rangeStart = new Date(`${startDate}T00:00:00.000Z`);
+  } else {
+    rangeStart = new Date();
+    rangeStart.setDate(rangeStart.getDate() - 30);
+    rangeStart.setHours(0, 0, 0, 0);
+  }
+  
+  if (endDate && typeof endDate === 'string') {
+    // Parse as UTC end of day
+    rangeEnd = new Date(`${endDate}T23:59:59.999Z`);
+  } else {
+    rangeEnd = new Date();
+    rangeEnd.setHours(23, 59, 59, 999);
+  }
+
+  console.log('[Farmacia Stats] Date range:', { rangeStart, rangeEnd });
+
+  // For backwards compatibility
+  const thirtyDaysAgo = rangeStart;
 
   // ========== TODAY STATS ==========
   const dispensesToday = await prisma.dispense.findMany({
@@ -180,11 +208,11 @@ router.get('/farmacia', authenticate, async (req, res) => {
     where: { status: 'ACTIVA' },
   });
 
-  // ========== TOP MEDICATIONS (30 days) ==========
+  // ========== TOP MEDICATIONS (date range) ==========
   const dispenseItems = await prisma.dispenseItem.findMany({
     where: {
       dispense: {
-        createdAt: { gte: thirtyDaysAgo },
+        createdAt: { gte: rangeStart, lte: rangeEnd },
       },
     },
     include: {
@@ -222,10 +250,10 @@ router.get('/farmacia', authenticate, async (req, res) => {
     revenueByCategory[category] = (revenueByCategory[category] || 0) + Number(item.subtotal || 0);
   }
 
-  // ========== MONTHLY STATS ==========
-  const monthlyDispenses = await prisma.dispense.findMany({
+  // ========== PERIOD STATS (using date range) ==========
+  const periodDispenses = await prisma.dispense.findMany({
     where: {
-      createdAt: { gte: thirtyDaysAgo },
+      createdAt: { gte: rangeStart, lte: rangeEnd },
     },
     include: {
       items: {
@@ -234,16 +262,27 @@ router.get('/farmacia', authenticate, async (req, res) => {
     },
   });
 
-  const monthlyStats = {
-    totalDispenses: monthlyDispenses.length,
-    totalRevenue: monthlyDispenses.reduce((sum, d) => 
+  // Calculate number of days in range for averages
+  const daysInRange = Math.max(1, Math.ceil((rangeEnd.getTime() - rangeStart.getTime()) / (1000 * 60 * 60 * 24)));
+
+  console.log('[Farmacia Stats] Period dispenses found:', periodDispenses.length, 'in', daysInRange, 'days');
+  console.log('[Farmacia Stats] Top medications:', topMedications.length);
+  console.log('[Farmacia Stats] Dispense items in range:', dispenseItems.length);
+
+  const periodStats = {
+    totalDispenses: periodDispenses.length,
+    totalRevenue: periodDispenses.reduce((sum, d) => 
       sum + d.items.reduce((itemSum, item) => itemSum + (Number(item.subtotal) || 0), 0), 0),
-    averagePerDay: monthlyDispenses.length / 30,
-    averageTicket: monthlyDispenses.length > 0 
-      ? monthlyDispenses.reduce((sum, d) => 
-          sum + d.items.reduce((itemSum, item) => itemSum + (Number(item.subtotal) || 0), 0), 0) / monthlyDispenses.length 
+    averagePerDay: periodDispenses.length / daysInRange,
+    averageTicket: periodDispenses.length > 0 
+      ? periodDispenses.reduce((sum, d) => 
+          sum + d.items.reduce((itemSum, item) => itemSum + (Number(item.subtotal) || 0), 0), 0) / periodDispenses.length 
       : 0,
+    daysInRange,
   };
+
+  // Backwards compatibility
+  const monthlyStats = periodStats;
 
   // ========== CONTROLLED MEDICATIONS ==========
   const controlledMeds = await prisma.medication.findMany({
@@ -273,6 +312,17 @@ router.get('/farmacia', authenticate, async (req, res) => {
         revenue,
       })),
       monthlyStats,
+      // Summary for frontend compatibility
+      summary: {
+        totalDispenses: periodStats.totalDispenses,
+        totalRevenue: periodStats.totalRevenue,
+        dailyAverage: periodStats.averagePerDay,
+        averageTicket: periodStats.averageTicket,
+        daysInRange: periodStats.daysInRange,
+      },
+      // Also expose at top level for fallback
+      totalDispenses: periodStats.totalDispenses,
+      totalRevenue: periodStats.totalRevenue,
     },
   });
 });
@@ -401,6 +451,87 @@ router.get('/admin', authenticate, isAdmin, async (req, res) => {
         active: activePatients,
         totalPets,
         totalOwners,
+      },
+    },
+  });
+});
+
+// GET /dashboard/pharmacy - Pharmacy dashboard stats
+router.get('/pharmacy', authenticate, async (req, res) => {
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const tomorrow = new Date(today);
+  tomorrow.setDate(tomorrow.getDate() + 1);
+
+  // Total medications
+  const totalMedications = await prisma.medication.count({
+    where: { activo: true },
+  });
+
+  // Low stock medications
+  const allMedications = await prisma.medication.findMany({
+    where: { activo: true },
+    select: { currentStock: true, minStock: true },
+  });
+  const lowStockCount = allMedications.filter(m => m.currentStock <= m.minStock).length;
+
+  // Expiring soon (within 30 days)
+  const thirtyDaysFromNow = new Date();
+  thirtyDaysFromNow.setDate(thirtyDaysFromNow.getDate() + 30);
+  const expiringSoon = await prisma.medication.count({
+    where: {
+      activo: true,
+      expirationDate: { lte: thirtyDaysFromNow, gte: today },
+    },
+  });
+
+  // Pending prescriptions
+  const pendingPrescriptions = await prisma.prescription.count({
+    where: { status: 'PENDIENTE' },
+  });
+
+  // Today's dispenses
+  const dispensesToday = await prisma.dispense.count({
+    where: { createdAt: { gte: today, lt: tomorrow } },
+  });
+
+  // Today's dispense value
+  const dispenseItems = await prisma.dispenseItem.findMany({
+    where: {
+      dispense: { createdAt: { gte: today, lt: tomorrow } },
+    },
+    select: { subtotal: true },
+  });
+  const todayValue = dispenseItems.reduce((sum, item) => sum + (item.subtotal || 0), 0);
+
+  // Active alerts
+  const activeAlerts = await prisma.stockAlert.count({
+    where: { status: 'ACTIVA' },
+  });
+
+  // Stock movements today (StockMovement uses performedAt, not createdAt)
+  const movementsToday = await prisma.stockMovement.count({
+    where: { performedAt: { gte: today, lt: tomorrow } },
+  });
+
+  res.json({
+    status: 'success',
+    data: {
+      inventory: {
+        total: totalMedications,
+        lowStock: lowStockCount,
+        expiringSoon,
+      },
+      prescriptions: {
+        pending: pendingPrescriptions,
+      },
+      today: {
+        dispenses: dispensesToday,
+        value: todayValue,
+        movements: movementsToday,
+      },
+      alerts: {
+        active: activeAlerts,
       },
     },
   });

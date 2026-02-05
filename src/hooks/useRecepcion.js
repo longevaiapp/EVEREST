@@ -15,7 +15,6 @@ export const useRecepcion = () => {
   const [pets, setPets] = useState([]);
   const [visits, setVisits] = useState([]);
   const [appointments, setAppointments] = useState([]);
-  const [preventiveCalendar, setPreventiveCalendar] = useState([]);
   
   // UI State
   const [loading, setLoading] = useState(false);
@@ -31,12 +30,10 @@ export const useRecepcion = () => {
 
   const loadTodayVisits = useCallback(async () => {
     try {
-      console.log('[useRecepcion] Cargando visitas del día...');
       const visitsData = await visitService.getToday();
-      console.log('[useRecepcion] Visitas recibidas:', visitsData?.length || 0, visitsData);
       setVisits(visitsData || []);
     } catch (err) {
-      console.error('[useRecepcion] Error loading visits:', err);
+      console.error('Error loading visits:', err);
       setVisits([]);
     }
   }, []);
@@ -51,28 +48,6 @@ export const useRecepcion = () => {
     }
   }, []);
 
-  const loadPreventiveCalendar = useCallback(async () => {
-    try {
-      const preventiveData = await petService.getPreventiveCalendar();
-      setPreventiveCalendar(preventiveData || []);
-    } catch (err) {
-      console.error('Error loading preventive calendar:', err);
-      setPreventiveCalendar([]);
-    }
-  }, []);
-
-  const loadAllPets = useCallback(async () => {
-    try {
-      console.log('[useRecepcion] Cargando todas las mascotas...');
-      const petsData = await petService.getAll();
-      console.log('[useRecepcion] Mascotas recibidas:', petsData?.pets?.length || 0);
-      setPets(petsData?.pets || []);
-    } catch (err) {
-      console.error('Error loading all pets:', err);
-      setPets([]);
-    }
-  }, []);
-
   const loadInitialData = useCallback(async () => {
     setLoading(true);
     setError(null);
@@ -81,8 +56,6 @@ export const useRecepcion = () => {
       await Promise.all([
         loadTodayVisits(),
         loadTodayAppointments(),
-        loadPreventiveCalendar(),
-        loadAllPets(),
       ]);
     } catch (err) {
       setError('Error cargando datos iniciales');
@@ -90,7 +63,7 @@ export const useRecepcion = () => {
     } finally {
       setLoading(false);
     }
-  }, [loadTodayVisits, loadTodayAppointments, loadPreventiveCalendar, loadAllPets]);
+  }, [loadTodayVisits, loadTodayAppointments]);
 
   // Cargar datos al montar
   useEffect(() => {
@@ -149,13 +122,10 @@ export const useRecepcion = () => {
     setError(null);
 
     try {
-      console.log('[useRecepcion] createOwner - data:', data);
       const newOwner = await ownerService.create(data);
-      console.log('[useRecepcion] createOwner - resultado:', newOwner);
       setFoundOwner(newOwner);
       return newOwner;
     } catch (err) {
-      console.error('[useRecepcion] createOwner - error:', err);
       const message = err.message || 'Error creando propietario';
       setError(message);
       throw new Error(message);
@@ -192,13 +162,10 @@ export const useRecepcion = () => {
     setError(null);
 
     try {
-      console.log('[useRecepcion] createPet - data:', data);
       const newPet = await petService.create(data);
-      console.log('[useRecepcion] createPet - resultado:', newPet);
       setOwnerPets(prev => [...prev, newPet]);
       return newPet;
     } catch (err) {
-      console.error('[useRecepcion] createPet - error:', err);
       const message = err.message || 'Error registrando mascota';
       setError(message);
       throw new Error(message);
@@ -224,26 +191,6 @@ export const useRecepcion = () => {
     }
   }, []);
 
-  // Buscar mascotas por nombre, número de ficha o propietario
-  const searchPets = useCallback(async (searchTerm) => {
-    if (!searchTerm || searchTerm.length < 2) {
-      return [];
-    }
-    
-    try {
-      console.log('[useRecepcion] searchPets - buscando:', searchTerm);
-      const result = await petService.getAll({ search: searchTerm, limit: 20 });
-      console.log('[useRecepcion] searchPets - resultado completo:', result);
-      // El resultado puede ser { pets, pagination } o directamente un array
-      const pets = result?.pets || result || [];
-      console.log('[useRecepcion] searchPets - pets extraídos:', pets.length);
-      return pets;
-    } catch (err) {
-      console.error('[useRecepcion] searchPets - error:', err);
-      return [];
-    }
-  }, []);
-
   const getPetById = useCallback(async (id) => {
     try {
       return await petService.getById(id);
@@ -262,16 +209,11 @@ export const useRecepcion = () => {
     setError(null);
 
     try {
-      console.log('[useRecepcion] checkInPet - petId:', petId);
       const visit = await visitService.create(petId);
-      console.log('[useRecepcion] checkInPet - Visita creada:', visit);
       setVisits(prev => [visit, ...prev]);
-      console.log('[useRecepcion] checkInPet - Refrescando visitas...');
       await loadTodayVisits(); // Refresh
-      console.log('[useRecepcion] checkInPet - Completado');
       return visit;
     } catch (err) {
-      console.error('[useRecepcion] checkInPet - Error:', err);
       const message = err.message || 'Error haciendo check-in';
       setError(message);
       throw new Error(message);
@@ -431,7 +373,6 @@ export const useRecepcion = () => {
     error,
     visits,
     appointments,
-    preventiveCalendar,
     foundOwner,
     ownerPets,
     
@@ -451,7 +392,6 @@ export const useRecepcion = () => {
     createPet,
     updatePet,
     getPetById,
-    searchPets,
     
     // Visit operations
     checkInPet,
@@ -469,11 +409,6 @@ export const useRecepcion = () => {
     clearError,
     loadInitialData,
     loadTodayVisits,
-    loadPreventiveCalendar,
-    loadAllPets,
-    
-    // All pets
-    allPets: pets,
   };
 };
 

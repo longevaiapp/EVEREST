@@ -79,7 +79,8 @@ const EMPTY_MEDICATION_FORM = {
   expirationDate: '',
   requiresRefrigeration: false,
   isControlled: false,
-  status: 'ACTIVO'
+  status: 'ACTIVO',
+  imageUrl: ''
 };
 
 function FarmaciaDashboard() {
@@ -236,10 +237,11 @@ function FarmaciaDashboard() {
   // Fetch other data on mount
   useEffect(() => {
     fetchPendingPrescriptions();
-    fetchDispenseHistory({ date: dispenseHistoryDate });
+    // Fetch all dispenses first, then filter by date
+    fetchDispenseHistory({});
     fetchStockAlerts();
     fetchPharmacyStats();
-  }, [fetchPendingPrescriptions, fetchDispenseHistory, fetchStockAlerts, fetchPharmacyStats, dispenseHistoryDate]);
+  }, [fetchPendingPrescriptions, fetchDispenseHistory, fetchStockAlerts, fetchPharmacyStats]);
   
   // Refetch dispense history when date changes
   useEffect(() => {
@@ -335,12 +337,12 @@ function FarmaciaDashboard() {
       id: med.id,
       nombre: med.name || med.nombre,
       genericName: med.genericName || med.nombreGenerico || '',
-      stock: med.currentStock ?? med.stockActual ?? 0,
-      minimo: med.minStock ?? med.stockMinimo ?? 10,
-      maximo: med.maxStock ?? med.stockMaximo ?? 100,
+      stock: Number(med.currentStock ?? med.stockActual ?? 0),
+      minimo: Number(med.minStock ?? med.stockMinimo ?? 10),
+      maximo: Number(med.maxStock ?? med.stockMaximo ?? 100),
       categoria: med.category || med.categoria || 'Other',
-      precio: med.salePrice ?? med.precioVenta ?? 0,
-      costPrice: med.costPrice ?? med.precioCosto ?? 0,
+      precio: Number(med.salePrice ?? med.precioVenta ?? 0),
+      costPrice: Number(med.costPrice ?? med.precioCosto ?? 0),
       presentation: med.presentation || med.presentacion || '',
       concentration: med.concentration || med.concentracion || '',
       unit: med.unit || med.unidad || 'unit',
@@ -350,6 +352,7 @@ function FarmaciaDashboard() {
       requiresRefrigeration: med.requiresRefrigeration || med.requiereRefrigeracion || false,
       isControlled: med.isControlled || med.esControlado || false,
       status: med.status || med.estado || 'ACTIVO',
+      imageUrl: med.imageUrl || null,
       // Original data for editing
       _original: med
     }));
@@ -396,6 +399,35 @@ function FarmaciaDashboard() {
     return Object.keys(errors).length === 0;
   };
 
+  // Handle image upload for medication
+  const handleImageUpload = (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    // Validate file type
+    if (!file.type.startsWith('image/')) {
+      toast.error('Please select an image file');
+      return;
+    }
+
+    // Validate file size (max 2MB)
+    if (file.size > 2 * 1024 * 1024) {
+      toast.error('Image must be less than 2MB');
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      handleFormChange('imageUrl', reader.result);
+    };
+    reader.readAsDataURL(file);
+  };
+
+  // Remove medication image
+  const handleRemoveImage = () => {
+    handleFormChange('imageUrl', '');
+  };
+
   // Handle create medication
   const handleCreateMedication = async () => {
     if (!validateMedicationForm()) return;
@@ -436,7 +468,8 @@ function FarmaciaDashboard() {
       expirationDate: original.expirationDate || original.fechaVencimiento || '',
       requiresRefrigeration: original.requiresRefrigeration || original.requiereRefrigeracion || false,
       isControlled: original.isControlled || original.esControlado || false,
-      status: original.status || original.estado || 'ACTIVO'
+      status: original.status || original.estado || 'ACTIVO',
+      imageUrl: original.imageUrl || ''
     });
     setFormErrors({});
     setShowEditMedicationModal(true);
@@ -910,15 +943,43 @@ function FarmaciaDashboard() {
     setSelectedPrescription(prescription);
     
     // Initialize dispense form with prescription items
-    const items = (prescription.items || []).map(item => ({
-      id: item.id,
-      medicationId: item.medicationId,
-      name: item.name || item.nombre,
-      requestedQty: item.quantity || item.cantidad || 1,
-      dispensedQty: item.quantity || item.cantidad || 1,
-      unitPrice: item.unitPrice || item.precioUnitario || 0,
-      available: item.available ?? true // Check stock availability
-    }));
+    // Try to auto-match prescription items to inventory medications
+    const items = (prescription.items || []).map(item => {
+      const prescribedName = (item.name || item.nombre || '').toLowerCase().trim();
+      
+      // Try to find a matching medication in inventory
+      let matchedMed = null;
+      if (item.medicationId) {
+        // If already has medicationId, find it
+        matchedMed = inventory.find(m => m.id === item.medicationId);
+      }
+      
+      if (!matchedMed) {
+        // Try to auto-match by name (fuzzy match)
+        matchedMed = inventory.find(m => {
+          const invName = (m.nombre || '').toLowerCase();
+          return invName.includes(prescribedName) || prescribedName.includes(invName);
+        });
+      }
+      
+      return {
+        id: item.id,
+        prescribedName: item.name || item.nombre, // Original prescribed name
+        medicationId: matchedMed?.id || null,
+        selectedMedication: matchedMed || null,
+        name: matchedMed?.nombre || item.name || item.nombre,
+        requestedQty: item.quantity || item.cantidad || 1,
+        dispensedQty: item.quantity || item.cantidad || 1,
+        unitPrice: matchedMed?.precio || item.unitPrice || item.precioUnitario || 0,
+        available: matchedMed ? matchedMed.stock > 0 : false,
+        stock: matchedMed?.stock || 0,
+        // Keep prescription item details for display
+        dosage: item.dosage,
+        frequency: item.frequency,
+        duration: item.duration,
+        instructions: item.instructions
+      };
+    });
     
     setDispenseForm({
       items,
@@ -927,6 +988,34 @@ function FarmaciaDashboard() {
       partialReason: ''
     });
     setShowDispenseModal(true);
+  };
+  
+  // Handle medication selection for dispense item
+  const handleSelectMedication = (index, medicationId) => {
+    const newItems = [...dispenseForm.items];
+    const selectedMed = inventory.find(m => m.id === medicationId);
+    
+    if (selectedMed) {
+      newItems[index] = {
+        ...newItems[index],
+        medicationId: selectedMed.id,
+        selectedMedication: selectedMed,
+        name: selectedMed.nombre,
+        unitPrice: selectedMed.precio,
+        available: selectedMed.stock > 0,
+        stock: selectedMed.stock
+      };
+    } else {
+      newItems[index] = {
+        ...newItems[index],
+        medicationId: null,
+        selectedMedication: null,
+        available: false,
+        stock: 0
+      };
+    }
+    
+    setDispenseForm({ ...dispenseForm, items: newItems });
   };
 
   // Handle dispense item quantity change
@@ -951,16 +1040,24 @@ function FarmaciaDashboard() {
   // Validate dispense form
   const validateDispenseForm = () => {
     if (!dispenseForm.deliveredTo.trim()) {
-      return 'Please enter the name of the person receiving the medication';
+      return t('farmacia.errors.deliveredToRequired', 'Please enter the name of the person receiving the medication');
     }
-    if (isPartialDispense() && !dispenseForm.partialReason.trim()) {
-      return 'Please provide a reason for partial dispensing';
-    }
-    // Check stock availability
+    
+    // Check that all items to dispense have a medication selected
     for (const item of dispenseForm.items) {
-      if (item.dispensedQty > 0 && !item.available) {
-        return `${item.name} is out of stock`;
+      if (item.dispensedQty > 0 && !item.medicationId) {
+        return t('farmacia.errors.selectMedication', `Please select a medication from inventory for: ${item.prescribedName || item.name}`);
       }
+      if (item.dispensedQty > 0 && !item.available) {
+        return t('farmacia.errors.outOfStock', `${item.name} is out of stock`);
+      }
+      if (item.dispensedQty > item.stock) {
+        return t('farmacia.errors.insufficientStock', `Insufficient stock for ${item.name}. Available: ${item.stock}`);
+      }
+    }
+    
+    if (isPartialDispense() && !dispenseForm.partialReason.trim()) {
+      return t('farmacia.errors.partialReasonRequired', 'Please provide a reason for partial dispensing');
     }
     return null;
   };
@@ -1161,7 +1258,7 @@ function FarmaciaDashboard() {
               {activeSection === 'dispensados' && t('farmacia.dispenseHistory.title')}
               {activeSection === 'reportes' && t('farmacia.reports.title')}
             </h1>
-            <p>{currentUser.nombre}</p>
+            <p>{currentUser?.nombre || 'Farmacia'}</p>
           </div>
         </div>
 
@@ -1373,7 +1470,7 @@ function FarmaciaDashboard() {
         {/* RECETAS PENDIENTES VIEW */}
         {activeSection === 'recetas' && (
           <div className="dashboard-content">
-            <div className="content-section full-width">
+            <div className="content-section full-width" style={{background: 'linear-gradient(135deg, rgba(30, 60, 114, 0.95) 0%, rgba(42, 82, 152, 0.9) 100%)', borderRadius: '20px', border: '1px solid rgba(100, 150, 255, 0.3)'}}>
               <div className="section-header">
                 <h2>📝 {t('farmacia.prescriptions.allPendingOrders')}</h2>
                 <button 
@@ -1492,7 +1589,7 @@ function FarmaciaDashboard() {
         {/* INVENTARIO VIEW */}
         {activeSection === 'inventario' && (
           <div className="dashboard-content">
-            <div className="content-section full-width">
+            <div className="content-section full-width" style={{background: 'linear-gradient(135deg, rgba(30, 60, 114, 0.95) 0%, rgba(42, 82, 152, 0.9) 100%)', borderRadius: '20px', border: '1px solid rgba(100, 150, 255, 0.3)'}}>
               <div className="section-header">
                 <h2>Inventory Control</h2>
                 <div className="section-actions">
@@ -1559,6 +1656,17 @@ function FarmaciaDashboard() {
                       
                       return (
                         <div key={item.id} className={`inventory-item ${isLowStock ? 'low-stock' : ''} ${expiringSoon ? 'expiring-soon' : ''}`}>
+                          {/* Product Image */}
+                          <div className="inventory-image">
+                            {item.imageUrl ? (
+                              <img src={item.imageUrl} alt={item.nombre} />
+                            ) : (
+                              <div className="image-placeholder">
+                                <span>💊</span>
+                              </div>
+                            )}
+                          </div>
+                          
                           <div className="inventory-header">
                             <div className="inventory-title-row">
                               <h4>{item.nombre}</h4>
@@ -1592,7 +1700,7 @@ function FarmaciaDashboard() {
                             </div>
                             <div className="detail-row">
                               <span>{t('farmacia.medications.price')}:</span>
-                              <strong>${item.precio.toFixed(2)}</strong>
+                              <strong>${(Number(item.precio) || 0).toFixed(2)}</strong>
                             </div>
                             {item.location && (
                               <div className="detail-row">
@@ -2053,19 +2161,23 @@ function FarmaciaDashboard() {
                       </tr>
                     </thead>
                     <tbody>
-                      {(selectedDispense.items || []).map((item, index) => (
-                        <tr key={item.id || index}>
-                          <td>{item.medication?.name || item.medicationName || 'Unknown'}</td>
-                          <td>{item.quantity || item.qty || 1}</td>
-                          <td>${(item.unitPrice || item.price || 0).toFixed(2)}</td>
-                          <td>${((item.quantity || 1) * (item.unitPrice || item.price || 0)).toFixed(2)}</td>
-                        </tr>
-                      ))}
+                      {(selectedDispense.items || []).map((item, index) => {
+                        const unitPrice = Number(item.unitPrice || item.price || 0);
+                        const qty = Number(item.dispensedQty || item.quantity || item.qty || 1);
+                        return (
+                          <tr key={item.id || index}>
+                            <td>{item.medication?.name || item.medicationName || 'Unknown'}</td>
+                            <td>{qty}</td>
+                            <td>${unitPrice.toFixed(2)}</td>
+                            <td>${(qty * unitPrice).toFixed(2)}</td>
+                          </tr>
+                        );
+                      })}
                     </tbody>
                     <tfoot>
                       <tr>
                         <td colSpan="3" className="total-label">Total:</td>
-                        <td className="total-value">${(selectedDispense.total || selectedDispense.valorTotal || 0).toFixed(2)}</td>
+                        <td className="total-value">${Number(selectedDispense.total || selectedDispense.valorTotal || 0).toFixed(2)}</td>
                       </tr>
                     </tfoot>
                   </table>
@@ -2191,6 +2303,44 @@ function FarmaciaDashboard() {
               </div>
               
               <div className="medication-form">
+                {/* Product Image Section */}
+                <div className="form-section image-section">
+                  <h3>📷 Product Image</h3>
+                  <div className="image-upload-container">
+                    <div className="image-preview">
+                      {medicationForm.imageUrl ? (
+                        <>
+                          <img src={medicationForm.imageUrl} alt="Product preview" />
+                          <button 
+                            type="button" 
+                            className="btn-remove-image"
+                            onClick={handleRemoveImage}
+                          >
+                            ✕
+                          </button>
+                        </>
+                      ) : (
+                        <div className="image-placeholder-large">
+                          <span>💊</span>
+                          <p>No image</p>
+                        </div>
+                      )}
+                    </div>
+                    <div className="image-upload-actions">
+                      <label className="btn-upload">
+                        📤 Upload Image
+                        <input 
+                          type="file" 
+                          accept="image/*"
+                          onChange={handleImageUpload}
+                          style={{ display: 'none' }}
+                        />
+                      </label>
+                      <span className="upload-hint">Max 2MB (JPG, PNG)</span>
+                    </div>
+                  </div>
+                </div>
+
                 {/* Basic Info Section */}
                 <div className="form-section">
                   <h3>{t('farmacia.form.basicInfo')}</h3>
@@ -2442,6 +2592,44 @@ function FarmaciaDashboard() {
               </div>
               
               <div className="medication-form">
+                {/* Product Image Section */}
+                <div className="form-section image-section">
+                  <h3>📷 Product Image</h3>
+                  <div className="image-upload-container">
+                    <div className="image-preview">
+                      {medicationForm.imageUrl ? (
+                        <>
+                          <img src={medicationForm.imageUrl} alt="Product preview" />
+                          <button 
+                            type="button" 
+                            className="btn-remove-image"
+                            onClick={handleRemoveImage}
+                          >
+                            ✕
+                          </button>
+                        </>
+                      ) : (
+                        <div className="image-placeholder-large">
+                          <span>💊</span>
+                          <p>No image</p>
+                        </div>
+                      )}
+                    </div>
+                    <div className="image-upload-actions">
+                      <label className="btn-upload">
+                        📤 Upload Image
+                        <input 
+                          type="file" 
+                          accept="image/*"
+                          onChange={handleImageUpload}
+                          style={{ display: 'none' }}
+                        />
+                      </label>
+                      <span className="upload-hint">Max 2MB (JPG, PNG)</span>
+                    </div>
+                  </div>
+                </div>
+
                 {/* Basic Info Section */}
                 <div className="form-section">
                   <h3>Basic Information</h3>
@@ -2760,47 +2948,84 @@ function FarmaciaDashboard() {
               {/* Medication Items */}
               <div className="dispense-items">
                 <h3>{t('farmacia.modals.dispense.prescribedItems')}</h3>
-                <table className="dispense-table">
-                  <thead>
-                    <tr>
-                      <th>{t('farmacia.modals.dispense.medication')}</th>
-                      <th>{t('farmacia.modals.dispense.requested')}</th>
-                      <th>{t('farmacia.modals.dispense.dispenseQty')}</th>
-                      <th>{t('farmacia.modals.dispense.unitPrice')}</th>
-                      <th>{t('farmacia.modals.dispense.subtotal')}</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {dispenseForm.items.map((item, index) => (
-                      <tr key={index} className={!item.available ? 'out-of-stock' : ''}>
-                        <td>
-                          <span className="med-name">{item.name}</span>
-                          {!item.available && <span className="stock-warning">⚠️ {t('farmacia.modals.dispense.outOfStock')}</span>}
-                        </td>
-                        <td className="text-center">{item.requestedQty}</td>
-                        <td>
+                <div className="dispense-items-list">
+                  {dispenseForm.items.map((item, index) => (
+                    <div key={index} className={`dispense-item-row ${!item.medicationId ? 'needs-selection' : ''} ${!item.available ? 'out-of-stock' : ''}`}>
+                      {/* Prescribed medication info */}
+                      <div className="prescribed-info">
+                        <span className="prescribed-label">📋 Prescribed:</span>
+                        <span className="prescribed-name">{item.prescribedName || item.name}</span>
+                        {item.dosage && <span className="prescribed-detail">{item.dosage}</span>}
+                        {item.frequency && <span className="prescribed-detail">{item.frequency}</span>}
+                        {item.duration && <span className="prescribed-detail">({item.duration})</span>}
+                      </div>
+                      
+                      {/* Inventory medication selector */}
+                      <div className="inventory-selection">
+                        <label>📦 {t('farmacia.modals.dispense.selectFromInventory', 'Select from inventory')}:</label>
+                        <select
+                          className={`form-control medication-select ${!item.medicationId ? 'required' : ''}`}
+                          value={item.medicationId || ''}
+                          onChange={(e) => handleSelectMedication(index, e.target.value)}
+                        >
+                          <option value="">-- {t('farmacia.modals.dispense.selectMedication', 'Select medication')} --</option>
+                          {inventory
+                            .filter(m => m.status !== 'INACTIVO')
+                            .map(med => (
+                              <option 
+                                key={med.id} 
+                                value={med.id}
+                                disabled={med.stock <= 0}
+                              >
+                                {med.nombre} {med.concentration && `(${med.concentration})`} - Stock: {med.stock} - ${Number(med.precio).toFixed(2)}
+                              </option>
+                            ))}
+                        </select>
+                        {item.medicationId && (
+                          <div className="selected-med-info">
+                            <span className={`stock-badge ${item.stock > 10 ? 'good' : item.stock > 0 ? 'low' : 'out'}`}>
+                              Stock: {item.stock}
+                            </span>
+                            <span className="price-badge">${Number(item.unitPrice).toFixed(2)}/u</span>
+                          </div>
+                        )}
+                        {!item.medicationId && (
+                          <span className="selection-warning">⚠️ {t('farmacia.modals.dispense.mustSelectMed', 'Must select a medication')}</span>
+                        )}
+                      </div>
+                      
+                      {/* Quantity controls */}
+                      <div className="dispense-qty-controls">
+                        <div className="qty-group">
+                          <label>{t('farmacia.modals.dispense.requested')}:</label>
+                          <span className="qty-value">{item.requestedQty}</span>
+                        </div>
+                        <div className="qty-group">
+                          <label>{t('farmacia.modals.dispense.dispenseQty')}:</label>
                           <input
                             type="number"
                             min="0"
-                            max={item.requestedQty}
+                            max={Math.min(item.requestedQty, item.stock || 0)}
                             value={item.dispensedQty}
                             onChange={(e) => handleDispenseQtyChange(index, e.target.value)}
                             className="qty-input"
-                            disabled={!item.available}
+                            disabled={!item.medicationId || !item.available}
                           />
-                        </td>
-                        <td className="text-right">${item.unitPrice.toFixed(2)}</td>
-                        <td className="text-right">${(item.dispensedQty * item.unitPrice).toFixed(2)}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                  <tfoot>
-                    <tr>
-                      <td colSpan="4" className="text-right"><strong>{t('farmacia.modals.dispense.total')}:</strong></td>
-                      <td className="text-right"><strong>${calculateDispenseTotal().toFixed(2)}</strong></td>
-                    </tr>
-                  </tfoot>
-                </table>
+                        </div>
+                        <div className="qty-group subtotal">
+                          <label>{t('farmacia.modals.dispense.subtotal')}:</label>
+                          <span className="subtotal-value">${(item.dispensedQty * item.unitPrice).toFixed(2)}</span>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+                
+                {/* Total */}
+                <div className="dispense-total">
+                  <strong>{t('farmacia.modals.dispense.total')}:</strong>
+                  <span className="total-value">${calculateDispenseTotal().toFixed(2)}</span>
+                </div>
               </div>
 
               {/* Partial Dispense Reason */}

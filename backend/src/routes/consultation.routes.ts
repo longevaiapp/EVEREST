@@ -136,8 +136,9 @@ router.put('/:id', authenticate, isMedico, async (req, res) => {
 router.put('/:id/complete', authenticate, isMedico, async (req, res) => {
   const id = req.params.id as string;
   const schema = z.object({
-    diagnosis: z.string().min(1),
-    soapPlan: z.string().min(1),
+    diagnosis: z.string().optional(),
+    soapPlan: z.string().optional(),
+    physicalExam: z.string().optional(),
     followUpDate: z.string().datetime().optional(),
     followUpNotes: z.string().optional(),
   });
@@ -147,8 +148,9 @@ router.put('/:id/complete', authenticate, isMedico, async (req, res) => {
   const consultation = await prisma.consultation.update({
     where: { id },
     data: {
-      diagnosis: data.diagnosis,
-      soapPlan: data.soapPlan,
+      diagnosis: data.diagnosis || null,
+      soapPlan: data.soapPlan || null,
+      physicalExam: data.physicalExam || null,
       followUpRequired: !!data.followUpDate,
       followUpDate: data.followUpDate ? new Date(data.followUpDate) : null,
       followUpNotes: data.followUpNotes,
@@ -163,9 +165,16 @@ router.put('/:id/complete', authenticate, isMedico, async (req, res) => {
 
   const newVisitStatus = prescriptions.length > 0 ? 'EN_FARMACIA' : 'LISTO_PARA_ALTA';
 
-  await prisma.visit.update({
+  // Get visit to update pet status
+  const visit = await prisma.visit.update({
     where: { id: consultation.visitId },
     data: { status: newVisitStatus },
+  });
+
+  // Also update pet status to match visit status
+  await prisma.pet.update({
+    where: { id: visit.petId },
+    data: { estado: newVisitStatus },
   });
 
   res.json({ status: 'success', data: { consultation } });

@@ -76,18 +76,7 @@ export const petService = {
    */
   async getAll(params = {}) {
     const response = await api.get('/pets', { params });
-    console.log('[petService] getAll - response:', response);
-    // El interceptor ya extrae response.data, que es { status, data: { pets, pagination } }
     return response.data;
-  },
-
-  /**
-   * Obtener mascotas de un propietario
-   * @param {string} ownerId
-   */
-  async getByOwner(ownerId) {
-    const response = await api.get(`/pets/by-owner/${ownerId}`);
-    return response.data?.pets || [];
   },
 
   /**
@@ -115,7 +104,6 @@ export const petService = {
       peso: data.peso ? parseFloat(data.peso) : null,
       color: data.color || null,
       condicionCorporal: mapCondicionCorporal(data.condicionCorporal),
-      fotoUrl: data.fotoUrl || null, // Base64 encoded photo
       // Medical history
       snapTest: data.snapTest || null,
       analisisClinicos: data.analisisClinicos || null,
@@ -152,9 +140,6 @@ export const petService = {
       otrosDatos: data.otrosDatos || null,
     };
 
-    console.log('[petService] CREATE - fotoUrl length:', mappedData.fotoUrl?.length || 0);
-    console.log('[petService] CREATE - fotoUrl first 100 chars:', mappedData.fotoUrl?.substring(0, 100));
-    
     const response = await api.post('/pets', mappedData);
     return response.data?.pet;
   },
@@ -187,25 +172,6 @@ export const petService = {
     const response = await api.get(`/pets/owner/${ownerId}`);
     return response.data?.pets || [];
   },
-
-  /**
-   * Obtener calendario de medicina preventiva
-   * Mascotas que necesitan vacunas o desparasitación
-   */
-  async getPreventiveCalendar() {
-    const response = await api.get('/pets/preventive-calendar');
-    return response.data?.preventiveCalendar || [];
-  },
-
-  /**
-   * Obtener historial médico completo de una mascota
-   * Incluye consultas, cirugías, hospitalizaciones, vacunas y notas
-   * @param {string} petId
-   */
-  async getHistorial(petId) {
-    const response = await api.get(`/pets/historial/${petId}`);
-    return response.data;
-  },
 };
 
 // ============================================================================
@@ -215,35 +181,11 @@ export const petService = {
 export const visitService = {
   /**
    * Obtener visitas de hoy (cola de espera)
-   * Transforma los datos para aplanar pet y owner en la raíz
    */
   async getToday() {
-    console.log('[visitService] getToday - Solicitando visitas del día...');
     const response = await api.get('/visits/today');
-    console.log('[visitService] getToday - Respuesta completa:', response);
-    console.log('[visitService] getToday - response.data:', response.data);
-    const visits = response.data?.visits || [];
-    console.log('[visitService] getToday - Visitas extraídas:', visits.length, visits);
-    
-    // Transformar para aplanar datos del pet y owner en la raíz
-    const transformedVisits = visits.map(v => ({
-      ...v,
-      // Datos del pet en la raíz para fácil acceso
-      petId: v.pet?.id,
-      nombre: v.pet?.nombre || 'Sin nombre',
-      especie: v.pet?.especie,
-      raza: v.pet?.raza,
-      sexo: v.pet?.sexo,
-      edad: v.pet?.edad,
-      numeroFicha: v.pet?.numeroFicha,
-      fotoUrl: v.pet?.fotoUrl, // Foto del paciente
-      // Datos del owner en la raíz
-      propietario: v.pet?.owner?.nombre,
-      telefono: v.pet?.owner?.telefono,
-      email: v.pet?.owner?.email,
-    }));
-    
-    return transformedVisits;
+    // API returns { status, data: { visits } }, interceptor returns response.data
+    return response.data?.visits || [];
   },
 
   /**
@@ -251,13 +193,8 @@ export const visitService = {
    * @param {string|number} petId
    */
   async create(petId) {
-    console.log('[visitService] create - petId:', petId);
     const response = await api.post('/visits', { petId: String(petId) });
-    console.log('[visitService] create - Respuesta completa:', response);
-    console.log('[visitService] create - response.data:', response.data);
-    const visit = response.data?.visit;
-    console.log('[visitService] create - Visita extraída:', visit);
-    return visit;
+    return response.data?.visit;
   },
 
   /**
@@ -449,13 +386,6 @@ function mapTipoVisita(tipo) {
 }
 
 function mapTipoCita(tipo) {
-  // Si ya viene en formato correcto (mayúsculas), retornarlo
-  const validTypes = ['CONSULTA_GENERAL', 'SEGUIMIENTO', 'VACUNACION', 'CIRUGIA', 'EMERGENCIA'];
-  if (validTypes.includes(tipo)) {
-    return tipo;
-  }
-  
-  // Mapeo de formatos alternativos
   const map = {
     'consulta_general': 'CONSULTA_GENERAL',
     'seguimiento': 'SEGUIMIENTO',
@@ -464,7 +394,7 @@ function mapTipoCita(tipo) {
     'vacunacion': 'VACUNACION',
     'emergencia': 'EMERGENCIA',
   };
-  return map[tipo?.toLowerCase()] || 'CONSULTA_GENERAL';
+  return map[tipo] || 'CONSULTA_GENERAL';
 }
 
 function mapMetodoPago(metodo) {

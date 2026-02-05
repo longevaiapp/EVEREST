@@ -12,6 +12,8 @@ const router = Router();
 // GET /dispenses - List dispenses
 router.get('/', authenticate, async (req, res) => {
   const { fecha, date, startDate, endDate, prescriptionId } = req.query;
+  
+  console.log('[Dispenses] Query params:', { fecha, date, startDate, endDate, prescriptionId });
 
   const where: any = {};
   
@@ -25,6 +27,7 @@ router.get('/', authenticate, async (req, res) => {
     const startOfDay = new Date(`${dateStr}T00:00:00.000Z`);
     const endOfDay = new Date(`${dateStr}T23:59:59.999Z`);
     where.createdAt = { gte: startOfDay, lte: endOfDay };
+    console.log('[Dispenses] Date filter:', { dateStr, startOfDay, endOfDay });
   } else if (startDate && endDate) {
     // Date range filter - parse as UTC
     const start = new Date(`${startDate as string}T00:00:00.000Z`);
@@ -32,27 +35,59 @@ router.get('/', authenticate, async (req, res) => {
     where.createdAt = { gte: start, lte: end };
   }
 
-  const dispenses = await prisma.dispense.findMany({
+  const rawDispenses = await prisma.dispense.findMany({
     where,
     include: {
-      prescription: {
-        include: {
-          consultation: {
-            include: {
-              visit: {
-                include: {
-                  pet: { include: { owner: true } },
-                },
-              },
-            },
-          },
-        },
+      pet: {
+        include: { owner: true }
       },
+      prescription: true,
       items: {
         include: { medication: true },
       },
+      dispensedBy: {
+        select: { id: true, nombre: true }
+      }
     },
     orderBy: { createdAt: 'desc' },
+  });
+
+  console.log('[Dispenses] Found:', rawDispenses.length, 'dispenses');
+
+  // Transform dispenses to include patient, owner, and total at top level
+  const dispenses = rawDispenses.map(dispense => {
+    const pet = dispense.pet;
+    const owner = pet?.owner;
+    
+    // Calculate total from items (unitPrice is Decimal, convert to number)
+    const total = dispense.items.reduce((sum, item) => {
+      const price = typeof item.unitPrice === 'object' ? Number(item.unitPrice) : item.unitPrice;
+      return sum + (item.dispensedQty * price);
+    }, 0);
+
+    return {
+      ...dispense,
+      // Add patient info at top level for frontend compatibility
+      // Pet uses 'nombre' and 'especie', Owner uses 'nombre' and 'telefono'
+      patient: pet ? {
+        id: pet.id,
+        name: pet.nombre,
+        species: pet.especie,
+        breed: pet.raza,
+        owner: owner ? {
+          id: owner.id,
+          name: owner.nombre,
+          phone: owner.telefono,
+          email: owner.email
+        } : null
+      } : null,
+      // Add calculated total
+      total,
+      // Add status based on items
+      status: dispense.items.every(item => item.dispensedQty >= item.requestedQty) 
+        ? 'COMPLETO' 
+        : 'PARCIAL'
+    };
   });
 
   res.json({ status: 'success', data: { dispenses } });
@@ -66,7 +101,7 @@ router.post('/', authenticate, isFarmacia, async (req, res) => {
     requestedQty: z.number().int().positive(),
     dispensedQty: z.number().int().nonnegative(),
     reason: z.string().optional(),
-    unitPrice: z.number().positive(),
+    unitPrice: z.number().nonnegative(), // Allow 0 for free samples/donations
   });
 
   const schema = z.object({
@@ -232,6 +267,12 @@ router.post('/', authenticate, isFarmacia, async (req, res) => {
       await prisma.visit.update({
         where: { id: consultation.visitId },
         data: { status: 'LISTO_PARA_ALTA' },
+      });
+
+      // Also update pet status
+      await prisma.pet.update({
+        where: { id: consultation.visit?.petId },
+        data: { estado: 'LISTO_PARA_ALTA' },
       });
 
       // Notify reception staff that patient is ready for checkout

@@ -194,8 +194,8 @@ function RecepcionDashboard() {
       )
     : allPetsFormatted;
 
-  // Appointments from API
-  const todayAppointments = (appointments || []).map(apt => ({
+  // Appointments from API - Separate active from completed/cancelled
+  const allAppointments = (appointments || []).map(apt => ({
     id: apt.id,
     pacienteId: apt.pet?.id,
     pacienteNombre: apt.pet?.nombre || 'No name',
@@ -207,8 +207,29 @@ function RecepcionDashboard() {
     motivo: apt.motivo || '',
     confirmada: apt.confirmada,
     cancelada: apt.cancelada,
+    status: apt.status || 'PENDIENTE',
+    visitId: apt.visitId, // If this exists, patient already checked in
     fromApi: true
   }));
+
+  // Filter appointments:
+  // - todayAppointments: Only pending/confirmed that haven't been checked in yet
+  // - Hide cancelled and completed appointments from main list
+  const todayAppointments = allAppointments.filter(apt => 
+    !apt.cancelada && 
+    !apt.visitId && 
+    !['CANCELADA', 'COMPLETADA', 'EN_CONSULTA', 'NO_ASISTIO'].includes(apt.status)
+  );
+
+  // Cancelled appointments for reference (could show in separate section)
+  const cancelledAppointments = allAppointments.filter(apt => 
+    apt.cancelada || apt.status === 'CANCELADA'
+  );
+
+  // Checked-in appointments (already have a visit)
+  const checkedInAppointments = allAppointments.filter(apt => 
+    apt.visitId || ['EN_CONSULTA', 'COMPLETADA'].includes(apt.status)
+  );
 
   // Pending tasks (empty for now, can be implemented later)
   const myTasks = [];
@@ -1032,7 +1053,7 @@ function RecepcionDashboard() {
               {todayAppointments.length > 0 && (
                 <div className="content-section info">
                   <h2>📅 {t('recepcion.sections.todayAppointments')}</h2>
-                  <p>{todayAppointments.length} {t('recepcion.appointments')}</p>
+                  <p>{todayAppointments.length} {t('recepcion.appointments.title')}</p>
                   <button className="btn-action" onClick={() => setActiveSection('citas')}>
                     {t('common.search')}
                   </button>

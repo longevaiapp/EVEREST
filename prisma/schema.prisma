@@ -1,11 +1,5 @@
-// prisma/schema.prisma
-// VET-OS Database Schema - EVEREST Project
-// Version: 1.0
-// Date: January 21, 2026
-
 generator client {
   provider = "prisma-client-js"
-  output   = "../backend/node_modules/.prisma/client"
 }
 
 datasource db {
@@ -13,42 +7,660 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-// ============================================================================
-// SISTEMA - Entidades base del sistema
-// ============================================================================
-
 model User {
-  id            String    @id @default(cuid())
-  email         String    @unique
-  password      String    // Hashed with bcrypt
-  nombre        String
-  rol           UserRole
-  especialidad  String?   // Solo para médicos
-  telefono      String?
-  activo        Boolean   @default(true)
-  createdAt     DateTime  @default(now())
-  updatedAt     DateTime  @updatedAt
-
-  // Relaciones
-  notifications     Notification[]
-  tasksAssigned     Task[]           @relation("TaskAssignee")
-  tasksCreated      Task[]           @relation("TaskCreator")
-  consultations     Consultation[]
-  labRequestsMade   LabRequest[]     @relation("LabRequestedBy")
-  labRequestsDone   LabRequest[]     @relation("LabCompletedBy")
-  prescriptions     Prescription[]
-  surgeriesLead     Surgery[]        @relation("SurgeonLead")
-  hospitalizations  Hospitalization[]
-  monitorings       Monitoring[]
-  medicalNotes      MedicalNote[]
-  dispenses         Dispense[]
-  stockMovements    StockMovement[]
-  alertsResolved    StockAlert[]
-  purchaseOrdersCreated  PurchaseOrder[]  @relation("POCreator")
-  purchaseOrdersReceived PurchaseOrder[]  @relation("POReceiver")
+  id                     String            @id @default(cuid())
+  email                  String            @unique
+  password               String
+  nombre                 String
+  rol                    UserRole
+  especialidad           String?
+  telefono               String?
+  activo                 Boolean           @default(true)
+  createdAt              DateTime          @default(now())
+  updatedAt              DateTime          @updatedAt
+  consultations          Consultation[]
+  dispenses              Dispense[]
+  hospitalizations       Hospitalization[]
+  labRequestsDone        LabRequest[]      @relation("LabCompletedBy")
+  labRequestsMade        LabRequest[]      @relation("LabRequestedBy")
+  medicalNotes           MedicalNote[]
+  monitorings            Monitoring[]
+  notifications          Notification[]
+  prescriptions          Prescription[]
+  purchaseOrdersCreated  PurchaseOrder[]   @relation("POCreator")
+  purchaseOrdersReceived PurchaseOrder[]   @relation("POReceiver")
+  alertsResolved         StockAlert[]
+  stockMovements         StockMovement[]
+  surgeriesLead          Surgery[]         @relation("SurgeonLead")
+  tasksAssigned          Task[]            @relation("TaskAssignee")
+  tasksCreated           Task[]            @relation("TaskCreator")
 
   @@index([email])
   @@index([rol])
+}
+
+model Notification {
+  id        String           @id @default(cuid())
+  userId    String
+  tipo      NotificationType
+  titulo    String
+  mensaje   String           @db.Text
+  leida     Boolean          @default(false)
+  data      String?          @db.LongText
+  createdAt DateTime         @default(now())
+  user      User             @relation(fields: [userId], references: [id])
+
+  @@index([userId, leida])
+  @@index([createdAt])
+}
+
+model Task {
+  id          String     @id @default(cuid())
+  titulo      String
+  descripcion String?    @db.Text
+  tipo        TaskType
+  prioridad   Priority
+  estado      TaskStatus @default(PENDIENTE)
+  assigneeId  String?
+  createdById String
+  petId       String?
+  visitId     String?
+  createdAt   DateTime   @default(now())
+  completedAt DateTime?
+  assignee    User?      @relation("TaskAssignee", fields: [assigneeId], references: [id])
+  createdBy   User       @relation("TaskCreator", fields: [createdById], references: [id])
+  pet         Pet?       @relation(fields: [petId], references: [id])
+  visit       Visit?     @relation(fields: [visitId], references: [id])
+
+  @@index([assigneeId, estado])
+  @@index([tipo, prioridad])
+  @@index([createdById], map: "Task_createdById_fkey")
+  @@index([petId], map: "Task_petId_fkey")
+  @@index([visitId], map: "Task_visitId_fkey")
+}
+
+model Owner {
+  id           String   @id @default(cuid())
+  nombre       String
+  telefono     String   @unique
+  email        String?
+  direccion    String?  @db.Text
+  ciudad       String?
+  codigoPostal String?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+  pets         Pet[]
+
+  @@index([telefono])
+  @@index([nombre])
+}
+
+model Pet {
+  id                       String            @id @default(cuid())
+  numeroFicha              String            @unique
+  ownerId                  String
+  nombre                   String
+  especie                  Species
+  raza                     String?
+  sexo                     Sexo
+  fechaNacimiento          DateTime?
+  peso                     Float?
+  color                    String?
+  condicionCorporal        BodyCondition?
+  fotoUrl                  String?           @db.LongText
+  snapTest                 String?           @db.Text
+  analisisClinicos         String?           @db.Text
+  antecedentes             String?           @db.Text
+  desparasitacionExterna   Boolean?
+  ultimaDesparasitacion    DateTime?
+  vacunasTexto             String?           @db.Text
+  vacunasActualizadas      Boolean?
+  ultimaVacuna             DateTime?
+  esterilizado             Boolean?
+  otrasCirugias            Boolean?
+  detalleCirugias          String?           @db.Text
+  ultimoCelo               DateTime?
+  cantidadPartos           Int?
+  ultimoParto              DateTime?
+  alimento                 String?
+  porcionesPorDia          String?
+  otrosAlimentos           String?
+  frecuenciaOtrosAlimentos String?
+  alergias                 String?           @db.Text
+  enfermedadesCronicas     String?           @db.Text
+  conviveOtrasMascotas     Boolean?
+  cualesMascotas           String?
+  actividadFisica          Boolean?
+  frecuenciaActividad      String?
+  saleViaPublica           Boolean?
+  frecuenciaSalida         String?
+  otrosDatos               String?           @db.Text
+  estado                   PatientStatus     @default(RECIEN_LLEGADO)
+  fechaIngreso             DateTime          @default(now())
+  primeraVisita            Boolean           @default(true)
+  activo                   Boolean           @default(true)
+  createdAt                DateTime          @default(now())
+  updatedAt                DateTime          @updatedAt
+  appointments             Appointment[]
+  consultations            Consultation[]
+  dispenses                Dispense[]
+  hospitalizations         Hospitalization[]
+  labRequests              LabRequest[]
+  medicalNotes             MedicalNote[]
+  owner                    Owner             @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+  prescriptions            Prescription[]
+  surgeries                Surgery[]
+  tasks                    Task[]
+  vaccineRecords           VaccineRecord[]
+  visits                   Visit[]
+
+  @@index([ownerId])
+  @@index([numeroFicha])
+  @@index([nombre])
+  @@index([estado])
+}
+
+model VaccineRecord {
+  id           String    @id @default(cuid())
+  petId        String
+  nombre       String
+  fecha        DateTime
+  proximaDosis DateTime?
+  lote         String?
+  aplicadaPor  String?
+  notas        String?   @db.Text
+  createdAt    DateTime  @default(now())
+  pet          Pet       @relation(fields: [petId], references: [id], onDelete: Cascade)
+
+  @@index([petId, proximaDosis])
+}
+
+model Visit {
+  id               String        @id @default(cuid())
+  petId            String
+  arrivalTime      DateTime      @default(now())
+  status           VisitStatus   @default(RECIEN_LLEGADO)
+  tipoVisita       VisitType?
+  motivo           String?       @db.Text
+  prioridad        Priority?
+  peso             Float?
+  temperatura      Float?
+  primeraVisita    Boolean       @default(false)
+  antecedentes     String?       @db.Text
+  assignedDoctorId String?
+  dischargeNotes   String?       @db.Text
+  dischargedAt     DateTime?
+  createdAt        DateTime      @default(now())
+  updatedAt        DateTime      @updatedAt
+  consultation     Consultation?
+  payment          Payment?
+  tasks            Task[]
+  pet              Pet           @relation(fields: [petId], references: [id])
+
+  @@index([petId])
+  @@index([status])
+  @@index([arrivalTime])
+}
+
+model Appointment {
+  id          String            @id @default(cuid())
+  petId       String
+  fecha       DateTime          @db.Date
+  hora        String
+  tipo        AppointmentType
+  motivo      String            @db.Text
+  confirmada  Boolean           @default(false)
+  cancelada   Boolean           @default(false)
+  notas       String?           @db.Text
+  createdById String?
+  createdAt   DateTime          @default(now())
+  updatedAt   DateTime          @updatedAt
+  status      AppointmentStatus @default(PENDIENTE)
+  visitId     String?
+  pet         Pet               @relation(fields: [petId], references: [id])
+
+  @@index([fecha])
+  @@index([petId])
+  @@index([status])
+}
+
+model Payment {
+  id          String        @id @default(cuid())
+  visitId     String        @unique
+  total       Decimal       @db.Decimal(10, 2)
+  metodoPago  PaymentMethod
+  fecha       DateTime      @default(now())
+  recibidoPor String?
+  notas       String?       @db.Text
+  createdAt   DateTime      @default(now())
+  visit       Visit         @relation(fields: [visitId], references: [id])
+
+  @@index([fecha])
+}
+
+model Consultation {
+  id                   String             @id @default(cuid())
+  visitId              String             @unique
+  petId                String
+  doctorId             String
+  startTime            DateTime           @default(now())
+  endTime              DateTime?
+  symptoms             String?            @db.Text
+  physicalExam         String?            @db.Text
+  diagnosis            String?            @db.Text
+  treatment            String?            @db.Text
+  notes                String?            @db.Text
+  vitalTemperature     Float?
+  vitalHeartRate       Int?
+  vitalRespiratoryRate Int?
+  vitalWeight          Float?
+  followUpRequired     Boolean            @default(false)
+  followUpDate         DateTime?
+  status               ConsultationStatus @default(EN_PROGRESO)
+  createdAt            DateTime           @default(now())
+  updatedAt            DateTime           @updatedAt
+  duration             Int?
+  followUpNotes        String?            @db.Text
+  historiaEnfermedad   String?            @db.Text
+  motivoConsulta       String?            @db.Text
+  soapAssessment       String?            @db.Text
+  soapObjective        String?            @db.Text
+  soapPlan             String?            @db.Text
+  soapSubjective       String?            @db.Text
+  vitalBloodPressure   String?
+  vitalHydration       String?
+  vitalMucosas         String?
+  vitalPulse           Int?
+  doctor               User               @relation(fields: [doctorId], references: [id])
+  pet                  Pet                @relation(fields: [petId], references: [id])
+  visit                Visit              @relation(fields: [visitId], references: [id])
+  diagnosticos         Diagnostico[]
+  hospitalization      Hospitalization?
+  labRequests          LabRequest[]
+  prescriptions        Prescription[]
+  signosVitales        SignosVitales[]
+  surgeries            Surgery[]
+
+  @@index([petId])
+  @@index([doctorId])
+  @@index([startTime])
+  @@index([status])
+}
+
+model Diagnostico {
+  id             String          @id @default(cuid())
+  consultationId String
+  codigoCIE10    String?
+  nombreCIE10    String?
+  descripcion    String          @db.Text
+  tipo           DiagnosticoTipo @default(PRESUNTIVO)
+  severidad      Severidad?
+  observaciones  String?         @db.Text
+  diferenciales  String?         @db.Text
+  orden          Int             @default(1)
+  esPrincipal    Boolean         @default(false)
+  createdAt      DateTime        @default(now())
+  updatedAt      DateTime        @updatedAt
+  consultation   Consultation    @relation(fields: [consultationId], references: [id], onDelete: Cascade)
+
+  @@index([consultationId])
+  @@index([codigoCIE10])
+}
+
+model SignosVitales {
+  id                     String       @id @default(cuid())
+  consultationId         String
+  registeredAt           DateTime     @default(now())
+  temperatura            Float?
+  frecuenciaCardiaca     Int?
+  frecuenciaRespiratoria Int?
+  peso                   Float?
+  presionArterial        String?
+  pulso                  Int?
+  saturacionOxigeno      Float?
+  glucosa                Float?
+  hidratacion            String?
+  mucosas                String?
+  tiempoLlenadoCapilar   String?
+  condicionCorporal      Int?
+  escalaDolor            Int?
+  localizacionDolor      String?
+  observaciones          String?      @db.Text
+  createdAt              DateTime     @default(now())
+  consultation           Consultation @relation(fields: [consultationId], references: [id], onDelete: Cascade)
+
+  @@index([consultationId])
+  @@index([registeredAt])
+}
+
+model LabRequest {
+  id             String           @id @default(cuid())
+  consultationId String
+  petId          String
+  requestedById  String
+  requestedAt    DateTime         @default(now())
+  type           LabType
+  urgency        LabUrgency       @default(NORMAL)
+  notes          String?          @db.Text
+  status         LabRequestStatus @default(PENDIENTE)
+  results        String?          @db.Text
+  resultFiles    String?          @db.LongText
+  completedAt    DateTime?
+  completedById  String?
+  createdAt      DateTime         @default(now())
+  updatedAt      DateTime         @updatedAt
+  completedBy    User?            @relation("LabCompletedBy", fields: [completedById], references: [id])
+  consultation   Consultation     @relation(fields: [consultationId], references: [id])
+  pet            Pet              @relation(fields: [petId], references: [id])
+  requestedBy    User             @relation("LabRequestedBy", fields: [requestedById], references: [id])
+
+  @@index([petId])
+  @@index([status])
+  @@index([consultationId])
+  @@index([completedById], map: "LabRequest_completedById_fkey")
+  @@index([requestedById], map: "LabRequest_requestedById_fkey")
+}
+
+model Prescription {
+  id                  String             @id @default(cuid())
+  consultationId      String
+  petId               String
+  prescribedById      String
+  prescribedAt        DateTime           @default(now())
+  generalInstructions String?            @db.Text
+  status              PrescriptionStatus @default(PENDIENTE)
+  createdAt           DateTime           @default(now())
+  updatedAt           DateTime           @updatedAt
+  dispenses           Dispense[]
+  consultation        Consultation       @relation(fields: [consultationId], references: [id])
+  pet                 Pet                @relation(fields: [petId], references: [id])
+  prescribedBy        User               @relation(fields: [prescribedById], references: [id])
+  items               PrescriptionItem[]
+
+  @@index([petId])
+  @@index([status])
+  @@index([consultationId])
+  @@index([prescribedById], map: "Prescription_prescribedById_fkey")
+}
+
+model PrescriptionItem {
+  id             String       @id @default(cuid())
+  prescriptionId String
+  name           String
+  dosage         String
+  frequency      String
+  duration       String
+  quantity       Int
+  instructions   String?      @db.Text
+  createdAt      DateTime     @default(now())
+  prescription   Prescription @relation(fields: [prescriptionId], references: [id], onDelete: Cascade)
+
+  @@index([prescriptionId])
+}
+
+model Surgery {
+  id                      String           @id @default(cuid())
+  petId                   String
+  consultationId          String
+  surgeonId               String
+  type                    String
+  scheduledDate           DateTime         @db.Date
+  scheduledTime           String
+  estimatedDuration       Int?
+  status                  SurgeryStatus    @default(PROGRAMADA)
+  prioridad               Priority         @default(MEDIA)
+  preOpNotes              String?          @db.Text
+  preOpStudies            String?          @db.LongText
+  sedationAuthorized      Boolean          @default(false)
+  consentSigned           Boolean          @default(false)
+  consentSignedBy         String?
+  consentSignedAt         DateTime?
+  fastingConfirmed        Boolean          @default(false)
+  startTime               DateTime?
+  endTime                 DateTime?
+  anesthesiaType          String?
+  complications           String?          @db.Text
+  postOpNotes             String?          @db.Text
+  procedure               String?          @db.Text
+  prognosis               Prognosis?
+  postOpCare              String?          @db.Text
+  hospitalizationRequired Boolean          @default(false)
+  followUpDate            DateTime?
+  createdAt               DateTime         @default(now())
+  updatedAt               DateTime         @updatedAt
+  hospitalization         Hospitalization?
+  consultation            Consultation     @relation(fields: [consultationId], references: [id])
+  pet                     Pet              @relation(fields: [petId], references: [id])
+  surgeon                 User             @relation("SurgeonLead", fields: [surgeonId], references: [id])
+
+  @@index([petId])
+  @@index([scheduledDate])
+  @@index([status])
+  @@index([consultationId], map: "Surgery_consultationId_fkey")
+  @@index([surgeonId], map: "Surgery_surgeonId_fkey")
+}
+
+model Hospitalization {
+  id                  String                @id @default(cuid())
+  petId               String
+  consultationId      String                @unique
+  surgeryId           String?               @unique
+  admittedById        String
+  admittedAt          DateTime              @default(now())
+  dischargedAt        DateTime?
+  reason              String                @db.Text
+  location            String?
+  status              HospitalizationStatus @default(ACTIVA)
+  createdAt           DateTime              @default(now())
+  updatedAt           DateTime              @updatedAt
+  cuidadosEspeciales  String?               @db.Text
+  dischargeNotes      String?               @db.Text
+  estimacionDias      Int?
+  frecuenciaMonitoreo String?
+  admittedBy          User                  @relation(fields: [admittedById], references: [id])
+  consultation        Consultation          @relation(fields: [consultationId], references: [id])
+  pet                 Pet                   @relation(fields: [petId], references: [id])
+  surgery             Surgery?              @relation(fields: [surgeryId], references: [id])
+  monitorings         Monitoring[]
+
+  @@index([petId])
+  @@index([status])
+  @@index([admittedById], map: "Hospitalization_admittedById_fkey")
+}
+
+model Monitoring {
+  id                     String              @id @default(cuid())
+  hospitalizationId      String
+  recordedById           String
+  recordedAt             DateTime            @default(now())
+  temperatura            Float?
+  frecuenciaCardiaca     Int?
+  frecuenciaRespiratoria Int?
+  presionArterial        String?
+  nivelConciencia        ConsciousnessLevel?
+  escalaDolor            Int?
+  observaciones          String?             @db.Text
+  createdAt              DateTime            @default(now())
+  hospitalization        Hospitalization     @relation(fields: [hospitalizationId], references: [id], onDelete: Cascade)
+  recordedBy             User                @relation(fields: [recordedById], references: [id])
+
+  @@index([hospitalizationId])
+  @@index([recordedAt])
+  @@index([recordedById], map: "Monitoring_recordedById_fkey")
+}
+
+model MedicalNote {
+  id             String          @id @default(cuid())
+  petId          String
+  consultationId String?
+  createdById    String
+  type           MedicalNoteType
+  content        String          @db.Text
+  isPrivate      Boolean         @default(false)
+  createdAt      DateTime        @default(now())
+  updatedAt      DateTime        @updatedAt
+  createdBy      User            @relation(fields: [createdById], references: [id])
+  pet            Pet             @relation(fields: [petId], references: [id])
+
+  @@index([petId])
+  @@index([type])
+  @@index([createdById], map: "MedicalNote_createdById_fkey")
+}
+
+model Medication {
+  id                    String              @id @default(cuid())
+  name                  String
+  genericName           String?
+  category              MedicationCategory
+  presentation          String
+  concentration         String?
+  unit                  String
+  currentStock          Int                 @default(0)
+  minStock              Int
+  maxStock              Int?
+  location              String?
+  requiresRefrigeration Boolean             @default(false)
+  isControlled          Boolean             @default(false)
+  costPrice             Decimal?            @db.Decimal(10, 2)
+  salePrice             Decimal             @db.Decimal(10, 2)
+  expirationDate        DateTime?
+  lastRestocked         DateTime?
+  supplier              String?
+  supplierCode          String?
+  activo                Boolean             @default(true)
+  createdAt             DateTime            @default(now())
+  updatedAt             DateTime            @updatedAt
+  imageUrl              String?             @db.LongText
+  dispenseItems         DispenseItem[]
+  purchaseOrderItems    PurchaseOrderItem[]
+  stockAlerts           StockAlert[]
+  stockMovements        StockMovement[]
+
+  @@index([name])
+  @@index([category])
+  @@index([currentStock])
+}
+
+model Dispense {
+  id             String         @id @default(cuid())
+  prescriptionId String
+  petId          String
+  dispensedById  String
+  dispensedAt    DateTime       @default(now())
+  status         DispenseStatus @default(PENDIENTE)
+  notes          String?        @db.Text
+  deliveredTo    String?
+  signature      String?        @db.LongText
+  createdAt      DateTime       @default(now())
+  dispensedBy    User           @relation(fields: [dispensedById], references: [id])
+  pet            Pet            @relation(fields: [petId], references: [id])
+  prescription   Prescription   @relation(fields: [prescriptionId], references: [id])
+  items          DispenseItem[]
+
+  @@index([prescriptionId])
+  @@index([petId])
+  @@index([status])
+  @@index([dispensedById], map: "Dispense_dispensedById_fkey")
+}
+
+model DispenseItem {
+  id             String     @id @default(cuid())
+  dispenseId     String
+  medicationId   String
+  medicationName String
+  requestedQty   Int
+  dispensedQty   Int
+  reason         String?
+  unitPrice      Decimal    @db.Decimal(10, 2)
+  subtotal       Decimal    @db.Decimal(10, 2)
+  createdAt      DateTime   @default(now())
+  dispense       Dispense   @relation(fields: [dispenseId], references: [id], onDelete: Cascade)
+  medication     Medication @relation(fields: [medicationId], references: [id])
+
+  @@index([dispenseId])
+  @@index([medicationId])
+}
+
+model StockMovement {
+  id             String       @id @default(cuid())
+  medicationId   String
+  type           MovementType
+  quantity       Int
+  previousStock  Int
+  newStock       Int
+  reason         String?      @db.Text
+  reference      String?
+  batchNumber    String?
+  expirationDate DateTime?
+  performedById  String
+  performedAt    DateTime     @default(now())
+  medication     Medication   @relation(fields: [medicationId], references: [id])
+  performedBy    User         @relation(fields: [performedById], references: [id])
+
+  @@index([medicationId])
+  @@index([type])
+  @@index([performedAt])
+  @@index([performedById], map: "StockMovement_performedById_fkey")
+}
+
+model StockAlert {
+  id              String      @id @default(cuid())
+  medicationId    String
+  type            AlertType
+  message         String      @db.Text
+  priority        Priority
+  status          AlertStatus @default(ACTIVA)
+  resolvedAt      DateTime?
+  resolvedById    String?
+  resolutionNotes String?     @db.Text
+  createdAt       DateTime    @default(now())
+  medication      Medication  @relation(fields: [medicationId], references: [id])
+  resolvedBy      User?       @relation(fields: [resolvedById], references: [id])
+
+  @@index([medicationId])
+  @@index([status, priority])
+  @@index([resolvedById], map: "StockAlert_resolvedById_fkey")
+}
+
+model PurchaseOrder {
+  id               String              @id @default(cuid())
+  supplier         String
+  supplierContact  String?
+  totalAmount      Decimal             @db.Decimal(10, 2)
+  status           PurchaseOrderStatus @default(BORRADOR)
+  createdById      String
+  sentAt           DateTime?
+  expectedDelivery DateTime?
+  receivedAt       DateTime?
+  receivedById     String?
+  notes            String?             @db.Text
+  createdAt        DateTime            @default(now())
+  updatedAt        DateTime            @updatedAt
+  createdBy        User                @relation("POCreator", fields: [createdById], references: [id])
+  receivedBy       User?               @relation("POReceiver", fields: [receivedById], references: [id])
+  items            PurchaseOrderItem[]
+
+  @@index([status])
+  @@index([supplier])
+  @@index([createdById], map: "PurchaseOrder_createdById_fkey")
+  @@index([receivedById], map: "PurchaseOrder_receivedById_fkey")
+}
+
+model PurchaseOrderItem {
+  id              String        @id @default(cuid())
+  purchaseOrderId String
+  medicationId    String
+  medicationName  String
+  quantity        Int
+  unitCost        Decimal       @db.Decimal(10, 2)
+  subtotal        Decimal       @db.Decimal(10, 2)
+  receivedQty     Int?
+  createdAt       DateTime      @default(now())
+  medication      Medication    @relation(fields: [medicationId], references: [id])
+  purchaseOrder   PurchaseOrder @relation(fields: [purchaseOrderId], references: [id], onDelete: Cascade)
+
+  @@index([purchaseOrderId])
+  @@index([medicationId])
 }
 
 enum UserRole {
@@ -57,21 +669,6 @@ enum UserRole {
   MEDICO
   LABORATORIO
   FARMACIA
-}
-
-model Notification {
-  id        String             @id @default(cuid())
-  userId    String
-  user      User               @relation(fields: [userId], references: [id])
-  tipo      NotificationType
-  titulo    String
-  mensaje   String             @db.Text
-  leida     Boolean            @default(false)
-  data      Json?              // Datos adicionales (patientId, etc.)
-  createdAt DateTime           @default(now())
-
-  @@index([userId, leida])
-  @@index([createdAt])
 }
 
 enum NotificationType {
@@ -85,33 +682,6 @@ enum NotificationType {
   ALTA_PENDIENTE
   STOCK_BAJO
   GENERAL
-}
-
-model Task {
-  id          String       @id @default(cuid())
-  titulo      String
-  descripcion String?      @db.Text
-  tipo        TaskType
-  prioridad   Priority
-  estado      TaskStatus   @default(PENDIENTE)
-  
-  // Asignación
-  assigneeId  String?
-  assignee    User?        @relation("TaskAssignee", fields: [assigneeId], references: [id])
-  createdById String
-  createdBy   User         @relation("TaskCreator", fields: [createdById], references: [id])
-  
-  // Referencias opcionales
-  petId       String?
-  pet         Pet?         @relation(fields: [petId], references: [id])
-  visitId     String?
-  visit       Visit?       @relation(fields: [visitId], references: [id])
-  
-  createdAt   DateTime     @default(now())
-  completedAt DateTime?
-
-  @@index([assigneeId, estado])
-  @@index([tipo, prioridad])
 }
 
 enum TaskType {
@@ -135,128 +705,6 @@ enum Priority {
   ALTA
   MEDIA
   BAJA
-}
-
-// ============================================================================
-// RECEPCIÓN - Propietarios, Mascotas, Visitas, Citas, Pagos
-// ============================================================================
-
-model Owner {
-  id           String   @id @default(cuid())
-  nombre       String
-  telefono     String   @unique
-  email        String?
-  direccion    String?  @db.Text
-  ciudad       String?
-  codigoPostal String?
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
-
-  // Relaciones
-  pets Pet[]
-
-  @@index([telefono])
-  @@index([nombre])
-}
-
-model Pet {
-  id           String   @id @default(cuid())
-  numeroFicha  String   @unique  // VET-001, VET-002...
-  ownerId      String
-  owner        Owner    @relation(fields: [ownerId], references: [id], onDelete: Cascade)
-  
-  // === DATOS BÁSICOS ===
-  nombre       String
-  especie      Species
-  raza         String?
-  sexo         Sexo
-  fechaNacimiento DateTime?
-  peso         Float?
-  color        String?
-  condicionCorporal BodyCondition?
-  fotoUrl      String?   @db.LongText  // Base64 encoded image
-  
-  // === HISTORIAL MÉDICO ===
-  snapTest         String?   @db.Text
-  analisisClinicos String?   @db.Text
-  antecedentes     String?   @db.Text
-  
-  // === VACUNAS Y DESPARASITACIÓN ===
-  desparasitacionExterna Boolean?
-  ultimaDesparasitacion  DateTime?
-  vacunasTexto           String?   @db.Text
-  vacunasActualizadas    Boolean?
-  ultimaVacuna           DateTime?
-  
-  // === CIRUGÍAS ===
-  esterilizado    Boolean?
-  otrasCirugias   Boolean?
-  detalleCirugias String?   @db.Text
-  
-  // === INFO REPRODUCTIVA (Hembras) ===
-  ultimoCelo      DateTime?
-  cantidadPartos  Int?
-  ultimoParto     DateTime?
-  
-  // === ALIMENTACIÓN ===
-  alimento                 String?
-  porcionesPorDia          String?
-  otrosAlimentos           String?
-  frecuenciaOtrosAlimentos String?
-  
-  // === ALERGIAS Y PATOLOGÍAS ===
-  alergias             String?   @db.Text
-  enfermedadesCronicas String?   @db.Text
-  
-  // === ESTILO DE VIDA ===
-  conviveOtrasMascotas Boolean?
-  cualesMascotas       String?
-  actividadFisica      Boolean?
-  frecuenciaActividad  String?
-  saleViaPublica       Boolean?
-  frecuenciaSalida     String?
-  otrosDatos           String?   @db.Text
-  
-  // === METADATA ===
-  estado        PatientStatus @default(RECIEN_LLEGADO)
-  fechaIngreso  DateTime      @default(now())
-  primeraVisita Boolean       @default(true)
-  activo        Boolean       @default(true)
-  createdAt     DateTime      @default(now())
-  updatedAt     DateTime      @updatedAt
-
-  // Relaciones
-  visits          Visit[]
-  appointments    Appointment[]
-  consultations   Consultation[]
-  labRequests     LabRequest[]
-  prescriptions   Prescription[]
-  surgeries       Surgery[]
-  hospitalizations Hospitalization[]
-  medicalNotes    MedicalNote[]
-  dispenses       Dispense[]
-  vaccineRecords  VaccineRecord[]
-  tasks           Task[]
-
-  @@index([ownerId])
-  @@index([numeroFicha])
-  @@index([nombre])
-  @@index([estado])
-}
-
-model VaccineRecord {
-  id          String    @id @default(cuid())
-  petId       String
-  pet         Pet       @relation(fields: [petId], references: [id], onDelete: Cascade)
-  nombre      String
-  fecha       DateTime
-  proximaDosis DateTime?
-  lote        String?
-  aplicadaPor String?
-  notas       String?   @db.Text
-  createdAt   DateTime  @default(now())
-
-  @@index([petId, proximaDosis])
 }
 
 enum Species {
@@ -294,42 +742,6 @@ enum PatientStatus {
   ALTA
 }
 
-model Visit {
-  id           String      @id @default(cuid())
-  petId        String
-  pet          Pet         @relation(fields: [petId], references: [id])
-  arrivalTime  DateTime    @default(now())
-  status       VisitStatus @default(RECIEN_LLEGADO)
-  
-  // === TRIAGE ===
-  tipoVisita   VisitType?
-  motivo       String?     @db.Text
-  prioridad    Priority?
-  peso         Float?
-  temperatura  Float?
-  primeraVisita Boolean    @default(false)
-  antecedentes String?     @db.Text
-  
-  // === ASIGNACIÓN ===
-  assignedDoctorId String?
-  
-  // === ALTA ===
-  dischargeNotes String?   @db.Text
-  dischargedAt   DateTime?
-  
-  createdAt    DateTime    @default(now())
-  updatedAt    DateTime    @updatedAt
-
-  // Relaciones
-  consultation Consultation?
-  payment      Payment?
-  tasks        Task[]
-
-  @@index([petId])
-  @@index([status])
-  @@index([arrivalTime])
-}
-
 enum VisitStatus {
   RECIEN_LLEGADO
   EN_ESPERA
@@ -350,31 +762,6 @@ enum VisitType {
   EMERGENCIA
 }
 
-model Appointment {
-  id             String            @id @default(cuid())
-  petId          String
-  pet            Pet               @relation(fields: [petId], references: [id])
-  fecha          DateTime          @db.Date
-  hora           String
-  tipo           AppointmentType
-  motivo         String            @db.Text
-  confirmada     Boolean           @default(false)
-  cancelada      Boolean           @default(false)
-  notas          String?           @db.Text
-  createdById    String?
-  
-  // === STATUS FLOW ===
-  status         AppointmentStatus @default(PENDIENTE)
-  visitId        String?           // Link to Visit when patient checks in
-  
-  createdAt      DateTime          @default(now())
-  updatedAt      DateTime          @updatedAt
-
-  @@index([fecha])
-  @@index([petId])
-  @@index([status])
-}
-
 enum AppointmentStatus {
   PENDIENTE
   CONFIRMADA
@@ -392,133 +779,15 @@ enum AppointmentType {
   EMERGENCIA
 }
 
-model Payment {
-  id          String        @id @default(cuid())
-  visitId     String        @unique
-  visit       Visit         @relation(fields: [visitId], references: [id])
-  total       Decimal       @db.Decimal(10, 2)
-  metodoPago  PaymentMethod
-  fecha       DateTime      @default(now())
-  recibidoPor String?
-  notas       String?       @db.Text
-  createdAt   DateTime      @default(now())
-
-  @@index([fecha])
-}
-
 enum PaymentMethod {
   EFECTIVO
   TARJETA
   TRANSFERENCIA
 }
 
-// ============================================================================
-// MÉDICO - Consultas, Laboratorio, Recetas, Cirugías, Hospitalización
-// ============================================================================
-
-model Consultation {
-  id          String             @id @default(cuid())
-  visitId     String             @unique
-  visit       Visit              @relation(fields: [visitId], references: [id])
-  petId       String
-  pet         Pet                @relation(fields: [petId], references: [id])
-  doctorId    String
-  doctor      User               @relation(fields: [doctorId], references: [id])
-  
-  // === TIEMPOS ===
-  startTime   DateTime           @default(now())
-  endTime     DateTime?
-  duration    Int?               // Duración en minutos (calculado)
-  
-  // === SOAP - Subjective (Lo que reporta el dueño) ===
-  soapSubjective     String?     @db.Text  // Historia clínica del paciente
-  motivoConsulta     String?     @db.Text  // Razón de la visita
-  historiaEnfermedad String?     @db.Text  // Evolución del problema
-  
-  // === SOAP - Objective (Examen físico) ===
-  soapObjective      String?     @db.Text  // Hallazgos del examen
-  physicalExam       String?     @db.Text  // Examen físico detallado
-  
-  // === SOAP - Assessment (Diagnóstico) ===
-  soapAssessment     String?     @db.Text  // Conclusión diagnóstica
-  diagnosis          String?     @db.Text  // Diagnóstico (texto libre, legacy)
-  
-  // === SOAP - Plan (Tratamiento) ===
-  soapPlan           String?     @db.Text  // Plan de tratamiento
-  treatment          String?     @db.Text  // Tratamiento (legacy)
-  
-  // === LEGACY FIELDS (mantener compatibilidad) ===
-  symptoms           String?     @db.Text  // Síntomas reportados
-  notes              String?     @db.Text  // Notas adicionales
-  
-  // === SIGNOS VITALES AL INGRESO ===
-  vitalTemperature     Float?
-  vitalHeartRate       Int?
-  vitalRespiratoryRate Int?
-  vitalWeight          Float?
-  vitalBloodPressure   String?    // e.g., "120/80"
-  vitalPulse           Int?
-  vitalHydration       String?    // Estado de hidratación
-  vitalMucosas         String?    // Color de mucosas
-  
-  // === SEGUIMIENTO ===
-  followUpRequired Boolean       @default(false)
-  followUpDate     DateTime?
-  followUpNotes    String?       @db.Text
-  
-  // === ESTADO ===
-  status       ConsultationStatus @default(EN_PROGRESO)
-  
-  createdAt    DateTime          @default(now())
-  updatedAt    DateTime          @updatedAt
-
-  // Relaciones
-  diagnosticos      Diagnostico[]
-  signosVitales     SignosVitales[]
-  labRequests       LabRequest[]
-  prescriptions     Prescription[]
-  surgeries         Surgery[]
-  hospitalization   Hospitalization?
-
-  @@index([petId])
-  @@index([doctorId])
-  @@index([startTime])
-  @@index([status])
-}
-
 enum ConsultationStatus {
   EN_PROGRESO
   COMPLETADA
-}
-
-// === DIAGNÓSTICO (Estructura para CIE-10 y clasificación) ===
-model Diagnostico {
-  id              String          @id @default(cuid())
-  consultationId  String
-  consultation    Consultation    @relation(fields: [consultationId], references: [id], onDelete: Cascade)
-  
-  // === CLASIFICACIÓN CIE-10 ===
-  codigoCIE10     String?         // Código CIE-10 (ej: A00.1)
-  nombreCIE10     String?         // Nombre del código CIE-10
-  
-  // === DIAGNÓSTICO ===
-  descripcion     String          @db.Text  // Descripción del diagnóstico
-  tipo            DiagnosticoTipo @default(PRESUNTIVO)
-  severidad       Severidad?
-  
-  // === DETALLES ===
-  observaciones   String?         @db.Text
-  diferenciales   String?         @db.Text  // Diagnósticos diferenciales
-  
-  // === ORDEN ===
-  orden           Int             @default(1)  // Orden de prioridad
-  esPrincipal     Boolean         @default(false)
-  
-  createdAt       DateTime        @default(now())
-  updatedAt       DateTime        @updatedAt
-
-  @@index([consultationId])
-  @@index([codigoCIE10])
 }
 
 enum DiagnosticoTipo {
@@ -532,77 +801,6 @@ enum Severidad {
   MODERADO
   SEVERO
   CRITICO
-}
-
-// === SIGNOS VITALES (Mediciones durante la consulta) ===
-model SignosVitales {
-  id              String       @id @default(cuid())
-  consultationId  String
-  consultation    Consultation @relation(fields: [consultationId], references: [id], onDelete: Cascade)
-  
-  // === TIMESTAMP ===
-  registeredAt    DateTime     @default(now())
-  
-  // === SIGNOS VITALES PRINCIPALES ===
-  temperatura           Float?    // °C
-  frecuenciaCardiaca    Int?      // lpm (latidos por minuto)
-  frecuenciaRespiratoria Int?     // rpm (respiraciones por minuto)
-  peso                  Float?    // kg
-  
-  // === SIGNOS VITALES SECUNDARIOS ===
-  presionArterial       String?   // e.g., "120/80 mmHg"
-  pulso                 Int?      // ppm
-  saturacionOxigeno     Float?    // SpO2 %
-  glucosa               Float?    // mg/dL
-  
-  // === ESTADO FÍSICO ===
-  hidratacion           String?   // Normal, Leve, Moderada, Severa
-  mucosas               String?   // Rosadas, Pálidas, Cianóticas, Ictéricas
-  tiempoLlenadoCapilar  String?   // TLC en segundos
-  condicionCorporal     Int?      // Escala 1-9
-  
-  // === DOLOR ===
-  escalaDolor           Int?      // 0-10
-  localizacionDolor     String?
-  
-  // === OBSERVACIONES ===
-  observaciones         String?   @db.Text
-  
-  createdAt             DateTime  @default(now())
-
-  @@index([consultationId])
-  @@index([registeredAt])
-}
-
-model LabRequest {
-  id              String           @id @default(cuid())
-  consultationId  String
-  consultation    Consultation     @relation(fields: [consultationId], references: [id])
-  petId           String
-  pet             Pet              @relation(fields: [petId], references: [id])
-  requestedById   String
-  requestedBy     User             @relation("LabRequestedBy", fields: [requestedById], references: [id])
-  requestedAt     DateTime         @default(now())
-  
-  // === ESTUDIO ===
-  type            LabType
-  urgency         LabUrgency       @default(NORMAL)
-  notes           String?          @db.Text
-  
-  // === RESULTADOS ===
-  status          LabRequestStatus @default(PENDIENTE)
-  results         String?          @db.Text
-  resultFiles     Json?
-  completedAt     DateTime?
-  completedById   String?
-  completedBy     User?            @relation("LabCompletedBy", fields: [completedById], references: [id])
-  
-  createdAt       DateTime         @default(now())
-  updatedAt       DateTime         @updatedAt
-
-  @@index([petId])
-  @@index([status])
-  @@index([consultationId])
 }
 
 enum LabType {
@@ -629,107 +827,11 @@ enum LabRequestStatus {
   COMPLETADO
 }
 
-model Prescription {
-  id               String             @id @default(cuid())
-  consultationId   String
-  consultation     Consultation       @relation(fields: [consultationId], references: [id])
-  petId            String
-  pet              Pet                @relation(fields: [petId], references: [id])
-  prescribedById   String
-  prescribedBy     User               @relation(fields: [prescribedById], references: [id])
-  prescribedAt     DateTime           @default(now())
-  
-  // === INSTRUCCIONES ===
-  generalInstructions String?         @db.Text
-  
-  // === ESTADO ===
-  status           PrescriptionStatus @default(PENDIENTE)
-  
-  createdAt        DateTime           @default(now())
-  updatedAt        DateTime           @updatedAt
-
-  // Relaciones
-  items            PrescriptionItem[]
-  dispenses        Dispense[]
-
-  @@index([petId])
-  @@index([status])
-  @@index([consultationId])
-}
-
-model PrescriptionItem {
-  id             String       @id @default(cuid())
-  prescriptionId String
-  prescription   Prescription @relation(fields: [prescriptionId], references: [id], onDelete: Cascade)
-  
-  name           String
-  dosage         String
-  frequency      String
-  duration       String
-  quantity       Int
-  instructions   String?      @db.Text
-  
-  createdAt      DateTime     @default(now())
-
-  @@index([prescriptionId])
-}
-
 enum PrescriptionStatus {
   PENDIENTE
   DESPACHADA
   PARCIAL
   CANCELADA
-}
-
-model Surgery {
-  id              String        @id @default(cuid())
-  petId           String
-  pet             Pet           @relation(fields: [petId], references: [id])
-  consultationId  String
-  consultation    Consultation  @relation(fields: [consultationId], references: [id])
-  surgeonId       String
-  surgeon         User          @relation("SurgeonLead", fields: [surgeonId], references: [id])
-  
-  // === PROGRAMACIÓN ===
-  type            String
-  scheduledDate   DateTime      @db.Date
-  scheduledTime   String
-  estimatedDuration Int?
-  status          SurgeryStatus @default(PROGRAMADA)
-  prioridad       Priority      @default(MEDIA)
-  
-  // === PRE-OPERATORIO ===
-  preOpNotes          String?   @db.Text
-  preOpStudies        Json?
-  sedationAuthorized  Boolean   @default(false)
-  consentSigned       Boolean   @default(false)
-  consentSignedBy     String?
-  consentSignedAt     DateTime?
-  fastingConfirmed    Boolean   @default(false)
-  
-  // === TRANS-OPERATORIO ===
-  startTime       DateTime?
-  endTime         DateTime?
-  anesthesiaType  String?
-  complications   String?       @db.Text
-  
-  // === POST-OPERATORIO ===
-  postOpNotes             String?   @db.Text
-  procedure               String?   @db.Text
-  prognosis               Prognosis?
-  postOpCare              String?   @db.Text
-  hospitalizationRequired Boolean   @default(false)
-  followUpDate            DateTime?
-  
-  createdAt       DateTime      @default(now())
-  updatedAt       DateTime      @updatedAt
-
-  // Relaciones
-  hospitalization Hospitalization?
-
-  @@index([petId])
-  @@index([scheduledDate])
-  @@index([status])
 }
 
 enum SurgeryStatus {
@@ -747,72 +849,9 @@ enum Prognosis {
   GRAVE
 }
 
-model Hospitalization {
-  id              String              @id @default(cuid())
-  petId           String
-  pet             Pet                 @relation(fields: [petId], references: [id])
-  consultationId  String              @unique
-  consultation    Consultation        @relation(fields: [consultationId], references: [id])
-  surgeryId       String?             @unique
-  surgery         Surgery?            @relation(fields: [surgeryId], references: [id])
-  
-  // === ADMISIÓN ===
-  admittedById    String
-  admittedBy      User                @relation(fields: [admittedById], references: [id])
-  admittedAt      DateTime            @default(now())
-  dischargedAt    DateTime?
-  reason          String              @db.Text
-  location        String?
-  
-  // === DETALLES DE HOSPITALIZACIÓN ===
-  frecuenciaMonitoreo   String?       // "1h", "2h", "4h", "6h", "8h"
-  cuidadosEspeciales    String?       @db.Text
-  estimacionDias        Int?
-  dischargeNotes        String?       @db.Text
-  
-  // === ESTADO ===
-  status          HospitalizationStatus @default(ACTIVA)
-  
-  createdAt       DateTime            @default(now())
-  updatedAt       DateTime            @updatedAt
-
-  // Relaciones
-  monitorings     Monitoring[]
-
-  @@index([petId])
-  @@index([status])
-}
-
 enum HospitalizationStatus {
   ACTIVA
   ALTA
-}
-
-model Monitoring {
-  id                  String          @id @default(cuid())
-  hospitalizationId   String
-  hospitalization     Hospitalization @relation(fields: [hospitalizationId], references: [id], onDelete: Cascade)
-  recordedById        String
-  recordedBy          User            @relation(fields: [recordedById], references: [id])
-  recordedAt          DateTime        @default(now())
-  
-  // === SIGNOS VITALES (EFG) ===
-  temperatura           Float?
-  frecuenciaCardiaca    Int?
-  frecuenciaRespiratoria Int?
-  presionArterial       String?
-  
-  // === ESTADO GENERAL ===
-  nivelConciencia       ConsciousnessLevel?
-  escalaDolor           Int?
-  
-  // === OBSERVACIONES ===
-  observaciones         String?       @db.Text
-  
-  createdAt             DateTime      @default(now())
-
-  @@index([hospitalizationId])
-  @@index([recordedAt])
 }
 
 enum ConsciousnessLevel {
@@ -823,86 +862,11 @@ enum ConsciousnessLevel {
   INCONSCIENTE
 }
 
-model MedicalNote {
-  id              String          @id @default(cuid())
-  petId           String
-  pet             Pet             @relation(fields: [petId], references: [id])
-  consultationId  String?
-  createdById     String
-  createdBy       User            @relation(fields: [createdById], references: [id])
-  
-  type            MedicalNoteType
-  content         String          @db.Text
-  isPrivate       Boolean         @default(false)
-  
-  createdAt       DateTime        @default(now())
-  updatedAt       DateTime        @updatedAt
-
-  @@index([petId])
-  @@index([type])
-}
-
 enum MedicalNoteType {
   EVOLUCION
   INTERCONSULTA
   ORDEN
   GENERAL
-}
-
-// ============================================================================
-// FARMACIA - Medicamentos, Despachos, Inventario, Alertas
-// ============================================================================
-
-model Medication {
-  id                    String             @id @default(cuid())
-  
-  // === IDENTIFICACIÓN ===
-  name                  String
-  genericName           String?
-  category              MedicationCategory
-  
-  // === PRESENTACIÓN ===
-  presentation          String
-  concentration         String?
-  unit                  String
-  
-  // === STOCK ===
-  currentStock          Int                @default(0)
-  minStock              Int
-  maxStock              Int?
-  location              String?
-  
-  // === CONTROL ===
-  requiresRefrigeration Boolean            @default(false)
-  isControlled          Boolean            @default(false)
-  
-  // === COSTOS ===
-  costPrice             Decimal?           @db.Decimal(10, 2)
-  salePrice             Decimal            @db.Decimal(10, 2)
-  
-  // === FECHAS ===
-  expirationDate        DateTime?
-  lastRestocked         DateTime?
-  
-  // === PROVEEDOR ===
-  supplier              String?
-  supplierCode          String?
-  
-  // === ESTADO ===
-  activo                Boolean            @default(true)
-  
-  createdAt             DateTime           @default(now())
-  updatedAt             DateTime           @updatedAt
-
-  // Relaciones
-  stockMovements        StockMovement[]
-  stockAlerts           StockAlert[]
-  dispenseItems         DispenseItem[]
-  purchaseOrderItems    PurchaseOrderItem[]
-
-  @@index([name])
-  @@index([category])
-  @@index([currentStock])
 }
 
 enum MedicationCategory {
@@ -921,85 +885,10 @@ enum MedicationCategory {
   OTRO
 }
 
-model Dispense {
-  id              String        @id @default(cuid())
-  prescriptionId  String
-  prescription    Prescription  @relation(fields: [prescriptionId], references: [id])
-  petId           String
-  pet             Pet           @relation(fields: [petId], references: [id])
-  dispensedById   String
-  dispensedBy     User          @relation(fields: [dispensedById], references: [id])
-  dispensedAt     DateTime      @default(now())
-  
-  // === DESPACHO ===
-  status          DispenseStatus @default(PENDIENTE)
-  
-  // === ENTREGA ===
-  notes           String?        @db.Text
-  deliveredTo     String?
-  signature       String?        @db.LongText
-  
-  createdAt       DateTime       @default(now())
-
-  // Relaciones
-  items           DispenseItem[]
-
-  @@index([prescriptionId])
-  @@index([petId])
-  @@index([status])
-}
-
-model DispenseItem {
-  id              String     @id @default(cuid())
-  dispenseId      String
-  dispense        Dispense   @relation(fields: [dispenseId], references: [id], onDelete: Cascade)
-  medicationId    String
-  medication      Medication @relation(fields: [medicationId], references: [id])
-  
-  medicationName  String
-  requestedQty    Int
-  dispensedQty    Int
-  reason          String?
-  unitPrice       Decimal    @db.Decimal(10, 2)
-  subtotal        Decimal    @db.Decimal(10, 2)
-  
-  createdAt       DateTime   @default(now())
-
-  @@index([dispenseId])
-  @@index([medicationId])
-}
-
 enum DispenseStatus {
   PENDIENTE
   COMPLETO
   PARCIAL
-}
-
-model StockMovement {
-  id              String       @id @default(cuid())
-  medicationId    String
-  medication      Medication   @relation(fields: [medicationId], references: [id])
-  
-  // === MOVIMIENTO ===
-  type            MovementType
-  quantity        Int
-  previousStock   Int
-  newStock        Int
-  
-  // === DETALLES ===
-  reason          String?      @db.Text
-  reference       String?
-  batchNumber     String?
-  expirationDate  DateTime?
-  
-  // === AUDITORÍA ===
-  performedById   String
-  performedBy     User         @relation(fields: [performedById], references: [id])
-  performedAt     DateTime     @default(now())
-
-  @@index([medicationId])
-  @@index([type])
-  @@index([performedAt])
 }
 
 enum MovementType {
@@ -1009,29 +898,6 @@ enum MovementType {
   DEVOLUCION
   VENCIDO
   MERMA
-}
-
-model StockAlert {
-  id              String        @id @default(cuid())
-  medicationId    String
-  medication      Medication    @relation(fields: [medicationId], references: [id])
-  
-  // === ALERTA ===
-  type            AlertType
-  message         String        @db.Text
-  priority        Priority
-  
-  // === ESTADO ===
-  status          AlertStatus   @default(ACTIVA)
-  resolvedAt      DateTime?
-  resolvedById    String?
-  resolvedBy      User?         @relation(fields: [resolvedById], references: [id])
-  resolutionNotes String?       @db.Text
-  
-  createdAt       DateTime      @default(now())
-
-  @@index([medicationId])
-  @@index([status, priority])
 }
 
 enum AlertType {
@@ -1045,59 +911,6 @@ enum AlertStatus {
   ACTIVA
   RESUELTA
   IGNORADA
-}
-
-model PurchaseOrder {
-  id               String              @id @default(cuid())
-  
-  // === PROVEEDOR ===
-  supplier         String
-  supplierContact  String?
-  
-  // === TOTALES ===
-  totalAmount      Decimal             @db.Decimal(10, 2)
-  
-  // === ESTADO ===
-  status           PurchaseOrderStatus @default(BORRADOR)
-  
-  // === FECHAS ===
-  createdById      String
-  createdBy        User                @relation("POCreator", fields: [createdById], references: [id])
-  sentAt           DateTime?
-  expectedDelivery DateTime?
-  receivedAt       DateTime?
-  receivedById     String?
-  receivedBy       User?               @relation("POReceiver", fields: [receivedById], references: [id])
-  
-  notes            String?             @db.Text
-  
-  createdAt        DateTime            @default(now())
-  updatedAt        DateTime            @updatedAt
-
-  // Relaciones
-  items            PurchaseOrderItem[]
-
-  @@index([status])
-  @@index([supplier])
-}
-
-model PurchaseOrderItem {
-  id              String        @id @default(cuid())
-  purchaseOrderId String
-  purchaseOrder   PurchaseOrder @relation(fields: [purchaseOrderId], references: [id], onDelete: Cascade)
-  medicationId    String
-  medication      Medication    @relation(fields: [medicationId], references: [id])
-  
-  medicationName  String
-  quantity        Int
-  unitCost        Decimal       @db.Decimal(10, 2)
-  subtotal        Decimal       @db.Decimal(10, 2)
-  receivedQty     Int?
-  
-  createdAt       DateTime      @default(now())
-
-  @@index([purchaseOrderId])
-  @@index([medicationId])
 }
 
 enum PurchaseOrderStatus {
