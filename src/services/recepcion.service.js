@@ -405,7 +405,7 @@ export const appointmentService = {
   async getToday() {
     const today = new Date().toISOString().split('T')[0];
     const response = await api.get('/appointments', { 
-      params: { date: today } 
+      params: { fecha: today } 
     });
     return response.data?.appointments || [];
   },

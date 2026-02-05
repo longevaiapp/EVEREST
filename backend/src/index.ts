@@ -1,7 +1,12 @@
 // src/index.ts
 // VET-OS Backend Entry Point
 
-import 'dotenv/config';
+import * as dotenv from 'dotenv';
+import * as path from 'path';
+
+// Cargar .env desde el directorio del backend
+dotenv.config({ path: path.resolve(__dirname, '../.env') });
+
 import 'express-async-errors';
 import express from 'express';
 import cors from 'cors';
@@ -73,6 +78,34 @@ app.get('/health', (req, res) => {
     version: '1.0.0',
     service: 'VET-OS API'
   });
+});
+
+// Debug endpoint - CHECK DISPENSES
+app.get('/debug/dispenses', async (req, res) => {
+  try {
+    const count = await prisma.dispense.count();
+    const latest = await prisma.dispense.findMany({
+      take: 5,
+      include: {
+        pet: { select: { nombre: true, especie: true, owner: { select: { nombre: true, telefono: true } } } },
+        items: { select: { medicationName: true, dispensedQty: true, unitPrice: true } }
+      },
+      orderBy: { createdAt: 'desc' }
+    });
+    res.json({ 
+      totalDispenses: count, 
+      latestDispenses: latest.map(d => ({
+        id: d.id,
+        petName: d.pet?.nombre,
+        ownerName: d.pet?.owner?.nombre,
+        createdAt: d.createdAt,
+        itemCount: d.items.length,
+        items: d.items
+      }))
+    });
+  } catch (e: any) {
+    res.json({ error: e.message });
+  }
 });
 
 // API Routes

@@ -147,6 +147,22 @@
   color: #fff;
 }
 
+.mark-all-read-btn {
+  font-size: 0.75rem;
+  color: rgba(255, 255, 255, 0.8);
+  background: rgba(76, 175, 80, 0.2);
+  padding: 0.35rem 0.75rem;
+  border-radius: 8px;
+  border: 1px solid rgba(76, 175, 80, 0.4);
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.mark-all-read-btn:hover {
+  background: rgba(76, 175, 80, 0.4);
+  border-color: rgba(76, 175, 80, 0.6);
+}
+
 .unread-count {
   font-size: 0.8rem;
   color: rgba(255, 255, 255, 0.8);

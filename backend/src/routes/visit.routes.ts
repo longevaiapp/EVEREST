@@ -110,7 +110,7 @@ router.put('/:id/discharge', authenticate, isRecepcion, async (req, res) => {
   const id = req.params.id as string;
   const schema = z.object({
     dischargeNotes: z.string().optional(),
-    total: z.number().positive(),
+    total: z.number().nonnegative(), // Allow 0 for free visits
     metodoPago: z.enum(['EFECTIVO', 'TARJETA', 'TRANSFERENCIA']),
   });
 

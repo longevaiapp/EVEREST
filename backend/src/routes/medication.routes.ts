@@ -9,6 +9,34 @@ import { authenticate, isFarmacia } from '../middleware/auth';
 
 const router = Router();
 
+// Category mapping from frontend values to Prisma enum
+const CATEGORY_MAP: Record<string, string> = {
+  'antibioticos': 'ANTIBIOTICO',
+  'antiinflamatorios': 'ANTIINFLAMATORIO',
+  'analgesicos': 'ANALGESICO',
+  'vacunas': 'VACUNA',
+  'corticosteroides': 'HORMONAL',
+  'protectores': 'OTRO',
+  'antiparasitarios': 'ANTIPARASITARIO',
+  'dermatologicos': 'DERMATOLOGICO',
+  'vitaminas': 'VITAMINA',
+  'otros': 'OTRO',
+  // Also support uppercase direct values
+  'ANTIBIOTICO': 'ANTIBIOTICO',
+  'ANTIINFLAMATORIO': 'ANTIINFLAMATORIO',
+  'ANALGESICO': 'ANALGESICO',
+  'VACUNA': 'VACUNA',
+  'ANTIPARASITARIO': 'ANTIPARASITARIO',
+  'VITAMINA': 'VITAMINA',
+  'SUERO': 'SUERO',
+  'ANESTESICO': 'ANESTESICO',
+  'DERMATOLOGICO': 'DERMATOLOGICO',
+  'OFTALMICO': 'OFTALMICO',
+  'CARDIACO': 'CARDIACO',
+  'HORMONAL': 'HORMONAL',
+  'OTRO': 'OTRO',
+};
+
 // GET /medications - List medications
 router.get('/', authenticate, async (req, res) => {
   const { search, category, activo, lowStock } = req.query;
@@ -22,7 +50,14 @@ router.get('/', authenticate, async (req, res) => {
     ];
   }
   
-  if (category) where.category = category;
+  // Map category to Prisma enum value
+  if (category) {
+    const mappedCategory = CATEGORY_MAP[category as string];
+    if (mappedCategory) {
+      where.category = mappedCategory;
+    }
+    // If category not found in map, don't filter by invalid category
+  }
   if (activo !== undefined) where.activo = activo === 'true';
 
   const medications = await prisma.medication.findMany({
@@ -169,6 +204,7 @@ router.post('/', authenticate, isFarmacia, async (req, res) => {
     supplierCode: z.string().optional(),
     expirationDate: z.string().datetime().optional(),
     location: z.string().optional(),
+    imageUrl: z.string().nullable().optional(),
   });
 
   const data = schema.parse(req.body);
@@ -223,12 +259,13 @@ router.put('/:id', authenticate, isFarmacia, async (req, res) => {
     presentation: z.string().optional(),
     concentration: z.string().optional(),
     category: z.enum(['ANTIBIOTICO', 'ANALGESICO', 'ANTIINFLAMATORIO', 'ANTIPARASITARIO', 'VACUNA', 'VITAMINA', 'SUERO', 'ANESTESICO', 'DERMATOLOGICO', 'OFTALMICO', 'CARDIACO', 'HORMONAL', 'OTRO']).optional(),
-    minStock: z.number().int().nonnegative().optional(),
-    maxStock: z.number().int().positive().optional(),
-    costPrice: z.number().positive().optional(),
-    salePrice: z.number().positive().optional(),
+    minStock: z.union([z.number(), z.string().transform(v => parseInt(v))]).optional(),
+    maxStock: z.union([z.number(), z.string().transform(v => parseInt(v))]).optional(),
+    costPrice: z.union([z.number(), z.string().transform(v => parseFloat(v))]).optional(),
+    salePrice: z.union([z.number(), z.string().transform(v => parseFloat(v))]).optional(),
     location: z.string().optional(),
     activo: z.boolean().optional(),
+    imageUrl: z.string().nullable().optional(),
   });
 
   const data = schema.parse(req.body);

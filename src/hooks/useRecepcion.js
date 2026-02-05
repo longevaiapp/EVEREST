@@ -97,14 +97,15 @@ export const useRecepcion = () => {
     loadInitialData();
   }, [loadInitialData]);
 
-  // Refresh automático cada 30 segundos
+  // Refresh automático cada 30 segundos para visitas y citas
   useEffect(() => {
     const interval = setInterval(() => {
       loadTodayVisits();
+      loadTodayAppointments();
     }, 30000);
     
     return () => clearInterval(interval);
-  }, [loadTodayVisits]);
+  }, [loadTodayVisits, loadTodayAppointments]);
 
   // ============================================================================
   // OWNER (PROPIETARIO) OPERATIONS
