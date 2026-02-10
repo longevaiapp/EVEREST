@@ -72,13 +72,14 @@ export const useMedico = () => {
     loadDashboardData();
   }, [loadDashboardData]);
 
-  // (Desactivado) Refresh automático cada 30 segundos
-  // useEffect(() => {
-  //   const interval = setInterval(() => {
-  //     loadDashboardData();
-  //   }, 30000);
-  //   return () => clearInterval(interval);
-  // }, [loadDashboardData]);
+  // Refresh automático cada 30 segundos
+  useEffect(() => {
+    const interval = setInterval(() => {
+      loadDashboardData();
+    }, 30000);
+    
+    return () => clearInterval(interval);
+  }, [loadDashboardData]);
 
   // ============================================================================
   // PACIENTE OPERATIONS

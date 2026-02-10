@@ -103,16 +103,13 @@ const useFarmacia = () => {
   // ==================== MEDICATIONS ====================
 
   /**
-   * Fetch all medications with optional filters
-   * @param {Object} filters - Optional filters to override internal state
+   * Fetch all medications with current filters
    */
-  const fetchMedications = useCallback(async (filters = null) => {
+  const fetchMedications = useCallback(async () => {
     setLoading(prev => ({ ...prev, medications: true }));
     setError(null);
     try {
-      // Use passed filters or fall back to internal medicationFilters state
-      const filtersToUse = filters || medicationFilters;
-      const data = await farmaciaService.getMedications(filtersToUse);
+      const data = await farmaciaService.getMedications(medicationFilters);
       setMedications(data);
       console.log('[useFarmacia] Medications loaded:', data.length);
     } catch (err) {
@@ -486,14 +483,11 @@ const useFarmacia = () => {
 
   /**
    * Fetch pharmacy dashboard stats
-   * @param {Object} params - Optional date range
-   * @param {string} params.startDate - Start date (YYYY-MM-DD)
-   * @param {string} params.endDate - End date (YYYY-MM-DD)
    */
-  const fetchPharmacyStats = useCallback(async (params = {}) => {
+  const fetchPharmacyStats = useCallback(async () => {
     setLoading(prev => ({ ...prev, stats: true }));
     try {
-      const data = await farmaciaService.getPharmacyStats(params);
+      const data = await farmaciaService.getPharmacyStats();
       setPharmacyStats(data);
       console.log('[useFarmacia] Stats loaded:', data);
       return data;

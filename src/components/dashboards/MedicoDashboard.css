@@ -696,21 +696,20 @@ button:disabled {
 
 .med-chip {
   padding: 0.5rem 1rem;
-  background: rgba(255, 255, 255, 0.15);
+  background: rgba(33, 150, 243, 0.2);
   backdrop-filter: blur(10px);
   -webkit-backdrop-filter: blur(10px);
-  color: #fff;
-  border: 1px solid rgba(255, 255, 255, 0.3);
+  color: #2196f3;
+  border: 1px solid rgba(33, 150, 243, 0.4);
   border-radius: 20px;
-  font-size: 0.8rem;
-  font-weight: 500;
+  font-size: 0.75rem;
+  font-weight: 600;
   cursor: pointer;
   transition: all 0.2s;
 }
 
 .med-chip:hover {
-  background: rgba(33, 150, 243, 0.6);
-  border-color: #2196f3;
+  background: rgba(33, 150, 243, 0.8);
   color: white;
   transform: translateY(-2px);
   box-shadow: 0 4px 12px rgba(33, 150, 243, 0.3);
@@ -1764,235 +1763,6 @@ button:disabled {
   font-weight: 600;
 }
 
-/* Consultation Mode Toggle */
-.consultation-mode-toggle {
-  display: flex;
-  gap: 0.5rem;
-  margin-bottom: 1rem;
-  padding: 0.5rem;
-  background: rgba(255, 255, 255, 0.1);
-  border-radius: 12px;
-  border: 1px solid rgba(255, 255, 255, 0.2);
-}
-
-.consultation-mode-toggle .mode-btn {
-  flex: 1;
-  padding: 0.75rem 1rem;
-  border: none;
-  background: transparent;
-  color: rgba(255, 255, 255, 0.7);
-  border-radius: 8px;
-  cursor: pointer;
-  font-size: 0.9rem;
-  font-weight: 500;
-  transition: all 0.2s ease;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 0.5rem;
-}
-
-.consultation-mode-toggle .mode-btn:hover {
-  background: rgba(255, 255, 255, 0.1);
-  color: #fff;
-}
-
-.consultation-mode-toggle .mode-btn.active {
-  background: linear-gradient(135deg, #4f46e5, #6366f1);
-  color: #fff;
-  box-shadow: 0 4px 12px rgba(79, 70, 229, 0.4);
-}
-
-/* Examen Físico Container */
-.examen-fisico-container {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  overflow: hidden;
-  background: rgba(255, 255, 255, 0.05);
-  border-radius: 12px;
-  border: 1px solid rgba(255, 255, 255, 0.1);
-}
-
-.examen-fisico-container .examen-fisico {
-  --bg-primary: rgba(30, 30, 50, 0.9);
-  --bg-secondary: rgba(45, 45, 70, 0.8);
-  --bg-hover: rgba(60, 60, 90, 0.8);
-  --text-primary: #e0e0e0;
-  --text-secondary: #a0a0a0;
-  --border-color: rgba(255, 255, 255, 0.15);
-  --primary-color: #6366f1;
-}
-
-.examen-fisico-container .exam-tabs {
-  background: rgba(30, 30, 50, 0.9);
-  border-bottom-color: rgba(255, 255, 255, 0.1);
-}
-
-.examen-fisico-container .exam-tabs .tab {
-  background: rgba(255, 255, 255, 0.08);
-  color: rgba(255, 255, 255, 0.7);
-}
-
-.examen-fisico-container .exam-tabs .tab:hover {
-  background: rgba(255, 255, 255, 0.15);
-}
-
-.examen-fisico-container .exam-tabs .tab.active {
-  background: linear-gradient(135deg, #4f46e5, #6366f1);
-  color: #fff;
-}
-
-.examen-fisico-container .exam-section {
-  background: rgba(40, 40, 65, 0.8);
-  border-color: rgba(255, 255, 255, 0.1);
-}
-
-.examen-fisico-container .section-header {
-  background: rgba(50, 50, 75, 0.8);
-}
-
-.examen-fisico-container .section-header:hover {
-  background: rgba(60, 60, 90, 0.8);
-}
-
-.examen-fisico-container .section-title {
-  color: #e0e0e0;
-}
-
-.examen-fisico-container .section-content {
-  border-top-color: rgba(255, 255, 255, 0.1);
-}
-
-/* Override checkbox-group para ExamenFisico - FORZAR FILAS */
-.examen-fisico-container .checkbox-group,
-.examen-fisico .checkbox-group {
-  display: flex !important;
-  flex-direction: row !important;
-  flex-wrap: wrap !important;
-  gap: 8px !important;
-}
-
-.examen-fisico-container .checkbox-group.cols-4 > *,
-.examen-fisico .checkbox-group.cols-4 > * {
-  flex: 0 0 calc(25% - 6px) !important;
-  max-width: calc(25% - 6px) !important;
-}
-
-.examen-fisico-container .checkbox-group.cols-5 > *,
-.examen-fisico .checkbox-group.cols-5 > * {
-  flex: 0 0 calc(20% - 7px) !important;
-  max-width: calc(20% - 7px) !important;
-}
-
-.examen-fisico-container .checkbox-group.cols-3 > *,
-.examen-fisico .checkbox-group.cols-3 > * {
-  flex: 0 0 calc(33.333% - 6px) !important;
-  max-width: calc(33.333% - 6px) !important;
-}
-
-.examen-fisico-container .radio-group,
-.examen-fisico .radio-group {
-  display: flex !important;
-  flex-direction: row !important;
-  flex-wrap: wrap !important;
-  gap: 8px !important;
-}
-
-.examen-fisico-container .radio-group.cols-4 > *,
-.examen-fisico .radio-group.cols-4 > * {
-  flex: 0 0 calc(25% - 6px) !important;
-  max-width: calc(25% - 6px) !important;
-}
-
-.examen-fisico-container .radio-group.cols-3 > *,
-.examen-fisico .radio-group.cols-3 > * {
-  flex: 0 0 calc(33.333% - 6px) !important;
-  max-width: calc(33.333% - 6px) !important;
-}
-
-.examen-fisico-container .exam-checkbox,
-.examen-fisico-container .exam-radio {
-  background: rgba(50, 50, 75, 0.6);
-  border-color: rgba(255, 255, 255, 0.15);
-  color: #e0e0e0;
-}
-
-.examen-fisico-container .exam-checkbox:hover,
-.examen-fisico-container .exam-radio:hover {
-  background: rgba(79, 70, 229, 0.2);
-  border-color: rgba(99, 102, 241, 0.5);
-}
-
-.examen-fisico-container .exam-checkbox.checked,
-.examen-fisico-container .exam-radio.checked {
-  background: linear-gradient(135deg, rgba(79, 70, 229, 0.4), rgba(99, 102, 241, 0.4));
-  border-color: #6366f1;
-  color: #fff;
-}
-
-.examen-fisico-container input[type="number"],
-.examen-fisico-container input[type="text"],
-.examen-fisico-container textarea {
-  background: rgba(30, 30, 50, 0.8);
-  border-color: rgba(255, 255, 255, 0.15);
-  color: #e0e0e0;
-}
-
-.examen-fisico-container input:focus,
-.examen-fisico-container textarea:focus {
-  border-color: #6366f1;
-  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.2);
-}
-
-.examen-fisico-container .bcs-btn {
-  background: rgba(50, 50, 75, 0.6);
-  border-color: rgba(255, 255, 255, 0.15);
-}
-
-.examen-fisico-container .bcs-btn.selected {
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
-}
-
-.examen-fisico-container .exam-actions {
-  background: rgba(30, 30, 50, 0.9);
-  border-top-color: rgba(255, 255, 255, 0.1);
-}
-
-.examen-fisico-container .btn-save-exam {
-  background: rgba(255, 255, 255, 0.1);
-}
-
-.examen-fisico-container .btn-save-exam.has-changes {
-  background: linear-gradient(135deg, #4f46e5, #6366f1);
-}
-
-.examen-fisico-container .subsection h5 {
-  color: #e0e0e0;
-}
-
-.examen-fisico-container .form-field label {
-  color: #a0a0a0;
-}
-
-.examen-fisico-container .info-badge {
-  background: linear-gradient(135deg, #4f46e5, #6366f1);
-}
-
-.examen-fisico-container .side-label {
-  background: #6366f1;
-}
-
-.examen-fisico-container .cn-item,
-.examen-fisico-container .limb-sides .side {
-  background: rgba(50, 50, 75, 0.5);
-  border-color: rgba(255, 255, 255, 0.1);
-}
-
-.examen-fisico-container .limb-section h5 {
-  border-bottom-color: #6366f1;
-}
-
 /* SOAP Notes */
 .soap-notes {
   flex: 1;
@@ -2157,14 +1927,6 @@ button:disabled {
 
 .action-btn.hospital:hover {
   background: rgba(244, 67, 54, 0.2);
-}
-
-.action-btn.followup {
-  border-color: rgba(0, 200, 150, 0.5);
-}
-
-.action-btn.followup:hover {
-  background: rgba(0, 200, 150, 0.2);
 }
 
 /* Consultation Footer */
@@ -2618,9 +2380,6 @@ button:disabled {
 /* Medications */
 .quick-medications {
   margin-bottom: 1rem;
-  padding: 0.75rem;
-  background: rgba(255, 255, 255, 0.05);
-  border-radius: 8px;
 }
 
 .quick-medications p {
@@ -2629,28 +2388,25 @@ button:disabled {
   margin-bottom: 0.5rem;
 }
 
-.quick-medications .med-chips {
+.med-chips {
   display: flex;
   flex-wrap: wrap;
   gap: 0.5rem;
 }
 
-.quick-medications .med-chip {
-  padding: 0.5rem 1rem;
-  background: rgba(255, 255, 255, 0.12);
-  border: 1px solid rgba(255, 255, 255, 0.25);
+.med-chip {
+  padding: 0.4rem 0.75rem;
+  background: rgba(76, 175, 80, 0.2);
+  border: 1px solid rgba(76, 175, 80, 0.4);
   border-radius: 20px;
-  color: #fff;
-  font-size: 0.8rem;
-  font-weight: 500;
+  color: #4caf50;
+  font-size: 0.75rem;
   cursor: pointer;
   transition: all 0.2s;
 }
 
-.quick-medications .med-chip:hover {
-  background: rgba(33, 150, 243, 0.5);
-  border-color: #2196f3;
-  transform: translateY(-1px);
+.med-chip:hover {
+  background: rgba(76, 175, 80, 0.3);
 }
 
 .add-medication-form {
@@ -2695,9 +2451,8 @@ button:disabled {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 0.85rem 1rem;
-  background: rgba(0, 0, 0, 0.25);
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  padding: 0.75rem;
+  background: rgba(255, 255, 255, 0.08);
   border-radius: 8px;
   margin-bottom: 0.5rem;
 }
@@ -2705,17 +2460,17 @@ button:disabled {
 .medication-info {
   display: flex;
   flex-direction: column;
-  gap: 0.3rem;
+  gap: 0.2rem;
 }
 
 .medication-info strong {
   color: #fff;
-  font-size: 0.95rem;
+  font-size: 0.9rem;
 }
 
 .medication-info span {
-  color: rgba(255, 255, 255, 0.85);
-  font-size: 0.85rem;
+  color: rgba(255, 255, 255, 0.7);
+  font-size: 0.8rem;
 }
 
 .btn-remove {
@@ -2763,246 +2518,6 @@ button:disabled {
 .btn-primary:disabled {
   opacity: 0.5;
   cursor: not-allowed;
-}
-
-/* ========================= */
-/* Prescription Modal Styles */
-/* ========================= */
-
-.prescription-modal {
-  max-width: 700px;
-}
-
-.medication-search-section {
-  margin-bottom: 1.5rem;
-}
-
-.medication-search-section > label {
-  display: block;
-  color: #fff;
-  font-size: 0.9rem;
-  margin-bottom: 0.5rem;
-  font-weight: 500;
-}
-
-.medication-search-container {
-  position: relative;
-}
-
-.search-input-wrapper {
-  position: relative;
-  display: flex;
-  align-items: center;
-}
-
-.search-medication-input {
-  padding-right: 60px !important;
-}
-
-.search-spinner {
-  position: absolute;
-  right: 40px;
-  font-size: 1rem;
-  animation: spin 1s linear infinite;
-}
-
-@keyframes spin {
-  from { transform: rotate(0deg); }
-  to { transform: rotate(360deg); }
-}
-
-.clear-selection-btn {
-  position: absolute;
-  right: 10px;
-  background: rgba(244, 67, 54, 0.3);
-  border: none;
-  color: #f44336;
-  width: 24px;
-  height: 24px;
-  border-radius: 50%;
-  cursor: pointer;
-  font-size: 0.8rem;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  transition: all 0.2s;
-}
-
-.clear-selection-btn:hover {
-  background: rgba(244, 67, 54, 0.5);
-}
-
-.medication-search-dropdown {
-  position: absolute;
-  top: 100%;
-  left: 0;
-  right: 0;
-  background: rgba(30, 30, 40, 0.98);
-  border: 1px solid rgba(255, 255, 255, 0.2);
-  border-radius: 8px;
-  margin-top: 4px;
-  max-height: 250px;
-  overflow-y: auto;
-  z-index: 1000;
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
-}
-
-.medication-search-item {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 0.75rem 1rem;
-  cursor: pointer;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-  transition: background 0.2s;
-}
-
-.medication-search-item:last-child {
-  border-bottom: none;
-}
-
-.medication-search-item:hover:not(.out-of-stock) {
-  background: rgba(33, 150, 243, 0.2);
-}
-
-.medication-search-item.out-of-stock {
-  opacity: 0.5;
-  cursor: not-allowed;
-}
-
-.med-search-info {
-  display: flex;
-  flex-direction: column;
-  gap: 0.2rem;
-}
-
-.med-search-info strong {
-  color: #fff;
-  font-size: 0.9rem;
-}
-
-.med-details {
-  color: rgba(255, 255, 255, 0.6);
-  font-size: 0.8rem;
-}
-
-.med-stock-badge {
-  flex-shrink: 0;
-}
-
-.stock-indicator {
-  padding: 0.25rem 0.5rem;
-  border-radius: 12px;
-  font-size: 0.75rem;
-  font-weight: 500;
-}
-
-.stock-indicator.high {
-  background: rgba(76, 175, 80, 0.2);
-  color: #4caf50;
-}
-
-.stock-indicator.low {
-  background: rgba(255, 152, 0, 0.2);
-  color: #ff9800;
-}
-
-.stock-indicator.empty {
-  background: rgba(244, 67, 54, 0.2);
-  color: #f44336;
-}
-
-.no-results {
-  padding: 1rem;
-  text-align: center;
-  color: rgba(255, 255, 255, 0.5);
-  font-style: italic;
-}
-
-.selected-medication-info {
-  margin-top: 0.75rem;
-  padding: 0.75rem;
-  background: rgba(76, 175, 80, 0.15);
-  border: 1px solid rgba(76, 175, 80, 0.3);
-  border-radius: 8px;
-  display: flex;
-  align-items: center;
-  gap: 1rem;
-}
-
-.med-selected-badge {
-  background: rgba(76, 175, 80, 0.3);
-  color: #4caf50;
-  padding: 0.25rem 0.5rem;
-  border-radius: 4px;
-  font-size: 0.75rem;
-  font-weight: 600;
-  flex-shrink: 0;
-}
-
-.med-selected-details {
-  color: #fff;
-  font-size: 0.85rem;
-}
-
-.med-selected-details strong {
-  color: #fff;
-}
-
-.med-selected-details span {
-  color: rgba(255, 255, 255, 0.7);
-}
-
-.stock-available {
-  color: #4caf50 !important;
-}
-
-/* Dose Input Group */
-.dose-group {
-  flex: 1;
-}
-
-.dose-input-group {
-  display: flex;
-  gap: 0.5rem;
-}
-
-.dose-amount {
-  flex: 1;
-  max-width: 120px;
-}
-
-.dose-unit {
-  flex: 1;
-  max-width: 120px;
-}
-
-.quantity-group {
-  max-width: 100px;
-}
-
-/* Medication List Enhanced */
-.medication-item .med-presentation {
-  color: rgba(255, 255, 255, 0.6);
-  font-size: 0.8rem;
-  font-style: italic;
-}
-
-.medication-item .med-dosage {
-  color: #fff;
-  font-weight: 600;
-  font-size: 0.85rem;
-}
-
-.medication-item .med-duration {
-  color: rgba(255, 255, 255, 0.8);
-  font-size: 0.8rem;
-}
-
-.medication-item .med-qty {
-  color: #ffc107;
-  font-size: 0.8rem;
-  font-weight: 600;
 }
 
 .btn-warning {
@@ -3591,187 +3106,6 @@ button:disabled {
   line-height: 1.4;
 }
 
-/* Exam Section in History */
-.exam-section {
-  background: rgba(76, 175, 80, 0.05);
-  padding: 1rem;
-  border-radius: 12px;
-  border: 1px solid rgba(76, 175, 80, 0.15);
-}
-
-.exam-summary {
-  display: flex;
-  flex-direction: column;
-  gap: 1rem;
-}
-
-.exam-subsection {
-  padding: 0.75rem;
-  background: rgba(255, 255, 255, 0.03);
-  border-radius: 8px;
-}
-
-.exam-subsection h6 {
-  margin: 0 0 0.5rem 0;
-  color: rgba(255, 255, 255, 0.7);
-  font-size: 0.8rem;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-}
-
-.exam-vitals-grid {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.5rem 1rem;
-}
-
-.exam-vitals-grid span {
-  color: #fff;
-  font-size: 0.85rem;
-  padding: 0.25rem 0.5rem;
-  background: rgba(255, 255, 255, 0.08);
-  border-radius: 4px;
-}
-
-.exam-findings {
-  margin: 0;
-  padding-left: 1.25rem;
-  color: #ffc107;
-  font-size: 0.85rem;
-}
-
-.exam-findings li {
-  margin-bottom: 0.25rem;
-}
-
-.exam-normal {
-  margin: 0;
-  color: #4caf50;
-  font-size: 0.85rem;
-}
-
-.specialized-exams {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.5rem;
-}
-
-.exam-badge {
-  background: rgba(33, 150, 243, 0.2);
-  color: #64b5f6;
-  padding: 0.25rem 0.75rem;
-  border-radius: 20px;
-  font-size: 0.8rem;
-  display: inline-flex;
-  align-items: center;
-  gap: 0.25rem;
-}
-
-/* Detalles de Exámenes Especializados en Historial */
-.specialized-details {
-  display: flex;
-  flex-direction: column;
-  gap: 1rem;
-}
-
-.exam-detail {
-  background: rgba(255, 255, 255, 0.05);
-  border-radius: 10px;
-  padding: 1rem;
-  margin-top: 0.75rem;
-  border-left: 3px solid;
-}
-
-.exam-detail h6 {
-  margin: 0 0 0.75rem 0;
-  font-size: 0.9rem;
-  font-weight: 600;
-}
-
-.exam-detail p {
-  margin: 0.25rem 0;
-  font-size: 0.85rem;
-  color: rgba(255, 255, 255, 0.85);
-}
-
-.exam-detail strong {
-  color: rgba(255, 255, 255, 0.95);
-}
-
-/* Oftalmológico */
-.oftalmo-detail {
-  border-left-color: #3b82f6;
-}
-
-.eyes-comparison {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 1rem;
-  margin: 0.75rem 0;
-}
-
-.eye-findings {
-  background: rgba(59, 130, 246, 0.1);
-  padding: 0.75rem;
-  border-radius: 8px;
-}
-
-.eye-header {
-  display: block;
-  font-weight: 600;
-  color: #60a5fa;
-  margin-bottom: 0.5rem;
-  font-size: 0.85rem;
-}
-
-.eye-findings ul {
-  margin: 0;
-  padding-left: 1.25rem;
-  font-size: 0.8rem;
-}
-
-.eye-findings li {
-  margin: 0.25rem 0;
-  color: rgba(255, 255, 255, 0.8);
-}
-
-.no-findings {
-  color: rgba(255, 255, 255, 0.4);
-  font-style: italic;
-  font-size: 0.8rem;
-}
-
-/* Ortopédico */
-.orto-detail {
-  border-left-color: #f59e0b;
-}
-
-.joints-summary {
-  display: flex;
-  flex-direction: column;
-  gap: 0.5rem;
-  margin: 0.5rem 0;
-}
-
-.joint-item {
-  font-size: 0.85rem;
-  color: rgba(255, 255, 255, 0.85);
-}
-
-.joint-item span {
-  margin-left: 0.5rem;
-}
-
-/* Neurológico */
-.neuro-detail {
-  border-left-color: #8b5cf6;
-}
-
-/* Dermatológico */
-.derma-detail {
-  border-left-color: #10b981;
-}
-
 /* Vitals Grid */
 .vitals-grid {
   display: flex;
@@ -4016,178 +3350,4 @@ button:disabled {
 .patient-info-modal .info-row {
   margin: 0.25rem 0;
   font-size: 0.9rem;
-}
-
-/* ============================================
-   FOLLOW-UP APPOINTMENT MODAL
-   ============================================ */
-
-.followup-modal {
-  max-width: 500px;
-  width: 95%;
-}
-
-.followup-modal .modal-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding-bottom: 1rem;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-  margin-bottom: 1.5rem;
-}
-
-.followup-modal .modal-header h2 {
-  margin: 0;
-  font-size: 1.25rem;
-  color: #fff;
-}
-
-.followup-modal .close-btn {
-  background: rgba(255, 255, 255, 0.1);
-  border: none;
-  width: 32px;
-  height: 32px;
-  border-radius: 8px;
-  color: rgba(255, 255, 255, 0.7);
-  cursor: pointer;
-  font-size: 1.1rem;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  transition: all 0.2s;
-}
-
-.followup-modal .close-btn:hover {
-  background: rgba(255, 255, 255, 0.2);
-  color: #fff;
-}
-
-.followup-patient-info {
-  background: rgba(0, 200, 150, 0.1);
-  border: 1px solid rgba(0, 200, 150, 0.3);
-  border-radius: 12px;
-  padding: 1rem;
-  margin-bottom: 1.5rem;
-}
-
-.followup-patient-info .patient-badge {
-  display: flex;
-  align-items: center;
-  gap: 1rem;
-}
-
-.followup-patient-info .patient-icon {
-  font-size: 2rem;
-  background: rgba(255, 255, 255, 0.1);
-  padding: 0.5rem;
-  border-radius: 10px;
-}
-
-.followup-patient-info .patient-details {
-  display: flex;
-  flex-direction: column;
-}
-
-.followup-patient-info .patient-details strong {
-  font-size: 1.1rem;
-  color: #fff;
-}
-
-.followup-patient-info .patient-details span {
-  font-size: 0.9rem;
-  color: rgba(255, 255, 255, 0.7);
-}
-
-.followup-form .form-row {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 1rem;
-}
-
-.followup-form .form-group {
-  margin-bottom: 1rem;
-}
-
-.followup-form label {
-  display: block;
-  margin-bottom: 0.5rem;
-  font-size: 0.9rem;
-  color: rgba(255, 255, 255, 0.9);
-  font-weight: 500;
-}
-
-.followup-form .form-control {
-  width: 100%;
-  padding: 0.75rem 1rem;
-  background: rgba(255, 255, 255, 0.1);
-  border: 1px solid rgba(255, 255, 255, 0.2);
-  border-radius: 10px;
-  color: #fff;
-  font-size: 0.95rem;
-  transition: all 0.2s;
-}
-
-.followup-form .form-control:focus {
-  outline: none;
-  border-color: rgba(0, 200, 150, 0.5);
-  background: rgba(255, 255, 255, 0.15);
-}
-
-.followup-form textarea.form-control {
-  resize: vertical;
-  min-height: 80px;
-}
-
-.followup-form select.form-control {
-  cursor: pointer;
-}
-
-.followup-form select.form-control option {
-  background: #1a1a2e;
-  color: #fff;
-}
-
-.followup-modal .modal-actions {
-  display: flex;
-  justify-content: flex-end;
-  gap: 1rem;
-  margin-top: 1.5rem;
-  padding-top: 1rem;
-  border-top: 1px solid rgba(255, 255, 255, 0.1);
-}
-
-.followup-modal .btn-primary {
-  background: linear-gradient(135deg, #00c896, #00a67e);
-  color: #fff;
-  border: none;
-  padding: 0.75rem 1.5rem;
-  border-radius: 10px;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.2s;
-}
-
-.followup-modal .btn-primary:hover:not(:disabled) {
-  transform: translateY(-2px);
-  box-shadow: 0 4px 15px rgba(0, 200, 150, 0.4);
-}
-
-.followup-modal .btn-primary:disabled {
-  opacity: 0.6;
-  cursor: not-allowed;
-}
-
-.followup-modal .btn-secondary {
-  background: rgba(255, 255, 255, 0.1);
-  color: #fff;
-  border: 1px solid rgba(255, 255, 255, 0.2);
-  padding: 0.75rem 1.5rem;
-  border-radius: 10px;
-  font-weight: 500;
-  cursor: pointer;
-  transition: all 0.2s;
-}
-
-.followup-modal .btn-secondary:hover:not(:disabled) {
-  background: rgba(255, 255, 255, 0.15);
 }

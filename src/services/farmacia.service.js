@@ -26,11 +26,8 @@ const farmaciaService = {
     const queryString = params.toString();
     const url = queryString ? `/medications?${queryString}` : '/medications';
     
-    // api.get() returns response.data due to interceptor
-    // Backend returns: { status: 'success', data: { medications: [...] } }
-    // So we access .data.medications
     const response = await api.get(url);
-    return response.data?.medications || response.data || [];
+    return response.data.data?.medications || response.data.data || [];
   },
 
   /**
@@ -40,7 +37,7 @@ const farmaciaService = {
    */
   getMedicationById: async (id) => {
     const response = await api.get(`/medications/${id}`);
-    return response.data?.medication || response.data;
+    return response.data.data?.medication || response.data.data;
   },
 
   /**
@@ -50,7 +47,7 @@ const farmaciaService = {
    */
   createMedication: async (data) => {
     const response = await api.post('/medications', data);
-    return response.data?.medication || response.data;
+    return response.data.data?.medication || response.data.data;
   },
 
   /**
@@ -61,7 +58,7 @@ const farmaciaService = {
    */
   updateMedication: async (id, data) => {
     const response = await api.put(`/medications/${id}`, data);
-    return response.data?.medication || response.data;
+    return response.data.data?.medication || response.data.data;
   },
 
   /**
@@ -71,7 +68,7 @@ const farmaciaService = {
    */
   deleteMedication: async (id) => {
     const response = await api.delete(`/medications/${id}`);
-    return response;
+    return response.data;
   },
 
   /**
@@ -88,7 +85,7 @@ const farmaciaService = {
       reason,
       batchNumber
     });
-    return response.data?.medication || response.data;
+    return response.data.data?.medication || response.data.data;
   },
 
   /**
@@ -97,7 +94,7 @@ const farmaciaService = {
    */
   getLowStockMedications: async () => {
     const response = await api.get('/medications/low-stock');
-    return response.data?.medications || response.data || [];
+    return response.data.data?.medications || response.data.data || [];
   },
 
   /**
@@ -106,7 +103,7 @@ const farmaciaService = {
    */
   getExpiringMedications: async () => {
     const response = await api.get('/medications/expiring');
-    return response.data?.medications || response.data || [];
+    return response.data.data?.medications || response.data.data || [];
   },
 
   /**
@@ -115,7 +112,7 @@ const farmaciaService = {
    */
   checkExpiringMedications: async () => {
     const response = await api.post('/medications/check-expiring');
-    return response.data;
+    return response.data.data;
   },
 
   /**
@@ -132,7 +129,7 @@ const farmaciaService = {
       notes,
       batchNumber
     });
-    return response.data?.medication || response.data;
+    return response.data.data?.medication || response.data.data;
   },
 
   /**
@@ -141,7 +138,7 @@ const farmaciaService = {
    */
   getStockAlerts: async () => {
     const response = await api.get('/medications/alerts');
-    return response.data?.alerts || response.data || [];
+    return response.data.data?.alerts || response.data.data || [];
   },
 
   /**
@@ -156,7 +153,7 @@ const farmaciaService = {
       status,
       notes
     });
-    return response.data?.alert || response.data;
+    return response.data.data?.alert || response.data.data;
   },
 
   /**
@@ -177,7 +174,7 @@ const farmaciaService = {
       : `/medications/${medicationId}/movements`;
     
     const response = await api.get(url);
-    return response.data?.movements || response.data || [];
+    return response.data.data?.movements || response.data.data || [];
   },
 
   // ==================== PRESCRIPTIONS ====================
@@ -188,7 +185,7 @@ const farmaciaService = {
    */
   getPendingPrescriptions: async () => {
     const response = await api.get('/prescriptions/pending');
-    return response.data?.prescriptions || response.data || [];
+    return response.data.data?.prescriptions || response.data.data || [];
   },
 
   /**
@@ -199,7 +196,7 @@ const farmaciaService = {
    */
   rejectPrescription: async (id, reason) => {
     const response = await api.put(`/prescriptions/${id}/reject`, { reason });
-    return response.data?.prescription || response.data;
+    return response.data.data?.prescription || response.data.data;
   },
 
   // ==================== DISPENSES ====================
@@ -222,8 +219,7 @@ const farmaciaService = {
     const url = queryString ? `/dispenses?${queryString}` : '/dispenses';
     
     const response = await api.get(url);
-    // Backend returns { status, data: { dispenses } }
-    return response.data?.data?.dispenses || response.data?.dispenses || response.data || [];
+    return response.data.data?.dispenses || response.data.data || [];
   },
 
   /**
@@ -248,29 +244,18 @@ const farmaciaService = {
       notes: data.notes || ''
     };
     const response = await api.post('/dispenses', payload);
-    return response.data?.dispense || response.data;
+    return response.data.data?.dispense || response.data.data;
   },
 
   // ==================== DASHBOARD & STATS ====================
 
   /**
    * Get pharmacy dashboard statistics
-   * @param {Object} params - Optional date range
-   * @param {string} params.startDate - Start date (YYYY-MM-DD)
-   * @param {string} params.endDate - End date (YYYY-MM-DD)
    * @returns {Promise<Object>} Pharmacy stats
    */
-  getPharmacyStats: async (params = {}) => {
-    const queryParams = new URLSearchParams();
-    if (params.startDate) queryParams.append('startDate', params.startDate);
-    if (params.endDate) queryParams.append('endDate', params.endDate);
-    
-    const queryString = queryParams.toString();
-    const url = `/dashboard/farmacia${queryString ? `?${queryString}` : ''}`;
-    console.log('[farmacia.service] Fetching stats with URL:', url);
-    const response = await api.get(url);
-    // Backend returns { status, data: { ... } }
-    return response.data?.data || response.data || response;
+  getPharmacyStats: async () => {
+    const response = await api.get('/dashboard/pharmacy');
+    return response.data.data || response.data;
   }
 };
 

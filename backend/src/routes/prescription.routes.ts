@@ -109,36 +109,8 @@ router.post('/', authenticate, isMedico, async (req, res) => {
     },
     include: {
       items: true,
-      pet: { include: { owner: true } },
     },
   });
-
-  // Notify pharmacy staff about new prescription
-  const pharmacyUsers = await prisma.user.findMany({
-    where: { rol: 'FARMACIA', activo: true },
-  });
-
-  const petName = prescription.pet?.nombre || 'Paciente';
-  const ownerName = prescription.pet?.owner?.nombre || 'Propietario';
-  const itemCount = prescription.items.length;
-
-  for (const pharmacist of pharmacyUsers) {
-    await prisma.notification.create({
-      data: {
-        userId: pharmacist.id,
-        tipo: 'RECETA_PENDIENTE',
-        titulo: 'Nueva Receta Pendiente',
-        mensaje: `${petName} (propietario: ${ownerName}) tiene una nueva receta con ${itemCount} medicamento(s).`,
-        data: {
-          prescriptionId: prescription.id,
-          petId: data.petId,
-          petName,
-          ownerName,
-          itemCount,
-        },
-      },
-    });
-  }
 
   res.status(201).json({ status: 'success', data: { prescription } });
 });
