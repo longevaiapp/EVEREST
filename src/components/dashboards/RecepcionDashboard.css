@@ -3374,3 +3374,300 @@
   transform: none;
   background: rgba(76, 175, 80, 0.3);
 }
+
+/* ===========================================
+   CITAS POR MÉDICO SECTION
+   =========================================== */
+
+.nav-badge.doctor {
+  background: linear-gradient(135deg, #9c27b0, #673ab7);
+}
+
+.citas-medico-section {
+  padding: 1rem;
+}
+
+.citas-medico-section .section-actions {
+  display: flex;
+  justify-content: flex-end;
+  margin-bottom: 1.5rem;
+}
+
+.citas-medico-section .btn-secondary {
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  color: #fff;
+  padding: 0.6rem 1.2rem;
+  border-radius: 8px;
+  cursor: pointer;
+  font-weight: 500;
+  transition: all 0.2s;
+}
+
+.citas-medico-section .btn-secondary:hover:not(:disabled) {
+  background: rgba(255, 255, 255, 0.2);
+}
+
+.citas-medico-section .btn-secondary:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.citas-medico-section .loading-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 3rem;
+  color: rgba(255, 255, 255, 0.6);
+}
+
+.citas-medico-section .loading-state .spinner {
+  font-size: 2.5rem;
+  animation: spin 1s linear infinite;
+}
+
+.citas-medico-section .empty-state {
+  text-align: center;
+  padding: 4rem 2rem;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 16px;
+  border: 1px dashed rgba(255, 255, 255, 0.2);
+}
+
+.citas-medico-section .empty-state .empty-icon {
+  font-size: 3rem;
+  display: block;
+  margin-bottom: 1rem;
+}
+
+.citas-medico-section .empty-state p {
+  font-size: 1.1rem;
+  color: rgba(255, 255, 255, 0.8);
+  margin: 0 0 0.5rem 0;
+}
+
+.citas-medico-section .empty-state small {
+  color: rgba(255, 255, 255, 0.5);
+  font-size: 0.85rem;
+}
+
+.citas-medico-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(360px, 1fr));
+  gap: 1.5rem;
+}
+
+.cita-medico-card {
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(156, 39, 176, 0.3);
+  border-radius: 16px;
+  padding: 1.25rem;
+  transition: all 0.2s;
+}
+
+.cita-medico-card:hover {
+  background: rgba(255, 255, 255, 0.12);
+  border-color: rgba(156, 39, 176, 0.5);
+  transform: translateY(-2px);
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.2);
+}
+
+.cita-medico-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1rem;
+  padding-bottom: 0.75rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.cita-datetime {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.cita-fecha {
+  font-size: 0.9rem;
+  color: rgba(255, 255, 255, 0.7);
+}
+
+.cita-hora {
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: #fff;
+}
+
+.cita-medico-patient {
+  margin-bottom: 0.75rem;
+}
+
+.cita-medico-patient .patient-row {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.cita-medico-patient .pet-icon {
+  font-size: 1.5rem;
+}
+
+.cita-medico-patient .patient-details {
+  display: flex;
+  flex-direction: column;
+}
+
+.cita-medico-patient .patient-details strong {
+  font-size: 1rem;
+  color: #fff;
+}
+
+.cita-medico-patient .breed {
+  font-size: 0.8rem;
+  color: rgba(255, 255, 255, 0.6);
+}
+
+.cita-medico-owner {
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 10px;
+  padding: 0.75rem;
+  margin-bottom: 0.75rem;
+}
+
+.cita-medico-owner .owner-info-line,
+.cita-medico-owner .owner-phone-line,
+.cita-medico-owner .owner-email-line {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 0.4rem;
+}
+
+.cita-medico-owner .owner-info-line:last-child,
+.cita-medico-owner .owner-phone-line:last-child,
+.cita-medico-owner .owner-email-line:last-child {
+  margin-bottom: 0;
+}
+
+.cita-medico-owner .owner-icon,
+.cita-medico-owner .phone-icon,
+.cita-medico-owner .email-icon {
+  font-size: 0.9rem;
+}
+
+.cita-medico-owner .phone-number,
+.cita-medico-owner .email {
+  color: rgba(255, 255, 255, 0.8);
+  font-size: 0.9rem;
+}
+
+.cita-medico-owner .btn-call {
+  margin-left: auto;
+  background: linear-gradient(135deg, #4caf50, #43a047);
+  color: #fff;
+  border: none;
+  padding: 0.3rem 0.75rem;
+  border-radius: 15px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.cita-medico-owner .btn-call:hover {
+  transform: scale(1.05);
+  box-shadow: 0 4px 12px rgba(76, 175, 80, 0.4);
+}
+
+.cita-medico-motivo {
+  background: rgba(156, 39, 176, 0.1);
+  border-radius: 8px;
+  padding: 0.75rem;
+  margin-bottom: 0.75rem;
+}
+
+.cita-medico-motivo strong {
+  color: #e1bee7;
+  font-size: 0.85rem;
+}
+
+.cita-medico-motivo p {
+  margin: 0.4rem 0 0 0;
+  color: rgba(255, 255, 255, 0.9);
+  font-size: 0.9rem;
+}
+
+.cita-medico-lab-context {
+  margin-bottom: 0.75rem;
+}
+
+.cita-medico-lab-context .lab-badge {
+  display: inline-block;
+  background: linear-gradient(135deg, #9c27b0, #673ab7);
+  color: #fff;
+  padding: 0.3rem 0.75rem;
+  border-radius: 15px;
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+
+.cita-medico-notas {
+  padding: 0.5rem;
+  background: rgba(0, 0, 0, 0.2);
+  border-radius: 6px;
+  margin-bottom: 0.75rem;
+}
+
+.cita-medico-notas small {
+  color: rgba(255, 255, 255, 0.6);
+  font-size: 0.8rem;
+}
+
+.cita-medico-actions {
+  display: flex;
+  gap: 0.5rem;
+  margin-top: 0.75rem;
+  padding-top: 0.75rem;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.cita-medico-actions button {
+  flex: 1;
+  padding: 0.6rem;
+  border-radius: 8px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+  border: none;
+}
+
+.cita-medico-actions .btn-confirm {
+  background: linear-gradient(135deg, #4caf50, #43a047);
+  color: #fff;
+}
+
+.cita-medico-actions .btn-confirm:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(76, 175, 80, 0.4);
+}
+
+.cita-medico-actions .btn-checkin {
+  background: linear-gradient(135deg, #2196f3, #1976d2);
+  color: #fff;
+}
+
+.cita-medico-actions .btn-checkin:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(33, 150, 243, 0.4);
+}
+
+.cita-medico-actions .btn-cancel {
+  background: rgba(244, 67, 54, 0.2);
+  color: #f44336;
+  border: 1px solid rgba(244, 67, 54, 0.3);
+}
+
+.cita-medico-actions .btn-cancel:hover {
+  background: rgba(244, 67, 54, 0.3);
+}

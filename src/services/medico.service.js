@@ -296,6 +296,45 @@ export const laboratorioService = {
     const response = await api.get('/lab-requests/pending');
     return response.data?.labRequests || [];
   },
+
+  /**
+   * Obtener resultados de laboratorio completados (para el panel del médico)
+   */
+  async getResultados() {
+    const response = await api.get('/medico/lab-results');
+    return response.data?.labResults || [];
+  },
+};
+
+// ============================================================================
+// CITAS DE SEGUIMIENTO (agendadas por médico)
+// ============================================================================
+
+export const citaSeguimientoService = {
+  /**
+   * Crear cita de seguimiento desde resultados de lab
+   * @param {Object} data - { petId, labRequestId?, motivo, fecha, hora, notas? }
+   */
+  async crear(data) {
+    console.log('[citaSeguimientoService.crear] data:', JSON.stringify(data, null, 2));
+    const response = await api.post('/medico/cita-seguimiento', {
+      petId: data.petId,
+      labRequestId: data.labRequestId,
+      motivo: data.motivo,
+      fecha: data.fecha,
+      hora: data.hora,
+      notas: data.notas,
+    });
+    return response.data?.cita;
+  },
+
+  /**
+   * Obtener citas agendadas por médicos (para recepción)
+   */
+  async getCitasMedico() {
+    const response = await api.get('/medico/citas-seguimiento');
+    return response.data?.appointments || [];
+  },
 };
 
 // ============================================================================
@@ -416,4 +455,5 @@ export default {
   laboratorio: laboratorioService,
   hospitalizacion: hospitalizacionService,
   notasMedicas: notasMedicasService,
+  citaSeguimiento: citaSeguimientoService,
 };

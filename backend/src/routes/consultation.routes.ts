@@ -137,7 +137,7 @@ router.put('/:id/complete', authenticate, isMedico, async (req, res) => {
   const id = req.params.id as string;
   const schema = z.object({
     diagnosis: z.string().min(1),
-    soapPlan: z.string().min(1),
+    soapPlan: z.string().optional(),
     followUpDate: z.string().datetime().optional(),
     followUpNotes: z.string().optional(),
   });
@@ -148,7 +148,7 @@ router.put('/:id/complete', authenticate, isMedico, async (req, res) => {
     where: { id },
     data: {
       diagnosis: data.diagnosis,
-      soapPlan: data.soapPlan,
+      soapPlan: data.soapPlan || 'Plan de tratamiento establecido',
       followUpRequired: !!data.followUpDate,
       followUpDate: data.followUpDate ? new Date(data.followUpDate) : null,
       followUpNotes: data.followUpNotes,

@@ -543,7 +543,10 @@
     "consentWarning": "Asegúrese de que el propietario ha firmado el consentimiento de sedación",
     "enterResults": "Ingrese los resultados del estudio...",
     "observationsPlaceholder": "Observaciones adicionales (opcional)...",
-    "saveAndNotify": "Guardar y Notificar Médico"
+    "saveAndNotify": "Guardar y Notificar Médico",
+    "studyStarted": "Estudio iniciado correctamente",
+    "resultsUploaded": "Resultados guardados y médico notificado",
+    "dashboard": "Dashboard"
   },
   
   "farmacia": {

@@ -831,4 +831,150 @@ router.post('/nota', authenticate, isMedico, async (req: Request, res: Response)
   res.status(201).json({ status: 'success', data: { nota: note } });
 });
 
+// =============================================================================
+// GET /api/medico/lab-results - Get completed lab results for doctor's patients
+// =============================================================================
+router.get('/lab-results', authenticate, isMedico, async (req: Request, res: Response) => {
+  const { status = 'COMPLETADO' } = req.query;
+
+  // Get lab requests that are completed (or specified status)
+  // Include patient and owner info for easy access
+  const labResults = await prisma.labRequest.findMany({
+    where: {
+      status: status as string,
+    },
+    include: {
+      pet: {
+        include: {
+          owner: {
+            select: {
+              id: true,
+              nombre: true,
+              telefono: true,
+              email: true,
+            },
+          },
+        },
+      },
+      consultation: {
+        include: {
+          doctor: {
+            select: { id: true, nombre: true },
+          },
+        },
+      },
+      requestedBy: {
+        select: { id: true, nombre: true },
+      },
+      completedBy: {
+        select: { id: true, nombre: true },
+      },
+    },
+    orderBy: { completedAt: 'desc' },
+    take: 50, // Limit to last 50
+  });
+
+  res.json({ status: 'success', data: { labResults } });
+});
+
+// =============================================================================
+// POST /api/medico/cita-seguimiento - Create follow-up appointment from lab results
+// =============================================================================
+router.post('/cita-seguimiento', authenticate, isMedico, async (req: Request, res: Response) => {
+  const schema = z.object({
+    petId: z.string().cuid(),
+    labRequestId: z.string().cuid().optional(),
+    fecha: z.string(), // Date string YYYY-MM-DD
+    hora: z.string(), // Time string HH:MM
+    tipo: z.enum(['SEGUIMIENTO', 'REVISION_RESULTADOS', 'CONSULTA']).default('SEGUIMIENTO'),
+    motivo: z.string().min(1),
+    notas: z.string().optional(),
+  });
+
+  const data = schema.parse(req.body);
+
+  // Create the appointment
+  const appointment = await prisma.appointment.create({
+    data: {
+      petId: data.petId,
+      fecha: new Date(data.fecha),
+      hora: data.hora,
+      tipo: data.tipo,
+      motivo: data.motivo,
+      notas: data.notas || null,
+      creadaPor: 'MEDICO', // Mark as created by doctor
+      agendadaPorId: req.user!.userId,
+      // Link to lab request if provided
+      metadata: data.labRequestId ? { labRequestId: data.labRequestId, origen: 'RESULTADOS_LAB' } : { origen: 'MEDICO' },
+    },
+    include: {
+      pet: {
+        include: {
+          owner: true,
+        },
+      },
+    },
+  });
+
+  // Create notification for reception
+  await prisma.notification.create({
+    data: {
+      // Notify all reception users (we'll use a generic approach)
+      userId: req.user!.userId, // For now, notify the doctor who created it
+      tipo: 'CITA_AGENDADA_MEDICO',
+      titulo: 'Nueva cita de seguimiento',
+      mensaje: `El Dr. ${req.user!.nombre || 'Médico'} agendó una cita de seguimiento para ${appointment.pet.nombre} el ${data.fecha} a las ${data.hora}`,
+      data: { 
+        appointmentId: appointment.id, 
+        petId: data.petId,
+        labRequestId: data.labRequestId,
+        origen: 'RESULTADOS_LAB'
+      },
+    },
+  });
+
+  res.status(201).json({ status: 'success', data: { appointment } });
+});
+
+// =============================================================================
+// GET /api/medico/citas-seguimiento - Get follow-up appointments created by doctors
+// =============================================================================
+router.get('/citas-seguimiento', authenticate, async (req: Request, res: Response) => {
+  const { pendientes = 'true' } = req.query;
+
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+
+  const whereClause: any = {
+    creadaPor: 'MEDICO',
+    cancelada: false,
+  };
+
+  if (pendientes === 'true') {
+    whereClause.fecha = { gte: today };
+    whereClause.confirmada = false;
+  }
+
+  const appointments = await prisma.appointment.findMany({
+    where: whereClause,
+    include: {
+      pet: {
+        include: {
+          owner: {
+            select: {
+              id: true,
+              nombre: true,
+              telefono: true,
+              email: true,
+            },
+          },
+        },
+      },
+    },
+    orderBy: [{ fecha: 'asc' }, { hora: 'asc' }],
+  });
+
+  res.json({ status: 'success', data: { appointments } });
+});
+
 export default router;

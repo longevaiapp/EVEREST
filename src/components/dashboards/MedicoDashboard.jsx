@@ -1,7 +1,11 @@
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback, useEffect, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useAuth } from '../../context/AuthContext';
 import useMedico from '../../hooks/useMedico';
+import farmaciaService from '../../services/farmacia.service';
+import recepcionService from '../../services/recepcion.service';
+import { laboratorioService, citaSeguimientoService } from '../../services/medico.service';
+import ExamenFisico from '../medico/ExamenFisico';
 import './MedicoDashboard.css';
 
 function MedicoDashboard() {
@@ -44,26 +48,39 @@ function MedicoDashboard() {
   const [showLabOrderModal, setShowLabOrderModal] = useState(false);
   const [showHospitalizationModal, setShowHospitalizationModal] = useState(false);
   const [showHistoryModal, setShowHistoryModal] = useState(false);
+  const [showFollowUpModal, setShowFollowUpModal] = useState(false);
+  
+  // Estado para formulario de cita de seguimiento
+  const [followUpForm, setFollowUpForm] = useState({
+    fecha: '',
+    hora: '10:00',
+    tipo: 'SEGUIMIENTO',
+    motivo: ''
+  });
+  const [savingFollowUp, setSavingFollowUp] = useState(false);
   
   // Estado para historial completo desde API
   const [historialData, setHistorialData] = useState(null);
   const [loadingHistorial, setLoadingHistorial] = useState(false);
 
-  // Form states
-  const [consultationNotes, setConsultationNotes] = useState({
-    subjetivo: '',
-    objetivo: '',
-    analisis: '',
-    plan: ''
+  // Estado para Resultados de Laboratorio Completados
+  const [labResults, setLabResults] = useState([]);
+  const [loadingLabResults, setLoadingLabResults] = useState(false);
+  const [showLabResultsPanel, setShowLabResultsPanel] = useState(false);
+  const [selectedLabResult, setSelectedLabResult] = useState(null);
+  const [showAgendarCitaModal, setShowAgendarCitaModal] = useState(false);
+  const [showLabResultDetailModal, setShowLabResultDetailModal] = useState(false);
+  const [showImageViewer, setShowImageViewer] = useState(false);
+  const [viewerImage, setViewerImage] = useState({ src: '', name: '' });
+  const [agendarCitaForm, setAgendarCitaForm] = useState({
+    fecha: '',
+    hora: '10:00',
+    motivo: ''
   });
-  
-  // Track which SOAP sections have been saved
-  const [savedSections, setSavedSections] = useState({
-    subjetivo: false,
-    objetivo: false,
-    analisis: false,
-    plan: false
-  });
+  const [savingCitaSeguimiento, setSavingCitaSeguimiento] = useState(false);
+
+  // Estado para el examen físico estructurado
+  const [examenFisicoData, setExamenFisicoData] = useState(null);
 
   const [vitalsForm, setVitalsForm] = useState({
     temperatura: '',
@@ -90,12 +107,108 @@ function MedicoDashboard() {
   });
 
   const [currentMedication, setCurrentMedication] = useState({
+    medicationId: null,
     nombre: '',
+    presentacion: '',
+    concentracion: '',
+    stockDisponible: 0,
     dosis: '',
+    unidadDosis: 'mg',
     frecuencia: '',
     via: 'ORAL',
-    duracion: ''
+    duracion: '',
+    cantidad: 1
   });
+
+  // Prescription medication search states
+  const [medicationSearch, setMedicationSearch] = useState('');
+  const [medicationResults, setMedicationResults] = useState([]);
+  const [searchingMedications, setSearchingMedications] = useState(false);
+  const [showMedicationDropdown, setShowMedicationDropdown] = useState(false);
+  const medicationSearchRef = useRef(null);
+  const searchTimeoutRef = useRef(null);
+
+  // Common frequency and duration options
+  const frequencyOptions = [
+    { value: 'cada 8 horas', label: 'Cada 8 horas' },
+    { value: 'cada 12 horas', label: 'Cada 12 horas' },
+    { value: 'cada 24 horas', label: 'Cada 24 horas' },
+    { value: '1 vez al día', label: '1 vez al día' },
+    { value: '2 veces al día', label: '2 veces al día' },
+    { value: '3 veces al día', label: '3 veces al día' },
+    { value: 'cada 6 horas', label: 'Cada 6 horas' },
+    { value: 'cada 4 horas', label: 'Cada 4 horas' },
+    { value: 'dosis única', label: 'Dosis única' },
+    { value: 'según necesidad', label: 'Según necesidad (PRN)' }
+  ];
+
+  const durationOptions = [
+    { value: '3 días', label: '3 días' },
+    { value: '5 días', label: '5 días' },
+    { value: '7 días', label: '7 días' },
+    { value: '10 días', label: '10 días' },
+    { value: '14 días', label: '14 días' },
+    { value: '21 días', label: '21 días' },
+    { value: '30 días', label: '30 días' },
+    { value: 'continuo', label: 'Continuo/Indefinido' },
+    { value: 'dosis única', label: 'Dosis única' }
+  ];
+
+  const dosisUnitOptions = [
+    { value: 'mg', label: 'mg' },
+    { value: 'ml', label: 'ml' },
+    { value: 'g', label: 'g' },
+    { value: 'UI', label: 'UI' },
+    { value: 'gotas', label: 'gotas' },
+    { value: 'tabletas', label: 'tableta(s)' },
+    { value: 'capsulas', label: 'cápsula(s)' },
+    { value: 'aplicaciones', label: 'aplicación(es)' }
+  ];
+
+  // Helper para convertir tipo de estudio a label legible
+  const tipoLabToLabel = (tipo) => {
+    const labels = {
+      HEMOGRAMA: 'Hemograma',
+      QUIMICA_SANGUINEA: 'Química Sanguínea',
+      URINALISIS: 'Urianálisis',
+      RAYOS_X: 'Rayos X',
+      ULTRASONIDO: 'Ultrasonido',
+      ELECTROCARDIOGRAMA: 'Electrocardiograma',
+      CITOLOGIA: 'Citología',
+      BIOPSIA: 'Biopsia',
+      COPROLOGIA: 'Coprología',
+      PERFIL_TIROIDEO: 'Perfil Tiroideo',
+    };
+    return labels[tipo] || tipo;
+  };
+
+  // Helper para descargar archivos base64 o URL
+  const downloadFile = (fileData, fileName) => {
+    try {
+      const link = document.createElement('a');
+      if (fileData.startsWith('data:')) {
+        // Es base64
+        link.href = fileData;
+        link.download = fileName || 'archivo';
+      } else {
+        // Es URL
+        link.href = fileData;
+        link.download = fileName || fileData.split('/').pop() || 'archivo';
+        link.target = '_blank';
+      }
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    } catch (error) {
+      console.error('Error downloading file:', error);
+    }
+  };
+
+  // Helper para abrir imagen en visor
+  const openImageViewer = (src, name) => {
+    setViewerImage({ src, name });
+    setShowImageViewer(true);
+  };
 
   const [labOrderForm, setLabOrderForm] = useState({
     estudios: [],
@@ -131,6 +244,58 @@ function MedicoDashboard() {
     }
   }, [error, clearError]);
 
+  // Cargar resultados de laboratorio
+  const loadLabResults = useCallback(async () => {
+    setLoadingLabResults(true);
+    try {
+      const results = await laboratorioService.getResultados();
+      setLabResults(results || []);
+    } catch (err) {
+      console.error('Error cargando resultados de lab:', err);
+      setLabResults([]);
+    } finally {
+      setLoadingLabResults(false);
+    }
+  }, []);
+
+  // Cargar resultados al mostrar el panel
+  useEffect(() => {
+    if (showLabResultsPanel) {
+      loadLabResults();
+    }
+  }, [showLabResultsPanel, loadLabResults]);
+
+  // Agendar cita de seguimiento desde resultados de lab
+  const handleAgendarCitaSeguimiento = async () => {
+    if (!selectedLabResult || !agendarCitaForm.fecha || !agendarCitaForm.hora || !agendarCitaForm.motivo) {
+      setLocalError('Completa todos los campos para agendar la cita');
+      return;
+    }
+
+    setSavingCitaSeguimiento(true);
+    try {
+      await citaSeguimientoService.crear({
+        petId: selectedLabResult.petId,
+        labRequestId: selectedLabResult.id,
+        motivo: agendarCitaForm.motivo,
+        fecha: agendarCitaForm.fecha,
+        hora: agendarCitaForm.hora,
+        notas: `Seguimiento por resultado de ${tipoLabToLabel(selectedLabResult.type)}`
+      });
+
+      // Limpiar y cerrar
+      setShowAgendarCitaModal(false);
+      setSelectedLabResult(null);
+      setAgendarCitaForm({ fecha: '', hora: '10:00', motivo: '' });
+      loadLabResults(); // Recargar para ver actualización
+    } catch (err) {
+      console.error('Error agendando cita:', err);
+      setLocalError('Error al agendar la cita: ' + (err.message || 'Error desconocido'));
+    } finally {
+      setSavingCitaSeguimiento(false);
+    }
+  };
+
   // Studies options (backend enums)
   const studiesOptions = [
     { id: 'HEMOGRAMA', name: t('medico.studies.hemograma', 'Complete Blood Count') },
@@ -154,6 +319,67 @@ function MedicoDashboard() {
     'Meloxicam 7.5mg',
     'Omeprazol 20mg'
   ];
+
+  // Medication search effect with debounce
+  useEffect(() => {
+    if (searchTimeoutRef.current) {
+      clearTimeout(searchTimeoutRef.current);
+    }
+
+    if (medicationSearch.length < 2) {
+      setMedicationResults([]);
+      setShowMedicationDropdown(false);
+      return;
+    }
+
+    searchTimeoutRef.current = setTimeout(async () => {
+      setSearchingMedications(true);
+      try {
+        const results = await farmaciaService.getMedications({ search: medicationSearch });
+        setMedicationResults(results);
+        setShowMedicationDropdown(true);
+      } catch (err) {
+        console.error('[MedicoDashboard] Error searching medications:', err);
+        setMedicationResults([]);
+      } finally {
+        setSearchingMedications(false);
+      }
+    }, 300);
+
+    return () => {
+      if (searchTimeoutRef.current) {
+        clearTimeout(searchTimeoutRef.current);
+      }
+    };
+  }, [medicationSearch]);
+
+  // Close medication dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (medicationSearchRef.current && !medicationSearchRef.current.contains(event.target)) {
+        setShowMedicationDropdown(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  // Select medication from search results
+  const handleSelectMedication = useCallback((medication) => {
+    const stock = medication.currentStock ?? medication.stockActual ?? 0;
+    setCurrentMedication(prev => ({
+      ...prev,
+      medicationId: medication.id,
+      nombre: medication.name || medication.nombre,
+      presentacion: medication.presentation || medication.presentacion || '',
+      concentracion: medication.concentration || medication.concentracion || '',
+      stockDisponible: stock,
+      unidadDosis: medication.unit || 'mg'
+    }));
+    setMedicationSearch('');
+    setShowMedicationDropdown(false);
+    setMedicationResults([]);
+  }, []);
 
   const handleSelectPatient = useCallback(async (patient) => {
     console.log('[handleSelectPatient] patient:', patient);
@@ -204,16 +430,45 @@ function MedicoDashboard() {
       return;
     }
     
-    // Si ya tiene una consulta activa, solo establecerla sin crear nueva
+    // Si ya tiene una consulta activa, cargar datos existentes
     if (patient.consultationId) {
-      console.log('[handleStartConsultation] Paciente ya tiene consulta, estableciendo como activa:', patient.consultationId);
-      setActiveConsultation({
-        id: patient.consultationId,
-        patientId: patient.id,
-        visitId: patient.visitId,
-        status: 'IN_PROGRESS'
-      });
-      setSelectedPatient(patient);
+      console.log('[handleStartConsultation] Paciente ya tiene consulta, cargando datos existentes:', patient.consultationId);
+      
+      // Cargar datos completos de la consulta primero
+      try {
+        const { consultaService } = await import('../../services/medico.service');
+        const consultaData = await consultaService.getById(patient.consultationId);
+        
+        setActiveConsultation({
+          id: patient.consultationId,
+          patientId: patient.id,
+          visitId: patient.visitId,
+          startTime: consultaData?.startTime || new Date().toISOString(),
+          status: 'IN_PROGRESS'
+        });
+        setSelectedPatient(patient);
+        
+        if (consultaData?.physicalExam) {
+          try {
+            const examData = JSON.parse(consultaData.physicalExam);
+            setExamenFisicoData(examData);
+            console.log('[handleStartConsultation] Examen físico cargado:', examData);
+          } catch (e) {
+            console.error('Error parsing physicalExam:', e);
+          }
+        }
+      } catch (err) {
+        console.error('Error loading consultation data:', err);
+        // Fallback: establecer consulta sin datos adicionales
+        setActiveConsultation({
+          id: patient.consultationId,
+          patientId: patient.id,
+          visitId: patient.visitId,
+          startTime: new Date().toISOString(),
+          status: 'IN_PROGRESS'
+        });
+        setSelectedPatient(patient);
+      }
       return;
     }
     
@@ -231,8 +486,7 @@ function MedicoDashboard() {
         });
         console.log('[handleStartConsultation] activeConsultation establecido con id:', consulta.id);
         setSelectedPatient(patient);
-        setConsultationNotes({ subjetivo: '', objetivo: '', analisis: '', plan: '' });
-        setSavedSections({ subjetivo: false, objetivo: false, analisis: false, plan: false });
+        setExamenFisicoData(null); // Limpiar examen físico para nueva consulta
       }
     } catch (err) {
       console.error('[handleStartConsultation] Error:', err);
@@ -250,57 +504,24 @@ function MedicoDashboard() {
     
     setLocalLoading(true);
     try {
+      // Use existing consultation data or defaults
+      const diagnosis = activeConsultation.diagnosis || activeConsultation.soapAssessment || 'Consulta completada';
+      const soapPlan = activeConsultation.soapPlan || activeConsultation.treatment || 'Plan de tratamiento establecido';
+      
       await completarConsulta(activeConsultation.id, {
-        diagnosis: consultationNotes.analisis || 'Consultation completed',
-        soapPlan: consultationNotes.plan || 'Follow-up as indicated',
+        diagnosis,
+        soapPlan,
       });
       
       setActiveConsultation(null);
       setSelectedPatient(null);
-      setConsultationNotes({ subjetivo: '', objetivo: '', analisis: '', plan: '' });
-      setSavedSections({ subjetivo: false, objetivo: false, analisis: false, plan: false });
+      setExamenFisicoData(null);
     } catch (err) {
       setLocalError(err.message || t('medico.errors.endConsultation', 'Error ending consultation'));
     } finally {
       setLocalLoading(false);
     }
-  }, [selectedPatient, activeConsultation, consultationNotes, completarConsulta, t]);
-
-  // Save individual SOAP section
-  const handleSaveSOAPSection = useCallback(async (section) => {
-    if (!activeConsultation?.id) {
-      setLocalError(t('medico.errors.noActiveConsultation', 'No active consultation'));
-      return;
-    }
-    
-    const value = consultationNotes[section];
-    if (!value || value.trim() === '') {
-      return; // Don't save if empty
-    }
-    
-    setLocalLoading(true);
-    try {
-      // Mapear nombres de campo frontend a backend
-      const fieldMap = {
-        subjetivo: 'soapSubjective',
-        objetivo: 'soapObjective',
-        analisis: 'soapAssessment',
-        plan: 'soapPlan'
-      };
-      
-      await actualizarConsulta(activeConsultation.id, {
-        [fieldMap[section]]: value
-      });
-      
-      // Marcar la sección como guardada
-      setSavedSections(prev => ({ ...prev, [section]: true }));
-    } catch (err) {
-      console.error(`Error guardando ${section}:`, err);
-      setLocalError(err.message || t('medico.errors.saveSOAP', 'Error saving notes'));
-    } finally {
-      setLocalLoading(false);
-    }
-  }, [activeConsultation, consultationNotes, actualizarConsulta, t]);
+  }, [selectedPatient, activeConsultation, completarConsulta, t]);
 
   const handleSaveVitals = useCallback(async () => {
     if (!activeConsultation) {
@@ -369,19 +590,32 @@ function MedicoDashboard() {
   }, [activeConsultation, diagnosisForm, agregarDiagnostico, t]);
 
   const handleAddMedication = useCallback(() => {
-    if (!currentMedication.nombre || !currentMedication.dosis) return;
+    if (!currentMedication.nombre || !currentMedication.dosis || !currentMedication.frecuencia) return;
+    
+    // Format dosis with unit
+    const dosisCompleta = `${currentMedication.dosis} ${currentMedication.unidadDosis}`;
     
     setPrescriptionForm(prev => ({
       ...prev,
-      medicamentos: [...prev.medicamentos, { ...currentMedication, id: Date.now() }]
+      medicamentos: [...prev.medicamentos, { 
+        ...currentMedication, 
+        dosis: dosisCompleta,
+        id: Date.now() 
+      }]
     }));
     
     setCurrentMedication({
+      medicationId: null,
       nombre: '',
+      presentacion: '',
+      concentracion: '',
+      stockDisponible: 0,
       dosis: '',
+      unidadDosis: 'mg',
       frecuencia: '',
       via: 'ORAL',
-      duracion: ''
+      duracion: '',
+      cantidad: 1
     });
   }, [currentMedication]);
 
@@ -412,11 +646,13 @@ function MedicoDashboard() {
       await crearReceta(activeConsultation.id, {
         petId: selectedPatient.id,
         items: prescriptionForm.medicamentos.map(m => ({
+          medicationId: m.medicationId || undefined,
           nombre: m.nombre,
           dosis: m.dosis,
           frecuencia: m.frecuencia,
-          duracion: m.duracion || '7 days',
-          cantidad: 1
+          via: m.via,
+          duracion: m.duracion || '7 días',
+          cantidad: m.cantidad || 1
         })),
         instruccionesGenerales: prescriptionForm.instrucciones || undefined
       });
@@ -534,7 +770,7 @@ function MedicoDashboard() {
     if (consultas && Array.isArray(consultas)) {
       consultas.forEach(consulta => {
         const detalles = {
-          soap: {},
+          examenFisico: null,
           diagnosticos: [],
           signosVitales: null,
           recetas: [],
@@ -542,11 +778,15 @@ function MedicoDashboard() {
           notas: consulta.notes || null
         };
         
-        // SOAP Notes
-        if (consulta.soapSubjective) detalles.soap.subjetivo = consulta.soapSubjective;
-        if (consulta.soapObjective) detalles.soap.objetivo = consulta.soapObjective;
-        if (consulta.soapAssessment) detalles.soap.analisis = consulta.soapAssessment;
-        if (consulta.soapPlan) detalles.soap.plan = consulta.soapPlan;
+        // Examen Físico
+        if (consulta.physicalExam) {
+          try {
+            detalles.examenFisico = JSON.parse(consulta.physicalExam);
+          } catch (e) {
+            console.error('Error parsing physicalExam:', e);
+            detalles.examenFisico = { raw: consulta.physicalExam };
+          }
+        }
         
         // Diagnósticos
         if (consulta.diagnosticos && consulta.diagnosticos.length > 0) {
@@ -595,11 +835,12 @@ function MedicoDashboard() {
         if (consulta.labRequests && consulta.labRequests.length > 0) {
           detalles.laboratorios = consulta.labRequests.map(lab => ({
             id: lab.id,
-            tipo: lab.testType,
-            prioridad: lab.priority,
+            tipo: lab.type,
+            prioridad: lab.urgency,
             estado: lab.status,
             notas: lab.notes,
             resultados: lab.results,
+            archivos: lab.resultFiles,
             fechaSolicitud: lab.requestedAt,
             fechaResultado: lab.completedAt
           }));
@@ -608,7 +849,7 @@ function MedicoDashboard() {
         history.push({
           timestamp: consulta.startTime,
           endTime: consulta.endTime,
-          accion: `Consultation${consulta.status === 'COMPLETADA' ? ' Completed' : ''}`,
+          accion: `Consulta${consulta.status === 'COMPLETADA' ? ' Completada' : ''}`,
           tipo: 'consulta',
           status: consulta.status,
           detalles: detalles,
@@ -704,7 +945,7 @@ function MedicoDashboard() {
     if (selectedPatient.consultations && Array.isArray(selectedPatient.consultations)) {
       selectedPatient.consultations.forEach(consulta => {
         const detalles = {
-          soap: {},
+          examenFisico: null,
           diagnosticos: [],
           signosVitales: null,
           recetas: [],
@@ -712,11 +953,15 @@ function MedicoDashboard() {
           notas: consulta.notes || null
         };
         
-        // SOAP Notes
-        if (consulta.soapSubjective) detalles.soap.subjetivo = consulta.soapSubjective;
-        if (consulta.soapObjective) detalles.soap.objetivo = consulta.soapObjective;;
-        if (consulta.soapAssessment) detalles.soap.analisis = consulta.soapAssessment;
-        if (consulta.soapPlan) detalles.soap.plan = consulta.soapPlan;
+        // Examen Físico
+        if (consulta.physicalExam) {
+          try {
+            detalles.examenFisico = JSON.parse(consulta.physicalExam);
+          } catch (e) {
+            console.error('Error parsing physicalExam:', e);
+            detalles.examenFisico = { raw: consulta.physicalExam };
+          }
+        }
         
         // Diagnósticos
         if (consulta.diagnosticos && consulta.diagnosticos.length > 0) {
@@ -765,11 +1010,12 @@ function MedicoDashboard() {
         if (consulta.labRequests && consulta.labRequests.length > 0) {
           detalles.laboratorios = consulta.labRequests.map(lab => ({
             id: lab.id,
-            tipo: lab.testType,
-            prioridad: lab.priority,
+            tipo: lab.type,
+            prioridad: lab.urgency,
             estado: lab.status,
             notas: lab.notes,
             resultados: lab.results,
+            archivos: lab.resultFiles,
             fechaSolicitud: lab.requestedAt,
             fechaResultado: lab.completedAt
           }));
@@ -1057,6 +1303,99 @@ function MedicoDashboard() {
             </div>
           )}
         </div>
+
+        {/* Botón para ver Resultados de Laboratorio */}
+        <div className="lab-results-toggle">
+          <button 
+            className={`lab-results-btn ${showLabResultsPanel ? 'active' : ''}`}
+            onClick={() => setShowLabResultsPanel(!showLabResultsPanel)}
+          >
+            <span className="icon">🧪</span>
+            {t('medico.labResults', 'Resultados de Lab')}
+            {labResults.length > 0 && <span className="badge-count">{labResults.length}</span>}
+          </button>
+        </div>
+
+        {/* Panel de Resultados de Laboratorio */}
+        {showLabResultsPanel && (
+          <div className="lab-results-section">
+            <div className="section-header">
+              <h4>
+                <span className="icon">🧪</span>
+                {t('medico.completedLabResults', 'Resultados Completados')}
+              </h4>
+              <button className="refresh-btn" onClick={loadLabResults} disabled={loadingLabResults}>
+                🔄
+              </button>
+            </div>
+
+            {loadingLabResults ? (
+              <div className="loading-state">
+                <span className="spinner">⏳</span>
+                <p>Cargando resultados...</p>
+              </div>
+            ) : labResults.length === 0 ? (
+              <div className="empty-state small">
+                <span className="empty-icon">📋</span>
+                <p>No hay resultados de laboratorio pendientes de revisar</p>
+              </div>
+            ) : (
+              <div className="lab-results-list">
+                {labResults.map(result => (
+                  <div key={result.id} className="lab-result-card">
+                    <div className="lab-result-header">
+                      <span className="lab-type-badge">{tipoLabToLabel(result.type)}</span>
+                      <span className="lab-date">{new Date(result.completedAt || result.updatedAt).toLocaleDateString()}</span>
+                    </div>
+                    <div className="lab-result-info">
+                      <div className="patient-row">
+                        <span className="pet-icon">{result.pet?.especie === 'PERRO' ? '🐕' : '🐈'}</span>
+                        <span className="patient-name">{result.pet?.nombre}</span>
+                      </div>
+                      <div className="owner-row">
+                        <span className="owner-icon">👤</span>
+                        <span className="owner-name">{result.pet?.owner?.nombre}</span>
+                        {result.pet?.owner?.telefono && (
+                          <span className="owner-phone">📱 {result.pet.owner.telefono}</span>
+                        )}
+                      </div>
+                      {result.resultNotes && (
+                        <div className="result-notes">
+                          <strong>Resultado:</strong> {result.resultNotes.substring(0, 100)}...
+                        </div>
+                      )}
+                    </div>
+                    <div className="lab-result-actions">
+                      <button 
+                        className="btn-view-result"
+                        onClick={() => {
+                          setSelectedLabResult(result);
+                          setShowLabResultDetailModal(true);
+                        }}
+                      >
+                        👁️ Ver
+                      </button>
+                      <button 
+                        className="btn-schedule-followup"
+                        onClick={() => {
+                          setSelectedLabResult(result);
+                          setAgendarCitaForm({
+                            fecha: '',
+                            hora: '10:00',
+                            motivo: `Seguimiento por resultado de ${tipoLabToLabel(result.type)}`
+                          });
+                          setShowAgendarCitaModal(true);
+                        }}
+                      >
+                        📅 Agendar Cita
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
       </aside>
 
       {/* CENTER PANEL - Active Consultation Workspace */}
@@ -1149,6 +1488,15 @@ function MedicoDashboard() {
                     <span className="detail-value">{selectedPatient.temperatura ? `${selectedPatient.temperatura}°C` : 'Not recorded'}</span>
                   </div>
                 </div>
+                {selectedPatient.antecedentes && (
+                  <div className="detail-card full-width">
+                    <span className="detail-icon">📋</span>
+                    <div className="detail-content">
+                      <span className="detail-label">Antecedentes (Triage)</span>
+                      <span className="detail-value">{selectedPatient.antecedentes}</span>
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
 
@@ -1259,106 +1607,57 @@ function MedicoDashboard() {
               </div>
               <div className="consultation-timer">
                 <span className="timer-label">{t('medico.consultationTime', 'Tiempo')}</span>
-                <span className="timer-value">{new Date(activeConsultation.startTime).toLocaleTimeString()}</span>
+                <span className="timer-value">
+                  {activeConsultation.startTime 
+                    ? new Date(activeConsultation.startTime).toLocaleTimeString() 
+                    : '--:--'}
+                </span>
               </div>
             </div>
 
-            <div className="soap-notes">
-              <div className="soap-section">
-                <div className="soap-header">
-                  <label><span className="soap-letter">S</span>{t('medico.subjective', 'Subjetivo')}</label>
-                  <button 
-                    className={`soap-save-btn ${savedSections.subjetivo ? 'saved' : ''}`}
-                    onClick={() => handleSaveSOAPSection('subjetivo')}
-                    disabled={!consultationNotes.subjetivo || localLoading}
-                    title={savedSections.subjetivo ? 'Saved' : 'Save'}
-                  >
-                    {savedSections.subjetivo ? '✓' : '💾'}
-                  </button>
-                </div>
-                <textarea
-                  placeholder={t('medico.subjectivePlaceholder', 'Clinical history, symptoms reported by the owner...')}
-                  value={consultationNotes.subjetivo}
-                  onChange={(e) => {
-                    setConsultationNotes(prev => ({ ...prev, subjetivo: e.target.value }));
-                    setSavedSections(prev => ({ ...prev, subjetivo: false }));
-                  }}
-                  rows="3"
-                />
-              </div>
-              
-              <div className="soap-section">
-                <div className="soap-header">
-                  <label><span className="soap-letter">O</span>{t('medico.objective', 'Objective')}</label>
-                  <button 
-                    className={`soap-save-btn ${savedSections.objetivo ? 'saved' : ''}`}
-                    onClick={() => handleSaveSOAPSection('objetivo')}
-                    disabled={!consultationNotes.objetivo || localLoading}
-                    title={savedSections.objetivo ? 'Saved' : 'Save'}
-                  >
-                    {savedSections.objetivo ? '✓' : '💾'}
-                  </button>
-                </div>
-                <textarea
-                  placeholder={t('medico.objectivePlaceholder', 'Physical exam findings, vital signs...')}
-                  value={consultationNotes.objetivo}
-                  onChange={(e) => {
-                    setConsultationNotes(prev => ({ ...prev, objetivo: e.target.value }));
-                    setSavedSections(prev => ({ ...prev, objetivo: false }));
-                  }}
-                  rows="3"
-                />
-              </div>
-              
-              <div className="soap-section">
-                <div className="soap-header">
-                  <label><span className="soap-letter">A</span>{t('medico.assessment', 'Assessment')}</label>
-                  <button 
-                    className={`soap-save-btn ${savedSections.analisis ? 'saved' : ''}`}
-                    onClick={() => handleSaveSOAPSection('analisis')}
-                    disabled={!consultationNotes.analisis || localLoading}
-                    title={savedSections.analisis ? 'Saved' : 'Save'}
-                  >
-                    {savedSections.analisis ? '✓' : '💾'}
-                  </button>
-                </div>
-                <textarea
-                  placeholder={t('medico.assessmentPlaceholder', 'Differential diagnosis, interpretation...')}
-                  value={consultationNotes.analisis}
-                  onChange={(e) => {
-                    setConsultationNotes(prev => ({ ...prev, analisis: e.target.value }));
-                    setSavedSections(prev => ({ ...prev, analisis: false }));
-                  }}
-                  rows="3"
-                />
-              </div>
-              
-              <div className="soap-section">
-                <div className="soap-header">
-                  <label><span className="soap-letter">P</span>{t('medico.plan', 'Plan')}</label>
-                  <button 
-                    className={`soap-save-btn ${savedSections.plan ? 'saved' : ''}`}
-                    onClick={() => handleSaveSOAPSection('plan')}
-                    disabled={!consultationNotes.plan || localLoading}
-                    title={savedSections.plan ? 'Saved' : 'Save'}
-                  >
-                    {savedSections.plan ? '✓' : '💾'}
-                  </button>
-                </div>
-                <textarea
-                  placeholder={t('medico.planPlaceholder', 'Treatment plan, follow-up...')}
-                  value={consultationNotes.plan}
-                  onChange={(e) => {
-                    setConsultationNotes(prev => ({ ...prev, plan: e.target.value }));
-                    setSavedSections(prev => ({ ...prev, plan: false }));
-                  }}
-                  rows="3"
-                />
-              </div>
+            {/* Examen Físico Estructurado */}
+            <div className="examen-fisico-container">
+              <ExamenFisico
+                consultationId={activeConsultation?.id}
+                initialData={examenFisicoData}
+                triageData={{
+                  peso: selectedPatient?.peso,
+                  temperatura: selectedPatient?.temperatura
+                }}
+                loading={localLoading}
+                onSave={async (examData) => {
+                  setLocalLoading(true);
+                  try {
+                    // Guardar el examen físico en el campo physicalExam como JSON
+                    await actualizarConsulta(activeConsultation.id, {
+                      physicalExam: JSON.stringify(examData),
+                      // También extraer signos vitales del examen general para campos individuales
+                      ...(examData.general?.temperatura && { vitalTemperature: parseFloat(examData.general.temperatura) }),
+                      ...(examData.general?.frecuenciaCardiaca && { vitalHeartRate: parseInt(examData.general.frecuenciaCardiaca) }),
+                      ...(examData.general?.frecuenciaRespiratoria && { vitalRespiratoryRate: parseInt(examData.general.frecuenciaRespiratoria) }),
+                      ...(examData.general?.peso && { vitalWeight: parseFloat(examData.general.peso) }),
+                      ...(examData.general?.hidratacion && { vitalHydration: examData.general.hidratacion }),
+                    });
+                    setExamenFisicoData(examData);
+                  } catch (err) {
+                    setLocalError(err.message || 'Error guardando examen físico');
+                  } finally {
+                    setLocalLoading(false);
+                  }
+                }}
+              />
             </div>
 
             <div className="quick-actions">
-              <button className="action-btn vitals" onClick={() => setShowVitalsModal(true)}>
+              <button className="action-btn vitals" onClick={() => {
+                // Pre-cargar datos del triage si existen
+                setVitalsForm(prev => ({
+                  ...prev,
+                  peso: selectedPatient?.peso || prev.peso,
+                  temperatura: selectedPatient?.temperatura || prev.temperatura,
+                }));
+                setShowVitalsModal(true);
+              }}>
                 🌡️ {t('medico.recordVitals', 'Signos Vitales')}
               </button>
               <button className="action-btn diagnosis" onClick={() => setShowDiagnosisModal(true)}>
@@ -1372,6 +1671,20 @@ function MedicoDashboard() {
               </button>
               <button className="action-btn hospital" onClick={() => setShowHospitalizationModal(true)}>
                 🏥 {t('medico.hospitalize', 'Hospitalizar')}
+              </button>
+              <button className="action-btn followup" onClick={() => {
+                // Pre-llenar el motivo con info del diagnóstico si existe
+                const tomorrow = new Date();
+                tomorrow.setDate(tomorrow.getDate() + 7); // Default: 1 week from now
+                setFollowUpForm({
+                  fecha: tomorrow.toISOString().split('T')[0],
+                  hora: '10:00',
+                  tipo: 'SEGUIMIENTO',
+                  motivo: `Seguimiento de consulta - ${selectedPatient?.nombre || 'Paciente'}`
+                });
+                setShowFollowUpModal(true);
+              }}>
+                📅 {t('medico.scheduleFollowUp', 'Agendar Seguimiento')}
               </button>
             </div>
 
@@ -1467,7 +1780,14 @@ function MedicoDashboard() {
                   📋 {t('medico.viewFullHistory', 'View Full History')}
                 </button>
                 {selectedPatient.estado === 'HOSPITALIZADO' && (
-                  <button className="quick-action-btn" onClick={() => setShowVitalsModal(true)}>
+                  <button className="quick-action-btn" onClick={() => {
+                    setVitalsForm(prev => ({
+                      ...prev,
+                      peso: selectedPatient?.peso || prev.peso,
+                      temperatura: selectedPatient?.temperatura || prev.temperatura,
+                    }));
+                    setShowVitalsModal(true);
+                  }}>
                     📝 {t('medico.recordMonitoring', 'Record Monitoring')}
                   </button>
                 )}
@@ -1594,49 +1914,203 @@ function MedicoDashboard() {
       {/* Prescription Modal */}
       {showPrescriptionModal && (
         <div className="modal-overlay" onClick={() => setShowPrescriptionModal(false)}>
-          <div className="modal-content large" onClick={e => e.stopPropagation()}>
+          <div className="modal-content large prescription-modal" onClick={e => e.stopPropagation()}>
             <h2>💊 {t('medico.createPrescription', 'Create Prescription')}</h2>
-            <div className="quick-medications">
-              <p>{t('medico.commonMedications', 'Common medications')}:</p>
-              <div className="med-chips">
-                {commonMedications.map(med => (
-                  <button key={med} className="med-chip" onClick={() => setCurrentMedication(prev => ({ ...prev, nombre: med }))}>+ {med}</button>
-                ))}
+            
+            {/* Medication Search */}
+            <div className="medication-search-section">
+              <label>{t('medico.searchMedication', 'Search medication in inventory')}</label>
+              <div className="medication-search-container" ref={medicationSearchRef}>
+                <div className="search-input-wrapper">
+                  <input 
+                    type="text" 
+                    className="form-control search-medication-input" 
+                    placeholder={t('medico.searchMedicationPlaceholder', 'Type to search medications...')} 
+                    value={currentMedication.nombre || medicationSearch}
+                    onChange={(e) => {
+                      if (currentMedication.medicationId) {
+                        // Clear selected medication and start new search
+                        setCurrentMedication(prev => ({
+                          ...prev,
+                          medicationId: null,
+                          nombre: '',
+                          presentacion: '',
+                          concentracion: '',
+                          stockDisponible: 0
+                        }));
+                      }
+                      setMedicationSearch(e.target.value);
+                    }}
+                  />
+                  {searchingMedications && <span className="search-spinner">⏳</span>}
+                  {currentMedication.medicationId && (
+                    <button 
+                      className="clear-selection-btn" 
+                      onClick={() => {
+                        setCurrentMedication(prev => ({
+                          ...prev,
+                          medicationId: null,
+                          nombre: '',
+                          presentacion: '',
+                          concentracion: '',
+                          stockDisponible: 0
+                        }));
+                        setMedicationSearch('');
+                      }}
+                    >✕</button>
+                  )}
+                </div>
+                
+                {/* Search Results Dropdown */}
+                {showMedicationDropdown && medicationResults.length > 0 && (
+                  <div className="medication-search-dropdown">
+                    {medicationResults.map(med => {
+                      const stock = med.currentStock ?? med.stockActual ?? 0;
+                      return (
+                        <div 
+                          key={med.id} 
+                          className={`medication-search-item ${stock === 0 ? 'out-of-stock' : ''}`}
+                          onClick={() => stock > 0 && handleSelectMedication(med)}
+                        >
+                          <div className="med-search-info">
+                            <strong>{med.name || med.nombre}</strong>
+                            <span className="med-details">
+                              {med.presentation || med.presentacion} {(med.concentration || med.concentracion) && `- ${med.concentration || med.concentracion}`}
+                            </span>
+                          </div>
+                          <div className="med-stock-badge">
+                            <span className={`stock-indicator ${stock > 10 ? 'high' : stock > 0 ? 'low' : 'empty'}`}>
+                              {stock > 0 ? `${stock} disponibles` : 'Sin stock'}
+                            </span>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+                
+                {showMedicationDropdown && medicationResults.length === 0 && medicationSearch.length >= 2 && !searchingMedications && (
+                  <div className="medication-search-dropdown">
+                    <div className="no-results">{t('medico.noMedicationsFound', 'No medications found')}</div>
+                  </div>
+                )}
               </div>
+              
+              {/* Selected Medication Info */}
+              {currentMedication.medicationId && (
+                <div className="selected-medication-info">
+                  <div className="med-selected-badge">✓ {t('medico.medicationSelected', 'Selected')}</div>
+                  <div className="med-selected-details">
+                    <strong>{currentMedication.nombre}</strong>
+                    {currentMedication.presentacion && <span> • {currentMedication.presentacion}</span>}
+                    {currentMedication.concentracion && <span> • {currentMedication.concentracion}</span>}
+                    <span className="stock-available"> • Stock: {currentMedication.stockDisponible}</span>
+                  </div>
+                </div>
+              )}
             </div>
+
+            {/* Fallback: Quick medications for when API is not available */}
+            {!currentMedication.medicationId && (
+              <div className="quick-medications">
+                <p>{t('medico.orSelectCommon', 'Or select a common medication')}:</p>
+                <div className="med-chips">
+                  {commonMedications.map(med => (
+                    <button key={med} className="med-chip" onClick={() => setCurrentMedication(prev => ({ ...prev, nombre: med }))}>+ {med}</button>
+                  ))}
+                </div>
+              </div>
+            )}
+            
+            {/* Dosage Form */}
             <div className="add-medication-form">
               <div className="form-row">
-                <div className="form-group">
-                  <label>{t('medico.medicationName', 'Medication')}</label>
-                  <input type="text" className="form-control" placeholder={t('medico.medicationNamePlaceholder', 'Medication name')} value={currentMedication.nombre} onChange={(e) => setCurrentMedication(prev => ({ ...prev, nombre: e.target.value }))} />
+                <div className="form-group dose-group">
+                  <label>{t('medico.dose', 'Dose')} *</label>
+                  <div className="dose-input-group">
+                    <input 
+                      type="number" 
+                      className="form-control dose-amount" 
+                      placeholder="500" 
+                      value={currentMedication.dosis} 
+                      onChange={(e) => setCurrentMedication(prev => ({ ...prev, dosis: e.target.value }))} 
+                      min="0"
+                      step="0.01"
+                    />
+                    <select 
+                      className="form-control dose-unit" 
+                      value={currentMedication.unidadDosis} 
+                      onChange={(e) => setCurrentMedication(prev => ({ ...prev, unidadDosis: e.target.value }))}
+                    >
+                      {dosisUnitOptions.map(opt => (
+                        <option key={opt.value} value={opt.value}>{opt.label}</option>
+                      ))}
+                    </select>
+                  </div>
                 </div>
                 <div className="form-group">
-                  <label>{t('medico.dose', 'Dose')}</label>
-                  <input type="text" className="form-control" placeholder="e.g: 500mg" value={currentMedication.dosis} onChange={(e) => setCurrentMedication(prev => ({ ...prev, dosis: e.target.value }))} />
+                  <label>{t('medico.frequency', 'Frequency')} *</label>
+                  <select 
+                    className="form-control" 
+                    value={currentMedication.frecuencia} 
+                    onChange={(e) => setCurrentMedication(prev => ({ ...prev, frecuencia: e.target.value }))}
+                  >
+                    <option value="">{t('medico.selectFrequency', 'Select frequency...')}</option>
+                    {frequencyOptions.map(opt => (
+                      <option key={opt.value} value={opt.value}>{opt.label}</option>
+                    ))}
+                  </select>
                 </div>
               </div>
               <div className="form-row">
-                <div className="form-group">
-                  <label>{t('medico.frequency', 'Frequency')}</label>
-                  <input type="text" className="form-control" placeholder="e.g: Every 8 hours" value={currentMedication.frecuencia} onChange={(e) => setCurrentMedication(prev => ({ ...prev, frecuencia: e.target.value }))} />
-                </div>
                 <div className="form-group">
                   <label>{t('medico.route', 'Route')}</label>
                   <select className="form-control" value={currentMedication.via} onChange={(e) => setCurrentMedication(prev => ({ ...prev, via: e.target.value }))}>
                     <option value="ORAL">Oral</option>
-                    <option value="INYECTABLE">Injectable</option>
-                    <option value="TOPICO">Topical</option>
-                    <option value="OFTALMICA">Ophthalmic</option>
-                    <option value="OTICA">Otic</option>
+                    <option value="INYECTABLE">Inyectable</option>
+                    <option value="SUBCUTANEO">Subcutáneo</option>
+                    <option value="INTRAMUSCULAR">Intramuscular</option>
+                    <option value="INTRAVENOSO">Intravenoso</option>
+                    <option value="TOPICO">Tópico</option>
+                    <option value="OFTALMICA">Oftálmico</option>
+                    <option value="OTICA">Ótico</option>
+                    <option value="RECTAL">Rectal</option>
                   </select>
                 </div>
                 <div className="form-group">
                   <label>{t('medico.duration', 'Duration')}</label>
-                  <input type="text" className="form-control" placeholder="e.g: 7 days" value={currentMedication.duracion} onChange={(e) => setCurrentMedication(prev => ({ ...prev, duracion: e.target.value }))} />
+                  <select 
+                    className="form-control" 
+                    value={currentMedication.duracion} 
+                    onChange={(e) => setCurrentMedication(prev => ({ ...prev, duracion: e.target.value }))}
+                  >
+                    <option value="">{t('medico.selectDuration', 'Select duration...')}</option>
+                    {durationOptions.map(opt => (
+                      <option key={opt.value} value={opt.value}>{opt.label}</option>
+                    ))}
+                  </select>
+                </div>
+                <div className="form-group quantity-group">
+                  <label>{t('medico.quantity', 'Quantity')}</label>
+                  <input 
+                    type="number" 
+                    className="form-control" 
+                    value={currentMedication.cantidad} 
+                    onChange={(e) => setCurrentMedication(prev => ({ ...prev, cantidad: parseInt(e.target.value) || 1 }))}
+                    min="1"
+                  />
                 </div>
               </div>
-              <button className="btn-add-medication" onClick={handleAddMedication} disabled={!currentMedication.nombre || !currentMedication.dosis}>+ {t('medico.addMedication', 'Add Medication')}</button>
+              <button 
+                className="btn-add-medication" 
+                onClick={handleAddMedication} 
+                disabled={!currentMedication.nombre || !currentMedication.dosis || !currentMedication.frecuencia}
+              >
+                + {t('medico.addMedication', 'Add Medication')}
+              </button>
             </div>
+            
+            {/* Medications List */}
             {prescriptionForm.medicamentos.length > 0 && (
               <div className="medications-list">
                 <h4>{t('medico.prescribedMedications', 'Prescription medications')}:</h4>
@@ -1644,14 +2118,17 @@ function MedicoDashboard() {
                   <div key={med.id} className="medication-item">
                     <div className="medication-info">
                       <strong>{med.nombre}</strong>
-                      <span>{med.dosis} - {med.frecuencia} ({med.via})</span>
-                      {med.duracion && <span>{t('medico.duration', 'Duration')}: {med.duracion}</span>}
+                      {med.presentacion && <span className="med-presentation">{med.presentacion}</span>}
+                      <span className="med-dosage">{med.dosis} - {med.frecuencia} - {med.via}</span>
+                      {med.duracion && <span className="med-duration">{t('medico.duration', 'Duration')}: {med.duracion}</span>}
+                      {med.cantidad > 1 && <span className="med-qty">{t('medico.quantity', 'Quantity')}: {med.cantidad}</span>}
                     </div>
                     <button className="btn-remove" onClick={() => handleRemoveMedication(med.id)}>✕</button>
                   </div>
                 ))}
               </div>
             )}
+            
             <div className="form-group">
               <label>{t('medico.generalInstructions', 'General instructions')}</label>
               <textarea className="form-control" placeholder={t('medico.instructionsPlaceholder', 'Additional instructions for the owner...')} rows="2" value={prescriptionForm.instrucciones} onChange={(e) => setPrescriptionForm(prev => ({ ...prev, instrucciones: e.target.value }))} />
@@ -1812,47 +2289,275 @@ function MedicoDashboard() {
                     
                     {entry.detalles && (
                       <div className="history-card-body">
-                        {/* SOAP Notes */}
-                        {entry.detalles.soap && Object.keys(entry.detalles.soap).length > 0 && (
-                          <div className="history-section soap-section">
-                            <h5>📝 SOAP Notes</h5>
-                            <div className="soap-grid">
-                              {entry.detalles.soap.subjetivo && (
-                                <div className="soap-item">
-                                  <span className="soap-letter">S</span>
-                                  <div>
-                                    <strong>Subjective</strong>
-                                    <p>{entry.detalles.soap.subjetivo}</p>
+                        {/* Examen Físico - Solo mostrar secciones con datos */}
+                        {entry.detalles.examenFisico && (
+                          <div className="history-section exam-section">
+                            <h5>🩺 Examen Físico</h5>
+                            <div className="exam-summary">
+                              {/* Signos Vitales del Examen General - solo si hay alguno */}
+                              {entry.detalles.examenFisico.general && (
+                                entry.detalles.examenFisico.general.peso ||
+                                entry.detalles.examenFisico.general.temperatura ||
+                                entry.detalles.examenFisico.general.frecuenciaCardiaca ||
+                                entry.detalles.examenFisico.general.frecuenciaRespiratoria ||
+                                entry.detalles.examenFisico.general.condicionCorporal ||
+                                entry.detalles.examenFisico.general.hidratacion
+                              ) ? (
+                                <div className="exam-subsection">
+                                  <h6>Signos Vitales</h6>
+                                  <div className="exam-vitals-grid">
+                                    {entry.detalles.examenFisico.general.peso && (
+                                      <span>Peso: {entry.detalles.examenFisico.general.peso} kg</span>
+                                    )}
+                                    {entry.detalles.examenFisico.general.temperatura && (
+                                      <span>Temp: {entry.detalles.examenFisico.general.temperatura}°C</span>
+                                    )}
+                                    {entry.detalles.examenFisico.general.frecuenciaCardiaca && (
+                                      <span>FC: {entry.detalles.examenFisico.general.frecuenciaCardiaca} bpm</span>
+                                    )}
+                                    {entry.detalles.examenFisico.general.frecuenciaRespiratoria && (
+                                      <span>FR: {entry.detalles.examenFisico.general.frecuenciaRespiratoria} rpm</span>
+                                    )}
+                                    {entry.detalles.examenFisico.general.condicionCorporal && (
+                                      <span>BCS: {entry.detalles.examenFisico.general.condicionCorporal}/9</span>
+                                    )}
+                                    {entry.detalles.examenFisico.general.hidratacion && (
+                                      <span>Hidratación: {entry.detalles.examenFisico.general.hidratacion}</span>
+                                    )}
                                   </div>
                                 </div>
-                              )}
-                              {entry.detalles.soap.objetivo && (
-                                <div className="soap-item">
-                                  <span className="soap-letter">O</span>
-                                  <div>
-                                    <strong>Objective</strong>
-                                    <p>{entry.detalles.soap.objetivo}</p>
-                                  </div>
+                              ) : null}
+                              
+                              {/* Estado Mental y Actitud */}
+                              {entry.detalles.examenFisico.general?.estadoMental?.length > 0 && (
+                                <div className="exam-subsection">
+                                  <h6>Estado Mental</h6>
+                                  <p>{entry.detalles.examenFisico.general.estadoMental.join(', ')}</p>
                                 </div>
                               )}
-                              {entry.detalles.soap.analisis && (
-                                <div className="soap-item">
-                                  <span className="soap-letter">A</span>
-                                  <div>
-                                    <strong>Assessment</strong>
-                                    <p>{entry.detalles.soap.analisis}</p>
-                                  </div>
+                              
+                              {/* Hallazgos del Examen General */}
+                              {entry.detalles.examenFisico.general && (
+                                <div className="exam-subsection">
+                                  <h6>Hallazgos</h6>
+                                  {(() => {
+                                    const findings = [];
+                                    const g = entry.detalles.examenFisico.general;
+                                    
+                                    // Ojos
+                                    if (g.ojos?.length > 0) findings.push(`Ojos: ${g.ojos.join(', ')}`);
+                                    // Oídos
+                                    if (g.oidos?.length > 0) findings.push(`Oídos: ${g.oidos.join(', ')}`);
+                                    // Nariz
+                                    if (g.nariz?.length > 0) findings.push(`Nariz: ${g.nariz.join(', ')}`);
+                                    // Boca
+                                    if (g.boca?.length > 0) findings.push(`Boca: ${g.boca.join(', ')}`);
+                                    // Linfonodos
+                                    if (g.linfonodos?.length > 0) findings.push(`Linfonodos: ${g.linfonodos.join(', ')}`);
+                                    // Piel/Pelo
+                                    if (g.pielPelo?.length > 0) findings.push(`Piel/Pelo: ${g.pielPelo.join(', ')}`);
+                                    // Cardiovascular
+                                    if (g.cardiovascular?.length > 0) findings.push(`Cardiovascular: ${g.cardiovascular.join(', ')}`);
+                                    // Respiratorio
+                                    if (g.respiratorio?.length > 0) findings.push(`Respiratorio: ${g.respiratorio.join(', ')}`);
+                                    // Digestivo
+                                    if (g.digestivo?.length > 0) findings.push(`Digestivo: ${g.digestivo.join(', ')}`);
+                                    // Urogenital
+                                    if (g.urogenital?.length > 0) findings.push(`Urogenital: ${g.urogenital.join(', ')}`);
+                                    // Musculoesquelético
+                                    if (g.musculoEsqueletico?.length > 0) findings.push(`Musculoesquelético: ${g.musculoEsqueletico.join(', ')}`);
+                                    // Neurológico
+                                    if (g.neurologico?.length > 0) findings.push(`Neurológico: ${g.neurologico.join(', ')}`);
+                                    
+                                    return findings.length > 0 ? (
+                                      <ul className="exam-findings">
+                                        {findings.map((f, idx) => <li key={idx}>{f}</li>)}
+                                      </ul>
+                                    ) : null;
+                                  })()}
                                 </div>
                               )}
-                              {entry.detalles.soap.plan && (
-                                <div className="soap-item">
-                                  <span className="soap-letter">P</span>
-                                  <div>
-                                    <strong>Plan</strong>
-                                    <p>{entry.detalles.soap.plan}</p>
+                              
+                              {/* Exámenes Especializados - Solo mostrar si tienen datos reales */}
+                              {(() => {
+                                // Función para verificar si un examen tiene datos reales
+                                const hasRealData = (exam) => {
+                                  if (!exam || typeof exam !== 'object') return false;
+                                  return Object.values(exam).some(val => {
+                                    if (Array.isArray(val)) return val.length > 0;
+                                    if (typeof val === 'string') return val.trim() !== '';
+                                    if (typeof val === 'number') return true;
+                                    if (typeof val === 'boolean') return val === true;
+                                    return false;
+                                  });
+                                };
+                                
+                                const hasNeuro = hasRealData(entry.detalles.examenFisico.neurologico);
+                                const hasDerma = hasRealData(entry.detalles.examenFisico.dermatologico);
+                                const hasOftalmo = hasRealData(entry.detalles.examenFisico.oftalmologico);
+                                const hasOrto = hasRealData(entry.detalles.examenFisico.ortopedico);
+                                
+                                if (!hasNeuro && !hasDerma && !hasOftalmo && !hasOrto) return null;
+                                
+                                // Función para renderizar hallazgos de un ojo
+                                const renderEyeFindings = (exam, side) => {
+                                  const findings = [];
+                                  const suffix = side === 'OD' ? 'OD' : 'OI';
+                                  
+                                  if (exam[`parpados${suffix}`]?.length > 0) findings.push(`Párpados: ${exam[`parpados${suffix}`].join(', ')}`);
+                                  if (exam[`conjuntiva${suffix}`]?.length > 0) findings.push(`Conjuntiva: ${exam[`conjuntiva${suffix}`].join(', ')}`);
+                                  if (exam[`cornea${suffix}`]?.length > 0) findings.push(`Córnea: ${exam[`cornea${suffix}`].join(', ')}`);
+                                  if (exam[`camaraAnterior${suffix}`]?.length > 0) findings.push(`Cámara Ant.: ${exam[`camaraAnterior${suffix}`].join(', ')}`);
+                                  if (exam[`irisPupila${suffix}`]?.length > 0) findings.push(`Iris/Pupila: ${exam[`irisPupila${suffix}`].join(', ')}`);
+                                  if (exam[`reflejosPupilares${suffix}`]?.length > 0) findings.push(`Reflejos: ${exam[`reflejosPupilares${suffix}`].join(', ')}`);
+                                  if (exam[`cristalino${suffix}`]?.length > 0) findings.push(`Cristalino: ${exam[`cristalino${suffix}`].join(', ')}`);
+                                  if (exam[`presionIntraocular${suffix}`]) findings.push(`PIO: ${exam[`presionIntraocular${suffix}`]}${exam[`pioValor${suffix}`] ? ` (${exam[`pioValor${suffix}`]} mmHg)` : ''}`);
+                                  if (exam[`fondoOjo${suffix}`]?.length > 0) findings.push(`Fondo: ${exam[`fondoOjo${suffix}`].join(', ')}`);
+                                  
+                                  return findings;
+                                };
+                                
+                                return (
+                                  <div className="exam-subsection specialized-details">
+                                    <h6>Exámenes Especializados Realizados</h6>
+                                    <div className="specialized-exams">
+                                      {hasNeuro && <span className="exam-badge">🧠 Neurológico</span>}
+                                      {hasDerma && <span className="exam-badge">🔬 Dermatológico</span>}
+                                      {hasOftalmo && <span className="exam-badge">👁️ Oftalmológico</span>}
+                                      {hasOrto && <span className="exam-badge">🦴 Ortopédico</span>}
+                                    </div>
+                                    
+                                    {/* Detalle Oftalmológico con OD/OI */}
+                                    {hasOftalmo && entry.detalles.examenFisico.oftalmologico && (
+                                      <div className="exam-detail oftalmo-detail">
+                                        <h6>👁️ Detalle Oftalmológico</h6>
+                                        {entry.detalles.examenFisico.oftalmologico.observacionGeneral?.length > 0 && (
+                                          <p><strong>Observación:</strong> {entry.detalles.examenFisico.oftalmologico.observacionGeneral.join(', ')}</p>
+                                        )}
+                                        <div className="eyes-comparison">
+                                          <div className="eye-findings">
+                                            <span className="eye-header">OD (Derecho)</span>
+                                            {(() => {
+                                              const findings = renderEyeFindings(entry.detalles.examenFisico.oftalmologico, 'OD');
+                                              return findings.length > 0 ? (
+                                                <ul>{findings.map((f, i) => <li key={i}>{f}</li>)}</ul>
+                                              ) : <span className="no-findings">Sin hallazgos</span>;
+                                            })()}
+                                          </div>
+                                          <div className="eye-findings">
+                                            <span className="eye-header">OI (Izquierdo)</span>
+                                            {(() => {
+                                              const findings = renderEyeFindings(entry.detalles.examenFisico.oftalmologico, 'OI');
+                                              return findings.length > 0 ? (
+                                                <ul>{findings.map((f, i) => <li key={i}>{f}</li>)}</ul>
+                                              ) : <span className="no-findings">Sin hallazgos</span>;
+                                            })()}
+                                          </div>
+                                        </div>
+                                        {entry.detalles.examenFisico.oftalmologico.impresion?.length > 0 && (
+                                          <p><strong>Impresión:</strong> {entry.detalles.examenFisico.oftalmologico.impresion.join(', ')}</p>
+                                        )}
+                                        {entry.detalles.examenFisico.oftalmologico.observaciones && (
+                                          <p><strong>Observaciones:</strong> {entry.detalles.examenFisico.oftalmologico.observaciones}</p>
+                                        )}
+                                      </div>
+                                    )}
+                                    
+                                    {/* Detalle Ortopédico con D/I */}
+                                    {hasOrto && entry.detalles.examenFisico.ortopedico && (
+                                      <div className="exam-detail orto-detail">
+                                        <h6>🦴 Detalle Ortopédico</h6>
+                                        {entry.detalles.examenFisico.ortopedico.marcha?.length > 0 && (
+                                          <p><strong>Marcha:</strong> {entry.detalles.examenFisico.ortopedico.marcha.join(', ')}</p>
+                                        )}
+                                        {(() => {
+                                          const orto = entry.detalles.examenFisico.ortopedico;
+                                          const joints = [];
+                                          // Torácicas
+                                          if (orto.hombroD?.length > 0 || orto.hombroI?.length > 0) {
+                                            joints.push({ name: 'Hombro', d: orto.hombroD, i: orto.hombroI });
+                                          }
+                                          if (orto.codoD?.length > 0 || orto.codoI?.length > 0) {
+                                            joints.push({ name: 'Codo', d: orto.codoD, i: orto.codoI });
+                                          }
+                                          if (orto.carpoD?.length > 0 || orto.carpoI?.length > 0) {
+                                            joints.push({ name: 'Carpo', d: orto.carpoD, i: orto.carpoI });
+                                          }
+                                          // Pélvicas
+                                          if (orto.caderaD?.length > 0 || orto.caderaI?.length > 0) {
+                                            joints.push({ name: 'Cadera', d: orto.caderaD, i: orto.caderaI });
+                                          }
+                                          if (orto.rodillaD?.length > 0 || orto.rodillaI?.length > 0) {
+                                            joints.push({ name: 'Rodilla', d: orto.rodillaD, i: orto.rodillaI });
+                                          }
+                                          if (orto.tarsoD?.length > 0 || orto.tarsoI?.length > 0) {
+                                            joints.push({ name: 'Tarso', d: orto.tarsoD, i: orto.tarsoI });
+                                          }
+                                          
+                                          return joints.length > 0 ? (
+                                            <div className="joints-summary">
+                                              {joints.map((j, idx) => (
+                                                <div key={idx} className="joint-item">
+                                                  <strong>{j.name}:</strong>
+                                                  {j.d?.length > 0 && <span> D: {j.d.join(', ')}</span>}
+                                                  {j.i?.length > 0 && <span> I: {j.i.join(', ')}</span>}
+                                                </div>
+                                              ))}
+                                            </div>
+                                          ) : null;
+                                        })()}
+                                        {entry.detalles.examenFisico.ortopedico.columna?.length > 0 && (
+                                          <p><strong>Columna:</strong> {entry.detalles.examenFisico.ortopedico.columna.join(', ')}</p>
+                                        )}
+                                        {entry.detalles.examenFisico.ortopedico.impresion?.length > 0 && (
+                                          <p><strong>Impresión:</strong> {entry.detalles.examenFisico.ortopedico.impresion.join(', ')}</p>
+                                        )}
+                                      </div>
+                                    )}
+                                    
+                                    {/* Detalle Neurológico */}
+                                    {hasNeuro && entry.detalles.examenFisico.neurologico && (
+                                      <div className="exam-detail neuro-detail">
+                                        <h6>🧠 Detalle Neurológico</h6>
+                                        {entry.detalles.examenFisico.neurologico.estadoMental && (
+                                          <p><strong>Estado Mental:</strong> {entry.detalles.examenFisico.neurologico.estadoMental}</p>
+                                        )}
+                                        {entry.detalles.examenFisico.neurologico.postura?.length > 0 && (
+                                          <p><strong>Postura:</strong> {entry.detalles.examenFisico.neurologico.postura.join(', ')}</p>
+                                        )}
+                                        {entry.detalles.examenFisico.neurologico.marcha?.length > 0 && (
+                                          <p><strong>Marcha:</strong> {entry.detalles.examenFisico.neurologico.marcha.join(', ')}</p>
+                                        )}
+                                        {entry.detalles.examenFisico.neurologico.localizacion?.length > 0 && (
+                                          <p><strong>Localización:</strong> {entry.detalles.examenFisico.neurologico.localizacion.join(', ')}</p>
+                                        )}
+                                      </div>
+                                    )}
+                                    
+                                    {/* Detalle Dermatológico */}
+                                    {hasDerma && entry.detalles.examenFisico.dermatologico && (
+                                      <div className="exam-detail derma-detail">
+                                        <h6>🔬 Detalle Dermatológico</h6>
+                                        {entry.detalles.examenFisico.dermatologico.condicionPiel?.length > 0 && (
+                                          <p><strong>Condición:</strong> {entry.detalles.examenFisico.dermatologico.condicionPiel.join(', ')}</p>
+                                        )}
+                                        {entry.detalles.examenFisico.dermatologico.pelaje?.length > 0 && (
+                                          <p><strong>Pelaje:</strong> {entry.detalles.examenFisico.dermatologico.pelaje.join(', ')}</p>
+                                        )}
+                                        {entry.detalles.examenFisico.dermatologico.lesionesPrimarias?.length > 0 && (
+                                          <p><strong>Lesiones Primarias:</strong> {entry.detalles.examenFisico.dermatologico.lesionesPrimarias.join(', ')}</p>
+                                        )}
+                                        {entry.detalles.examenFisico.dermatologico.lesionesSecundarias?.length > 0 && (
+                                          <p><strong>Lesiones Secundarias:</strong> {entry.detalles.examenFisico.dermatologico.lesionesSecundarias.join(', ')}</p>
+                                        )}
+                                        {entry.detalles.examenFisico.dermatologico.impresion?.length > 0 && (
+                                          <p><strong>Impresión:</strong> {entry.detalles.examenFisico.dermatologico.impresion.join(', ')}</p>
+                                        )}
+                                      </div>
+                                    )}
                                   </div>
-                                </div>
-                              )}
+                                );
+                              })()}
                             </div>
                           </div>
                         )}
@@ -1950,18 +2655,53 @@ function MedicoDashboard() {
                         {/* Laboratory Studies */}
                         {entry.detalles.laboratorios && entry.detalles.laboratorios.length > 0 && (
                           <div className="history-section lab-section">
-                            <h5>🔬 Laboratory Studies</h5>
+                            <h5>🔬 Estudios de Laboratorio</h5>
                             <div className="lab-list">
                               {entry.detalles.laboratorios.map((lab, li) => (
                                 <div key={li} className={`lab-item status-${lab.estado?.toLowerCase()}`}>
                                   <div className="lab-header">
-                                    <span className="lab-type">{lab.tipo}</span>
+                                    <span className="lab-type">{tipoLabToLabel(lab.tipo)}</span>
                                     <span className={`lab-status ${lab.estado?.toLowerCase()}`}>{lab.estado}</span>
+                                    {lab.prioridad === 'URGENTE' && <span className="urgente-badge">⚡ URGENTE</span>}
                                   </div>
-                                  {lab.notas && <p className="lab-notes">{lab.notas}</p>}
+                                  <div className="lab-dates">
+                                    <span>Solicitado: {lab.fechaSolicitud ? new Date(lab.fechaSolicitud).toLocaleDateString('es-MX') : '-'}</span>
+                                    {lab.fechaResultado && <span> • Completado: {new Date(lab.fechaResultado).toLocaleDateString('es-MX')}</span>}
+                                  </div>
+                                  {lab.notas && <p className="lab-notes"><strong>Notas:</strong> {lab.notas}</p>}
                                   {lab.resultados && (
                                     <div className="lab-results">
-                                      <strong>Results:</strong> {lab.resultados}
+                                      <strong>Resultados:</strong>
+                                      <pre className="results-text">{lab.resultados}</pre>
+                                    </div>
+                                  )}
+                                  {lab.archivos && lab.archivos.length > 0 && (
+                                    <div className="lab-files">
+                                      <strong>Archivos:</strong>
+                                      <div className="files-grid">
+                                        {lab.archivos.map((archivo, fi) => {
+                                          // Detectar si es base64 o URL
+                                          const isBase64 = typeof archivo === 'string' && archivo.startsWith('data:');
+                                          const isBase64Image = isBase64 && archivo.startsWith('data:image/');
+                                          const isUrlImage = !isBase64 && /\.(jpg|jpeg|png|gif|webp)$/i.test(archivo);
+                                          const isImage = isBase64Image || isUrlImage;
+                                          const fileName = isBase64 ? `Archivo ${fi + 1}` : (archivo.split('/').pop() || `Archivo ${fi + 1}`);
+                                          
+                                          return (
+                                            <div key={fi} className="file-item">
+                                              {isImage ? (
+                                                <a href={archivo} target="_blank" rel="noopener noreferrer" className="file-image-link">
+                                                  <img src={archivo} alt={`Resultado ${fi + 1}`} className="file-thumbnail" />
+                                                </a>
+                                              ) : (
+                                                <a href={archivo} target="_blank" rel="noopener noreferrer" className="file-link">
+                                                  📎 {fileName}
+                                                </a>
+                                              )}
+                                            </div>
+                                          );
+                                        })}
+                                      </div>
                                     </div>
                                   )}
                                 </div>
@@ -2043,6 +2783,458 @@ function MedicoDashboard() {
             <div className="modal-actions">
               <button className="btn-secondary" onClick={() => setShowHistoryModal(false)}>
                 Cerrar
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Follow-up Appointment Modal */}
+      {showFollowUpModal && selectedPatient && (
+        <div className="modal-overlay" onClick={() => setShowFollowUpModal(false)}>
+          <div className="modal-content followup-modal" onClick={e => e.stopPropagation()}>
+            <div className="modal-header">
+              <h2>📅 {t('medico.scheduleFollowUp', 'Agendar Cita de Seguimiento')}</h2>
+              <button className="close-btn" onClick={() => setShowFollowUpModal(false)}>✕</button>
+            </div>
+
+            <div className="followup-patient-info">
+              <div className="patient-badge">
+                <span className="patient-icon">{selectedPatient.especie?.toLowerCase() === 'gato' ? '🐈' : '🐕'}</span>
+                <div className="patient-details">
+                  <strong>{selectedPatient.nombre}</strong>
+                  <span>{selectedPatient.raza} • {selectedPatient.propietario}</span>
+                </div>
+              </div>
+            </div>
+
+            <form onSubmit={async (e) => {
+              e.preventDefault();
+              setSavingFollowUp(true);
+              try {
+                // Get pet ID from selectedPatient
+                const petId = selectedPatient.petId || selectedPatient.id;
+                
+                await recepcionService.appointments.create({
+                  petId: petId,
+                  fecha: followUpForm.fecha,
+                  hora: followUpForm.hora,
+                  tipo: followUpForm.tipo,
+                  motivo: followUpForm.motivo,
+                  notas: `Cita de seguimiento agendada por Dr. ${user?.nombre || user?.name || 'Médico'}`
+                });
+
+                alert(`✅ Cita de seguimiento agendada\nFecha: ${followUpForm.fecha}\nHora: ${followUpForm.hora}`);
+                setShowFollowUpModal(false);
+                
+                // Reload dashboard to reflect new appointment
+                loadDashboardData();
+              } catch (error) {
+                console.error('Error scheduling follow-up:', error);
+                alert('❌ Error al agendar cita: ' + (error.message || 'Por favor intente de nuevo'));
+              } finally {
+                setSavingFollowUp(false);
+              }
+            }} className="followup-form">
+              <div className="form-row">
+                <div className="form-group">
+                  <label>📆 {t('medico.date', 'Fecha')}</label>
+                  <input
+                    type="date"
+                    className="form-control"
+                    value={followUpForm.fecha}
+                    onChange={(e) => setFollowUpForm(prev => ({ ...prev, fecha: e.target.value }))}
+                    min={new Date().toISOString().split('T')[0]}
+                    required
+                  />
+                </div>
+                <div className="form-group">
+                  <label>🕐 {t('medico.time', 'Hora')}</label>
+                  <input
+                    type="time"
+                    className="form-control"
+                    value={followUpForm.hora}
+                    onChange={(e) => setFollowUpForm(prev => ({ ...prev, hora: e.target.value }))}
+                    required
+                  />
+                </div>
+              </div>
+
+              <div className="form-group">
+                <label>📋 {t('medico.appointmentType', 'Tipo de Cita')}</label>
+                <select
+                  className="form-control"
+                  value={followUpForm.tipo}
+                  onChange={(e) => setFollowUpForm(prev => ({ ...prev, tipo: e.target.value }))}
+                >
+                  <option value="SEGUIMIENTO">Seguimiento</option>
+                  <option value="CONSULTA_GENERAL">Consulta General</option>
+                  <option value="VACUNACION">Vacunación</option>
+                  <option value="CIRUGIA">Cirugía</option>
+                </select>
+              </div>
+
+              <div className="form-group">
+                <label>📝 {t('medico.reason', 'Motivo')}</label>
+                <textarea
+                  className="form-control"
+                  value={followUpForm.motivo}
+                  onChange={(e) => setFollowUpForm(prev => ({ ...prev, motivo: e.target.value }))}
+                  placeholder="Ej: Revisión de herida quirúrgica, control de peso, seguimiento de tratamiento..."
+                  rows={3}
+                  required
+                />
+              </div>
+
+              <div className="modal-actions">
+                <button 
+                  type="button" 
+                  className="btn-secondary" 
+                  onClick={() => setShowFollowUpModal(false)}
+                  disabled={savingFollowUp}
+                >
+                  {t('common.cancel', 'Cancelar')}
+                </button>
+                <button 
+                  type="submit" 
+                  className="btn-primary"
+                  disabled={savingFollowUp}
+                >
+                  {savingFollowUp ? '⏳ Agendando...' : `📅 ${t('medico.scheduleAppointment', 'Agendar Cita')}`}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Modal para ver detalle de resultados de lab */}
+      {showLabResultDetailModal && selectedLabResult && (
+        <div className="modal-overlay" onClick={() => setShowLabResultDetailModal(false)}>
+          <div className="modal-content lab-result-detail-modal" onClick={e => e.stopPropagation()}>
+            <div className="modal-header">
+              <h2>🧪 Resultado de Laboratorio</h2>
+              <button className="close-btn" onClick={() => setShowLabResultDetailModal(false)}>✕</button>
+            </div>
+
+            <div className="lab-result-detail-content">
+              {/* Info del estudio */}
+              <div className="lab-result-type-header">
+                <span className="lab-type-badge large">{tipoLabToLabel(selectedLabResult.type)}</span>
+                <span className="lab-date">
+                  Completado: {new Date(selectedLabResult.completedAt || selectedLabResult.updatedAt).toLocaleDateString()} 
+                  {' '}a las{' '}
+                  {new Date(selectedLabResult.completedAt || selectedLabResult.updatedAt).toLocaleTimeString()}
+                </span>
+              </div>
+
+              {/* Info del paciente */}
+              <div className="lab-result-patient-section">
+                <h4>🐾 Paciente</h4>
+                <div className="patient-info-grid">
+                  <div className="info-item">
+                    <span className="label">Nombre:</span>
+                    <span className="value">{selectedLabResult.pet?.nombre}</span>
+                  </div>
+                  <div className="info-item">
+                    <span className="label">Especie:</span>
+                    <span className="value">{selectedLabResult.pet?.especie}</span>
+                  </div>
+                  <div className="info-item">
+                    <span className="label">Raza:</span>
+                    <span className="value">{selectedLabResult.pet?.raza}</span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Info del propietario */}
+              <div className="lab-result-owner-section">
+                <h4>👤 Propietario</h4>
+                <div className="owner-info-grid">
+                  <div className="info-item">
+                    <span className="label">Nombre:</span>
+                    <span className="value">{selectedLabResult.pet?.owner?.nombre}</span>
+                  </div>
+                  {selectedLabResult.pet?.owner?.telefono && (
+                    <div className="info-item">
+                      <span className="label">Teléfono:</span>
+                      <span className="value">📱 {selectedLabResult.pet.owner.telefono}</span>
+                    </div>
+                  )}
+                  {selectedLabResult.pet?.owner?.email && (
+                    <div className="info-item">
+                      <span className="label">Email:</span>
+                      <span className="value">✉️ {selectedLabResult.pet.owner.email}</span>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* Notas del estudio */}
+              {selectedLabResult.notes && (
+                <div className="lab-result-notes-section">
+                  <h4>📋 Indicaciones del Médico</h4>
+                  <p>{selectedLabResult.notes}</p>
+                </div>
+              )}
+
+              {/* Resultados */}
+              <div className="lab-result-results-section">
+                <h4>📊 Resultados</h4>
+                {selectedLabResult.resultNotes ? (
+                  <div className="result-notes-content">
+                    <p>{selectedLabResult.resultNotes}</p>
+                  </div>
+                ) : (
+                  <p className="no-results">Sin observaciones registradas</p>
+                )}
+              </div>
+
+              {/* Archivos adjuntos */}
+              {selectedLabResult.resultFiles && (
+                <div className="lab-result-files-section">
+                  <h4>📁 Archivos Adjuntos</h4>
+                  <div className="files-gallery">
+                    {(() => {
+                      try {
+                        let files = typeof selectedLabResult.resultFiles === 'string' 
+                          ? JSON.parse(selectedLabResult.resultFiles) 
+                          : selectedLabResult.resultFiles;
+                        
+                        if (Array.isArray(files) && files.length > 0) {
+                          return files.map((file, idx) => {
+                            // Detectar si es string (URL o base64) o objeto
+                            const isString = typeof file === 'string';
+                            const fileData = isString ? file : file.data;
+                            const fileName = isString 
+                              ? (file.startsWith('data:') ? `Resultado_${idx + 1}` : file.split('/').pop())
+                              : (file.name || `Resultado_${idx + 1}`);
+                            
+                            // Detectar tipo de archivo
+                            const isBase64 = fileData?.startsWith('data:');
+                            const isBase64Image = isBase64 && fileData.startsWith('data:image/');
+                            const isBase64PDF = isBase64 && fileData.startsWith('data:application/pdf');
+                            const isUrlImage = !isBase64 && /\.(jpg|jpeg|png|gif|webp)$/i.test(fileData || '');
+                            const isUrlPDF = !isBase64 && /\.pdf$/i.test(fileData || '');
+                            const isImage = isBase64Image || isUrlImage || file.type?.startsWith('image/');
+                            const isPDF = isBase64PDF || isUrlPDF || file.type === 'application/pdf';
+                            
+                            // Extensión para el nombre del archivo
+                            let fileExt = '';
+                            if (isImage) {
+                              const match = fileData?.match(/data:image\/(\w+)/);
+                              fileExt = match ? `.${match[1]}` : '.jpg';
+                            } else if (isPDF) {
+                              fileExt = '.pdf';
+                            }
+                            const downloadName = fileName.includes('.') ? fileName : `${fileName}${fileExt}`;
+                            
+                            return (
+                              <div key={idx} className="file-card-container">
+                                {isImage ? (
+                                  <div className="file-card image-card">
+                                    <div 
+                                      className="file-preview-clickable"
+                                      onClick={() => openImageViewer(fileData, downloadName)}
+                                    >
+                                      <img src={fileData} alt={fileName} className="file-preview-img" />
+                                      <div className="file-overlay-hover">🔍 Ver imagen</div>
+                                    </div>
+                                    <div className="file-actions">
+                                      <button 
+                                        className="btn-download"
+                                        onClick={() => downloadFile(fileData, downloadName)}
+                                        title="Descargar imagen"
+                                      >
+                                        📥 Descargar
+                                      </button>
+                                    </div>
+                                  </div>
+                                ) : isPDF ? (
+                                  <div className="file-card pdf-card">
+                                    <div className="pdf-icon-container">
+                                      <div className="pdf-icon">📄</div>
+                                      <span className="file-name">{downloadName}</span>
+                                    </div>
+                                    <div className="file-actions">
+                                      <button 
+                                        className="btn-download"
+                                        onClick={() => downloadFile(fileData, downloadName)}
+                                        title="Descargar PDF"
+                                      >
+                                        📥 Descargar
+                                      </button>
+                                    </div>
+                                  </div>
+                                ) : (
+                                  <div className="file-card generic-card">
+                                    <div className="file-icon-container">
+                                      <div className="file-icon">📎</div>
+                                      <span className="file-name">{downloadName}</span>
+                                    </div>
+                                    <div className="file-actions">
+                                      <button 
+                                        className="btn-download"
+                                        onClick={() => downloadFile(fileData, downloadName)}
+                                        title="Descargar archivo"
+                                      >
+                                        📥 Descargar
+                                      </button>
+                                    </div>
+                                  </div>
+                                )}
+                              </div>
+                            );
+                          });
+                        }
+                        return <p className="no-files">No hay archivos adjuntos</p>;
+                      } catch (e) {
+                        console.error('Error parsing resultFiles:', e);
+                        return <p className="no-files">Error al cargar archivos</p>;
+                      }
+                    })()}
+                  </div>
+                </div>
+              )}
+            </div>
+
+            <div className="modal-actions">
+              <button 
+                className="btn-secondary" 
+                onClick={() => setShowLabResultDetailModal(false)}
+              >
+                Cerrar
+              </button>
+              <button 
+                className="btn-primary"
+                onClick={() => {
+                  setShowLabResultDetailModal(false);
+                  setAgendarCitaForm({
+                    fecha: '',
+                    hora: '10:00',
+                    motivo: `Seguimiento por resultado de ${tipoLabToLabel(selectedLabResult.type)}`
+                  });
+                  setShowAgendarCitaModal(true);
+                }}
+              >
+                📅 Agendar Cita de Seguimiento
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal para agendar cita desde resultados de lab */}
+      {showAgendarCitaModal && selectedLabResult && (
+        <div className="modal-overlay" onClick={() => setShowAgendarCitaModal(false)}>
+          <div className="modal-content agendar-cita-modal" onClick={e => e.stopPropagation()}>
+            <div className="modal-header">
+              <h2>📅 Agendar Cita de Seguimiento</h2>
+              <button className="close-btn" onClick={() => setShowAgendarCitaModal(false)}>✕</button>
+            </div>
+
+            <div className="lab-context-info">
+              <div className="info-badge lab-badge">
+                <span className="icon">🧪</span>
+                <span>{tipoLabToLabel(selectedLabResult.type)}</span>
+              </div>
+              <div className="patient-info-row">
+                <span className="pet-icon">{selectedLabResult.pet?.especie === 'PERRO' ? '🐕' : '🐈'}</span>
+                <div className="patient-details">
+                  <strong>{selectedLabResult.pet?.nombre}</strong>
+                  <span className="owner-info">
+                    👤 {selectedLabResult.pet?.owner?.nombre}
+                    {selectedLabResult.pet?.owner?.telefono && ` • 📱 ${selectedLabResult.pet.owner.telefono}`}
+                  </span>
+                </div>
+              </div>
+              {selectedLabResult.resultNotes && (
+                <div className="result-preview">
+                  <strong>Resultado:</strong>
+                  <p>{selectedLabResult.resultNotes}</p>
+                </div>
+              )}
+            </div>
+
+            <form onSubmit={async (e) => {
+              e.preventDefault();
+              await handleAgendarCitaSeguimiento();
+            }} className="agendar-form">
+              <div className="form-row">
+                <div className="form-group">
+                  <label>📆 Fecha</label>
+                  <input
+                    type="date"
+                    className="form-control"
+                    value={agendarCitaForm.fecha}
+                    onChange={(e) => setAgendarCitaForm(prev => ({ ...prev, fecha: e.target.value }))}
+                    min={new Date().toISOString().split('T')[0]}
+                    required
+                  />
+                </div>
+                <div className="form-group">
+                  <label>🕐 Hora</label>
+                  <input
+                    type="time"
+                    className="form-control"
+                    value={agendarCitaForm.hora}
+                    onChange={(e) => setAgendarCitaForm(prev => ({ ...prev, hora: e.target.value }))}
+                    required
+                  />
+                </div>
+              </div>
+
+              <div className="form-group">
+                <label>📝 Motivo de la Cita</label>
+                <textarea
+                  className="form-control"
+                  value={agendarCitaForm.motivo}
+                  onChange={(e) => setAgendarCitaForm(prev => ({ ...prev, motivo: e.target.value }))}
+                  placeholder="Descripción del motivo de seguimiento..."
+                  rows={3}
+                  required
+                />
+              </div>
+
+              <div className="modal-actions">
+                <button 
+                  type="button" 
+                  className="btn-secondary" 
+                  onClick={() => setShowAgendarCitaModal(false)}
+                  disabled={savingCitaSeguimiento}
+                >
+                  Cancelar
+                </button>
+                <button 
+                  type="submit" 
+                  className="btn-primary"
+                  disabled={savingCitaSeguimiento}
+                >
+                  {savingCitaSeguimiento ? '⏳ Agendando...' : '📅 Agendar Cita'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Image Viewer Modal */}
+      {showImageViewer && viewerImage.src && (
+        <div className="image-viewer-overlay" onClick={() => setShowImageViewer(false)}>
+          <div className="image-viewer-container" onClick={(e) => e.stopPropagation()}>
+            <div className="image-viewer-header">
+              <span className="image-viewer-title">{viewerImage.name}</span>
+              <button className="close-btn" onClick={() => setShowImageViewer(false)}>✕</button>
+            </div>
+            <div className="image-viewer-content">
+              <img src={viewerImage.src} alt={viewerImage.name} />
+            </div>
+            <div className="image-viewer-actions">
+              <button 
+                className="btn-download-large"
+                onClick={() => downloadFile(viewerImage.src, viewerImage.name)}
+              >
+                📥 Descargar Imagen
               </button>
             </div>
           </div>

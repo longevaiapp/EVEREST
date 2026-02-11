@@ -584,7 +584,273 @@
 }
 
 .modal-content.large {
-  max-width: 700px;
+  max-width: 800px;
+}
+
+.modal-content.study-detail-modal {
+  max-width: 900px;
+  max-height: 90vh;
+  overflow-y: auto;
+}
+
+.modal-header-detail {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1.5rem;
+  padding-bottom: 1rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.modal-header-detail h2 {
+  color: #fff;
+  margin: 0;
+  font-size: 1.5rem;
+}
+
+.modal-header-detail .close-btn {
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  color: #fff;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  cursor: pointer;
+  font-size: 1.25rem;
+  transition: all 0.2s ease;
+}
+
+.modal-header-detail .close-btn:hover {
+  background: rgba(255, 71, 87, 0.3);
+  border-color: rgba(255, 71, 87, 0.5);
+}
+
+.detail-section {
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 16px;
+  padding: 1.25rem;
+  margin-bottom: 1.25rem;
+}
+
+.section-title {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin-bottom: 1rem;
+}
+
+.section-title .section-icon {
+  font-size: 1.25rem;
+}
+
+.section-title h3 {
+  color: #fff;
+  margin: 0;
+  font-size: 1.1rem;
+  font-weight: 600;
+}
+
+.detail-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 1rem;
+}
+
+.detail-item {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.detail-item .label {
+  font-size: 0.75rem;
+  color: rgba(255, 255, 255, 0.6);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.detail-item .value {
+  font-size: 0.95rem;
+  color: #fff;
+  font-weight: 500;
+}
+
+.detail-item .type-value {
+  font-size: 1.1rem;
+  color: #3498db;
+}
+
+.priority-badge.large,
+.status-badge.large {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.4rem 0.75rem;
+  border-radius: 8px;
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+
+.notes-content,
+.results-content {
+  background: rgba(0, 0, 0, 0.2);
+  border-radius: 12px;
+  padding: 1rem;
+}
+
+.notes-content p {
+  color: rgba(255, 255, 255, 0.9);
+  margin: 0;
+  line-height: 1.6;
+}
+
+.results-content pre {
+  color: #fff;
+  margin: 0;
+  white-space: pre-wrap;
+  word-break: break-word;
+  font-family: 'Consolas', 'Monaco', monospace;
+  font-size: 0.9rem;
+  line-height: 1.6;
+}
+
+/* Files Gallery */
+.files-gallery {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  gap: 1rem;
+}
+
+.file-card {
+  border-radius: 12px;
+  overflow: hidden;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  transition: all 0.3s ease;
+}
+
+.file-card:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.3);
+  border-color: rgba(255, 255, 255, 0.3);
+}
+
+.file-preview {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-decoration: none;
+  color: #fff;
+  position: relative;
+  min-height: 120px;
+  padding: 1rem;
+}
+
+.file-preview.image-preview {
+  padding: 0;
+}
+
+.file-preview.image-preview img {
+  width: 100%;
+  height: 120px;
+  object-fit: cover;
+}
+
+.file-preview .pdf-icon,
+.file-preview .file-icon {
+  font-size: 2.5rem;
+  margin-bottom: 0.5rem;
+}
+
+.file-preview .file-name {
+  font-size: 0.75rem;
+  text-align: center;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 100%;
+  color: rgba(255, 255, 255, 0.8);
+}
+
+.file-overlay {
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.7);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.file-overlay span {
+  color: #fff;
+  font-size: 0.85rem;
+  font-weight: 500;
+}
+
+.file-card:hover .file-overlay {
+  opacity: 1;
+}
+
+/* Uploaded Files Preview in Form */
+.uploaded-files-preview {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  margin-top: 0.75rem;
+}
+
+.uploaded-file-item {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 8px;
+  padding: 0.5rem 0.75rem;
+  max-width: 200px;
+}
+
+.uploaded-file-item .file-thumb {
+  width: 40px;
+  height: 40px;
+  object-fit: cover;
+  border-radius: 4px;
+}
+
+.uploaded-file-item .file-icon-small {
+  font-size: 1.25rem;
+}
+
+.uploaded-file-item .file-name-small {
+  flex: 1;
+  font-size: 0.8rem;
+  color: rgba(255, 255, 255, 0.9);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 100px;
+}
+
+.uploaded-file-item .remove-file-btn {
+  background: rgba(255, 71, 87, 0.2);
+  border: none;
+  color: #ff4757;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  cursor: pointer;
+  font-size: 0.75rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+}
+
+.uploaded-file-item .remove-file-btn:hover {
+  background: rgba(255, 71, 87, 0.4);
 }
 
 .modal-content h2 {
@@ -677,6 +943,62 @@
 }
 
 /* Responsive */
+/* Toast notifications */
+.laboratorio-dashboard .toast {
+  position: fixed;
+  top: 80px;
+  right: 20px;
+  z-index: 9999;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 1rem 1.25rem;
+  border-radius: 12px;
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  animation: toastSlideIn 0.3s ease-out;
+  font-weight: 500;
+  min-width: 280px;
+  max-width: 400px;
+}
+
+.laboratorio-dashboard .toast.success {
+  background: rgba(46, 213, 115, 0.9);
+  color: white;
+  border-color: rgba(46, 213, 115, 0.5);
+}
+
+.laboratorio-dashboard .toast.error {
+  background: rgba(255, 71, 87, 0.9);
+  color: white;
+  border-color: rgba(255, 71, 87, 0.5);
+}
+
+.laboratorio-dashboard .toast.warning {
+  background: rgba(255, 165, 2, 0.9);
+  color: white;
+  border-color: rgba(255, 165, 2, 0.5);
+}
+
+.laboratorio-dashboard .toast.info {
+  background: rgba(30, 144, 255, 0.9);
+  color: white;
+  border-color: rgba(30, 144, 255, 0.5);
+}
+
+@keyframes toastSlideIn {
+  from {
+    transform: translateX(100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
 @media (max-width: 768px) {
   .laboratorio-dashboard {
     flex-direction: column;
@@ -703,5 +1025,11 @@
 
   .modal-content {
     max-width: 100%;
+  }
+  
+  .laboratorio-dashboard .toast {
+    left: 20px;
+    right: 20px;
+    min-width: unset;
   }
 }

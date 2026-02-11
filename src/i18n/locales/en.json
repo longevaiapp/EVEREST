@@ -544,7 +544,10 @@
     "consentWarning": "Make sure the owner has signed the sedation consent form",
     "enterResults": "Enter study results...",
     "observationsPlaceholder": "Additional observations (optional)...",
-    "saveAndNotify": "Save and Notify Doctor"
+    "saveAndNotify": "Save and Notify Doctor",
+    "studyStarted": "Study started successfully",
+    "resultsUploaded": "Results saved and doctor notified",
+    "dashboard": "Dashboard"
   },
   
   "farmacia": {

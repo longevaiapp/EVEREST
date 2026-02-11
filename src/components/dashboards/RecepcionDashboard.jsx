@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { useAuth } from '../../context/AuthContext';
 import useRecepcion from '../../hooks/useRecepcion';
 import { petService } from '../../services/recepcion.service';
+import { citaSeguimientoService } from '../../services/medico.service';
 import { QRCodeSVG } from 'qrcode.react';
 import './RecepcionDashboard.css';
 
@@ -59,6 +60,10 @@ function RecepcionDashboard() {
   // Estado para historial médico en expediente
   const [historialData, setHistorialData] = useState(null);
   const [loadingHistorial, setLoadingHistorial] = useState(false);
+  
+  // Estado para citas agendadas por médicos
+  const [citasMedico, setCitasMedico] = useState([]);
+  const [loadingCitasMedico, setLoadingCitasMedico] = useState(false);
   
   // Estado para búsqueda de mascotas en modal de citas
   const [petSearchQuery, setPetSearchQuery] = useState('');
@@ -592,6 +597,20 @@ function RecepcionDashboard() {
     }
   };
 
+  // Función para cargar citas agendadas por médicos
+  const loadCitasMedico = useCallback(async () => {
+    setLoadingCitasMedico(true);
+    try {
+      const citas = await citaSeguimientoService.getCitasMedico();
+      setCitasMedico(citas || []);
+    } catch (error) {
+      console.error('Error cargando citas de médico:', error);
+      setCitasMedico([]);
+    } finally {
+      setLoadingCitasMedico(false);
+    }
+  }, []);
+
   // URL para el formulario de cliente (puede ser ajustada según el deploy)
   const clientFormURL = `${window.location.origin}/registro-cliente`;
 
@@ -910,6 +929,20 @@ function RecepcionDashboard() {
           </button>
           
           <button 
+            className={`nav-item ${activeSection === 'citas-medico' ? 'active' : ''}`}
+            onClick={() => { 
+              setActiveSection('citas-medico');
+              loadCitasMedico();
+            }}
+          >
+            <span className="nav-icon">🩺</span>
+            <span>Citas por Médico</span>
+            {citasMedico.length > 0 && (
+              <span className="nav-badge doctor">{citasMedico.length}</span>
+            )}
+          </button>
+          
+          <button 
             className={`nav-item ${activeSection === 'preventiva' ? 'active' : ''}`}
             onClick={() => setActiveSection('preventiva')}
           >
@@ -962,6 +995,7 @@ function RecepcionDashboard() {
               {activeSection === 'checkin' && t('recepcion.checkInFlow.title')}
               {activeSection === 'nueva-mascota' && t('recepcion.newPatient.title')}
               {activeSection === 'citas' && t('recepcion.sections.todayAppointments')}
+              {activeSection === 'citas-medico' && '🩺 Citas por Médico'}
               {activeSection === 'preventiva' && t('recepcion.triage.consultationTypes.preventive')}
               {activeSection === 'triage' && t('recepcion.triage.title')}
               {activeSection === 'todos' && t('recepcion.allPatients')}
@@ -972,6 +1006,7 @@ function RecepcionDashboard() {
               {activeSection === 'checkin' && t('recepcion.checkInFlow.searchByPhone')}
               {activeSection === 'nueva-mascota' && t('recepcion.newPatient.registerPatient')}
               {activeSection === 'citas' && `${todayAppointments.length} ${t('recepcion.sections.todayAppointments').toLowerCase()}`}
+              {activeSection === 'citas-medico' && `${citasMedico.length} citas agendadas por médicos`}
               {activeSection === 'preventiva' && t('recepcion.triage.consultationTypes.preventive')}
               {activeSection === 'triage' && t('recepcion.sections.triagePending')}
               {activeSection === 'todos' && t('recepcion.allPatients')}
@@ -1032,7 +1067,7 @@ function RecepcionDashboard() {
               {todayAppointments.length > 0 && (
                 <div className="content-section info">
                   <h2>📅 {t('recepcion.sections.todayAppointments')}</h2>
-                  <p>{todayAppointments.length} {t('recepcion.appointments')}</p>
+                  <p>{todayAppointments.length} citas programadas</p>
                   <button className="btn-action" onClick={() => setActiveSection('citas')}>
                     {t('common.search')}
                   </button>
@@ -1873,6 +1908,151 @@ function RecepcionDashboard() {
             ) : (
               <div className="empty-state">
                 <p>📅 {t('recepcion.messages.noAppointmentsToday')}</p>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* SECCIÓN: CITAS AGENDADAS POR MÉDICO */}
+        {activeSection === 'citas-medico' && (
+          <div className="citas-medico-section">
+            <div className="section-actions">
+              <button className="btn-secondary" onClick={loadCitasMedico} disabled={loadingCitasMedico}>
+                🔄 {loadingCitasMedico ? 'Cargando...' : 'Actualizar'}
+              </button>
+            </div>
+            
+            {loadingCitasMedico ? (
+              <div className="loading-state">
+                <span className="spinner">⏳</span>
+                <p>Cargando citas...</p>
+              </div>
+            ) : citasMedico.length > 0 ? (
+              <div className="citas-medico-grid">
+                {citasMedico.map((cita) => (
+                  <div key={cita.id} className="cita-medico-card">
+                    <div className="cita-medico-header">
+                      <div className="cita-datetime">
+                        <span className="cita-fecha">📅 {new Date(cita.fecha).toLocaleDateString()}</span>
+                        <span className="cita-hora">🕐 {cita.hora}</span>
+                      </div>
+                      <span className={`status-badge ${cita.confirmada ? 'success' : 'warning'}`}>
+                        {cita.confirmada ? '✓ Confirmada' : '⏳ Por confirmar'}
+                      </span>
+                    </div>
+                    
+                    <div className="cita-medico-patient">
+                      <div className="patient-row">
+                        <span className="pet-icon">{cita.pet?.especie === 'PERRO' ? '🐕' : '🐈'}</span>
+                        <div className="patient-details">
+                          <strong>{cita.pet?.nombre || 'Mascota'}</strong>
+                          <span className="breed">{cita.pet?.raza}</span>
+                        </div>
+                      </div>
+                    </div>
+                    
+                    <div className="cita-medico-owner">
+                      <div className="owner-info-line">
+                        <span className="owner-icon">👤</span>
+                        <strong>{cita.pet?.owner?.nombre || 'Propietario'}</strong>
+                      </div>
+                      {cita.pet?.owner?.telefono && (
+                        <div className="owner-phone-line">
+                          <span className="phone-icon">📱</span>
+                          <span className="phone-number">{cita.pet.owner.telefono}</span>
+                          <button 
+                            className="btn-call" 
+                            onClick={() => handleCallPatient(cita.pet.owner.telefono)}
+                          >
+                            Llamar
+                          </button>
+                        </div>
+                      )}
+                      {cita.pet?.owner?.email && (
+                        <div className="owner-email-line">
+                          <span className="email-icon">✉️</span>
+                          <span className="email">{cita.pet.owner.email}</span>
+                        </div>
+                      )}
+                    </div>
+                    
+                    <div className="cita-medico-motivo">
+                      <strong>📝 Motivo:</strong>
+                      <p>{cita.motivo}</p>
+                    </div>
+                    
+                    {cita.metadata?.labType && (
+                      <div className="cita-medico-lab-context">
+                        <span className="lab-badge">🧪 {cita.metadata.labType}</span>
+                      </div>
+                    )}
+                    
+                    {cita.notas && (
+                      <div className="cita-medico-notas">
+                        <small>💬 {cita.notas}</small>
+                      </div>
+                    )}
+                    
+                    <div className="cita-medico-actions">
+                      {!cita.confirmada && (
+                        <button 
+                          className="btn-confirm"
+                          onClick={async () => {
+                            try {
+                              await confirmAppointment(cita.id);
+                              await loadCitasMedico();
+                              alert('✅ Cita confirmada');
+                            } catch (err) {
+                              alert('Error: ' + (err.message || 'No se pudo confirmar'));
+                            }
+                          }}
+                        >
+                          ✓ Confirmar
+                        </button>
+                      )}
+                      {cita.confirmada && cita.pet?.id && (
+                        <button 
+                          className="btn-checkin"
+                          onClick={async () => {
+                            try {
+                              await checkInPet(cita.pet.id);
+                              await refreshData();
+                              await loadCitasMedico();
+                              alert(`✅ Check-in completado para ${cita.pet.nombre}`);
+                              setActiveSection('triage');
+                            } catch (err) {
+                              alert('Error: ' + (err.message || 'No se pudo hacer check-in'));
+                            }
+                          }}
+                        >
+                          🏥 Check-in
+                        </button>
+                      )}
+                      <button 
+                        className="btn-cancel"
+                        onClick={async () => {
+                          if (confirm('¿Cancelar esta cita?')) {
+                            try {
+                              await cancelAppointment(cita.id);
+                              await loadCitasMedico();
+                              alert('Cita cancelada');
+                            } catch (err) {
+                              alert('Error: ' + (err.message || 'No se pudo cancelar'));
+                            }
+                          }
+                        }}
+                      >
+                        ✕ Cancelar
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="empty-state">
+                <span className="empty-icon">🩺</span>
+                <p>No hay citas agendadas por médicos pendientes</p>
+                <small>Cuando un médico agende una cita de seguimiento desde resultados de laboratorio, aparecerá aquí</small>
               </div>
             )}
           </div>

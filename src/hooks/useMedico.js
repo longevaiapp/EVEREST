@@ -67,18 +67,11 @@ export const useMedico = () => {
     }
   }, []);
 
-  // Cargar datos al montar
+  // Cargar datos al montar - solo una vez
   useEffect(() => {
     loadDashboardData();
-  }, [loadDashboardData]);
-
-  // Refresh automático cada 30 segundos
-  useEffect(() => {
-    const interval = setInterval(() => {
-      loadDashboardData();
-    }, 30000);
-    
-    return () => clearInterval(interval);
+    // NOTE: Auto-refresh deshabilitado porque causa problemas de recarga continua
+    // Si se necesita refresh manual, usar el botón de recargar en el dashboard
   }, [loadDashboardData]);
 
   // ============================================================================

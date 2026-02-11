@@ -8,18 +8,20 @@
 
 .order-card {
   padding: 1.5rem;
-  background: rgba(255, 255, 255, 0.15);
+  background: linear-gradient(135deg, rgba(30, 136, 229, 0.3) 0%, rgba(21, 101, 192, 0.4) 100%);
   backdrop-filter: blur(20px) saturate(180%);
   -webkit-backdrop-filter: blur(20px) saturate(180%);
-  border-radius: 12px;
-  border: 1px solid rgba(255, 255, 255, 0.3);
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+  border-radius: 16px;
+  border: 1px solid rgba(100, 181, 246, 0.25);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
   transition: all 0.3s ease;
 }
 
 .order-card:hover {
   transform: translateY(-2px);
-  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.15);
+  background: linear-gradient(135deg, rgba(30, 136, 229, 0.45) 0%, rgba(21, 101, 192, 0.55) 100%);
+  border-color: rgba(100, 181, 246, 0.5);
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.25);
 }
 
 .order-card.urgent {
@@ -65,11 +67,11 @@
   align-items: center;
   gap: 1rem;
   padding: 1rem;
-  background: rgba(255, 255, 255, 0.2);
+  background: rgba(25, 118, 210, 0.25);
   backdrop-filter: blur(10px);
   -webkit-backdrop-filter: blur(10px);
-  border: 1px solid rgba(255, 255, 255, 0.3);
-  border-radius: 8px;
+  border: 1px solid rgba(100, 181, 246, 0.25);
+  border-radius: 12px;
   margin-bottom: 1rem;
 }
 
@@ -104,9 +106,9 @@
   width: 48px;
   height: 48px;
   border-radius: 50%;
-  background: rgba(255, 255, 255, 0.3);
+  background: rgba(25, 118, 210, 0.3);
   backdrop-filter: blur(10px);
-  border: 2px solid rgba(255, 255, 255, 0.5);
+  border: 2px solid rgba(100, 181, 246, 0.5);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -116,11 +118,11 @@
 
 .order-medications {
   padding: 1rem;
-  background: rgba(255, 255, 255, 0.2);
+  background: rgba(25, 118, 210, 0.2);
   backdrop-filter: blur(10px);
   -webkit-backdrop-filter: blur(10px);
-  border: 1px solid rgba(255, 255, 255, 0.25);
-  border-radius: 8px;
+  border: 1px solid rgba(100, 181, 246, 0.25);
+  border-radius: 12px;
   margin-bottom: 1rem;
 }
 
@@ -153,21 +155,21 @@
 
 .btn-prepare {
   padding: 1rem;
-  background: linear-gradient(135deg, rgba(156, 39, 176, 0.9) 0%, rgba(123, 31, 162, 0.9) 100%);
+  background: linear-gradient(135deg, rgba(25, 118, 210, 0.9) 0%, rgba(13, 71, 161, 0.9) 100%);
   backdrop-filter: blur(10px);
   color: white;
-  border: 1px solid rgba(156, 39, 176, 0.5);
-  border-radius: 8px;
+  border: 1px solid rgba(100, 181, 246, 0.5);
+  border-radius: 12px;
   font-weight: 600;
   cursor: pointer;
   transition: all 0.3s;
-  box-shadow: 0 4px 16px rgba(156, 39, 176, 0.3);
+  box-shadow: 0 4px 16px rgba(25, 118, 210, 0.3);
 }
 
 .btn-prepare:hover:not(:disabled) {
   transform: translateY(-2px);
-  box-shadow: 0 6px 20px rgba(156, 39, 176, 0.4);
-  background: linear-gradient(135deg, rgba(156, 39, 176, 1) 0%, rgba(123, 31, 162, 1) 100%);
+  box-shadow: 0 6px 20px rgba(25, 118, 210, 0.4);
+  background: linear-gradient(135deg, rgba(30, 136, 229, 1) 0%, rgba(21, 101, 192, 1) 100%);
 }
 
 .btn-prepare.preparing {
@@ -196,18 +198,51 @@
 
 .inventory-item {
   padding: 1.5rem;
-  background: rgba(255, 255, 255, 0.15);
+  background: linear-gradient(135deg, rgba(25, 118, 210, 0.3) 0%, rgba(13, 71, 161, 0.4) 100%);
   backdrop-filter: blur(20px) saturate(180%);
   -webkit-backdrop-filter: blur(20px) saturate(180%);
-  border-radius: 12px;
-  border: 1px solid rgba(255, 255, 255, 0.3);
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+  border-radius: 16px;
+  border: 1px solid rgba(100, 181, 246, 0.25);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
   transition: all 0.3s ease;
+  display: flex;
+  flex-direction: column;
 }
 
 .inventory-item:hover {
   transform: translateY(-2px);
-  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.15);
+  background: linear-gradient(135deg, rgba(25, 118, 210, 0.45) 0%, rgba(13, 71, 161, 0.55) 100%);
+  border-color: rgba(100, 181, 246, 0.5);
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.25);
+}
+
+/* Inventory Item Image */
+.inventory-image {
+  width: 100%;
+  height: 120px;
+  border-radius: 12px;
+  overflow: hidden;
+  margin-bottom: 1rem;
+  background: rgba(13, 71, 161, 0.3);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.inventory-image img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.inventory-image .image-placeholder {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(135deg, rgba(25, 118, 210, 0.4), rgba(13, 71, 161, 0.5));
+  font-size: 2.5rem;
 }
 
 .inventory-item.low-stock {
@@ -233,7 +268,7 @@
 .inventory-category {
   font-size: 0.7rem;
   padding: 0.25rem 0.75rem;
-  background: rgba(156, 39, 176, 0.8);
+  background: rgba(25, 118, 210, 0.8);
   backdrop-filter: blur(10px);
   color: white;
   border-radius: 12px;
@@ -242,10 +277,10 @@
 }
 
 .inventory-details {
-  background: rgba(255, 255, 255, 0.15);
+  background: rgba(13, 71, 161, 0.35);
   backdrop-filter: blur(10px);
-  border: 1px solid rgba(255, 255, 255, 0.2);
-  border-radius: 8px;
+  border: 1px solid rgba(100, 181, 246, 0.2);
+  border-radius: 12px;
   padding: 0.75rem;
   margin-bottom: 1rem;
 }
@@ -283,12 +318,12 @@
 
 .stock-bar {
   height: 8px;
-  background: rgba(255, 255, 255, 0.2);
+  background: rgba(13, 71, 161, 0.35);
   backdrop-filter: blur(5px);
   border-radius: 4px;
   overflow: hidden;
   margin-bottom: 0.5rem;
-  border: 1px solid rgba(255, 255, 255, 0.2);
+  border: 1px solid rgba(100, 181, 246, 0.2);
 }
 
 .stock-fill {
@@ -322,17 +357,17 @@
 
 .btn-icon {
   padding: 0.5rem 0.75rem;
-  background: rgba(255, 255, 255, 0.2);
+  background: rgba(25, 118, 210, 0.25);
   backdrop-filter: blur(10px);
-  border: 1px solid rgba(255, 255, 255, 0.3);
-  border-radius: 6px;
+  border: 1px solid rgba(100, 181, 246, 0.3);
+  border-radius: 10px;
   cursor: pointer;
   transition: all 0.2s;
   font-size: 1rem;
 }
 
 .btn-icon:hover {
-  background: rgba(255, 255, 255, 0.3);
+  background: rgba(25, 118, 210, 0.4);
   transform: translateY(-2px);
 }
 
@@ -751,9 +786,10 @@
 
 /* ==================== DISPENSE MODAL ==================== */
 .dispense-modal {
-  max-width: 700px;
+  max-width: 800px;
   max-height: 90vh;
   overflow-y: auto;
+  background: rgba(30, 60, 114, 0.95) !important;
 }
 
 .dispense-patient-info {
@@ -761,9 +797,10 @@
   align-items: center;
   gap: 1rem;
   padding: 1rem;
-  background: rgba(156, 39, 176, 0.1);
+  background: rgba(156, 39, 176, 0.2);
   border-radius: 8px;
   margin-bottom: 1.5rem;
+  border: 1px solid rgba(156, 39, 176, 0.3);
 }
 
 .dispense-patient-info .patient-avatar {
@@ -773,19 +810,222 @@
 .dispense-patient-info h3 {
   margin: 0;
   font-size: 1.25rem;
+  color: #fff;
 }
 
 .dispense-patient-info p {
   margin: 0;
-  opacity: 0.8;
+  color: rgba(255, 255, 255, 0.8);
   font-size: 0.875rem;
 }
 
 .dispense-items h3 {
   margin-bottom: 1rem;
   font-size: 1rem;
+  color: #fff;
 }
 
+/* New dispense items list design */
+.dispense-items-list {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+}
+
+.dispense-item-row {
+  padding: 1rem;
+  background: rgba(255, 255, 255, 0.08);
+  border-radius: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  transition: all 0.2s ease;
+}
+
+.dispense-item-row:hover {
+  background: rgba(255, 255, 255, 0.12);
+}
+
+.dispense-item-row.needs-selection {
+  border-color: rgba(255, 193, 7, 0.5);
+  background: rgba(255, 193, 7, 0.08);
+}
+
+.dispense-item-row.out-of-stock {
+  border-color: rgba(244, 67, 54, 0.5);
+  background: rgba(244, 67, 54, 0.08);
+  opacity: 0.7;
+}
+
+.prescribed-info {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 0.75rem;
+  padding-bottom: 0.75rem;
+  border-bottom: 1px dashed rgba(255, 255, 255, 0.15);
+}
+
+.prescribed-label {
+  font-size: 0.75rem;
+  opacity: 0.7;
+  text-transform: uppercase;
+}
+
+.prescribed-name {
+  font-weight: 600;
+  font-size: 1rem;
+  color: #fff;
+}
+
+.prescribed-detail {
+  font-size: 0.8rem;
+  padding: 0.15rem 0.5rem;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 4px;
+  opacity: 0.9;
+}
+
+.inventory-selection {
+  margin-bottom: 0.75rem;
+}
+
+.inventory-selection label {
+  display: block;
+  font-size: 0.75rem;
+  opacity: 0.8;
+  margin-bottom: 0.35rem;
+}
+
+.medication-select {
+  width: 100%;
+  padding: 0.6rem;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 6px;
+  background: rgba(255, 255, 255, 0.1);
+  color: inherit;
+  font-size: 0.9rem;
+  cursor: pointer;
+}
+
+.medication-select:focus {
+  outline: none;
+  border-color: rgba(156, 39, 176, 0.6);
+  box-shadow: 0 0 0 3px rgba(156, 39, 176, 0.2);
+}
+
+.medication-select.required {
+  border-color: rgba(255, 193, 7, 0.6);
+}
+
+.medication-select option {
+  background: #2a2a3a;
+  color: #fff;
+  padding: 0.5rem;
+}
+
+.medication-select option:disabled {
+  color: #888;
+}
+
+.selected-med-info {
+  display: flex;
+  gap: 0.75rem;
+  margin-top: 0.5rem;
+}
+
+.stock-badge, .price-badge {
+  font-size: 0.75rem;
+  padding: 0.2rem 0.5rem;
+  border-radius: 4px;
+}
+
+.stock-badge.good {
+  background: rgba(76, 175, 80, 0.2);
+  color: #4caf50;
+}
+
+.stock-badge.low {
+  background: rgba(255, 193, 7, 0.2);
+  color: #ffc107;
+}
+
+.stock-badge.out {
+  background: rgba(244, 67, 54, 0.2);
+  color: #f44336;
+}
+
+.price-badge {
+  background: rgba(33, 150, 243, 0.2);
+  color: #2196f3;
+}
+
+.selection-warning {
+  display: inline-block;
+  font-size: 0.75rem;
+  color: #ffc107;
+  margin-top: 0.35rem;
+}
+
+.dispense-qty-controls {
+  display: flex;
+  align-items: center;
+  gap: 1.5rem;
+  padding-top: 0.75rem;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.qty-group {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.qty-group label {
+  font-size: 0.75rem;
+  color: rgba(255, 255, 255, 0.7);
+  white-space: nowrap;
+}
+
+.qty-group .qty-value {
+  font-weight: 600;
+  min-width: 40px;
+  text-align: center;
+  color: #fff;
+}
+
+.qty-group.subtotal {
+  margin-left: auto;
+}
+
+.subtotal-value {
+  font-weight: 700;
+  color: #4caf50;
+  font-size: 1.1rem;
+}
+
+.dispense-total {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 1rem;
+  padding: 1rem;
+  background: rgba(156, 39, 176, 0.15);
+  border-radius: 8px;
+  margin-bottom: 1.5rem;
+}
+
+.dispense-total strong {
+  font-size: 1rem;
+}
+
+.dispense-total .total-value {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: #4caf50;
+}
+
+/* Legacy table styles (kept for compatibility) */
 .dispense-table {
   width: 100%;
   border-collapse: collapse;
@@ -1028,6 +1268,54 @@
   justify-content: space-between;
   align-items: center;
   margin-bottom: 1.5rem;
+}
+
+.section-header h2 {
+  color: #1a237e;
+  font-weight: 700;
+  text-shadow: none;
+}
+
+.section-actions {
+  display: flex;
+  gap: 0.75rem;
+  align-items: center;
+}
+
+/* Fix inventory section text contrast */
+.farmacia-dashboard .content-section.full-width .section-header h2 {
+  color: #1a237e;
+}
+
+.farmacia-dashboard .search-bar .search-input {
+  background: rgba(255, 255, 255, 0.95);
+  color: #333;
+  border: 1px solid rgba(0, 0, 0, 0.15);
+}
+
+.farmacia-dashboard .search-bar .search-input::placeholder {
+  color: #666;
+}
+
+.farmacia-dashboard .category-filter {
+  background: rgba(255, 255, 255, 0.95);
+  color: #333;
+  border: 1px solid rgba(0, 0, 0, 0.15);
+  padding: 0.5rem 0.75rem;
+  border-radius: 8px;
+}
+
+.farmacia-dashboard .section-actions .btn-primary {
+  background: linear-gradient(135deg, #9c27b0, #673ab7);
+  color: #fff;
+  font-weight: 600;
+}
+
+.farmacia-dashboard .section-actions .btn-secondary {
+  background: rgba(103, 58, 183, 0.15);
+  color: #5e35b1;
+  border: 1px solid rgba(103, 58, 183, 0.3);
+  font-weight: 600;
 }
 
 .count-badge {
@@ -2796,3 +3084,693 @@
   background: rgba(255, 152, 0, 1);
 }
 
+/* ============================================
+   IMAGE UPLOAD STYLES
+   ============================================ */
+
+.image-section {
+  border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+  padding-bottom: 1.5rem;
+  margin-bottom: 1.5rem;
+}
+
+.image-upload-container {
+  display: flex;
+  gap: 1.5rem;
+  align-items: flex-start;
+}
+
+.image-preview {
+  width: 150px;
+  height: 150px;
+  border-radius: 12px;
+  overflow: hidden;
+  background: rgba(255, 255, 255, 0.1);
+  border: 2px dashed rgba(255, 255, 255, 0.3);
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.image-preview img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.image-preview .btn-remove-image {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: rgba(244, 67, 54, 0.9);
+  color: white;
+  border: none;
+  cursor: pointer;
+  font-size: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s;
+}
+
+.image-preview .btn-remove-image:hover {
+  background: rgba(244, 67, 54, 1);
+  transform: scale(1.1);
+}
+
+.image-placeholder-large {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
+  color: rgba(255, 255, 255, 0.5);
+}
+
+.image-placeholder-large span {
+  font-size: 3rem;
+  margin-bottom: 0.5rem;
+}
+
+.image-placeholder-large p {
+  font-size: 0.8rem;
+  margin: 0;
+}
+
+.image-upload-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.btn-upload {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.75rem 1.25rem;
+  background: linear-gradient(135deg, rgba(103, 58, 183, 0.8), rgba(156, 39, 176, 0.8));
+  color: white;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 0.9rem;
+  font-weight: 600;
+  transition: all 0.2s;
+  border: none;
+}
+
+.btn-upload:hover {
+  background: linear-gradient(135deg, rgba(103, 58, 183, 1), rgba(156, 39, 176, 1));
+  transform: translateY(-2px);
+}
+
+.upload-hint {
+  font-size: 0.75rem;
+  color: rgba(255, 255, 255, 0.5);
+}
+/* ============================================
+   CONTRAST FIXES FOR FARMACIA DASHBOARD
+   ============================================ */
+
+/* Section Headers - ensure dark text on light glass backgrounds */
+.farmacia-dashboard .content-section h2,
+.farmacia-dashboard .section-header h2 {
+  color: #1a237e;
+  text-shadow: none;
+  font-weight: 700;
+}
+
+.farmacia-dashboard .content-section h3,
+.farmacia-dashboard .section-header h3 {
+  color: #283593;
+  font-weight: 600;
+}
+
+/* Pending Orders Section Title */
+.farmacia-dashboard .pending-orders-header h2 {
+  color: #1a237e;
+}
+
+/* Modal Styles - ensure proper contrast */
+.farmacia-dashboard .modal-content {
+  background: rgba(30, 60, 114, 0.95);
+  backdrop-filter: blur(40px) saturate(180%);
+  -webkit-backdrop-filter: blur(40px) saturate(180%);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.farmacia-dashboard .modal-content h2 {
+  color: #fff;
+  text-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+}
+
+.farmacia-dashboard .modal-content h3 {
+  color: #fff;
+}
+
+.farmacia-dashboard .modal-content p,
+.farmacia-dashboard .modal-content label {
+  color: rgba(255, 255, 255, 0.9);
+}
+
+/* Order Details Modal */
+.farmacia-dashboard .patient-info-modal {
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 12px;
+  padding: 1rem;
+  margin-bottom: 1rem;
+}
+
+.farmacia-dashboard .patient-info-modal .info-row {
+  color: #fff;
+  padding: 0.5rem 0;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.farmacia-dashboard .patient-info-modal .info-row:last-child {
+  border-bottom: none;
+}
+
+.farmacia-dashboard .patient-info-modal .info-row strong {
+  color: rgba(255, 255, 255, 0.7);
+  margin-right: 0.5rem;
+}
+
+.farmacia-dashboard .order-detail-section {
+  background: rgba(255, 255, 255, 0.08);
+  border-radius: 8px;
+  padding: 1rem;
+  margin-bottom: 1rem;
+}
+
+.farmacia-dashboard .order-detail-section h3 {
+  color: #fff;
+  font-size: 1rem;
+  margin-bottom: 0.75rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  padding-bottom: 0.5rem;
+}
+
+.farmacia-dashboard .order-detail-section p {
+  color: rgba(255, 255, 255, 0.9);
+}
+
+.farmacia-dashboard .order-detail-section .info-row {
+  color: #fff;
+  margin-bottom: 0.5rem;
+}
+
+/* Buttons in Modal */
+.farmacia-dashboard .btn-close {
+  background: rgba(255, 255, 255, 0.2);
+  color: #fff;
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  padding: 0.75rem 1.5rem;
+  border-radius: 8px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.farmacia-dashboard .btn-close:hover {
+  background: rgba(255, 255, 255, 0.3);
+}
+
+.farmacia-dashboard .btn-success {
+  background: linear-gradient(135deg, #4caf50, #2e7d32);
+  color: #fff;
+  border: none;
+  padding: 0.75rem 1.5rem;
+  border-radius: 8px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.farmacia-dashboard .btn-success:hover {
+  background: linear-gradient(135deg, #66bb6a, #388e3c);
+  transform: translateY(-1px);
+}
+
+/* Inventory Section - White/Light Background Fixes */
+.farmacia-dashboard .section-actions .btn-primary {
+  background: linear-gradient(135deg, #9c27b0, #673ab7);
+  color: #fff;
+}
+
+.farmacia-dashboard .section-actions .btn-secondary {
+  background: rgba(103, 58, 183, 0.1);
+  color: #673ab7;
+  border: 1px solid rgba(103, 58, 183, 0.3);
+}
+
+.farmacia-dashboard .section-actions .btn-secondary:hover {
+  background: rgba(103, 58, 183, 0.2);
+}
+
+/* Category Filter Dropdown */
+.farmacia-dashboard .category-filter {
+  background: rgba(255, 255, 255, 0.9);
+  color: #333;
+  border: 1px solid rgba(0, 0, 0, 0.1);
+}
+
+.farmacia-dashboard .category-filter option {
+  background: #fff;
+  color: #333;
+}
+
+/* Search Input */
+.farmacia-dashboard .search-input {
+  background: rgba(255, 255, 255, 0.9);
+  color: #333;
+  border: 1px solid rgba(0, 0, 0, 0.1);
+}
+
+.farmacia-dashboard .search-input::placeholder {
+  color: rgba(0, 0, 0, 0.5);
+}
+
+/* Dispense Modal Items */
+.farmacia-dashboard .dispense-item-card {
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 12px;
+  padding: 1rem;
+  margin-bottom: 1rem;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.farmacia-dashboard .dispense-item-card h4 {
+  color: #fff;
+}
+
+.farmacia-dashboard .dispense-item-card .prescribed-info {
+  color: rgba(255, 255, 255, 0.8);
+}
+
+.farmacia-dashboard .dispense-item-card label {
+  color: rgba(255, 255, 255, 0.9);
+}
+
+/* Total Section */
+.farmacia-dashboard .dispense-total {
+  background: rgba(156, 39, 176, 0.2);
+  border-radius: 8px;
+  padding: 1rem;
+  margin-top: 1rem;
+}
+
+.farmacia-dashboard .dispense-total .total-label {
+  color: rgba(255, 255, 255, 0.8);
+}
+
+.farmacia-dashboard .dispense-total .total-amount {
+  color: #4caf50;
+  font-size: 1.5rem;
+  font-weight: 700;
+}
+
+/* Form inputs in modals */
+.farmacia-dashboard .modal-content input[type="text"],
+.farmacia-dashboard .modal-content input[type="number"],
+.farmacia-dashboard .modal-content select,
+.farmacia-dashboard .modal-content textarea {
+  background: rgba(255, 255, 255, 0.15);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  color: #fff;
+  border-radius: 8px;
+  padding: 0.75rem;
+}
+
+.farmacia-dashboard .modal-content input::placeholder,
+.farmacia-dashboard .modal-content textarea::placeholder {
+  color: rgba(255, 255, 255, 0.5);
+}
+
+.farmacia-dashboard .modal-content select option {
+  background: #1a237e;
+  color: #fff;
+}
+
+/* Prescription Items in Dispense Modal */
+.farmacia-dashboard .prescribed-badge {
+  background: rgba(33, 150, 243, 0.3);
+  color: #64b5f6;
+  padding: 0.25rem 0.5rem;
+  border-radius: 4px;
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+
+.farmacia-dashboard .dose-badge,
+.farmacia-dashboard .frequency-badge,
+.farmacia-dashboard .duration-badge {
+  background: rgba(255, 255, 255, 0.15);
+  color: #fff;
+  padding: 0.25rem 0.5rem;
+  border-radius: 4px;
+  font-size: 0.8rem;
+}
+
+.farmacia-dashboard .stock-badge {
+  background: rgba(76, 175, 80, 0.3);
+  color: #81c784;
+  padding: 0.25rem 0.5rem;
+  border-radius: 4px;
+  font-size: 0.75rem;
+}
+
+.farmacia-dashboard .price-badge {
+  background: rgba(255, 193, 7, 0.3);
+  color: #ffd54f;
+  padding: 0.25rem 0.5rem;
+  border-radius: 4px;
+  font-size: 0.75rem;
+}
+
+/* Delivered to Input */
+.farmacia-dashboard .delivered-to-section {
+  margin-top: 1rem;
+}
+
+.farmacia-dashboard .delivered-to-section label {
+  color: #4caf50;
+  font-weight: 600;
+  display: block;
+  margin-bottom: 0.5rem;
+}
+
+/* ============================================
+   BLUE GLASS THEME - EVEREST Color Palette
+   Override white backgrounds with blue glassmorphism
+   ============================================ */
+
+/* ===========================================
+   CONTENT SECTIONS - Blue Glass Cards
+   Override inherited white styles from global CSS
+   =========================================== */
+.dashboard.farmacia-dashboard .content-section,
+.dashboard.farmacia-dashboard .content-section.full-width,
+.dashboard.farmacia-dashboard .dashboard-content .content-section,
+div.farmacia-dashboard .content-section,
+div.farmacia-dashboard .dashboard-content .content-section {
+  background: linear-gradient(135deg, rgba(26, 35, 126, 0.85) 0%, rgba(13, 71, 161, 0.9) 100%) !important;
+  backdrop-filter: blur(20px) saturate(180%) !important;
+  -webkit-backdrop-filter: blur(20px) saturate(180%) !important;
+  border: 1px solid rgba(100, 181, 246, 0.3) !important;
+  border-radius: 20px !important;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3) !important;
+}
+
+.dashboard.farmacia-dashboard .content-section:hover,
+div.farmacia-dashboard .content-section:hover {
+  border-color: rgba(100, 181, 246, 0.5) !important;
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.4) !important;
+}
+
+/* ===========================================
+   SECTION HEADERS
+   =========================================== */
+.dashboard.farmacia-dashboard .content-section h2,
+.dashboard.farmacia-dashboard .section-header h2,
+div.farmacia-dashboard .content-section h2,
+div.farmacia-dashboard .section-header h2 {
+  color: #fff !important;
+  text-shadow: 0 2px 8px rgba(0, 0, 0, 0.3) !important;
+}
+
+/* ===========================================
+   INVENTORY CARDS - Blue Glass
+   =========================================== */
+.dashboard.farmacia-dashboard .inventory-item,
+.dashboard.farmacia-dashboard .inventory-card,
+div.farmacia-dashboard .inventory-item,
+div.farmacia-dashboard .inventory-card {
+  background: linear-gradient(135deg, rgba(25, 118, 210, 0.3) 0%, rgba(13, 71, 161, 0.4) 100%) !important;
+  border: 1px solid rgba(100, 181, 246, 0.25) !important;
+  border-radius: 16px !important;
+  backdrop-filter: blur(15px) !important;
+  -webkit-backdrop-filter: blur(15px) !important;
+}
+
+.dashboard.farmacia-dashboard .inventory-item:hover,
+.dashboard.farmacia-dashboard .inventory-card:hover,
+div.farmacia-dashboard .inventory-item:hover,
+div.farmacia-dashboard .inventory-card:hover {
+  background: linear-gradient(135deg, rgba(25, 118, 210, 0.45) 0%, rgba(13, 71, 161, 0.55) 100%) !important;
+  border-color: rgba(100, 181, 246, 0.5) !important;
+  transform: translateY(-2px);
+}
+
+.dashboard.farmacia-dashboard .inventory-item h4,
+.dashboard.farmacia-dashboard .inventory-card h4,
+div.farmacia-dashboard .inventory-item h4,
+div.farmacia-dashboard .inventory-card h4 {
+  color: #fff !important;
+}
+
+.dashboard.farmacia-dashboard .inventory-item p,
+.dashboard.farmacia-dashboard .inventory-card p,
+div.farmacia-dashboard .inventory-item p,
+div.farmacia-dashboard .inventory-card p {
+  color: rgba(255, 255, 255, 0.85) !important;
+}
+
+/* Inventory image placeholder */
+.dashboard.farmacia-dashboard .inventory-image .image-placeholder,
+div.farmacia-dashboard .inventory-image .image-placeholder {
+  background: linear-gradient(135deg, rgba(25, 118, 210, 0.4), rgba(13, 71, 161, 0.5)) !important;
+}
+
+/* ===========================================
+   STAT CARDS - Blue Glass
+   =========================================== */
+.dashboard.farmacia-dashboard .stat-card,
+div.farmacia-dashboard .stat-card {
+  background: linear-gradient(135deg, rgba(25, 118, 210, 0.35) 0%, rgba(13, 71, 161, 0.45) 100%) !important;
+  border: 1px solid rgba(100, 181, 246, 0.3) !important;
+  border-radius: 16px !important;
+}
+
+.dashboard.farmacia-dashboard .stat-card:hover,
+div.farmacia-dashboard .stat-card:hover {
+  background: linear-gradient(135deg, rgba(25, 118, 210, 0.5) 0%, rgba(13, 71, 161, 0.6) 100%) !important;
+  border-color: rgba(100, 181, 246, 0.5) !important;
+}
+
+.dashboard.farmacia-dashboard .stat-card .stat-value,
+.dashboard.farmacia-dashboard .stat-card .stat-label,
+div.farmacia-dashboard .stat-card .stat-value,
+div.farmacia-dashboard .stat-card .stat-label {
+  color: #fff !important;
+}
+
+/* ===========================================
+   ORDER CARDS - Blue Glass
+   =========================================== */
+.dashboard.farmacia-dashboard .order-card,
+div.farmacia-dashboard .order-card {
+  background: linear-gradient(135deg, rgba(30, 136, 229, 0.3) 0%, rgba(21, 101, 192, 0.4) 100%) !important;
+  border: 1px solid rgba(100, 181, 246, 0.25) !important;
+  border-radius: 16px !important;
+}
+
+.dashboard.farmacia-dashboard .order-card:hover,
+div.farmacia-dashboard .order-card:hover {
+  background: linear-gradient(135deg, rgba(30, 136, 229, 0.45) 0%, rgba(21, 101, 192, 0.55) 100%) !important;
+  border-color: rgba(100, 181, 246, 0.5) !important;
+}
+
+/* ===========================================
+   SEARCH & FILTER INPUTS - Blue Styled
+   =========================================== */
+.dashboard.farmacia-dashboard .search-input,
+.dashboard.farmacia-dashboard .search-bar input,
+.dashboard.farmacia-dashboard .category-filter,
+.dashboard.farmacia-dashboard .form-control,
+div.farmacia-dashboard .search-input,
+div.farmacia-dashboard .search-bar input,
+div.farmacia-dashboard .category-filter,
+div.farmacia-dashboard .form-control {
+  background: rgba(13, 71, 161, 0.5) !important;
+  color: #fff !important;
+  border: 1px solid rgba(100, 181, 246, 0.3) !important;
+  border-radius: 12px !important;
+}
+
+.dashboard.farmacia-dashboard .search-input::placeholder,
+.dashboard.farmacia-dashboard .search-bar input::placeholder,
+div.farmacia-dashboard .search-input::placeholder,
+div.farmacia-dashboard .search-bar input::placeholder {
+  color: rgba(255, 255, 255, 0.6) !important;
+}
+
+.dashboard.farmacia-dashboard .search-input:focus,
+.dashboard.farmacia-dashboard .category-filter:focus,
+.dashboard.farmacia-dashboard .form-control:focus,
+div.farmacia-dashboard .search-input:focus,
+div.farmacia-dashboard .category-filter:focus,
+div.farmacia-dashboard .form-control:focus {
+  border-color: rgba(100, 181, 246, 0.7) !important;
+  outline: none !important;
+  box-shadow: 0 0 0 3px rgba(100, 181, 246, 0.25) !important;
+}
+
+/* Select dropdown options */
+.dashboard.farmacia-dashboard .category-filter option,
+.dashboard.farmacia-dashboard select option,
+div.farmacia-dashboard .category-filter option,
+div.farmacia-dashboard select option {
+  background: #0d47a1 !important;
+  color: #fff !important;
+}
+
+/* ===========================================
+   BUTTONS - Blue Theme
+   =========================================== */
+.dashboard.farmacia-dashboard .btn-primary,
+div.farmacia-dashboard .btn-primary {
+  background: linear-gradient(135deg, #1976d2, #0d47a1) !important;
+  color: #fff !important;
+  border: none !important;
+  border-radius: 12px !important;
+}
+
+.dashboard.farmacia-dashboard .btn-primary:hover,
+div.farmacia-dashboard .btn-primary:hover {
+  background: linear-gradient(135deg, #42a5f5, #1976d2) !important;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 15px rgba(25, 118, 210, 0.4) !important;
+}
+
+.dashboard.farmacia-dashboard .btn-secondary,
+div.farmacia-dashboard .btn-secondary {
+  background: rgba(25, 118, 210, 0.25) !important;
+  color: #90caf9 !important;
+  border: 1px solid rgba(100, 181, 246, 0.4) !important;
+  border-radius: 12px !important;
+}
+
+.dashboard.farmacia-dashboard .btn-secondary:hover,
+div.farmacia-dashboard .btn-secondary:hover {
+  background: rgba(25, 118, 210, 0.4) !important;
+  color: #fff !important;
+  border-color: rgba(100, 181, 246, 0.6) !important;
+}
+
+/* ===========================================
+   EMPTY & LOADING STATES
+   =========================================== */
+.dashboard.farmacia-dashboard .empty-state,
+div.farmacia-dashboard .empty-state {
+  color: rgba(255, 255, 255, 0.7) !important;
+}
+
+.dashboard.farmacia-dashboard .loading-state,
+div.farmacia-dashboard .loading-state {
+  color: rgba(255, 255, 255, 0.8) !important;
+}
+
+/* ===========================================
+   ALERT CARDS - Keep semantic colors
+   =========================================== */
+.dashboard.farmacia-dashboard .alert-card,
+div.farmacia-dashboard .alert-card {
+  background: linear-gradient(135deg, rgba(244, 67, 54, 0.2) 0%, rgba(183, 28, 28, 0.3) 100%) !important;
+  border: 1px solid rgba(244, 67, 54, 0.4) !important;
+  border-radius: 16px !important;
+}
+
+.dashboard.farmacia-dashboard .alert-card.warning,
+div.farmacia-dashboard .alert-card.warning {
+  background: linear-gradient(135deg, rgba(255, 152, 0, 0.2) 0%, rgba(230, 81, 0, 0.3) 100%) !important;
+  border-color: rgba(255, 152, 0, 0.4) !important;
+}
+
+/* ===========================================
+   HISTORY CARDS - Blue-Green Glass
+   =========================================== */
+.dashboard.farmacia-dashboard .dispense-history-card,
+.dashboard.farmacia-dashboard .history-card,
+div.farmacia-dashboard .dispense-history-card,
+div.farmacia-dashboard .history-card {
+  background: linear-gradient(135deg, rgba(0, 150, 136, 0.2) 0%, rgba(0, 77, 64, 0.3) 100%) !important;
+  border: 1px solid rgba(0, 150, 136, 0.35) !important;
+  border-radius: 16px !important;
+}
+
+/* ===========================================
+   TABLE STYLING
+   =========================================== */
+.dashboard.farmacia-dashboard table,
+div.farmacia-dashboard table {
+  color: #fff !important;
+}
+
+.dashboard.farmacia-dashboard th,
+div.farmacia-dashboard th {
+  color: rgba(255, 255, 255, 0.8) !important;
+  border-bottom: 1px solid rgba(100, 181, 246, 0.2) !important;
+}
+
+.dashboard.farmacia-dashboard td,
+div.farmacia-dashboard td {
+  color: rgba(255, 255, 255, 0.9) !important;
+  border-bottom: 1px solid rgba(100, 181, 246, 0.1) !important;
+}
+
+.dashboard.farmacia-dashboard tr:hover,
+div.farmacia-dashboard tr:hover {
+  background: rgba(25, 118, 210, 0.15) !important;
+}
+
+/* ===========================================
+   SECTION ACTIONS AREA
+   =========================================== */
+.dashboard.farmacia-dashboard .section-actions,
+div.farmacia-dashboard .section-actions {
+  display: flex;
+  gap: 1rem;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.dashboard.farmacia-dashboard .section-header,
+div.farmacia-dashboard .section-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+}
+
+/* ===========================================
+   SEARCH BAR SPECIFIC
+   =========================================== */
+.dashboard.farmacia-dashboard .search-bar,
+div.farmacia-dashboard .search-bar {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.dashboard.farmacia-dashboard .btn-clear,
+div.farmacia-dashboard .btn-clear {
+  position: absolute;
+  right: 10px;
+  background: transparent !important;
+  border: none !important;
+  color: rgba(255, 255, 255, 0.6) !important;
+  cursor: pointer;
+  padding: 0.25rem 0.5rem;
+}
+
+.dashboard.farmacia-dashboard .btn-clear:hover,
+div.farmacia-dashboard .btn-clear:hover {
+  color: #fff !important;
+}
