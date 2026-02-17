@@ -712,73 +712,73 @@
   }
 }
 
-/* ===== FORZAR DARK MODE EN MEDICO DASHBOARD ===== */
+/* ===== STYLES FOR MEDICO DASHBOARD ===== */
 .medico-dashboard .examen-fisico,
 .consultation-panel .examen-fisico {
-  --bg-primary: #1a1a2e;
-  --bg-secondary: #252540;
-  --bg-hover: #2d2d4a;
-  --text-primary: #e0e0e0;
-  --text-secondary: #a0a0a0;
-  --border-color: #3a3a5c;
-  --primary-color: #6366f1;
+  --bg-primary: #ffffff;
+  --bg-secondary: #f8f9fa;
+  --bg-hover: #f1f5f9;
+  --text-primary: #1e293b;
+  --text-secondary: #64748b;
+  --border-color: #e2e8f0;
+  --primary-color: #0077b6;
 }
 
 .medico-dashboard .exam-checkbox,
 .consultation-panel .exam-checkbox,
 .medico-dashboard .exam-radio,
 .consultation-panel .exam-radio {
-  background: rgba(255, 255, 255, 0.05);
-  border-color: rgba(255, 255, 255, 0.1);
-  color: #e0e0e0;
+  background: rgba(0, 119, 182, 0.05);
+  border-color: rgba(0, 119, 182, 0.2);
+  color: #1e293b;
 }
 
 .medico-dashboard .exam-checkbox:hover,
 .consultation-panel .exam-checkbox:hover,
 .medico-dashboard .exam-radio:hover,
 .consultation-panel .exam-radio:hover {
-  background: rgba(99, 102, 241, 0.15);
-  border-color: #6366f1;
+  background: rgba(0, 119, 182, 0.1);
+  border-color: #0077b6;
 }
 
 .medico-dashboard .exam-checkbox.checked,
 .consultation-panel .exam-checkbox.checked,
 .medico-dashboard .exam-radio.checked,
 .consultation-panel .exam-radio.checked {
-  background: linear-gradient(135deg, #4f46e5, #6366f1);
-  border-color: #6366f1;
+  background: linear-gradient(135deg, #0077b6, #00a8e7);
+  border-color: #0077b6;
   color: white;
 }
 
 .medico-dashboard .exam-checkbox .checkmark,
 .consultation-panel .exam-checkbox .checkmark {
-  border-color: rgba(255, 255, 255, 0.3);
+  border-color: rgba(0, 119, 182, 0.3);
 }
 
 .medico-dashboard .exam-checkbox.checked .checkmark,
 .consultation-panel .exam-checkbox.checked .checkmark {
   background: white;
   border-color: white;
-  color: #4f46e5;
+  color: #0077b6;
 }
 
 .medico-dashboard .section-header,
 .consultation-panel .section-header {
-  background: rgba(255, 255, 255, 0.03);
+  background: rgba(0, 119, 182, 0.05);
 }
 
 .medico-dashboard .section-header:hover,
 .consultation-panel .section-header:hover {
-  background: rgba(255, 255, 255, 0.06);
+  background: rgba(0, 119, 182, 0.08);
 }
 
 .medico-dashboard .section-content,
 .consultation-panel .section-content {
-  background: rgba(0, 0, 0, 0.2);
+  background: #ffffff;
 }
 
 .medico-dashboard .exam-section,
 .consultation-panel .exam-section {
-  background: rgba(255, 255, 255, 0.02);
-  border-color: rgba(255, 255, 255, 0.08);
+  background: #ffffff;
+  border-color: #e2e8f0;
 }

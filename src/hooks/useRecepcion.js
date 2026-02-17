@@ -43,7 +43,9 @@ export const useRecepcion = () => {
 
   const loadTodayAppointments = useCallback(async () => {
     try {
+      console.log('[useRecepcion] Loading today appointments...');
       const appointmentsData = await appointmentService.getToday();
+      console.log('[useRecepcion] Appointments received:', appointmentsData?.length || 0, appointmentsData);
       setAppointments(appointmentsData || []);
     } catch (err) {
       console.error('Error loading appointments:', err);

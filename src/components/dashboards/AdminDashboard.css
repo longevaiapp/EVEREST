@@ -9,35 +9,53 @@
 
 .role-card {
   padding: 1.5rem;
-  background: rgba(255, 255, 255, 0.15);
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.92) 0%, rgba(255, 255, 255, 0.8) 100%);
   backdrop-filter: blur(20px) saturate(180%);
   -webkit-backdrop-filter: blur(20px) saturate(180%);
-  border-radius: 12px;
-  border: 1px solid rgba(255, 255, 255, 0.3);
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+  border-radius: 16px;
+  border: 1px solid rgba(255, 255, 255, 0.9);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.06);
   text-align: center;
-  transition: all 0.3s ease;
+  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
+  overflow: hidden;
+}
+
+.role-card::before {
+  content: '';
+  position: absolute;
+  top: -50%;
+  left: -50%;
+  width: 200%;
+  height: 200%;
+  background: radial-gradient(circle, rgba(0, 119, 182, 0.05) 0%, transparent 70%);
+  opacity: 0;
+  transition: opacity 0.4s ease;
+}
+
+.role-card:hover::before {
+  opacity: 1;
 }
 
 .role-card:hover {
-  transform: translateY(-4px);
-  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.15);
+  transform: translateY(-6px) scale(1.02);
+  box-shadow: 0 20px 40px rgba(0, 119, 182, 0.12);
 }
 
 .role-card.recepcion {
-  border-color: rgba(33, 150, 243, 0.5);
+  border-color: rgba(33, 150, 243, 0.4);
 }
 
 .role-card.medico {
-  border-color: rgba(76, 175, 80, 0.5);
+  border-color: rgba(16, 185, 129, 0.4);
 }
 
 .role-card.farmacia {
-  border-color: rgba(156, 39, 176, 0.5);
+  border-color: rgba(156, 39, 176, 0.4);
 }
 
 .role-card.admin {
-  border-color: rgba(255, 152, 0, 0.5);
+  border-color: rgba(255, 152, 0, 0.4);
 }
 
 .role-icon {
@@ -47,9 +65,9 @@
 
 .role-card h3 {
   font-size: 1.25rem;
-  color: rgba(255, 255, 255, 1);
+  color: #1e293b;
   margin-bottom: 0.5rem;
-  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+  text-shadow: none;
 }
 
 .role-count {

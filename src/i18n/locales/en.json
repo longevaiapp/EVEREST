@@ -79,6 +79,7 @@
     "dashboard": "Dashboard",
     "checkIn": "Check-in",
     "patients": "Patients",
+    "appointmentLabel": "appointment(s)",
     "allPatients": "All Patients",
     
     "stats": {
