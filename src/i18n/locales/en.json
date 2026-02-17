@@ -30,7 +30,6 @@
     "notRegistered": "Not registered",
     "notSpecified": "Not specified"
   },
-  
   "auth": {
     "login": "Login",
     "logout": "Logout",
@@ -46,7 +45,6 @@
     "enterCredentials": "Please enter email and password",
     "systemTitle": "Veterinary Management System"
   },
-  
   "navbar": {
     "notifications": "Notifications",
     "unread": "unread",
@@ -57,7 +55,6 @@
     "spanish": "Spanish",
     "english": "English"
   },
-  
   "roles": {
     "ADMIN": "Administrator",
     "RECEPCION": "Reception",
@@ -65,7 +62,6 @@
     "LABORATORIO": "Laboratory",
     "FARMACIA": "Pharmacy"
   },
-  
   "notifications": {
     "NUEVA_TAREA": "New Task",
     "ESTUDIOS_SOLICITADOS": "Tests Requested",
@@ -73,21 +69,18 @@
     "PACIENTE_LISTO_ALTA": "Patient Ready for Discharge",
     "CIRUGIA_PROGRAMADA": "Surgery Scheduled"
   },
-  
   "recepcion": {
     "title": "Reception Panel",
     "dashboard": "Dashboard",
     "checkIn": "Check-in",
     "patients": "Patients",
     "allPatients": "All Patients",
-    
     "stats": {
       "todayPatients": "Today's Patients",
       "pendingTriage": "Pending Triage",
       "inQueue": "In Waiting Queue",
       "todayAppointments": "Today's Appointments"
     },
-    
     "sections": {
       "recentArrivals": "Recent Arrivals",
       "triagePending": "Pending Triage",
@@ -95,7 +88,6 @@
       "readyForDischarge": "Ready for Discharge",
       "todayAppointments": "Today's Appointments"
     },
-    
     "patient": {
       "name": "Name",
       "owner": "Owner",
@@ -117,7 +109,6 @@
       "reason": "Reason",
       "record": "Record"
     },
-    
     "species": {
       "dog": "Dog",
       "cat": "Cat",
@@ -128,7 +119,6 @@
       "rodent": "Rodent",
       "other": "Other"
     },
-    
     "triage": {
       "title": "Triage",
       "startTriage": "Start Triage",
@@ -155,7 +145,6 @@
         "emergency": "Emergency"
       }
     },
-    
     "checkInFlow": {
       "title": "Patient Check-in",
       "searchClient": "Search Client",
@@ -171,7 +160,6 @@
       "checkInSuccess": "Check-in completed successfully",
       "checkedInAt": "Arrived at"
     },
-    
     "newPatient": {
       "title": "New Patient",
       "ownerInfo": "Owner Information",
@@ -184,7 +172,6 @@
       "registerPatient": "Register Patient",
       "generateQR": "Generate QR"
     },
-    
     "medicalHistory": {
       "snapTest": "Snap Test",
       "clinicalAnalysis": "Clinical Analysis",
@@ -195,20 +182,17 @@
       "vaccinesUpToDate": "Vaccines Up to Date",
       "lastVaccine": "Last Vaccine"
     },
-    
     "surgeries": {
       "sterilized": "Sterilized",
       "otherSurgeries": "Other Surgeries",
       "surgeryDetails": "Surgery Details"
     },
-    
     "feeding": {
       "food": "Food",
       "portionsPerDay": "Portions per Day",
       "otherFoods": "Other Foods",
       "frequency": "Frequency"
     },
-    
     "lifestyle": {
       "livesWithOtherPets": "Lives with other pets",
       "whichPets": "Which ones?",
@@ -218,18 +202,15 @@
       "outingFrequency": "Outing Frequency",
       "otherData": "Other Data"
     },
-    
     "allergies": {
       "title": "Allergies",
       "chronicDiseases": "Chronic Diseases"
     },
-    
     "reproductive": {
       "lastHeat": "Last Heat",
       "numberOfBirths": "Number of Births",
       "lastBirth": "Last Birth"
     },
-    
     "appointments": {
       "title": "Appointments",
       "newAppointment": "New Appointment",
@@ -254,7 +235,6 @@
       "appointmentCancelled": "Appointment cancelled",
       "confirmCancel": "Are you sure you want to cancel this appointment?"
     },
-    
     "discharge": {
       "title": "Discharge Process",
       "processDischarge": "Process Discharge",
@@ -271,7 +251,6 @@
       "completeDischarge": "Complete Discharge",
       "dischargeSuccess": "Patient discharged successfully"
     },
-    
     "expediente": {
       "title": "Record",
       "clinicalRecord": "Clinical Record",
@@ -284,7 +263,6 @@
       "consultHistory": "Consultation History",
       "closeRecord": "Close Record"
     },
-    
     "preventive": {
       "title": "Preventive Medicine",
       "calendar": "Preventive Medicine Calendar",
@@ -295,21 +273,18 @@
       "noPendingPatients": "No patients with pending preventive medicine",
       "closeCalendar": "Close Calendar"
     },
-    
     "queue": {
       "position": "Position",
       "waitingTime": "Waiting Time",
       "assignDoctor": "Assign Doctor",
       "doctorAssigned": "Doctor Assigned"
     },
-    
     "actions": {
       "viewRecord": "View Record",
       "call": "Call",
       "startTriage": "Start Triage",
       "completeDischarge": "Complete Discharge"
     },
-    
     "status": {
       "RECIEN_LLEGADO": "Just Arrived",
       "EN_ESPERA": "Waiting",
@@ -322,7 +297,6 @@
       "LISTO_PARA_ALTA": "Ready for Discharge",
       "ALTA": "Discharged"
     },
-    
     "messages": {
       "noRecentArrivals": "No recent arrivals",
       "noPendingTriage": "No pending triage",
@@ -332,9 +306,61 @@
       "patientRegistered": "Patient registered successfully",
       "triageCompleted": "Triage completed",
       "errorOccurred": "An error occurred"
+    },
+    "serviceType": {
+      "title": "Select Service Type",
+      "description": "Please select the type of service for this visit:",
+      "medical": "Medical Consultation",
+      "medicalDesc": "Veterinary exam, treatment, surgery",
+      "grooming": "Grooming / Styling",
+      "groomingDesc": "Bath, haircut, nail trimming"
+    },
+    "grooming": {
+      "title": "Grooming Service Request",
+      "confirmCancel": "Are you sure you want to cancel? The grooming form will not be saved.",
+      "ownerInfo": "Owner Information",
+      "petInfo": "Pet Information",
+      "petCondition": "Pet Condition at Arrival",
+      "services": "Services Requested",
+      "specialInstructions": "Special Instructions",
+      "healthConditions": "Health Conditions",
+      "authorization": "Authorization & Consent",
+      "coatCondition": "Coat Condition",
+      "knots": "Knots / Tangles",
+      "skin": "Skin",
+      "nails": "Nails",
+      "ears": "Ears",
+      "eyes": "Eyes",
+      "generalObservations": "General Observations",
+      "bathType": "Bath Type",
+      "dryOnly": "Dry Only",
+      "basicBath": "Basic Bath",
+      "medicatedBath": "Medicated Bath",
+      "deepCleaning": "Deep Cleaning",
+      "fleaBath": "Flea & Tick Bath",
+      "haircutStyle": "Haircut Style",
+      "noHaircut": "No Haircut",
+      "hygienic": "Hygienic Trim",
+      "breedStandard": "Breed Standard",
+      "fullGrooming": "Full Grooming",
+      "custom": "Custom Style",
+      "detailServices": "Detail Services",
+      "extras": "Extra Services",
+      "instructionsPlaceholder": "Enter any special instructions...",
+      "hasAllergies": "Has allergies or skin sensitivities",
+      "hasMedicalCondition": "Has medical conditions",
+      "recentMedication": "Recently medicated",
+      "recentVaccination": "Recent vaccination (last 7 days)",
+      "behaviorNotes": "Behavior notes for stylist",
+      "aggressiveBehavior": "May show aggressive behavior",
+      "anxious": "Gets anxious during grooming",
+      "consentText": "I authorize EVEREST to perform the grooming services indicated above.",
+      "pickupTime": "Estimated pickup time",
+      "contactPhone": "Contact phone for this visit",
+      "submit": "Submit Grooming Request",
+      "cancel": "Cancel"
     }
   },
-  
   "medico": {
     "title": "Doctor Panel",
     "consultations": "My Consultations",
@@ -359,7 +385,6 @@
     "scheduled": "Scheduled",
     "complete": "Complete",
     "generateReport": "Generate Report",
-    
     "todayAppointments": "Today's Appointments",
     "inConsultation": "In Consultation",
     "scheduledAppointments": "Scheduled",
@@ -367,7 +392,6 @@
     "noAppointments": "No appointments for today",
     "active": "Active",
     "waiting": "Waiting",
-    
     "activeConsultation": "Active Consultation",
     "consultationWorkspace": "Consultation Area",
     "doctor": "Dr.",
@@ -376,7 +400,6 @@
     "selectPatientDesc": "Select a patient from the left panel to start a consultation",
     "patientInfo": "Patient Information",
     "noPatientSelected": "Select a patient to view information",
-    
     "owner": "Owner",
     "reason": "Reason",
     "weight": "Weight",
@@ -389,7 +412,6 @@
     "patient": "Patient",
     "priority": "Priority",
     "history": "History",
-    
     "startConsultation": "Start Consultation",
     "endConsultation": "End Consultation",
     "viewHistory": "View History",
@@ -397,7 +419,6 @@
     "consultationTime": "Time",
     "consultationStarted": "Consultation started",
     "consultationCompleted": "Consultation completed",
-    
     "subjective": "Subjective",
     "objective": "Objective",
     "assessment": "Assessment",
@@ -406,14 +427,12 @@
     "objectivePlaceholder": "Physical exam findings, vital signs...",
     "assessmentPlaceholder": "Differential diagnosis, interpretation...",
     "planPlaceholder": "Treatment plan, follow-up...",
-    
     "recordVitals": "Vital Signs",
     "addDiagnosis": "Diagnosis",
     "createPrescription": "Prescription",
     "orderLabs": "Lab Orders",
     "hospitalize": "Hospitalize",
     "recordMonitoring": "Record Monitoring",
-    
     "patientDetails": "Patient Details",
     "ownerDetails": "Owner Details",
     "currentVisit": "Current Visit",
@@ -421,7 +440,6 @@
     "recentHistory": "Recent History",
     "noRecentHistory": "No recent history",
     "by": "By",
-    
     "recordVitalSigns": "Record Vital Signs",
     "temperature": "Temperature",
     "heartRate": "Heart Rate",
@@ -430,7 +448,6 @@
     "consciousnessLevel": "Consciousness Level",
     "painScale": "Pain Scale",
     "vitalsRecorded": "Vital signs recorded",
-    
     "diagnosisCode": "Code (ICD-10)",
     "diagnosisDescription": "Description",
     "diagnosisDescPlaceholder": "Describe the diagnosis...",
@@ -446,7 +463,6 @@
     "severe": "Severe",
     "critical": "Critical",
     "diagnosisAdded": "Diagnosis added",
-    
     "commonMedications": "Common Medications",
     "medicationName": "Medication",
     "medicationNamePlaceholder": "Medication name",
@@ -460,7 +476,6 @@
     "instructionsPlaceholder": "Additional instructions for the owner...",
     "sendToPharmacy": "Send to Pharmacy",
     "prescriptionCreated": "Prescription created",
-    
     "createLabOrder": "Lab Order",
     "selectStudies": "Select Studies",
     "normal": "Normal",
@@ -470,7 +485,6 @@
     "indicationsPlaceholder": "Presumptive diagnosis, reason for study...",
     "sendToLab": "Send to Lab",
     "labOrderCreated": "Lab order created",
-    
     "hospitalizePatient": "Hospitalize Patient",
     "hospitalizationReason": "Hospitalization Reason",
     "hospitalizationReasonPlaceholder": "Reason for hospitalizing the patient...",
@@ -484,10 +498,8 @@
     "every4Hours": "Every 4 hours",
     "every6Hours": "Every 6 hours",
     "every8Hours": "Every 8 hours",
-    
     "medicalHistory": "Medical History",
     "noHistoryFound": "No history found for this patient",
-    
     "status": {
       "pending": "Pending",
       "confirmed": "Confirmed",
@@ -496,7 +508,6 @@
       "noShow": "No Show",
       "cancelled": "Cancelled"
     },
-    
     "studies": {
       "hemograma": "Complete Blood Count",
       "bioquimica": "Blood Chemistry",
@@ -506,7 +517,6 @@
       "ecografia": "Ultrasound",
       "electrocardiograma": "Electrocardiogram"
     },
-    
     "errors": {
       "startConsultation": "Error starting consultation",
       "endConsultation": "Error ending consultation",
@@ -517,7 +527,6 @@
       "hospitalize": "Error hospitalizing patient"
     }
   },
-  
   "laboratorio": {
     "title": "Laboratory Panel",
     "pendingTests": "Pending Tests",
@@ -549,7 +558,6 @@
     "resultsUploaded": "Results saved and doctor notified",
     "dashboard": "Dashboard"
   },
-  
   "farmacia": {
     "title": "Pharmacy Panel",
     "pendingPrescriptions": "Pending Prescriptions",
@@ -568,7 +576,6 @@
     "category": "Category",
     "price": "Price",
     "quantity": "Quantity",
-    
     "nav": {
       "dashboard": "Dashboard",
       "prescriptions": "Prescriptions",
@@ -576,7 +583,6 @@
       "dispensed": "Dispensed",
       "reports": "Reports"
     },
-    
     "stats": {
       "pendingOrders": "Pending Orders",
       "urgentOrders": "Urgent Orders",
@@ -587,7 +593,6 @@
       "revenueToday": "Today's Revenue",
       "productsDispensed": "Products Dispensed"
     },
-    
     "sections": {
       "pendingOrders": "Pending Orders",
       "urgentPrescriptions": "Urgent Prescriptions",
@@ -596,7 +601,6 @@
       "deliveryHistory": "Delivery History",
       "reportsStatistics": "Reports & Statistics"
     },
-    
     "prescriptions": {
       "patient": "Patient",
       "owner": "Owner",
@@ -628,7 +632,6 @@
       "other": "Other reason",
       "additionalNotes": "Additional notes"
     },
-    
     "medications": {
       "name": "Name",
       "genericName": "Generic Name",
@@ -664,7 +667,6 @@
       "lowStockAlert": "Low stock - Reorder needed",
       "expired": "EXPIRED"
     },
-    
     "categories": {
       "antibioticos": "Antibiotics",
       "antiinflamatorios": "Anti-inflammatories",
@@ -677,7 +679,6 @@
       "vitaminas": "Vitamins & Supplements",
       "otros": "Other"
     },
-    
     "stock": {
       "adjust": "Adjust Stock",
       "restock": "Restock",
@@ -697,7 +698,6 @@
       "expired": "Expired",
       "noHistory": "No movement history"
     },
-    
     "alerts": {
       "title": "Stock Alerts",
       "lowStock": "Low Stock",
@@ -727,7 +727,6 @@
       "pendingOrders": "Pending Orders",
       "ordersWaiting": "orders waiting"
     },
-    
     "dispenseHistory": {
       "title": "Dispense History",
       "date": "Date",
@@ -757,7 +756,6 @@
       "revenueToday": "Revenue Today",
       "productsDispensed": "Products Dispensed"
     },
-    
     "reports": {
       "title": "Reports & Statistics",
       "dateRange": "Date Range",
@@ -777,7 +775,6 @@
       "noData": "No data available",
       "pendingOrders": "Pending Orders"
     },
-    
     "form": {
       "basicInfo": "Basic Information",
       "stockInfo": "Stock Information",
@@ -829,7 +826,6 @@
       "requiresRefrigeration": "Requires Refrigeration",
       "controlledSubstance": "Controlled Substance"
     },
-    
     "toast": {
       "medicationAdded": "Medication added successfully",
       "medicationUpdated": "Medication updated successfully",
@@ -849,7 +845,6 @@
       "connectionError": "Connection error. Please try again.",
       "retryFailed": "Retry failed. Please try later."
     },
-    
     "empty": {
       "noPrescriptions": "No pending prescriptions",
       "noMedications": "No medications registered",
@@ -864,7 +859,6 @@
       "emptyInventory": "Empty inventory. Add your first medication!",
       "noData": "No data available"
     },
-    
     "loading": {
       "prescriptions": "Loading prescriptions...",
       "medications": "Loading medications...",
@@ -877,10 +871,8 @@
       "dispensing": "Dispensing...",
       "generic": "Loading"
     },
-    
     "refresh": "Refresh",
     "unknown": "Unknown",
-    
     "modals": {
       "deactivate": {
         "title": "Deactivate Medication?",
@@ -1037,7 +1029,6 @@
         "confirmIgnored": "Confirm Ignore"
       }
     },
-    
     "errors": {
       "loadFailed": "Failed to load data",
       "saveFailed": "Failed to save",
@@ -1048,7 +1039,6 @@
       "tryAgain": "Try again"
     }
   },
-  
   "admin": {
     "title": "Admin Panel",
     "users": "Users",

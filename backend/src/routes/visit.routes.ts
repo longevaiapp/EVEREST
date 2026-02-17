@@ -14,9 +14,10 @@ router.post('/', authenticate, isRecepcion, async (req, res) => {
   const schema = z.object({
     petId: z.string().or(z.number()).transform(val => String(val)),
     appointmentId: z.string().cuid().optional(), // Link to scheduled appointment
+    serviceType: z.enum(['MEDICO', 'ESTETICA']).optional().default('MEDICO'), // Medical or Grooming
   });
 
-  const { petId, appointmentId } = schema.parse(req.body);
+  const { petId, appointmentId, serviceType } = schema.parse(req.body);
 
   // Verify pet exists
   const pet = await prisma.pet.findUnique({ where: { id: petId } });
@@ -27,6 +28,7 @@ router.post('/', authenticate, isRecepcion, async (req, res) => {
     data: {
       petId,
       status: 'RECIEN_LLEGADO',
+      serviceType,
     },
     include: {
       pet: { include: { owner: true } },
@@ -37,7 +39,7 @@ router.post('/', authenticate, isRecepcion, async (req, res) => {
   if (appointmentId) {
     await prisma.appointment.update({
       where: { id: appointmentId },
-      data: { 
+      data: {
         status: 'CONFIRMADA',
         visitId: visit.id,
       },
@@ -92,12 +94,22 @@ router.get('/today', authenticate, async (req, res) => {
   const tomorrow = new Date(today);
   tomorrow.setDate(tomorrow.getDate() + 1);
 
+  // Optional filter by serviceType
+  const serviceType = req.query.serviceType as string | undefined;
+
+  const whereClause: any = {
+    arrivalTime: { gte: today, lt: tomorrow },
+  };
+
+  if (serviceType && (serviceType === 'MEDICO' || serviceType === 'ESTETICA')) {
+    whereClause.serviceType = serviceType;
+  }
+
   const visits = await prisma.visit.findMany({
-    where: {
-      arrivalTime: { gte: today, lt: tomorrow },
-    },
+    where: whereClause,
     include: {
       pet: { include: { owner: true } },
+      groomingService: true, // Include grooming data if exists
     },
     orderBy: { arrivalTime: 'desc' },
   });

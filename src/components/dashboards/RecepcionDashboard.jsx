@@ -4,7 +4,10 @@ import { useAuth } from '../../context/AuthContext';
 import useRecepcion from '../../hooks/useRecepcion';
 import { petService } from '../../services/recepcion.service';
 import { citaSeguimientoService } from '../../services/medico.service';
+import groomingService from '../../services/grooming.service';
 import { QRCodeSVG } from 'qrcode.react';
+import GroomingIntakeForm from './GroomingIntakeForm';
+import RegisterPetModal from '../RegisterPetModal';
 import './RecepcionDashboard.css';
 
 function RecepcionDashboard() {
@@ -35,7 +38,7 @@ function RecepcionDashboard() {
     loadInitialData: refreshData,
     allPets = []
   } = useRecepcion();
-  
+
   const [selectedPatient, setSelectedPatient] = useState(null);
   const [showTriageModal, setShowTriageModal] = useState(false);
   const [showDischargeModal, setShowDischargeModal] = useState(false);
@@ -49,22 +52,31 @@ function RecepcionDashboard() {
   const [foundClient, setFoundClient] = useState(null);
   const [clientSearchError, setClientSearchError] = useState('');
   const [showClientPets, setShowClientPets] = useState(false);
-  
+
+  // Service Type State (MEDICO or ESTETICA)
+  const [selectedServiceType, setSelectedServiceType] = useState(null); // null until user selects
+  const [showServiceTypeModal, setShowServiceTypeModal] = useState(false);
+  const [pendingCheckInPet, setPendingCheckInPet] = useState(null); // Pet waiting for service type selection
+  const [showGroomingModal, setShowGroomingModal] = useState(false);
+  const [groomingVisit, setGroomingVisit] = useState(null); // Current grooming visit being processed
+  const [newlyCreatedOwner, setNewlyCreatedOwner] = useState(null); // Store owner info for new patient grooming flow
+  const [showRegisterPetModal, setShowRegisterPetModal] = useState(false); // Register new pet modal
+
   // Estado para modal de edición de foto
   const [showEditPhotoModal, setShowEditPhotoModal] = useState(false);
   const [editingPet, setEditingPet] = useState(null);
   const [editPhotoPreview, setEditPhotoPreview] = useState(null);
   const [editPhotoData, setEditPhotoData] = useState(null);
   const [savingPhoto, setSavingPhoto] = useState(false);
-  
+
   // Estado para historial médico en expediente
   const [historialData, setHistorialData] = useState(null);
   const [loadingHistorial, setLoadingHistorial] = useState(false);
-  
+
   // Estado para citas agendadas por médicos
   const [citasMedico, setCitasMedico] = useState([]);
   const [loadingCitasMedico, setLoadingCitasMedico] = useState(false);
-  
+
   // Estado para búsqueda de mascotas en modal de citas
   const [petSearchQuery, setPetSearchQuery] = useState('');
   const [petSearchResults, setPetSearchResults] = useState([]);
@@ -149,7 +161,7 @@ function RecepcionDashboard() {
   // ============================================================================
   // REAL DATA FROM API (no mock)
   // ============================================================================
-  
+
   // Transform visits from API to dashboard format
   const allVisits = (todayVisits || []).map(v => ({
     id: v.pet?.id,
@@ -161,6 +173,7 @@ function RecepcionDashboard() {
     propietario: v.pet?.owner?.nombre || 'No owner',
     telefono: v.pet?.owner?.telefono || '',
     estado: v.status,
+    serviceType: v.serviceType, // MEDICO or ESTETICA
     motivo: v.motivo || 'Consultation',
     prioridad: v.prioridad || 'MEDIA',
     tipoVisita: v.tipoVisita,
@@ -171,7 +184,8 @@ function RecepcionDashboard() {
   }));
 
   // Filter by status
-  const newArrivals = allVisits.filter(p => p.estado === 'RECIEN_LLEGADO');
+  // Triage is only for MEDICO visits - grooming visits go directly to stylist
+  const newArrivals = allVisits.filter(p => p.estado === 'RECIEN_LLEGADO' && p.serviceType !== 'ESTETICA');
   const waitingPatients = allVisits.filter(p => p.estado === 'EN_ESPERA');
   const inConsultPatients = allVisits.filter(p => p.estado === 'EN_CONSULTA');
   const readyForDischarge = allVisits.filter(p => p.estado === 'LISTO_PARA_ALTA');
@@ -191,12 +205,12 @@ function RecepcionDashboard() {
 
   // Patient search - uses allPetsFormatted instead of allVisits for "all" section
   const filteredPatients = searchQuery
-    ? allPetsFormatted.filter(p => 
-        p.nombre.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        p.numeroFicha?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        p.propietario?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        p.telefono?.includes(searchQuery)
-      )
+    ? allPetsFormatted.filter(p =>
+      p.nombre.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      p.numeroFicha?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      p.propietario?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      p.telefono?.includes(searchQuery)
+    )
     : allPetsFormatted;
 
   // Appointments from API
@@ -257,12 +271,12 @@ function RecepcionDashboard() {
 
   const handleSubmitTriage = async (e) => {
     e.preventDefault();
-    
+
     if (!selectedPatient?.visitId) {
       alert('Error: Patient does not have an associated visit');
       return;
     }
-    
+
     try {
       await completeTriage(selectedPatient.visitId, {
         tipoVisita: triageData.tipoVisita,
@@ -274,9 +288,9 @@ function RecepcionDashboard() {
         primeraVisita: triageData.primeraVisita
       });
       await refreshData();
-      
-      alert(triageData.primeraVisita 
-        ? 'Triage completed - New record will be created' 
+
+      alert(triageData.primeraVisita
+        ? 'Triage completed - New record will be created'
         : 'Triage completed - Existing record will be consulted'
       );
       setShowTriageModal(false);
@@ -298,7 +312,7 @@ function RecepcionDashboard() {
     setShowExpedienteModal(true);
     setLoadingHistorial(true);
     setHistorialData(null);
-    
+
     try {
       const data = await petService.getHistorial(patient.id);
       console.log('[handleViewExpediente] Historial cargado:', data);
@@ -313,10 +327,10 @@ function RecepcionDashboard() {
   // Función para formatear el historial para mostrar
   const getFormattedHistorial = useCallback(() => {
     if (!historialData?.historial) return [];
-    
+
     const history = [];
     const { consultas, cirugias, hospitalizaciones, vacunas } = historialData.historial;
-    
+
     // Agregar consultas con detalles completos
     if (consultas && Array.isArray(consultas)) {
       consultas.forEach(consulta => {
@@ -352,7 +366,7 @@ function RecepcionDashboard() {
         });
       });
     }
-    
+
     // Agregar hospitalizaciones
     if (hospitalizaciones && Array.isArray(hospitalizaciones)) {
       hospitalizaciones.forEach(hosp => {
@@ -366,7 +380,7 @@ function RecepcionDashboard() {
         });
       });
     }
-    
+
     // Agregar cirugías
     if (cirugias && Array.isArray(cirugias)) {
       cirugias.forEach(surgery => {
@@ -379,7 +393,7 @@ function RecepcionDashboard() {
         });
       });
     }
-    
+
     // Agregar vacunas
     if (vacunas && Array.isArray(vacunas)) {
       vacunas.forEach(vacuna => {
@@ -392,7 +406,7 @@ function RecepcionDashboard() {
         });
       });
     }
-    
+
     // Ordenar por fecha descendente
     return history.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
   }, [historialData]);
@@ -400,7 +414,7 @@ function RecepcionDashboard() {
   // ============================================================================
   // EDICIÓN DE FOTO DE MASCOTA
   // ============================================================================
-  
+
   const handleEditPhoto = (pet) => {
     setEditingPet(pet);
     setEditPhotoPreview(pet.fotoUrl || null);
@@ -426,12 +440,12 @@ function RecepcionDashboard() {
         // Comprimir imagen usando canvas
         const canvas = document.createElement('canvas');
         const ctx = canvas.getContext('2d');
-        
+
         // Redimensionar a máximo 400px manteniendo proporción
         const MAX_SIZE = 400;
         let width = img.width;
         let height = img.height;
-        
+
         if (width > height && width > MAX_SIZE) {
           height = (height * MAX_SIZE) / width;
           width = MAX_SIZE;
@@ -439,11 +453,11 @@ function RecepcionDashboard() {
           width = (width * MAX_SIZE) / height;
           height = MAX_SIZE;
         }
-        
+
         canvas.width = width;
         canvas.height = height;
         ctx.drawImage(img, 0, 0, width, height);
-        
+
         // Convertir a Base64 con compresión JPEG
         const compressedBase64 = canvas.toDataURL('image/jpeg', 0.7);
         setEditPhotoPreview(compressedBase64);
@@ -464,12 +478,12 @@ function RecepcionDashboard() {
     try {
       console.log('[EditPhoto] Saving photo for:', editingPet.nombre);
       console.log('[EditPhoto] Base64 length:', editPhotoData.length);
-      
+
       await updatePet(editingPet.id, { fotoUrl: editPhotoData });
-      
+
       // Refresh data
       await refreshData();
-      
+
       alert('✅ Photo saved successfully');
       setShowEditPhotoModal(false);
       setEditingPet(null);
@@ -485,14 +499,14 @@ function RecepcionDashboard() {
 
   const handleRemovePhoto = async () => {
     if (!editingPet) return;
-    
+
     if (!window.confirm('Are you sure you want to delete the photo?')) return;
 
     setSavingPhoto(true);
     try {
       await updatePet(editingPet.id, { fotoUrl: null });
       await refreshData();
-      
+
       alert('✅ Photo deleted');
       setShowEditPhotoModal(false);
       setEditingPet(null);
@@ -523,7 +537,7 @@ function RecepcionDashboard() {
 
   const handleCancelAppointment = async (citaId) => {
     if (!window.confirm('Are you sure you want to cancel this appointment?')) return;
-    
+
     try {
       await cancelAppointment(citaId);
       await refreshData();
@@ -544,7 +558,7 @@ function RecepcionDashboard() {
     setClientSearchError('');
     setFoundClient(null);
     setShowClientPets(false);
-    
+
     if (!clientSearchPhone.trim()) {
       setClientSearchError('Please enter a phone number');
       return;
@@ -552,7 +566,7 @@ function RecepcionDashboard() {
 
     try {
       const result = await searchOwnerByPhone(clientSearchPhone.trim());
-      
+
       if (result && result.owner) {
         // API retorna campos en español: nombre, telefono, email
         // result = { owner, pets }
@@ -568,7 +582,14 @@ function RecepcionDashboard() {
             especie: pet.especie,
             raza: pet.raza,
             numeroFicha: pet.numeroFicha || `VET-${String(pet.id).padStart(3, '0')}`,
-            propietario: owner.nombre
+            propietario: owner.nombre,
+            // Include full owner object for grooming form
+            owner: {
+              id: owner.id,
+              nombre: owner.nombre,
+              telefono: owner.telefono,
+              email: owner.email || ''
+            }
           }))
         });
         setShowClientPets(true);
@@ -582,18 +603,68 @@ function RecepcionDashboard() {
   };
 
   // Función para hacer check-in de mascota existente (usando API real)
+  // Now shows service type selection modal first
   const handleCheckInExistingPet = async (pet) => {
+    // Store the pet and show service type selection modal
+    setPendingCheckInPet(pet);
+    setShowServiceTypeModal(true);
+  };
+
+  // Función para completar el check-in después de seleccionar tipo de servicio
+  const completeCheckInWithServiceType = async (serviceType) => {
+    if (!pendingCheckInPet) return;
+
     try {
-      await checkInPet(pet.id);
+      const visit = await checkInPet(pendingCheckInPet.id, serviceType);
       await refreshData(); // Update visits list
-      alert(`✅ Check-in completed for ${pet.nombre}\nThe patient is ready for triage.`);
+
+      setShowServiceTypeModal(false);
       setFoundClient(null);
       setClientSearchPhone('');
       setShowClientPets(false);
-      setActiveSection('triage');
+
+      if (serviceType === 'ESTETICA') {
+        // For grooming, show the grooming form directly
+        setGroomingVisit({
+          ...visit,
+          pet: pendingCheckInPet
+        });
+        setPendingCheckInPet(null);
+        setShowGroomingModal(true);
+      } else {
+        // For medical, proceed to triage
+        alert(`✅ Check-in completed for ${pendingCheckInPet.nombre}\nThe patient is ready for triage.`);
+        setPendingCheckInPet(null);
+        setActiveSection('triage');
+      }
     } catch (error) {
       console.error('Check-in error:', error);
       alert('Error performing check-in. Please try again.');
+      setPendingCheckInPet(null);
+      setShowServiceTypeModal(false);
+    }
+  };
+
+  // Función para manejar el envío del formulario de estética
+  const handleGroomingSubmit = async (groomingData) => {
+    try {
+      console.log('[RecepcionDashboard] handleGroomingSubmit - groomingVisit:', groomingVisit);
+      console.log('[RecepcionDashboard] handleGroomingSubmit - groomingData:', groomingData);
+
+      await groomingService.create({
+        visitId: groomingVisit.id,
+        petId: groomingVisit.pet?.id || groomingVisit.petId,
+        ...groomingData
+      });
+
+      await refreshData();
+      setShowGroomingModal(false);
+      setGroomingVisit(null);
+      alert('✅ Grooming service request submitted successfully!');
+      setActiveSection('dashboard');
+    } catch (error) {
+      console.error('Error submitting grooming form:', error);
+      alert('Error submitting grooming form. Please try again.');
     }
   };
 
@@ -630,7 +701,7 @@ function RecepcionDashboard() {
       confirmada: false
     });
   };
-  
+
   // Función para buscar mascotas por nombre
   const handleSearchPets = async (query) => {
     setPetSearchQuery(query);
@@ -644,7 +715,7 @@ function RecepcionDashboard() {
 
   const handleSubmitNewAppointment = async (e) => {
     e.preventDefault();
-    
+
     try {
       // Try to create appointment via API
       if (newAppointmentData.pacienteId) {
@@ -658,7 +729,7 @@ function RecepcionDashboard() {
         });
         await refreshData();
       }
-      
+
       alert(`✅ Appointment scheduled successfully\nPatient: ${newAppointmentData.pacienteNombre}\nDate: ${newAppointmentData.fecha} ${newAppointmentData.hora}`);
       setShowNewAppointmentModal(false);
       setActiveSection('citas');
@@ -670,10 +741,10 @@ function RecepcionDashboard() {
 
   const handleSubmitNewPatient = async (e) => {
     e.preventDefault();
-    
+
     try {
       console.log('[handleSubmitNewPatient] Starting new patient registration...');
-      
+
       // 1. Create owner first
       const ownerData = {
         nombre: newPatientData.propietario,
@@ -681,15 +752,15 @@ function RecepcionDashboard() {
         email: newPatientData.email || null,
         direccion: newPatientData.direccion || null,
       };
-      
+
       console.log('[handleSubmitNewPatient] Creating owner:', ownerData);
       const owner = await createOwner(ownerData);
       console.log('[handleSubmitNewPatient] Owner created:', owner);
-      
+
       if (!owner || !owner.id) {
         throw new Error('Could not create owner');
       }
-      
+
       // Helper functions to transform frontend values to backend enum values
       const mapEspecie = (val) => {
         const map = { 'Dog': 'PERRO', 'Cat': 'GATO', 'Bird': 'AVE', 'Rodent': 'ROEDOR', 'Reptile': 'REPTIL', 'Other': 'OTRO' };
@@ -705,7 +776,7 @@ function RecepcionDashboard() {
       };
       const toBoolean = (val) => val === 'Yes' || val === true;
       const toDatetimeOrNull = (val) => val ? new Date(val).toISOString() : null;
-      
+
       // 2. Create pet associated with owner
       const petData = {
         ownerId: owner.id,
@@ -753,35 +824,25 @@ function RecepcionDashboard() {
         frecuenciaSalida: newPatientData.frecuenciaSalida || null,
         otrosDatos: newPatientData.otrosDatos || null,
       };
-      
+
       console.log('[handleSubmitNewPatient] Creating pet:', petData);
       const pet = await createPet(petData);
       console.log('[handleSubmitNewPatient] Pet created:', pet);
-      
+
       if (!pet || !pet.id) {
         throw new Error('Could not create pet');
       }
-      
-      // 3. Auto check-in (create visit)
-      console.log('[handleSubmitNewPatient] Checking in pet:', pet.id);
-      const visit = await checkInPet(pet.id);
-      console.log('[handleSubmitNewPatient] Visit created:', visit);
-      
-      // 4. Refresh data
-      console.log('[handleSubmitNewPatient] Refreshing data...');
-      await refreshData();
-      console.log('[handleSubmitNewPatient] Data refreshed. Current visits:', todayVisits);
-      
-      alert(`✅ Patient registered successfully!\n\n` +
-            `Owner: ${owner.nombre}\n` +
-            `Pet: ${pet.nombre}\n` +
-            `Record: ${pet.numeroFicha || 'Generated'}\n\n` +
-            `Patient appears in "New Arrivals" and is ready for triage.`);
-      
-      // Close modal 
-      setShowNewPatientModal(false);
-      
-      // Reset form
+
+      // 3. Show service type selection modal instead of auto check-in
+      // Store the pet and owner info for the service type selection flow
+      setPendingCheckInPet({
+        ...pet,
+        propietario: owner.nombre,
+        owner: owner
+      });
+      setNewlyCreatedOwner(owner);
+
+      // Reset form first
       setNewPatientData({
         propietario: '',
         direccion: '',
@@ -825,10 +886,15 @@ function RecepcionDashboard() {
         otrosDatos: ''
       });
       setMascotaWizardStep(1);
-      
-      // Switch to triage section to see the new patient
-      setActiveSection('triage');
-      
+
+      // Switch to dashboard section (so we can see the modal)
+      setActiveSection('dashboard');
+
+      // Show service type selection modal
+      setShowServiceTypeModal(true);
+
+      console.log('[handleSubmitNewPatient] Patient created, showing service type modal');
+
     } catch (error) {
       console.error('Error registering patient:', error);
       alert(`❌ Error: ${error.message || 'Could not register patient'}`);
@@ -848,7 +914,7 @@ function RecepcionDashboard() {
 
   const handleSubmitDischarge = async (e) => {
     e.preventDefault();
-    
+
     try {
       // Llamar API real para procesar alta
       await dischargeVisit(selectedPatient.visitId, {
@@ -891,33 +957,33 @@ function RecepcionDashboard() {
         <div className="sidebar-header">
           <h3>🏥 {t('recepcion.title')}</h3>
         </div>
-        
+
         <nav className="sidebar-nav">
-          <button 
+          <button
             className={`nav-item ${activeSection === 'dashboard' ? 'active' : ''}`}
             onClick={() => setActiveSection('dashboard')}
           >
             <span className="nav-icon">📊</span>
             <span>{t('recepcion.dashboard')}</span>
           </button>
-          
-          <button 
+
+          <button
             className={`nav-item ${activeSection === 'checkin' ? 'active' : ''}`}
             onClick={() => setActiveSection('checkin')}
           >
             <span className="nav-icon">📲</span>
             <span>{t('recepcion.checkIn')}</span>
           </button>
-          
-          <button 
+
+          <button
             className={`nav-item ${activeSection === 'nueva-mascota' ? 'active' : ''}`}
             onClick={() => setActiveSection('nueva-mascota')}
           >
             <span className="nav-icon">🐾</span>
             <span>{t('recepcion.newPatient.title')}</span>
           </button>
-          
-          <button 
+
+          <button
             className={`nav-item ${activeSection === 'citas' ? 'active' : ''}`}
             onClick={() => setActiveSection('citas')}
           >
@@ -927,10 +993,10 @@ function RecepcionDashboard() {
               <span className="nav-badge">{todayAppointments.length}</span>
             )}
           </button>
-          
-          <button 
+
+          <button
             className={`nav-item ${activeSection === 'citas-medico' ? 'active' : ''}`}
-            onClick={() => { 
+            onClick={() => {
               setActiveSection('citas-medico');
               loadCitasMedico();
             }}
@@ -941,8 +1007,8 @@ function RecepcionDashboard() {
               <span className="nav-badge doctor">{citasMedico.length}</span>
             )}
           </button>
-          
-          <button 
+
+          <button
             className={`nav-item ${activeSection === 'preventiva' ? 'active' : ''}`}
             onClick={() => setActiveSection('preventiva')}
           >
@@ -952,8 +1018,8 @@ function RecepcionDashboard() {
               <span className="nav-badge warning">{preventiveCalendar.length}</span>
             )}
           </button>
-          
-          <button 
+
+          <button
             className={`nav-item ${activeSection === 'triage' ? 'active' : ''}`}
             onClick={() => setActiveSection('triage')}
           >
@@ -963,16 +1029,16 @@ function RecepcionDashboard() {
               <span className="nav-badge urgent">{newArrivals.length}</span>
             )}
           </button>
-          
-          <button 
+
+          <button
             className={`nav-item ${activeSection === 'todos' ? 'active' : ''}`}
             onClick={() => setActiveSection('todos')}
           >
             <span className="nav-icon">📋</span>
             <span>{t('recepcion.allPatients')}</span>
           </button>
-          
-          <button 
+
+          <button
             className={`nav-item ${activeSection === 'alta' ? 'active' : ''}`}
             onClick={() => setActiveSection('alta')}
           >
@@ -1020,31 +1086,31 @@ function RecepcionDashboard() {
           <>
             <div className="dashboard-stats">
               <div className="stat-card">
-                <div className="stat-icon" style={{background: 'rgba(244, 67, 54, 0.3)'}}>🆕</div>
+                <div className="stat-icon" style={{ background: 'rgba(244, 67, 54, 0.3)' }}>🆕</div>
                 <div className="stat-content">
                   <h3>{newArrivals.length}</h3>
                   <p>{t('recepcion.sections.recentArrivals')}</p>
                 </div>
               </div>
-              
+
               <div className="stat-card">
-                <div className="stat-icon" style={{background: 'rgba(255, 152, 0, 0.3)'}}>⏳</div>
+                <div className="stat-icon" style={{ background: 'rgba(255, 152, 0, 0.3)' }}>⏳</div>
                 <div className="stat-content">
                   <h3>{waitingPatients.length}</h3>
                   <p>{t('recepcion.sections.waitingQueue')}</p>
                 </div>
               </div>
-              
+
               <div className="stat-card">
-                <div className="stat-icon" style={{background: 'rgba(33, 150, 243, 0.3)'}}>👨‍⚕️</div>
+                <div className="stat-icon" style={{ background: 'rgba(33, 150, 243, 0.3)' }}>👨‍⚕️</div>
                 <div className="stat-content">
                   <h3>{inConsultPatients.length}</h3>
                   <p>{t('recepcion.status.EN_CONSULTA')}</p>
                 </div>
               </div>
-              
+
               <div className="stat-card">
-                <div className="stat-icon" style={{background: 'rgba(76, 175, 80, 0.3)'}}>✅</div>
+                <div className="stat-icon" style={{ background: 'rgba(76, 175, 80, 0.3)' }}>✅</div>
                 <div className="stat-content">
                   <h3>{readyForDischarge.length}</h3>
                   <p>{t('recepcion.sections.readyForDischarge')}</p>
@@ -1101,7 +1167,7 @@ function RecepcionDashboard() {
                   {t('recepcion.checkInFlow.searchByPhone')}
                 </p>
                 <div className="qr-container">
-                  <QRCodeSVG 
+                  <QRCodeSVG
                     value={clientFormURL}
                     size={200}
                     level="H"
@@ -1127,7 +1193,7 @@ function RecepcionDashboard() {
                 <p className="search-description">
                   {t('recepcion.checkInFlow.searchByPhone')}
                 </p>
-                
+
                 <form onSubmit={handleSearchClient} className="client-search-form">
                   <div className="search-input-group">
                     <span className="search-icon">📞</span>
@@ -1158,7 +1224,7 @@ function RecepcionDashboard() {
                       <p>📞 {foundClient.telefono}</p>
                       {foundClient.email && <p>✉️ {foundClient.email}</p>}
                     </div>
-                    
+
                     <div className="pets-list">
                       <h5>🐾 {t('recepcion.checkInFlow.selectPet')}:</h5>
                       {foundClient.mascotas.map(pet => (
@@ -1172,7 +1238,7 @@ function RecepcionDashboard() {
                               <small>{pet.raza} • {pet.edad}</small>
                             </div>
                           </div>
-                          <button 
+                          <button
                             className="btn-checkin"
                             onClick={() => handleCheckInExistingPet(pet)}
                           >
@@ -1182,10 +1248,10 @@ function RecepcionDashboard() {
                       ))}
                     </div>
 
-                    <button 
+                    <button
                       className="btn-add-pet"
                       onClick={() => {
-                        alert(t('recepcion.checkInFlow.registerNewPet'));
+                        setShowRegisterPetModal(true);
                       }}
                     >
                       ➕ {t('recepcion.checkInFlow.registerNewPet')}
@@ -1230,7 +1296,7 @@ function RecepcionDashboard() {
                 { num: 6, label: t('recepcion.newPatient.feeding'), icon: '🍖' },
                 { num: 7, label: t('recepcion.lifestyle.otherData'), icon: '📝' }
               ].map((step) => (
-                <div 
+                <div
                   key={step.num}
                   className={`wizard-step ${mascotaWizardStep === step.num ? 'active' : ''} ${mascotaWizardStep > step.num ? 'completed' : ''}`}
                   onClick={() => setMascotaWizardStep(step.num)}
@@ -1245,7 +1311,7 @@ function RecepcionDashboard() {
 
             {/* Contenido del paso actual */}
             <div className="wizard-content">
-              
+
               {/* STEP 1: OWNER DATA */}
               {mascotaWizardStep === 1 && (
                 <div className="form-card wizard-card">
@@ -1256,7 +1322,7 @@ function RecepcionDashboard() {
                       <input
                         type="text"
                         value={newPatientData.propietario}
-                        onChange={(e) => setNewPatientData({...newPatientData, propietario: e.target.value})}
+                        onChange={(e) => setNewPatientData({ ...newPatientData, propietario: e.target.value })}
                         placeholder={t('recepcion.patient.name')}
                         required
                       />
@@ -1266,7 +1332,7 @@ function RecepcionDashboard() {
                       <input
                         type="text"
                         value={newPatientData.direccion}
-                        onChange={(e) => setNewPatientData({...newPatientData, direccion: e.target.value})}
+                        onChange={(e) => setNewPatientData({ ...newPatientData, direccion: e.target.value })}
                         placeholder={t('recepcion.patient.address')}
                       />
                     </div>
@@ -1275,7 +1341,7 @@ function RecepcionDashboard() {
                       <input
                         type="tel"
                         value={newPatientData.telefono}
-                        onChange={(e) => setNewPatientData({...newPatientData, telefono: e.target.value})}
+                        onChange={(e) => setNewPatientData({ ...newPatientData, telefono: e.target.value })}
                         placeholder="10 digits"
                         required
                       />
@@ -1285,7 +1351,7 @@ function RecepcionDashboard() {
                       <input
                         type="email"
                         value={newPatientData.email}
-                        onChange={(e) => setNewPatientData({...newPatientData, email: e.target.value})}
+                        onChange={(e) => setNewPatientData({ ...newPatientData, email: e.target.value })}
                         placeholder={t('auth.enterEmail')}
                       />
                     </div>
@@ -1297,7 +1363,7 @@ function RecepcionDashboard() {
               {mascotaWizardStep === 2 && (
                 <div className="form-card wizard-card">
                   <h3>🐾 {t('recepcion.newPatient.petInfo')}</h3>
-                  
+
                   {/* Pet photo */}
                   <div className="foto-upload-container">
                     <div className="foto-preview">
@@ -1341,7 +1407,7 @@ function RecepcionDashboard() {
                       <input
                         type="text"
                         value={newPatientData.nombre}
-                        onChange={(e) => setNewPatientData({...newPatientData, nombre: e.target.value})}
+                        onChange={(e) => setNewPatientData({ ...newPatientData, nombre: e.target.value })}
                         placeholder="Pet name"
                         required
                       />
@@ -1351,14 +1417,14 @@ function RecepcionDashboard() {
                       <input
                         type="date"
                         value={newPatientData.fechaNacimiento}
-                        onChange={(e) => setNewPatientData({...newPatientData, fechaNacimiento: e.target.value})}
+                        onChange={(e) => setNewPatientData({ ...newPatientData, fechaNacimiento: e.target.value })}
                       />
                     </div>
                     <div className="form-group">
                       <label>{t('recepcion.patient.sex')}: *</label>
                       <select
                         value={newPatientData.sexo}
-                        onChange={(e) => setNewPatientData({...newPatientData, sexo: e.target.value})}
+                        onChange={(e) => setNewPatientData({ ...newPatientData, sexo: e.target.value })}
                       >
                         <option value="Male">{t('recepcion.patient.male')}</option>
                         <option value="Female">{t('recepcion.patient.female')}</option>
@@ -1370,7 +1436,7 @@ function RecepcionDashboard() {
                         type="number"
                         step="0.1"
                         value={newPatientData.peso}
-                        onChange={(e) => setNewPatientData({...newPatientData, peso: e.target.value})}
+                        onChange={(e) => setNewPatientData({ ...newPatientData, peso: e.target.value })}
                         placeholder="0.0"
                       />
                     </div>
@@ -1378,7 +1444,7 @@ function RecepcionDashboard() {
                       <label>{t('recepcion.patient.species')}: *</label>
                       <select
                         value={newPatientData.especie}
-                        onChange={(e) => setNewPatientData({...newPatientData, especie: e.target.value})}
+                        onChange={(e) => setNewPatientData({ ...newPatientData, especie: e.target.value })}
                       >
                         <option value="Dog">{t('recepcion.species.dog')}</option>
                         <option value="Cat">{t('recepcion.species.cat')}</option>
@@ -1393,7 +1459,7 @@ function RecepcionDashboard() {
                       <input
                         type="text"
                         value={newPatientData.raza}
-                        onChange={(e) => setNewPatientData({...newPatientData, raza: e.target.value})}
+                        onChange={(e) => setNewPatientData({ ...newPatientData, raza: e.target.value })}
                         placeholder="Breed or mixed"
                       />
                     </div>
@@ -1402,7 +1468,7 @@ function RecepcionDashboard() {
                       <input
                         type="text"
                         value={newPatientData.color}
-                        onChange={(e) => setNewPatientData({...newPatientData, color: e.target.value})}
+                        onChange={(e) => setNewPatientData({ ...newPatientData, color: e.target.value })}
                         placeholder="Coat color"
                       />
                     </div>
@@ -1410,7 +1476,7 @@ function RecepcionDashboard() {
                       <label>{t('recepcion.patient.bodyCondition')} (1-5):</label>
                       <select
                         value={newPatientData.condicionCorporal}
-                        onChange={(e) => setNewPatientData({...newPatientData, condicionCorporal: e.target.value})}
+                        onChange={(e) => setNewPatientData({ ...newPatientData, condicionCorporal: e.target.value })}
                       >
                         <option value="1">1 - Very thin</option>
                         <option value="2">2 - Thin</option>
@@ -1433,7 +1499,7 @@ function RecepcionDashboard() {
                       <input
                         type="text"
                         value={newPatientData.snapTest}
-                        onChange={(e) => setNewPatientData({...newPatientData, snapTest: e.target.value})}
+                        onChange={(e) => setNewPatientData({ ...newPatientData, snapTest: e.target.value })}
                         placeholder="Snap Test results"
                       />
                     </div>
@@ -1441,7 +1507,7 @@ function RecepcionDashboard() {
                       <label>{t('recepcion.medicalHistory.clinicalAnalysis')}:</label>
                       <textarea
                         value={newPatientData.analisisClinicos}
-                        onChange={(e) => setNewPatientData({...newPatientData, analisisClinicos: e.target.value})}
+                        onChange={(e) => setNewPatientData({ ...newPatientData, analisisClinicos: e.target.value })}
                         placeholder="Previous clinical analysis results"
                         rows={4}
                       />
@@ -1460,7 +1526,7 @@ function RecepcionDashboard() {
                         <input
                           type="checkbox"
                           checked={newPatientData.desparasitacionExterna}
-                          onChange={(e) => setNewPatientData({...newPatientData, desparasitacionExterna: e.target.checked})}
+                          onChange={(e) => setNewPatientData({ ...newPatientData, desparasitacionExterna: e.target.checked })}
                         />
                         {t('recepcion.medicalHistory.externalDeworming')}
                       </label>
@@ -1470,14 +1536,14 @@ function RecepcionDashboard() {
                       <input
                         type="date"
                         value={newPatientData.ultimaDesparasitacion}
-                        onChange={(e) => setNewPatientData({...newPatientData, ultimaDesparasitacion: e.target.value})}
+                        onChange={(e) => setNewPatientData({ ...newPatientData, ultimaDesparasitacion: e.target.value })}
                       />
                     </div>
                     <div className="form-group full-width">
                       <label>{t('recepcion.medicalHistory.vaccines')}:</label>
                       <textarea
                         value={newPatientData.vacunas}
-                        onChange={(e) => setNewPatientData({...newPatientData, vacunas: e.target.value})}
+                        onChange={(e) => setNewPatientData({ ...newPatientData, vacunas: e.target.value })}
                         placeholder="List of applied vaccines"
                         rows={3}
                       />
@@ -1487,7 +1553,7 @@ function RecepcionDashboard() {
                         <input
                           type="checkbox"
                           checked={newPatientData.vacunasActualizadas}
-                          onChange={(e) => setNewPatientData({...newPatientData, vacunasActualizadas: e.target.checked})}
+                          onChange={(e) => setNewPatientData({ ...newPatientData, vacunasActualizadas: e.target.checked })}
                         />
                         {t('recepcion.medicalHistory.vaccinesUpToDate')}
                       </label>
@@ -1497,7 +1563,7 @@ function RecepcionDashboard() {
                       <input
                         type="date"
                         value={newPatientData.ultimaVacuna}
-                        onChange={(e) => setNewPatientData({...newPatientData, ultimaVacuna: e.target.value})}
+                        onChange={(e) => setNewPatientData({ ...newPatientData, ultimaVacuna: e.target.value })}
                       />
                     </div>
                   </div>
@@ -1518,7 +1584,7 @@ function RecepcionDashboard() {
                             name="esterilizado"
                             value="Yes"
                             checked={newPatientData.esterilizado === 'Yes'}
-                            onChange={(e) => setNewPatientData({...newPatientData, esterilizado: e.target.value})}
+                            onChange={(e) => setNewPatientData({ ...newPatientData, esterilizado: e.target.value })}
                           />
                           {t('common.yes')}
                         </label>
@@ -1528,7 +1594,7 @@ function RecepcionDashboard() {
                             name="esterilizado"
                             value="No"
                             checked={newPatientData.esterilizado === 'No'}
-                            onChange={(e) => setNewPatientData({...newPatientData, esterilizado: e.target.value})}
+                            onChange={(e) => setNewPatientData({ ...newPatientData, esterilizado: e.target.value })}
                           />
                           {t('common.no')}
                         </label>
@@ -1543,7 +1609,7 @@ function RecepcionDashboard() {
                             name="otrasCirugias"
                             value="Yes"
                             checked={newPatientData.otrasCirugias === 'Yes'}
-                            onChange={(e) => setNewPatientData({...newPatientData, otrasCirugias: e.target.value})}
+                            onChange={(e) => setNewPatientData({ ...newPatientData, otrasCirugias: e.target.value })}
                           />
                           {t('common.yes')}
                         </label>
@@ -1553,7 +1619,7 @@ function RecepcionDashboard() {
                             name="otrasCirugias"
                             value="No"
                             checked={newPatientData.otrasCirugias === 'No'}
-                            onChange={(e) => setNewPatientData({...newPatientData, otrasCirugias: e.target.value})}
+                            onChange={(e) => setNewPatientData({ ...newPatientData, otrasCirugias: e.target.value })}
                           />
                           {t('common.no')}
                         </label>
@@ -1564,7 +1630,7 @@ function RecepcionDashboard() {
                         <label>{t('recepcion.surgeries.surgeryDetails')}:</label>
                         <textarea
                           value={newPatientData.detalleCirugias}
-                          onChange={(e) => setNewPatientData({...newPatientData, detalleCirugias: e.target.value})}
+                          onChange={(e) => setNewPatientData({ ...newPatientData, detalleCirugias: e.target.value })}
                           placeholder="Describe previous surgeries"
                           rows={3}
                         />
@@ -1582,7 +1648,7 @@ function RecepcionDashboard() {
                           <input
                             type="date"
                             value={newPatientData.ultimoCelo}
-                            onChange={(e) => setNewPatientData({...newPatientData, ultimoCelo: e.target.value})}
+                            onChange={(e) => setNewPatientData({ ...newPatientData, ultimoCelo: e.target.value })}
                           />
                         </div>
                         <div className="form-group">
@@ -1591,7 +1657,7 @@ function RecepcionDashboard() {
                             type="number"
                             min="0"
                             value={newPatientData.cantidadPartos}
-                            onChange={(e) => setNewPatientData({...newPatientData, cantidadPartos: e.target.value})}
+                            onChange={(e) => setNewPatientData({ ...newPatientData, cantidadPartos: e.target.value })}
                             placeholder="0"
                           />
                         </div>
@@ -1600,7 +1666,7 @@ function RecepcionDashboard() {
                           <input
                             type="date"
                             value={newPatientData.ultimoParto}
-                            onChange={(e) => setNewPatientData({...newPatientData, ultimoParto: e.target.value})}
+                            onChange={(e) => setNewPatientData({ ...newPatientData, ultimoParto: e.target.value })}
                           />
                         </div>
                       </div>
@@ -1619,7 +1685,7 @@ function RecepcionDashboard() {
                       <input
                         type="text"
                         value={newPatientData.alimento}
-                        onChange={(e) => setNewPatientData({...newPatientData, alimento: e.target.value})}
+                        onChange={(e) => setNewPatientData({ ...newPatientData, alimento: e.target.value })}
                         placeholder="Brand/type of food"
                       />
                     </div>
@@ -1628,7 +1694,7 @@ function RecepcionDashboard() {
                       <input
                         type="text"
                         value={newPatientData.porcionesPorDia}
-                        onChange={(e) => setNewPatientData({...newPatientData, porcionesPorDia: e.target.value})}
+                        onChange={(e) => setNewPatientData({ ...newPatientData, porcionesPorDia: e.target.value })}
                         placeholder="e.g., 2 cups"
                       />
                     </div>
@@ -1637,7 +1703,7 @@ function RecepcionDashboard() {
                       <input
                         type="text"
                         value={newPatientData.otrosAlimentos}
-                        onChange={(e) => setNewPatientData({...newPatientData, otrosAlimentos: e.target.value})}
+                        onChange={(e) => setNewPatientData({ ...newPatientData, otrosAlimentos: e.target.value })}
                         placeholder="Treats, scraps, etc."
                       />
                     </div>
@@ -1646,7 +1712,7 @@ function RecepcionDashboard() {
                       <input
                         type="text"
                         value={newPatientData.frecuenciaOtrosAlimentos}
-                        onChange={(e) => setNewPatientData({...newPatientData, frecuenciaOtrosAlimentos: e.target.value})}
+                        onChange={(e) => setNewPatientData({ ...newPatientData, frecuenciaOtrosAlimentos: e.target.value })}
                         placeholder="Daily, weekly, etc."
                       />
                     </div>
@@ -1655,7 +1721,7 @@ function RecepcionDashboard() {
                       <input
                         type="text"
                         value={newPatientData.alergias}
-                        onChange={(e) => setNewPatientData({...newPatientData, alergias: e.target.value})}
+                        onChange={(e) => setNewPatientData({ ...newPatientData, alergias: e.target.value })}
                         placeholder="Known allergies"
                       />
                     </div>
@@ -1663,7 +1729,7 @@ function RecepcionDashboard() {
                       <label>{t('recepcion.allergies.chronicDiseases')}:</label>
                       <textarea
                         value={newPatientData.enfermedadesCronicas}
-                        onChange={(e) => setNewPatientData({...newPatientData, enfermedadesCronicas: e.target.value})}
+                        onChange={(e) => setNewPatientData({ ...newPatientData, enfermedadesCronicas: e.target.value })}
                         placeholder="Chronic medical conditions"
                         rows={3}
                       />
@@ -1686,7 +1752,7 @@ function RecepcionDashboard() {
                             name="conviveOtrasMascotas"
                             value="Yes"
                             checked={newPatientData.conviveOtrasMascotas === 'Yes'}
-                            onChange={(e) => setNewPatientData({...newPatientData, conviveOtrasMascotas: e.target.value})}
+                            onChange={(e) => setNewPatientData({ ...newPatientData, conviveOtrasMascotas: e.target.value })}
                           />
                           {t('common.yes')}
                         </label>
@@ -1696,7 +1762,7 @@ function RecepcionDashboard() {
                             name="conviveOtrasMascotas"
                             value="No"
                             checked={newPatientData.conviveOtrasMascotas === 'No'}
-                            onChange={(e) => setNewPatientData({...newPatientData, conviveOtrasMascotas: e.target.value})}
+                            onChange={(e) => setNewPatientData({ ...newPatientData, conviveOtrasMascotas: e.target.value })}
                           />
                           {t('common.no')}
                         </label>
@@ -1708,7 +1774,7 @@ function RecepcionDashboard() {
                         <input
                           type="text"
                           value={newPatientData.cualesMascotas}
-                          onChange={(e) => setNewPatientData({...newPatientData, cualesMascotas: e.target.value})}
+                          onChange={(e) => setNewPatientData({ ...newPatientData, cualesMascotas: e.target.value })}
                           placeholder="Dogs, cats, etc."
                         />
                       </div>
@@ -1722,7 +1788,7 @@ function RecepcionDashboard() {
                             name="actividadFisica"
                             value="Yes"
                             checked={newPatientData.actividadFisica === 'Yes'}
-                            onChange={(e) => setNewPatientData({...newPatientData, actividadFisica: e.target.value})}
+                            onChange={(e) => setNewPatientData({ ...newPatientData, actividadFisica: e.target.value })}
                           />
                           {t('common.yes')}
                         </label>
@@ -1732,7 +1798,7 @@ function RecepcionDashboard() {
                             name="actividadFisica"
                             value="No"
                             checked={newPatientData.actividadFisica === 'No'}
-                            onChange={(e) => setNewPatientData({...newPatientData, actividadFisica: e.target.value})}
+                            onChange={(e) => setNewPatientData({ ...newPatientData, actividadFisica: e.target.value })}
                           />
                           {t('common.no')}
                         </label>
@@ -1744,7 +1810,7 @@ function RecepcionDashboard() {
                         <input
                           type="text"
                           value={newPatientData.frecuenciaActividad}
-                          onChange={(e) => setNewPatientData({...newPatientData, frecuenciaActividad: e.target.value})}
+                          onChange={(e) => setNewPatientData({ ...newPatientData, frecuenciaActividad: e.target.value })}
                           placeholder="Daily, 3 times/week, etc."
                         />
                       </div>
@@ -1758,7 +1824,7 @@ function RecepcionDashboard() {
                             name="saleViaPublica"
                             value="Yes"
                             checked={newPatientData.saleViaPublica === 'Yes'}
-                            onChange={(e) => setNewPatientData({...newPatientData, saleViaPublica: e.target.value})}
+                            onChange={(e) => setNewPatientData({ ...newPatientData, saleViaPublica: e.target.value })}
                           />
                           {t('common.yes')}
                         </label>
@@ -1768,7 +1834,7 @@ function RecepcionDashboard() {
                             name="saleViaPublica"
                             value="No"
                             checked={newPatientData.saleViaPublica === 'No'}
-                            onChange={(e) => setNewPatientData({...newPatientData, saleViaPublica: e.target.value})}
+                            onChange={(e) => setNewPatientData({ ...newPatientData, saleViaPublica: e.target.value })}
                           />
                           {t('common.no')}
                         </label>
@@ -1780,7 +1846,7 @@ function RecepcionDashboard() {
                         <input
                           type="text"
                           value={newPatientData.frecuenciaSalida}
-                          onChange={(e) => setNewPatientData({...newPatientData, frecuenciaSalida: e.target.value})}
+                          onChange={(e) => setNewPatientData({ ...newPatientData, frecuenciaSalida: e.target.value })}
                           placeholder="Daily walks, etc."
                         />
                       </div>
@@ -1789,7 +1855,7 @@ function RecepcionDashboard() {
                       <label>{t('recepcion.lifestyle.otherData')}:</label>
                       <textarea
                         value={newPatientData.otrosDatos}
-                        onChange={(e) => setNewPatientData({...newPatientData, otrosDatos: e.target.value})}
+                        onChange={(e) => setNewPatientData({ ...newPatientData, otrosDatos: e.target.value })}
                         placeholder="Additional relevant information"
                         rows={4}
                       />
@@ -1802,26 +1868,26 @@ function RecepcionDashboard() {
             {/* Botones de navegación del wizard */}
             <div className="wizard-navigation">
               {mascotaWizardStep > 1 && (
-                <button 
-                  type="button" 
+                <button
+                  type="button"
                   className="btn-wizard-prev"
                   onClick={() => setMascotaWizardStep(mascotaWizardStep - 1)}
                 >
                   ← {t('common.previous')}
                 </button>
               )}
-              
+
               {mascotaWizardStep < 7 ? (
-                <button 
-                  type="button" 
+                <button
+                  type="button"
                   className="btn-wizard-next"
                   onClick={() => setMascotaWizardStep(mascotaWizardStep + 1)}
                 >
                   {t('common.next')} →
                 </button>
               ) : (
-                <button 
-                  type="button" 
+                <button
+                  type="button"
                   className="btn-wizard-submit"
                   onClick={handleSubmitNewPatient}
                   disabled={apiLoading}
@@ -1845,64 +1911,65 @@ function RecepcionDashboard() {
               <div className="appointments-grid">
                 {todayAppointments.map((cita) => (
                   <div key={cita.id} className="appointment-card">
-                      <div className="appointment-header">
-                        <div className="appointment-time-large">{cita.hora || '---'}</div>
-                        {cita.cancelada ? (
-                          <span className="status-badge error">✕ {t('recepcion.appointments.cancelled')}</span>
-                        ) : cita.confirmada ? (
-                          <span className="status-badge success">✓ {t('recepcion.appointments.confirmed')}</span>
-                        ) : (
-                          <span className="status-badge warning">⚠ {t('recepcion.appointments.pending')}</span>
-                        )}
-                      </div>
-                      <div className="appointment-body">
-                        <h4>{cita.pacienteNombre || cita.paciente || 'No name'}</h4>
-                        <p><strong>{t('recepcion.patient.owner')}:</strong> {cita.propietario || 'Not specified'}</p>
-                        <p><strong>{t('recepcion.appointments.type')}:</strong> {(cita.tipo || 'CONSULTA_GENERAL').replace(/_/g, ' ')}</p>
-                        <p><strong>{t('recepcion.triage.reason')}:</strong> {cita.motivo || 'Not specified'}</p>
-                      </div>
-                      <div className="appointment-actions">
-                        <button className="btn-icon" title={t('recepcion.actions.call')} onClick={() => handleCallPatient(cita.telefono || '555-0000')}>📞</button>
-                        <button className="btn-icon" title={t('recepcion.actions.viewRecord')} onClick={() => alert(t('recepcion.actions.viewRecord'))}>📄</button>
-                        {/* Botón Check-in: Solo para citas confirmadas que aún no tienen check-in */}
-                        {cita.confirmada && !cita.cancelada && cita.pacienteId && (
-                          <button 
-                            className="btn-icon success" 
-                            title={t('recepcion.checkIn', 'Check-in')}
-                            onClick={async () => {
-                              try {
-                                await checkInPet(cita.pacienteId);
-                                await refreshData();
-                                alert(`✅ Check-in completed for ${cita.pacienteNombre}\nThe patient is ready for triage.`);
-                                setActiveSection('triage');
-                              } catch (err) {
-                                alert('Check-in error: ' + (err.message || 'Please try again'));
-                              }
-                            }}
-                          >
-                            🏥
-                          </button>
-                        )}
-                        {!cita.confirmada && !cita.cancelada && (
-                          <button 
-                            className="btn-icon success" 
-                            title={t('common.confirm')}
-                            onClick={() => handleConfirmAppointment(cita.id)}
-                          >
-                            ✓
-                          </button>
-                        )}
-                        {!cita.cancelada && (
-                          <button 
-                            className="btn-icon error" 
-                            title={t('common.cancel')}
-                            onClick={() => handleCancelAppointment(cita.id)}
-                          >
-                            ✕
-                          </button>
-                        )}
-                      </div>
+                    <div className="appointment-header">
+                      <div className="appointment-time-large">{cita.hora || '---'}</div>
+                      {cita.cancelada ? (
+                        <span className="status-badge error">✕ {t('recepcion.appointments.cancelled')}</span>
+                      ) : cita.confirmada ? (
+                        <span className="status-badge success">✓ {t('recepcion.appointments.confirmed')}</span>
+                      ) : (
+                        <span className="status-badge warning">⚠ {t('recepcion.appointments.pending')}</span>
+                      )}
                     </div>
+                    <div className="appointment-body">
+                      <h4>{cita.pacienteNombre || cita.paciente || 'No name'}</h4>
+                      <p><strong>{t('recepcion.patient.owner')}:</strong> {cita.propietario || 'Not specified'}</p>
+                      <p><strong>{t('recepcion.appointments.type')}:</strong> {(cita.tipo || 'CONSULTA_GENERAL').replace(/_/g, ' ')}</p>
+                      <p><strong>{t('recepcion.triage.reason')}:</strong> {cita.motivo || 'Not specified'}</p>
+                    </div>
+                    <div className="appointment-actions">
+                      <button className="btn-icon" title={t('recepcion.actions.call')} onClick={() => handleCallPatient(cita.telefono || '555-0000')}>📞</button>
+                      <button className="btn-icon" title={t('recepcion.actions.viewRecord')} onClick={() => alert(t('recepcion.actions.viewRecord'))}>📄</button>
+                      {/* Botón Check-in: Solo para citas confirmadas que aún no tienen check-in */}
+                      {cita.confirmada && !cita.cancelada && cita.pacienteId && (
+                        <button
+                          className="btn-icon success"
+                          title={t('recepcion.checkIn', 'Check-in')}
+                          onClick={() => {
+                            // Use service type selection flow
+                            setPendingCheckInPet({
+                              id: cita.pacienteId,
+                              nombre: cita.pacienteNombre || cita.paciente,
+                              especie: cita.especie || 'Not specified',
+                              raza: cita.raza || '',
+                              propietario: cita.propietario
+                            });
+                            setShowServiceTypeModal(true);
+                          }}
+                        >
+                          🏥
+                        </button>
+                      )}
+                      {!cita.confirmada && !cita.cancelada && (
+                        <button
+                          className="btn-icon success"
+                          title={t('common.confirm')}
+                          onClick={() => handleConfirmAppointment(cita.id)}
+                        >
+                          ✓
+                        </button>
+                      )}
+                      {!cita.cancelada && (
+                        <button
+                          className="btn-icon error"
+                          title={t('common.cancel')}
+                          onClick={() => handleCancelAppointment(cita.id)}
+                        >
+                          ✕
+                        </button>
+                      )}
+                    </div>
+                  </div>
                 ))}
               </div>
             ) : (
@@ -1921,7 +1988,7 @@ function RecepcionDashboard() {
                 🔄 {loadingCitasMedico ? 'Cargando...' : 'Actualizar'}
               </button>
             </div>
-            
+
             {loadingCitasMedico ? (
               <div className="loading-state">
                 <span className="spinner">⏳</span>
@@ -1940,7 +2007,7 @@ function RecepcionDashboard() {
                         {cita.confirmada ? '✓ Confirmada' : '⏳ Por confirmar'}
                       </span>
                     </div>
-                    
+
                     <div className="cita-medico-patient">
                       <div className="patient-row">
                         <span className="pet-icon">{cita.pet?.especie === 'PERRO' ? '🐕' : '🐈'}</span>
@@ -1950,7 +2017,7 @@ function RecepcionDashboard() {
                         </div>
                       </div>
                     </div>
-                    
+
                     <div className="cita-medico-owner">
                       <div className="owner-info-line">
                         <span className="owner-icon">👤</span>
@@ -1960,8 +2027,8 @@ function RecepcionDashboard() {
                         <div className="owner-phone-line">
                           <span className="phone-icon">📱</span>
                           <span className="phone-number">{cita.pet.owner.telefono}</span>
-                          <button 
-                            className="btn-call" 
+                          <button
+                            className="btn-call"
                             onClick={() => handleCallPatient(cita.pet.owner.telefono)}
                           >
                             Llamar
@@ -1975,27 +2042,27 @@ function RecepcionDashboard() {
                         </div>
                       )}
                     </div>
-                    
+
                     <div className="cita-medico-motivo">
                       <strong>📝 Motivo:</strong>
                       <p>{cita.motivo}</p>
                     </div>
-                    
+
                     {cita.metadata?.labType && (
                       <div className="cita-medico-lab-context">
                         <span className="lab-badge">🧪 {cita.metadata.labType}</span>
                       </div>
                     )}
-                    
+
                     {cita.notas && (
                       <div className="cita-medico-notas">
                         <small>💬 {cita.notas}</small>
                       </div>
                     )}
-                    
+
                     <div className="cita-medico-actions">
                       {!cita.confirmada && (
-                        <button 
+                        <button
                           className="btn-confirm"
                           onClick={async () => {
                             try {
@@ -2011,24 +2078,25 @@ function RecepcionDashboard() {
                         </button>
                       )}
                       {cita.confirmada && cita.pet?.id && (
-                        <button 
+                        <button
                           className="btn-checkin"
-                          onClick={async () => {
-                            try {
-                              await checkInPet(cita.pet.id);
-                              await refreshData();
-                              await loadCitasMedico();
-                              alert(`✅ Check-in completado para ${cita.pet.nombre}`);
-                              setActiveSection('triage');
-                            } catch (err) {
-                              alert('Error: ' + (err.message || 'No se pudo hacer check-in'));
-                            }
+                          onClick={() => {
+                            // Use service type selection flow
+                            setPendingCheckInPet({
+                              id: cita.pet.id,
+                              nombre: cita.pet.nombre,
+                              especie: cita.pet.especie,
+                              raza: cita.pet.raza,
+                              propietario: cita.pet.owner?.nombre,
+                              owner: cita.pet.owner
+                            });
+                            setShowServiceTypeModal(true);
                           }}
                         >
                           🏥 Check-in
                         </button>
                       )}
-                      <button 
+                      <button
                         className="btn-cancel"
                         onClick={async () => {
                           if (confirm('¿Cancelar esta cita?')) {
@@ -2065,21 +2133,21 @@ function RecepcionDashboard() {
               <div className="preventive-calendar-grid">
                 {preventiveCalendar.map(patient => (
                   <div key={patient.id} className="calendar-patient-card">
-                      <div className="calendar-patient-header">
-                        <div className="patient-avatar">
-                          {patient.fotoUrl ? (
-                            <img src={patient.fotoUrl} alt={patient.nombre} className="patient-avatar-photo-small" />
-                          ) : (
-                            patient.especie === 'DOG' ? '🐕' : patient.especie === 'CAT' ? '🐈' : '🐾'
-                          )}
-                        </div>
-                        <div>
-                          <h4>{patient.nombre}</h4>
-                          <span className="text-small">{patient.propietario}</span>
-                        </div>
+                    <div className="calendar-patient-header">
+                      <div className="patient-avatar">
+                        {patient.fotoUrl ? (
+                          <img src={patient.fotoUrl} alt={patient.nombre} className="patient-avatar-photo-small" />
+                        ) : (
+                          patient.especie === 'DOG' ? '🐕' : patient.especie === 'CAT' ? '🐈' : '🐾'
+                        )}
                       </div>
+                      <div>
+                        <h4>{patient.nombre}</h4>
+                        <span className="text-small">{patient.propietario}</span>
+                      </div>
+                    </div>
 
-                      <div className="calendar-patient-details">
+                    <div className="calendar-patient-details">
                       <div className="detail-item">
                         <strong>{t('recepcion.patient.name')}:</strong> {patient.numeroFicha}
                       </div>
@@ -2115,7 +2183,7 @@ function RecepcionDashboard() {
                     </div>
 
                     <div className="card-actions">
-                      <button 
+                      <button
                         className="btn-action"
                         onClick={() => window.open(`tel:${patient.telefono}`, '_self')}
                       >
@@ -2143,32 +2211,32 @@ function RecepcionDashboard() {
               <div className="patients-grid">
                 {newArrivals.map(patient => (
                   <div key={patient.id} className="patient-card-urgent">
-                      <div className="patient-card-header">
-                        <div className="patient-avatar-small">
-                          {patient.fotoUrl ? (
-                            <img src={patient.fotoUrl} alt={patient.nombre} className="patient-avatar-photo-small" />
-                          ) : (
-                            patient.especie === 'Dog' ? '🐕' : '🐈'
-                          )}
-                        </div>
-                        <div>
-                          <h4>{patient.nombre}</h4>
-                          <span className="patient-ficha">{patient.numeroFicha}</span>
-                        </div>
+                    <div className="patient-card-header">
+                      <div className="patient-avatar-small">
+                        {patient.fotoUrl ? (
+                          <img src={patient.fotoUrl} alt={patient.nombre} className="patient-avatar-photo-small" />
+                        ) : (
+                          patient.especie === 'Dog' ? '🐕' : '🐈'
+                        )}
                       </div>
-                      <div className="patient-details-small">
-                        <p><strong>{t('recepcion.patient.owner')}:</strong> {patient.propietario}</p>
-                        <p><strong>{t('recepcion.patient.species')}:</strong> {patient.especie} - {patient.raza}</p>
-                        <p><strong>{t('recepcion.patient.phone')}:</strong> {patient.telefono}</p>
-                        {patient.motivo && <p><strong>{t('recepcion.triage.reason')}:</strong> {patient.motivo}</p>}
+                      <div>
+                        <h4>{patient.nombre}</h4>
+                        <span className="patient-ficha">{patient.numeroFicha}</span>
                       </div>
-                      <button 
-                        className="btn-action urgent"
-                        onClick={() => handleStartTriage(patient)}
-                      >
-                        📋 {t('recepcion.triage.startTriage')}
-                      </button>
                     </div>
+                    <div className="patient-details-small">
+                      <p><strong>{t('recepcion.patient.owner')}:</strong> {patient.propietario}</p>
+                      <p><strong>{t('recepcion.patient.species')}:</strong> {patient.especie} - {patient.raza}</p>
+                      <p><strong>{t('recepcion.patient.phone')}:</strong> {patient.telefono}</p>
+                      {patient.motivo && <p><strong>{t('recepcion.triage.reason')}:</strong> {patient.motivo}</p>}
+                    </div>
+                    <button
+                      className="btn-action urgent"
+                      onClick={() => handleStartTriage(patient)}
+                    >
+                      📋 {t('recepcion.triage.startTriage')}
+                    </button>
+                  </div>
                 ))}
               </div>
             ) : (
@@ -2194,7 +2262,7 @@ function RecepcionDashboard() {
                 <button className="btn-clear" onClick={() => setSearchQuery('')}>✕</button>
               )}
             </div>
-            
+
             <div className="patients-grid-modern">
               {filteredPatients.length === 0 ? (
                 <div className="empty-state">
@@ -2207,9 +2275,9 @@ function RecepcionDashboard() {
                     <div className="patient-card-top">
                       <div className="patient-avatar-container">
                         {patient.fotoUrl ? (
-                          <img 
-                            src={patient.fotoUrl} 
-                            alt={patient.nombre} 
+                          <img
+                            src={patient.fotoUrl}
+                            alt={patient.nombre}
                             className="patient-avatar-photo"
                           />
                         ) : (
@@ -2224,14 +2292,14 @@ function RecepcionDashboard() {
                         <span className="patient-ficha-badge">{patient.numeroFicha}</span>
                       </div>
                       <div className="patient-card-actions">
-                        <button 
-                          className="btn-card-action primary" 
-                          onClick={() => handleViewExpediente(patient)} 
+                        <button
+                          className="btn-card-action primary"
+                          onClick={() => handleViewExpediente(patient)}
                           title={t('recepcion.actions.viewRecord')}
                         >
                           📋
                         </button>
-                        <button 
+                        <button
                           className="btn-card-action secondary"
                           onClick={() => handleEditPhoto(patient)}
                           title="Edit Photo"
@@ -2239,7 +2307,7 @@ function RecepcionDashboard() {
                           📷
                         </button>
                         {patient.estado === 'RECIEN_LLEGADO' && (
-                          <button 
+                          <button
                             className="btn-card-action warning"
                             onClick={() => handleStartTriage(patient)}
                             title="Start Triage"
@@ -2248,7 +2316,7 @@ function RecepcionDashboard() {
                           </button>
                         )}
                         {patient.estado === 'LISTO_PARA_ALTA' && (
-                          <button 
+                          <button
                             className="btn-card-action success"
                             onClick={() => handleStartDischarge(patient)}
                             title="Process Discharge"
@@ -2258,7 +2326,7 @@ function RecepcionDashboard() {
                         )}
                       </div>
                     </div>
-                    
+
                     <div className="patient-card-info">
                       <div className="info-item">
                         <span className="info-icon">🧬</span>
@@ -2275,17 +2343,17 @@ function RecepcionDashboard() {
                         </div>
                       )}
                     </div>
-                    
+
                     <div className="patient-card-footer">
                       <span className={`status-badge-modern ${patient.estado?.toLowerCase().replace(/_/g, '-')}`}>
                         {t(`recepcion.status.${patient.estado}`, patient.estado?.replace(/_/g, ' '))}
                       </span>
                       {patient.prioridad && (
                         <span className={`priority-badge-modern ${patient.prioridad?.toLowerCase()}`}>
-                          {patient.prioridad === 'ALTA' ? '🔴' : patient.prioridad === 'MEDIA' ? '🟠' : '🟢'} 
-                          {' '}{patient.prioridad === 'ALTA' ? t('recepcion.triage.high', 'Alta') : 
-                                patient.prioridad === 'MEDIA' ? t('recepcion.triage.medium', 'Media') : 
-                                t('recepcion.triage.low', 'Baja')}
+                          {patient.prioridad === 'ALTA' ? '🔴' : patient.prioridad === 'MEDIA' ? '🟠' : '🟢'}
+                          {' '}{patient.prioridad === 'ALTA' ? t('recepcion.triage.high', 'Alta') :
+                            patient.prioridad === 'MEDIA' ? t('recepcion.triage.medium', 'Media') :
+                              t('recepcion.triage.low', 'Baja')}
                         </span>
                       )}
                     </div>
@@ -2302,33 +2370,33 @@ function RecepcionDashboard() {
             {readyForDischarge.length > 0 ? (
               <div className="patients-grid">
                 {readyForDischarge.map(patient => (
-                    <div key={patient.id} className="patient-card-alta">
-                      <div className="patient-card-header">
-                        <div className="patient-avatar-small">
-                          {patient.fotoUrl ? (
-                            <img src={patient.fotoUrl} alt={patient.nombre} className="patient-avatar-photo-small" />
-                          ) : (
-                            patient.especie === 'Dog' ? '🐕' : '🐈'
-                          )}
-                        </div>
-                        <div>
-                          <h4>{patient.nombre}</h4>
-                          <span className="patient-ficha">{patient.numeroFicha}</span>
-                        </div>
+                  <div key={patient.id} className="patient-card-alta">
+                    <div className="patient-card-header">
+                      <div className="patient-avatar-small">
+                        {patient.fotoUrl ? (
+                          <img src={patient.fotoUrl} alt={patient.nombre} className="patient-avatar-photo-small" />
+                        ) : (
+                          patient.especie === 'Dog' ? '🐕' : '🐈'
+                        )}
                       </div>
-                      <div className="patient-details-small">
-                        <p><strong>{t('recepcion.patient.owner')}:</strong> {patient.propietario}</p>
-                        <p><strong>{t('recepcion.patient.phone')}:</strong> {patient.telefono}</p>
-                        <p><strong>{t('recepcion.patient.species')}:</strong> {patient.especie} - {patient.raza}</p>
+                      <div>
+                        <h4>{patient.nombre}</h4>
+                        <span className="patient-ficha">{patient.numeroFicha}</span>
                       </div>
-                      <button 
-                        className="btn-action success"
-                        onClick={() => handleStartDischarge(patient)}
-                      >
-                        💰 {t('recepcion.discharge.processDischarge')}
-                      </button>
                     </div>
-                  ))
+                    <div className="patient-details-small">
+                      <p><strong>{t('recepcion.patient.owner')}:</strong> {patient.propietario}</p>
+                      <p><strong>{t('recepcion.patient.phone')}:</strong> {patient.telefono}</p>
+                      <p><strong>{t('recepcion.patient.species')}:</strong> {patient.especie} - {patient.raza}</p>
+                    </div>
+                    <button
+                      className="btn-action success"
+                      onClick={() => handleStartDischarge(patient)}
+                    >
+                      💰 {t('recepcion.discharge.processDischarge')}
+                    </button>
+                  </div>
+                ))
                 }
               </div>
             ) : (
@@ -2345,8 +2413,8 @@ function RecepcionDashboard() {
       {showTriageModal && selectedPatient && (
         <div className="modal-overlay" onClick={() => setShowTriageModal(false)}>
           <div className="modal-content large" onClick={e => e.stopPropagation()}>
-              <h2>📋 {t('recepcion.triage.title')} - {selectedPatient.nombre}</h2>
-            
+            <h2>📋 {t('recepcion.triage.title')} - {selectedPatient.nombre}</h2>
+
             <div className="patient-info-modal">
               <div className="info-row">
                 <strong>{t('recepcion.patient.owner')}:</strong> {selectedPatient.propietario}
@@ -2362,9 +2430,9 @@ function RecepcionDashboard() {
             <form onSubmit={handleSubmitTriage} className="triage-form">
               <div className="form-section">
                 <h3>1. {t('recepcion.triage.visitType')}</h3>
-                <select 
+                <select
                   value={triageData.tipoVisita}
-                  onChange={(e) => setTriageData({...triageData, tipoVisita: e.target.value})}
+                  onChange={(e) => setTriageData({ ...triageData, tipoVisita: e.target.value })}
                   required
                 >
                   <option value="consulta_general">{t('recepcion.triage.consultationTypes.general')}</option>
@@ -2378,7 +2446,7 @@ function RecepcionDashboard() {
                 <h3>2. {t('recepcion.triage.reason')}</h3>
                 <textarea
                   value={triageData.motivo}
-                  onChange={(e) => setTriageData({...triageData, motivo: e.target.value})}
+                  onChange={(e) => setTriageData({ ...triageData, motivo: e.target.value })}
                   placeholder={t('recepcion.triage.reason')}
                   rows="3"
                   required
@@ -2390,34 +2458,34 @@ function RecepcionDashboard() {
                 <h3>3. {t('recepcion.triage.priority')}</h3>
                 <div className="priority-options">
                   <label className={triageData.prioridad === 'BAJA' ? 'selected' : ''}>
-                    <input 
-                      type="radio" 
-                      name="prioridad" 
+                    <input
+                      type="radio"
+                      name="prioridad"
                       value="BAJA"
                       checked={triageData.prioridad === 'BAJA'}
-                      onChange={(e) => setTriageData({...triageData, prioridad: e.target.value})}
+                      onChange={(e) => setTriageData({ ...triageData, prioridad: e.target.value })}
                     />
-                    <span style={{background: '#4caf50'}}>{t('recepcion.triage.low').toUpperCase()}</span>
+                    <span style={{ background: '#4caf50' }}>{t('recepcion.triage.low').toUpperCase()}</span>
                   </label>
                   <label className={triageData.prioridad === 'MEDIA' ? 'selected' : ''}>
-                    <input 
-                      type="radio" 
-                      name="prioridad" 
+                    <input
+                      type="radio"
+                      name="prioridad"
                       value="MEDIA"
                       checked={triageData.prioridad === 'MEDIA'}
-                      onChange={(e) => setTriageData({...triageData, prioridad: e.target.value})}
+                      onChange={(e) => setTriageData({ ...triageData, prioridad: e.target.value })}
                     />
-                    <span style={{background: '#ff9800'}}>{t('recepcion.triage.medium').toUpperCase()}</span>
+                    <span style={{ background: '#ff9800' }}>{t('recepcion.triage.medium').toUpperCase()}</span>
                   </label>
                   <label className={triageData.prioridad === 'ALTA' ? 'selected' : ''}>
-                    <input 
-                      type="radio" 
-                      name="prioridad" 
+                    <input
+                      type="radio"
+                      name="prioridad"
                       value="ALTA"
                       checked={triageData.prioridad === 'ALTA'}
-                      onChange={(e) => setTriageData({...triageData, prioridad: e.target.value})}
+                      onChange={(e) => setTriageData({ ...triageData, prioridad: e.target.value })}
                     />
-                    <span style={{background: '#f44336'}}>{t('recepcion.triage.high').toUpperCase()}</span>
+                    <span style={{ background: '#f44336' }}>{t('recepcion.triage.high').toUpperCase()}</span>
                   </label>
                 </div>
               </div>
@@ -2429,7 +2497,7 @@ function RecepcionDashboard() {
                     type="number"
                     step="0.1"
                     value={triageData.peso}
-                    onChange={(e) => setTriageData({...triageData, peso: e.target.value})}
+                    onChange={(e) => setTriageData({ ...triageData, peso: e.target.value })}
                     placeholder="Ej: 25.5"
                     required
                   />
@@ -2440,7 +2508,7 @@ function RecepcionDashboard() {
                     type="number"
                     step="0.1"
                     value={triageData.temperatura}
-                    onChange={(e) => setTriageData({...triageData, temperatura: e.target.value})}
+                    onChange={(e) => setTriageData({ ...triageData, temperatura: e.target.value })}
                     placeholder="Ej: 38.5"
                   />
                 </div>
@@ -2452,7 +2520,7 @@ function RecepcionDashboard() {
                     <input
                       type="checkbox"
                       checked={triageData.primeraVisita}
-                      onChange={(e) => setTriageData({...triageData, primeraVisita: e.target.checked})}
+                      onChange={(e) => setTriageData({ ...triageData, primeraVisita: e.target.checked })}
                     />
                     <strong>{t('recepcion.triage.firstVisit')}?</strong>
                   </label>
@@ -2463,7 +2531,7 @@ function RecepcionDashboard() {
                 <h3>4. {t('recepcion.triage.background')}</h3>
                 <textarea
                   value={triageData.antecedentes}
-                  onChange={(e) => setTriageData({...triageData, antecedentes: e.target.value})}
+                  onChange={(e) => setTriageData({ ...triageData, antecedentes: e.target.value })}
                   placeholder={t('recepcion.triage.background')}
                   rows="4"
                 />
@@ -2479,7 +2547,7 @@ function RecepcionDashboard() {
               </div>
             </form>
           </div>
-            
+
         </div>
       )}
 
@@ -2487,8 +2555,8 @@ function RecepcionDashboard() {
       {showDischargeModal && selectedPatient && (
         <div className="modal-overlay" onClick={() => setShowDischargeModal(false)}>
           <div className="modal-content" onClick={e => e.stopPropagation()}>
-              <h2>💰 {t('recepcion.discharge.title')} - {selectedPatient.nombre}</h2>
-            
+            <h2>💰 {t('recepcion.discharge.title')} - {selectedPatient.nombre}</h2>
+
             <div className="patient-info-modal">
               <div className="info-row">
                 <strong>{t('recepcion.patient.owner')}:</strong> {selectedPatient.propietario}
@@ -2507,7 +2575,7 @@ function RecepcionDashboard() {
                     <input
                       type="number"
                       value={dischargeData.total}
-                      onChange={(e) => setDischargeData({...dischargeData, total: e.target.value})}
+                      onChange={(e) => setDischargeData({ ...dischargeData, total: e.target.value })}
                       required
                     />
                   </div>
@@ -2515,7 +2583,7 @@ function RecepcionDashboard() {
                     <label>{t('recepcion.discharge.paymentMethod')}</label>
                     <select
                       value={dischargeData.metodoPago}
-                      onChange={(e) => setDischargeData({...dischargeData, metodoPago: e.target.value})}
+                      onChange={(e) => setDischargeData({ ...dischargeData, metodoPago: e.target.value })}
                     >
                       <option value="efectivo">{t('recepcion.discharge.cash')}</option>
                       <option value="tarjeta">{t('recepcion.discharge.card')}</option>
@@ -2533,7 +2601,7 @@ function RecepcionDashboard() {
                     <input
                       type="date"
                       value={dischargeData.fechaSeguimiento}
-                      onChange={(e) => setDischargeData({...dischargeData, fechaSeguimiento: e.target.value})}
+                      onChange={(e) => setDischargeData({ ...dischargeData, fechaSeguimiento: e.target.value })}
                     />
                   </div>
                   <div className="form-group">
@@ -2541,7 +2609,7 @@ function RecepcionDashboard() {
                     <input
                       type="time"
                       value={dischargeData.horaSeguimiento}
-                      onChange={(e) => setDischargeData({...dischargeData, horaSeguimiento: e.target.value})}
+                      onChange={(e) => setDischargeData({ ...dischargeData, horaSeguimiento: e.target.value })}
                     />
                   </div>
                 </div>
@@ -2557,7 +2625,7 @@ function RecepcionDashboard() {
               </div>
             </form>
           </div>
-            
+
         </div>
       )}
 
@@ -2565,7 +2633,7 @@ function RecepcionDashboard() {
       {selectedPatient && !showTriageModal && !showDischargeModal && !showExpedienteModal && (
         <div className="modal-overlay" onClick={() => setSelectedPatient(null)}>
           <div className="modal-content" onClick={e => e.stopPropagation()}>
-              <h2>📄 {t('recepcion.expediente.title')} - {selectedPatient.nombre}</h2>
+            <h2>📄 {t('recepcion.expediente.title')} - {selectedPatient.nombre}</h2>
             <div className="patient-detail-info">
               <div className="detail-row">
                 <strong>{t('recepcion.patient.name')}:</strong> {selectedPatient.nombre}
@@ -2589,8 +2657,8 @@ function RecepcionDashboard() {
                 <strong>{t('recepcion.patient.phone')}:</strong> {selectedPatient.telefono}
               </div>
               <div className="detail-row">
-                <strong>{t('common.status')}:</strong> 
-                <span className="status-badge" style={{background: getStatusColor(selectedPatient.estado), marginLeft: '0.5rem'}}>
+                <strong>{t('common.status')}:</strong>
+                <span className="status-badge" style={{ background: getStatusColor(selectedPatient.estado), marginLeft: '0.5rem' }}>
                   {selectedPatient.estado.replace(/_/g, ' ')}
                 </span>
               </div>
@@ -2604,7 +2672,7 @@ function RecepcionDashboard() {
               {t('common.close')}
             </button>
           </div>
-            
+
         </div>
       )}
 
@@ -2616,7 +2684,7 @@ function RecepcionDashboard() {
               <h2>📄 {t('recepcion.expediente.clinicalRecord')} - {selectedPatient.nombre}</h2>
               <button className="close-btn" onClick={() => setShowExpedienteModal(false)}>✕</button>
             </div>
-            
+
             <div className="expediente-content">
               <div className="expediente-section">
                 <h3>{t('recepcion.expediente.generalInfo')}</h3>
@@ -2660,7 +2728,7 @@ function RecepcionDashboard() {
               {/* CONSULTATION HISTORY FROM API */}
               <div className="expediente-section historial-section">
                 <h3>📋 {t('recepcion.expediente.consultHistory')}</h3>
-                
+
                 {loadingHistorial ? (
                   <div className="loading-historial">
                     <div className="spinner"></div>
@@ -2690,9 +2758,9 @@ function RecepcionDashboard() {
                               {item.tipo === 'vacuna' && `Vaccine: ${item.nombre}`}
                             </span>
                             <span className="consulta-fecha">
-                              {new Date(item.timestamp).toLocaleDateString('en-US', { 
-                                day: 'numeric', 
-                                month: 'short', 
+                              {new Date(item.timestamp).toLocaleDateString('en-US', {
+                                day: 'numeric',
+                                month: 'short',
                                 year: 'numeric',
                                 hour: '2-digit',
                                 minute: '2-digit'
@@ -2701,7 +2769,7 @@ function RecepcionDashboard() {
                           </div>
                           {item.doctor && <span className="consulta-doctor">👨‍⚕️ {item.doctor}</span>}
                         </div>
-                        
+
                         {item.tipo === 'consulta' && (
                           <div className="consulta-detalles">
                             {/* SOAP Notes */}
@@ -2736,7 +2804,7 @@ function RecepcionDashboard() {
                                 </div>
                               </div>
                             )}
-                            
+
                             {/* Vital Signs */}
                             {item.signosVitales && (
                               <div className="vitales-section">
@@ -2749,7 +2817,7 @@ function RecepcionDashboard() {
                                 </div>
                               </div>
                             )}
-                            
+
                             {/* Diagnoses */}
                             {item.diagnosticos && item.diagnosticos.length > 0 && (
                               <div className="diagnosticos-section">
@@ -2765,7 +2833,7 @@ function RecepcionDashboard() {
                                 </ul>
                               </div>
                             )}
-                            
+
                             {/* Prescriptions */}
                             {item.recetas && item.recetas.length > 0 && (
                               <div className="recetas-section">
@@ -2783,7 +2851,7 @@ function RecepcionDashboard() {
                                 ))}
                               </div>
                             )}
-                            
+
                             {/* Laboratory Tests */}
                             {item.laboratorios && item.laboratorios.length > 0 && (
                               <div className="labs-section">
@@ -2801,21 +2869,21 @@ function RecepcionDashboard() {
                             )}
                           </div>
                         )}
-                        
+
                         {item.tipo === 'hospitalizacion' && (
                           <div className="consulta-detalles">
                             <p><strong>Reason:</strong> {item.motivo}</p>
                             {item.fechaAlta && <p><strong>Discharge:</strong> {new Date(item.fechaAlta).toLocaleDateString()}</p>}
                           </div>
                         )}
-                        
+
                         {item.tipo === 'cirugia' && (
                           <div className="consulta-detalles">
                             <p><strong>Procedure:</strong> {item.procedimiento}</p>
                             <span className={`badge status-${item.status?.toLowerCase()}`}>{item.status}</span>
                           </div>
                         )}
-                        
+
                         {item.tipo === 'vacuna' && (
                           <div className="consulta-detalles">
                             {item.lote && <p><strong>Batch:</strong> {item.lote}</p>}
@@ -2833,7 +2901,7 @@ function RecepcionDashboard() {
               {t('recepcion.expediente.closeRecord')}
             </button>
           </div>
-            
+
         </div>
       )}
 
@@ -2842,11 +2910,11 @@ function RecepcionDashboard() {
         <div className="modal-overlay" onClick={() => setShowNewAppointmentModal(false)}>
           <div className="modal-content" onClick={e => e.stopPropagation()}>
             <h2>📅 {t('recepcion.appointments.scheduleNew')}</h2>
-            
+
             <form onSubmit={handleSubmitNewAppointment} className="appointment-form">
               <div className="form-section">
                 <h3>{t('recepcion.appointments.patientInfo')}</h3>
-                
+
                 {/* Search by pet name */}
                 <div className="form-group">
                   <label>🐾 Search pet by name, record or owner</label>
@@ -2859,18 +2927,18 @@ function RecepcionDashboard() {
                       style={{ flex: 1 }}
                     />
                   </div>
-                  
+
                   {/* Resultados de búsqueda de mascotas */}
                   {petSearchResults.length > 0 && (
-                    <div className="search-results" style={{ 
-                      maxHeight: '200px', 
-                      overflowY: 'auto', 
+                    <div className="search-results" style={{
+                      maxHeight: '200px',
+                      overflowY: 'auto',
                       border: '1px solid #ddd',
                       borderRadius: '4px',
                       marginTop: '0.5rem'
                     }}>
                       {petSearchResults.map(pet => (
-                        <div 
+                        <div
                           key={pet.id}
                           onClick={() => {
                             setNewAppointmentData({
@@ -2904,7 +2972,7 @@ function RecepcionDashboard() {
                       ))}
                     </div>
                   )}
-                  
+
                   {petSearchQuery.length >= 2 && petSearchResults.length === 0 && (
                     <div style={{ padding: '0.5rem', color: '#666', fontStyle: 'italic' }}>
                       No pets found with "{petSearchQuery}"
@@ -2927,7 +2995,7 @@ function RecepcionDashboard() {
                       placeholder="Enter phone..."
                       value={newAppointmentData.telefonoBusqueda || ''}
                       onChange={(e) => setNewAppointmentData({
-                        ...newAppointmentData, 
+                        ...newAppointmentData,
                         telefonoBusqueda: e.target.value
                       })}
                     />
@@ -2977,9 +3045,9 @@ function RecepcionDashboard() {
                 )}
 
                 {newAppointmentData.pacienteNombre && (
-                  <div className="selected-patient-info" style={{ 
-                    padding: '0.75rem', 
-                    background: '#e8f5e9', 
+                  <div className="selected-patient-info" style={{
+                    padding: '0.75rem',
+                    background: '#e8f5e9',
                     borderRadius: '4px',
                     marginTop: '0.5rem',
                     display: 'flex',
@@ -2987,16 +3055,16 @@ function RecepcionDashboard() {
                     alignItems: 'center'
                   }}>
                     <span>✅ Selected patient: <strong>{newAppointmentData.pacienteNombre}</strong></span>
-                    <button 
+                    <button
                       type="button"
                       onClick={() => setNewAppointmentData({
                         ...newAppointmentData,
                         pacienteId: '',
                         pacienteNombre: ''
                       })}
-                      style={{ 
-                        background: 'none', 
-                        border: 'none', 
+                      style={{
+                        background: 'none',
+                        border: 'none',
                         cursor: 'pointer',
                         color: '#d32f2f'
                       }}
@@ -3015,7 +3083,7 @@ function RecepcionDashboard() {
                     <input
                       type="date"
                       value={newAppointmentData.fecha}
-                      onChange={(e) => setNewAppointmentData({...newAppointmentData, fecha: e.target.value})}
+                      onChange={(e) => setNewAppointmentData({ ...newAppointmentData, fecha: e.target.value })}
                       required
                     />
                   </div>
@@ -3024,7 +3092,7 @@ function RecepcionDashboard() {
                     <input
                       type="time"
                       value={newAppointmentData.hora}
-                      onChange={(e) => setNewAppointmentData({...newAppointmentData, hora: e.target.value})}
+                      onChange={(e) => setNewAppointmentData({ ...newAppointmentData, hora: e.target.value })}
                       required
                     />
                   </div>
@@ -3037,7 +3105,7 @@ function RecepcionDashboard() {
                   <label>{t('recepcion.appointments.type')} *</label>
                   <select
                     value={newAppointmentData.tipo}
-                    onChange={(e) => setNewAppointmentData({...newAppointmentData, tipo: e.target.value})}
+                    onChange={(e) => setNewAppointmentData({ ...newAppointmentData, tipo: e.target.value })}
                     required
                   >
                     <option value="CONSULTA_GENERAL">{t('recepcion.triage.general')}</option>
@@ -3052,7 +3120,7 @@ function RecepcionDashboard() {
                   <label>{t('recepcion.appointments.reason')} *</label>
                   <textarea
                     value={newAppointmentData.motivo}
-                    onChange={(e) => setNewAppointmentData({...newAppointmentData, motivo: e.target.value})}
+                    onChange={(e) => setNewAppointmentData({ ...newAppointmentData, motivo: e.target.value })}
                     placeholder={t('recepcion.appointments.reasonPlaceholder')}
                     rows="3"
                     required
@@ -3064,7 +3132,7 @@ function RecepcionDashboard() {
                     <input
                       type="checkbox"
                       checked={newAppointmentData.confirmada}
-                      onChange={(e) => setNewAppointmentData({...newAppointmentData, confirmada: e.target.checked})}
+                      onChange={(e) => setNewAppointmentData({ ...newAppointmentData, confirmada: e.target.checked })}
                     />
                     {' '}{t('recepcion.appointments.confirmImmediately')}
                   </label>
@@ -3072,9 +3140,9 @@ function RecepcionDashboard() {
               </div>
 
               <div className="modal-actions">
-                <button 
-                  type="button" 
-                  className="btn-close" 
+                <button
+                  type="button"
+                  className="btn-close"
                   onClick={() => {
                     setShowNewAppointmentModal(false);
                     clearFoundOwner?.();
@@ -3082,8 +3150,8 @@ function RecepcionDashboard() {
                 >
                   {t('common.cancel')}
                 </button>
-                <button 
-                  type="submit" 
+                <button
+                  type="submit"
                   className="btn-success"
                   disabled={!newAppointmentData.pacienteId}
                 >
@@ -3100,7 +3168,7 @@ function RecepcionDashboard() {
         <div className="modal-overlay" onClick={() => setShowCalendarModal(false)}>
           <div className="modal-content large" onClick={e => e.stopPropagation()}>
             <h2>📅 {t('recepcion.preventive.calendar')}</h2>
-            
+
             <div className="calendar-content">
               <div className="calendar-info">
                 <p>{t('recepcion.preventive.patientsNeedingAttention')}</p>
@@ -3178,8 +3246,8 @@ function RecepcionDashboard() {
           <div className="modal-content modal-edit-photo" onClick={(e) => e.stopPropagation()}>
             <div className="modal-header">
               <h3>📷 Photo of {editingPet.nombre}</h3>
-              <button 
-                className="btn-close-modal" 
+              <button
+                className="btn-close-modal"
                 onClick={() => setShowEditPhotoModal(false)}
                 disabled={savingPhoto}
               >
@@ -3190,8 +3258,8 @@ function RecepcionDashboard() {
             <div className="modal-body edit-photo-body">
               <div className="photo-preview-container">
                 {editPhotoPreview ? (
-                  <img 
-                    src={editPhotoPreview} 
+                  <img
+                    src={editPhotoPreview}
                     alt={editingPet.nombre}
                     className="photo-preview-large"
                   />
@@ -3222,7 +3290,7 @@ function RecepcionDashboard() {
 
             <div className="modal-footer">
               {editPhotoPreview && !editPhotoData && (
-                <button 
+                <button
                   className="btn-danger"
                   onClick={handleRemovePhoto}
                   disabled={savingPhoto}
@@ -3230,14 +3298,14 @@ function RecepcionDashboard() {
                   🗑️ Delete
                 </button>
               )}
-              <button 
+              <button
                 className="btn-secondary"
                 onClick={() => setShowEditPhotoModal(false)}
                 disabled={savingPhoto}
               >
                 Cancel
               </button>
-              <button 
+              <button
                 className="btn-primary"
                 onClick={handleSavePhoto}
                 disabled={savingPhoto || !editPhotoData}
@@ -3248,6 +3316,138 @@ function RecepcionDashboard() {
           </div>
         </div>
       )}
+
+      {/* MODAL: SERVICE TYPE SELECTION */}
+      {showServiceTypeModal && pendingCheckInPet && (
+        <div className="modal-overlay" onClick={() => {
+          setShowServiceTypeModal(false);
+          setPendingCheckInPet(null);
+        }}>
+          <div className="modal-content" onClick={e => e.stopPropagation()}>
+            <h2>🏥 {t('recepcion.serviceType.title', 'Select Service Type')}</h2>
+
+            <div className="patient-info-modal">
+              <div className="info-row">
+                <strong>{t('recepcion.patient.patient', 'Patient')}:</strong> {pendingCheckInPet.nombre}
+              </div>
+              <div className="info-row">
+                <strong>{t('recepcion.patient.species', 'Species')}:</strong> {pendingCheckInPet.especie} - {pendingCheckInPet.raza}
+              </div>
+              <div className="info-row">
+                <strong>{t('recepcion.patient.owner', 'Owner')}:</strong> {pendingCheckInPet.propietario || pendingCheckInPet.owner?.nombre}
+              </div>
+            </div>
+
+            <p className="service-type-description">
+              {t('recepcion.serviceType.description', 'Please select the type of service for this visit:')}
+            </p>
+
+            <div className="service-type-options">
+              <button
+                className="service-type-btn medical"
+                onClick={() => completeCheckInWithServiceType('MEDICO')}
+              >
+                <span className="service-icon">👨‍⚕️</span>
+                <span className="service-label">{t('recepcion.serviceType.medical', 'Medical Consultation')}</span>
+                <span className="service-description">{t('recepcion.serviceType.medicalDesc', 'Veterinary exam, treatment, surgery')}</span>
+              </button>
+
+              <button
+                className="service-type-btn grooming"
+                onClick={() => completeCheckInWithServiceType('ESTETICA')}
+              >
+                <span className="service-icon">✂️</span>
+                <span className="service-label">{t('recepcion.serviceType.grooming', 'Grooming / Styling')}</span>
+                <span className="service-description">{t('recepcion.serviceType.groomingDesc', 'Bath, haircut, nail trimming')}</span>
+              </button>
+            </div>
+
+            <div className="modal-footer">
+              <button
+                className="btn-secondary"
+                onClick={() => {
+                  setShowServiceTypeModal(false);
+                  setPendingCheckInPet(null);
+                }}
+              >
+                {t('common.cancel', 'Cancel')}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* MODAL: GROOMING INTAKE FORM */}
+      {showGroomingModal && groomingVisit && (
+        <div className="modal-overlay grooming-modal-overlay" onClick={() => {
+          if (window.confirm(t('recepcion.grooming.confirmCancel', 'Are you sure you want to cancel? The grooming form will not be saved.'))) {
+            setShowGroomingModal(false);
+            setGroomingVisit(null);
+          }
+        }}>
+          <div className="modal-content grooming-modal-content" onClick={e => e.stopPropagation()}>
+            <GroomingIntakeForm
+              pet={groomingVisit.pet}
+              visit={groomingVisit}
+              owner={groomingVisit.pet?.owner || { nombre: groomingVisit.pet?.propietario }}
+              onSubmit={handleGroomingSubmit}
+              onCancel={() => {
+                if (window.confirm(t('recepcion.grooming.confirmCancel', 'Are you sure you want to cancel? The grooming form will not be saved.'))) {
+                  setShowGroomingModal(false);
+                  setGroomingVisit(null);
+                }
+              }}
+            />
+          </div>
+        </div>
+      )}
+
+      {/* MODAL: REGISTER NEW PET */}
+      <RegisterPetModal
+        isOpen={showRegisterPetModal}
+        onClose={() => setShowRegisterPetModal(false)}
+        owner={foundClient}
+        onPetCreated={(newPet) => {
+          // Add the new pet to the found client's pets list
+          if (foundClient) {
+            // Calculate age from date of birth
+            let edad = 'Unknown';
+            if (newPet.fechaNacimiento) {
+              const birthDate = new Date(newPet.fechaNacimiento);
+              const today = new Date();
+              const years = today.getFullYear() - birthDate.getFullYear();
+              const months = today.getMonth() - birthDate.getMonth();
+              if (years > 0) {
+                edad = `${years} year${years > 1 ? 's' : ''}`;
+              } else if (months > 0) {
+                edad = `${months} month${months > 1 ? 's' : ''}`;
+              } else {
+                edad = 'Less than 1 month';
+              }
+            }
+
+            setFoundClient({
+              ...foundClient,
+              mascotas: [...foundClient.mascotas, {
+                id: newPet.id,
+                nombre: newPet.nombre,
+                especie: newPet.especie === 'PERRO' ? 'Dog' : newPet.especie === 'GATO' ? 'Cat' : newPet.especie,
+                raza: newPet.raza,
+                edad: edad,
+                // Include owner information for grooming form
+                owner: {
+                  id: foundClient.id,
+                  nombre: foundClient.nombre,
+                  telefono: foundClient.telefono,
+                  email: foundClient.email
+                },
+                propietario: foundClient.nombre
+              }]
+            });
+          }
+          setShowRegisterPetModal(false);
+        }}
+      />
     </div>
   );
 }

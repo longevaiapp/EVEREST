@@ -90,3 +90,6 @@ export const isLaboratorio = authorize('LABORATORIO', 'ADMIN');
 
 // Check if user is pharmacist or admin
 export const isFarmacia = authorize('FARMACIA', 'ADMIN');
+
+// Check if user is stylist or admin
+export const isEstilista = authorize('ESTILISTA', 'ADMIN');

@@ -1,0 +1,994 @@
+/* src/components/dashboards/EstilistaDashboard.css */
+/* Estilos para el Dashboard de Estilista (Grooming) */
+/* Layout de 3 columnas similar al módulo médico */
+
+/* ============================================================================
+   BASE LAYOUT
+   ============================================================================ */
+
+.estilista-dashboard {
+    display: grid;
+    grid-template-columns: 320px 1fr 300px;
+    gap: 1rem;
+    height: calc(100vh - 80px);
+    padding: 1rem;
+    background: linear-gradient(135deg, #f8f4ff 0%, #f0e6ff 100%);
+    overflow: hidden;
+}
+
+.estilista-dashboard.loading-state {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+/* ============================================================================
+   ERROR NOTIFICATION
+   ============================================================================ */
+
+.estilista-dashboard .error-notification {
+    position: fixed;
+    top: 100px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: #ff4444;
+    color: white;
+    padding: 12px 20px;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    z-index: 1000;
+    box-shadow: 0 4px 15px rgba(255, 68, 68, 0.3);
+}
+
+.estilista-dashboard .error-notification button {
+    background: transparent;
+    border: none;
+    color: white;
+    cursor: pointer;
+    font-size: 1.2rem;
+}
+
+/* ============================================================================
+   LEFT PANEL - Patient Queue
+   ============================================================================ */
+
+.estilista-dashboard .left-panel {
+    background: white;
+    border-radius: 16px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+}
+
+.estilista-dashboard .panel-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 16px 20px;
+    background: linear-gradient(135deg, #9b59b6 0%, #8e44ad 100%);
+    color: white;
+}
+
+.estilista-dashboard .panel-header h3 {
+    margin: 0;
+    font-size: 1.1rem;
+    font-weight: 600;
+}
+
+.estilista-dashboard .refresh-btn {
+    background: rgba(255, 255, 255, 0.2);
+    border: none;
+    padding: 8px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 1rem;
+    transition: all 0.2s;
+}
+
+.estilista-dashboard .refresh-btn:hover {
+    background: rgba(255, 255, 255, 0.3);
+}
+
+.estilista-dashboard .refresh-btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+/* Queue Summary Stats */
+.estilista-dashboard .queue-summary {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 8px;
+    padding: 12px;
+    background: #fafafa;
+    border-bottom: 1px solid #eee;
+}
+
+.estilista-dashboard .queue-summary .stat {
+    text-align: center;
+    padding: 10px 8px;
+    border-radius: 10px;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.estilista-dashboard .queue-summary .stat:hover {
+    transform: translateY(-2px);
+}
+
+.estilista-dashboard .queue-summary .stat.pending {
+    background: linear-gradient(135deg, #fff3e0 0%, #ffe0b2 100%);
+}
+
+.estilista-dashboard .queue-summary .stat.in-progress {
+    background: linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%);
+}
+
+.estilista-dashboard .queue-summary .stat.completed {
+    background: linear-gradient(135deg, #e8f5e9 0%, #c8e6c9 100%);
+}
+
+.estilista-dashboard .stat-number {
+    display: block;
+    font-size: 1.5rem;
+    font-weight: 700;
+}
+
+.estilista-dashboard .stat-label {
+    font-size: 0.75rem;
+    color: #666;
+}
+
+/* Filter Tabs */
+.estilista-dashboard .filter-tabs {
+    display: flex;
+    gap: 4px;
+    padding: 8px 12px;
+    background: #f5f5f5;
+    border-bottom: 1px solid #eee;
+    overflow-x: auto;
+}
+
+.estilista-dashboard .filter-tab {
+    flex: 1;
+    padding: 8px 12px;
+    border: none;
+    background: transparent;
+    border-radius: 8px;
+    font-size: 0.8rem;
+    cursor: pointer;
+    transition: all 0.2s;
+    white-space: nowrap;
+}
+
+.estilista-dashboard .filter-tab:hover {
+    background: #e0e0e0;
+}
+
+.estilista-dashboard .filter-tab.active {
+    background: #9b59b6;
+    color: white;
+    font-weight: 600;
+}
+
+/* Patient Queue List */
+.estilista-dashboard .patient-queue {
+    flex: 1;
+    overflow-y: auto;
+    padding: 12px;
+}
+
+.estilista-dashboard .empty-queue {
+    text-align: center;
+    padding: 40px 20px;
+    color: #999;
+}
+
+.estilista-dashboard .empty-icon {
+    font-size: 3rem;
+    display: block;
+    margin-bottom: 12px;
+}
+
+/* Patient Card */
+.estilista-dashboard .patient-card {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px;
+    margin-bottom: 8px;
+    border-radius: 12px;
+    cursor: pointer;
+    transition: all 0.2s;
+    border: 2px solid transparent;
+}
+
+.estilista-dashboard .patient-card:hover {
+    transform: translateX(4px);
+}
+
+.estilista-dashboard .patient-card.selected {
+    border-color: #9b59b6;
+    box-shadow: 0 4px 15px rgba(155, 89, 182, 0.2);
+}
+
+.estilista-dashboard .patient-card.pending {
+    background: linear-gradient(135deg, #fff8e1 0%, #ffecb3 100%);
+}
+
+.estilista-dashboard .patient-card.in-progress {
+    background: linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%);
+}
+
+.estilista-dashboard .patient-card.completed {
+    background: linear-gradient(135deg, #e8f5e9 0%, #c8e6c9 100%);
+}
+
+.estilista-dashboard .patient-card.cancelled {
+    background: #f5f5f5;
+    opacity: 0.7;
+}
+
+.estilista-dashboard .patient-time {
+    font-weight: 600;
+    font-size: 0.9rem;
+    color: #333;
+    min-width: 50px;
+}
+
+.estilista-dashboard .patient-info {
+    flex: 1;
+    min-width: 0;
+}
+
+.estilista-dashboard .patient-name {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-weight: 600;
+    font-size: 0.95rem;
+}
+
+.estilista-dashboard .pet-photo {
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    object-fit: cover;
+}
+
+.estilista-dashboard .pet-icon {
+    font-size: 1.2rem;
+}
+
+.estilista-dashboard .patient-details {
+    font-size: 0.8rem;
+    color: #666;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.estilista-dashboard .status-badge {
+    padding: 4px 8px;
+    border-radius: 6px;
+    font-size: 0.75rem;
+    font-weight: 600;
+}
+
+.estilista-dashboard .status-badge.pending {
+    background: #ff9800;
+    color: white;
+}
+
+.estilista-dashboard .status-badge.in-progress {
+    background: #2196f3;
+    color: white;
+}
+
+.estilista-dashboard .status-badge.completed {
+    background: #4caf50;
+    color: white;
+}
+
+.estilista-dashboard .status-badge.cancelled {
+    background: #9e9e9e;
+    color: white;
+}
+
+.estilista-dashboard .status-badge.large {
+    padding: 8px 16px;
+    font-size: 0.9rem;
+}
+
+/* ============================================================================
+   MAIN PANEL - Grooming Details
+   ============================================================================ */
+
+.estilista-dashboard .main-panel {
+    background: white;
+    border-radius: 16px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+    overflow-y: auto;
+}
+
+.estilista-dashboard .no-selection {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    height: 100%;
+    color: #999;
+    text-align: center;
+    padding: 40px;
+}
+
+.estilista-dashboard .no-selection-icon {
+    font-size: 5rem;
+    margin-bottom: 20px;
+}
+
+.estilista-dashboard .no-selection h2 {
+    margin: 0 0 8px 0;
+    color: #666;
+}
+
+.estilista-dashboard .no-selection p {
+    margin: 0;
+    font-size: 0.95rem;
+}
+
+/* Grooming Details */
+.estilista-dashboard .grooming-details {
+    padding: 20px;
+}
+
+.estilista-dashboard .details-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding-bottom: 16px;
+    border-bottom: 2px solid #f0f0f0;
+    margin-bottom: 20px;
+}
+
+.estilista-dashboard .patient-header-info {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+}
+
+.estilista-dashboard .patient-header-info h2 {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin: 0;
+    font-size: 1.5rem;
+}
+
+.estilista-dashboard .header-pet-photo {
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    object-fit: cover;
+}
+
+.estilista-dashboard .header-pet-icon {
+    font-size: 2rem;
+}
+
+.estilista-dashboard .action-buttons {
+    display: flex;
+    gap: 10px;
+}
+
+.estilista-dashboard .action-buttons button {
+    padding: 10px 20px;
+    border: none;
+    border-radius: 10px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.estilista-dashboard .btn-primary {
+    background: linear-gradient(135deg, #2196f3 0%, #1976d2 100%);
+    color: white;
+}
+
+.estilista-dashboard .btn-primary:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 15px rgba(33, 150, 243, 0.3);
+}
+
+.estilista-dashboard .btn-success {
+    background: linear-gradient(135deg, #4caf50 0%, #388e3c 100%);
+    color: white;
+}
+
+.estilista-dashboard .btn-success:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 15px rgba(76, 175, 80, 0.3);
+}
+
+.estilista-dashboard .btn-danger {
+    background: linear-gradient(135deg, #f44336 0%, #d32f2f 100%);
+    color: white;
+}
+
+.estilista-dashboard .btn-danger:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 15px rgba(244, 67, 54, 0.3);
+}
+
+.estilista-dashboard .btn-secondary {
+    background: #e0e0e0;
+    color: #333;
+}
+
+.estilista-dashboard .btn-secondary:hover {
+    background: #d0d0d0;
+}
+
+/* Detail Sections */
+.estilista-dashboard .detail-section {
+    background: #fafafa;
+    border-radius: 12px;
+    padding: 16px;
+    margin-bottom: 16px;
+}
+
+.estilista-dashboard .detail-section h3 {
+    margin: 0 0 12px 0;
+    font-size: 1.1rem;
+    color: #333;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.estilista-dashboard .detail-section h4 {
+    margin: 0 0 8px 0;
+    font-size: 0.95rem;
+    color: #666;
+}
+
+/* Tags */
+.estilista-dashboard .condition-tags,
+.estilista-dashboard .health-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.estilista-dashboard .tag {
+    padding: 6px 12px;
+    border-radius: 20px;
+    font-size: 0.85rem;
+    font-weight: 500;
+}
+
+.estilista-dashboard .tag.calm {
+    background: #e8f5e9;
+    color: #2e7d32;
+}
+
+.estilista-dashboard .tag.nervous {
+    background: #fff3e0;
+    color: #ef6c00;
+}
+
+.estilista-dashboard .tag.aggressive {
+    background: #ffebee;
+    color: #c62828;
+}
+
+.estilista-dashboard .tag.anxious {
+    background: #fce4ec;
+    color: #ad1457;
+}
+
+.estilista-dashboard .tag.warning {
+    background: #fff3e0;
+    color: #e65100;
+}
+
+.estilista-dashboard .tag.info {
+    background: #e3f2fd;
+    color: #1565c0;
+}
+
+.estilista-dashboard .tag.health-alert {
+    background: #ffebee;
+    color: #c62828;
+}
+
+.estilista-dashboard .tag.health-ok {
+    background: #e8f5e9;
+    color: #2e7d32;
+}
+
+.estilista-dashboard .observations {
+    margin: 12px 0 0 0;
+    padding: 12px;
+    background: white;
+    border-radius: 8px;
+    font-style: italic;
+    color: #666;
+}
+
+/* Services Grid */
+.estilista-dashboard .services-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 16px;
+}
+
+.estilista-dashboard .service-group {
+    background: white;
+    border-radius: 10px;
+    padding: 12px;
+}
+
+.estilista-dashboard .service-items {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.estilista-dashboard .service-item {
+    font-size: 0.9rem;
+    color: #333;
+}
+
+/* Special Instructions */
+.estilista-dashboard .special-instructions {
+    margin: 0;
+    padding: 12px;
+    background: #fff8e1;
+    border-left: 4px solid #ffc107;
+    border-radius: 0 8px 8px 0;
+    font-size: 0.95rem;
+}
+
+/* Authorization */
+.estilista-dashboard .authorization-items {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.estilista-dashboard .auth-item {
+    font-size: 0.9rem;
+    color: #2e7d32;
+}
+
+.estilista-dashboard .auth-item.consent {
+    font-weight: 600;
+}
+
+/* Internal Use Section */
+.estilista-dashboard .internal-use {
+    background: linear-gradient(135deg, #e8f5e9 0%, #c8e6c9 100%);
+    border: 2px solid #4caf50;
+}
+
+.estilista-dashboard .internal-use h3 {
+    color: #2e7d32;
+}
+
+.estilista-dashboard .internal-use-completed {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.estilista-dashboard .internal-field {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.estilista-dashboard .internal-field label {
+    font-weight: 600;
+    color: #333;
+    font-size: 0.85rem;
+}
+
+.estilista-dashboard .internal-field span,
+.estilista-dashboard .internal-field p {
+    font-size: 0.95rem;
+    margin: 0;
+}
+
+.estilista-dashboard .discharge-badge {
+    display: inline-block;
+    padding: 6px 12px;
+    border-radius: 8px;
+    font-weight: 600;
+}
+
+.estilista-dashboard .discharge-badge.excellent {
+    background: #4caf50;
+    color: white;
+}
+
+.estilista-dashboard .discharge-badge.good {
+    background: #2196f3;
+    color: white;
+}
+
+.estilista-dashboard .discharge-badge.requires_observation {
+    background: #ff9800;
+    color: white;
+}
+
+.estilista-dashboard .internal-use-pending {
+    text-align: center;
+    padding: 20px;
+    color: #666;
+    font-style: italic;
+}
+
+/* ============================================================================
+   RIGHT PANEL - Patient Info
+   ============================================================================ */
+
+.estilista-dashboard .right-panel {
+    background: white;
+    border-radius: 16px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+    overflow-y: auto;
+}
+
+.estilista-dashboard .no-selection-small {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    height: 100%;
+    color: #999;
+    text-align: center;
+}
+
+.estilista-dashboard .no-selection-small span {
+    font-size: 3rem;
+    margin-bottom: 12px;
+}
+
+.estilista-dashboard .patient-details-panel {
+    padding: 16px;
+}
+
+/* Patient Photo */
+.estilista-dashboard .patient-photo-section {
+    text-align: center;
+    margin-bottom: 16px;
+}
+
+.estilista-dashboard .patient-photo-large {
+    width: 120px;
+    height: 120px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 4px solid #9b59b6;
+}
+
+.estilista-dashboard .patient-photo-placeholder {
+    width: 120px;
+    height: 120px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #f3e5f5 0%, #e1bee7 100%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 4rem;
+    margin: 0 auto;
+}
+
+/* Info Sections */
+.estilista-dashboard .info-section {
+    background: #fafafa;
+    border-radius: 12px;
+    padding: 16px;
+    margin-bottom: 12px;
+}
+
+.estilista-dashboard .info-section h3 {
+    margin: 0 0 12px 0;
+    text-align: center;
+    font-size: 1.2rem;
+    color: #333;
+}
+
+.estilista-dashboard .info-section h4 {
+    margin: 0 0 12px 0;
+    font-size: 1rem;
+    color: #666;
+}
+
+.estilista-dashboard .info-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 12px;
+}
+
+.estilista-dashboard .info-item {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.estilista-dashboard .info-item label {
+    font-size: 0.75rem;
+    color: #999;
+    text-transform: uppercase;
+}
+
+.estilista-dashboard .info-item span {
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: #333;
+}
+
+/* Owner Section */
+.estilista-dashboard .owner-info {
+    text-align: center;
+}
+
+.estilista-dashboard .owner-name {
+    font-weight: 600;
+    font-size: 1rem;
+    margin: 0 0 8px 0;
+}
+
+.estilista-dashboard .owner-phone,
+.estilista-dashboard .owner-email {
+    font-size: 0.9rem;
+    color: #666;
+    margin: 4px 0;
+}
+
+/* Visit Section */
+.estilista-dashboard .visit-info p {
+    margin: 6px 0;
+    font-size: 0.9rem;
+}
+
+/* ============================================================================
+   MODAL
+   ============================================================================ */
+
+.estilista-dashboard .modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.5);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+}
+
+.estilista-dashboard .modal-content {
+    background: white;
+    border-radius: 16px;
+    width: 100%;
+    max-width: 500px;
+    max-height: 90vh;
+    overflow-y: auto;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+}
+
+.estilista-dashboard .modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 20px 24px;
+    background: linear-gradient(135deg, #4caf50 0%, #388e3c 100%);
+    color: white;
+    border-radius: 16px 16px 0 0;
+}
+
+.estilista-dashboard .modal-header h2 {
+    margin: 0;
+    font-size: 1.2rem;
+}
+
+.estilista-dashboard .close-btn {
+    background: rgba(255, 255, 255, 0.2);
+    border: none;
+    color: white;
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    cursor: pointer;
+    font-size: 1.2rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.estilista-dashboard .close-btn:hover {
+    background: rgba(255, 255, 255, 0.3);
+}
+
+.estilista-dashboard .modal-body {
+    padding: 24px;
+}
+
+.estilista-dashboard .form-group {
+    margin-bottom: 20px;
+}
+
+.estilista-dashboard .form-group label {
+    display: block;
+    font-weight: 600;
+    margin-bottom: 8px;
+    color: #333;
+}
+
+.estilista-dashboard .form-group .required {
+    color: #f44336;
+}
+
+.estilista-dashboard .time-display {
+    width: 100%;
+    padding: 12px;
+    border: 2px solid #e0e0e0;
+    border-radius: 8px;
+    font-size: 1.1rem;
+    font-weight: 600;
+    text-align: center;
+    background: #fafafa;
+}
+
+/* Discharge Options */
+.estilista-dashboard .discharge-options {
+    display: flex;
+    gap: 12px;
+}
+
+.estilista-dashboard .discharge-option {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 16px 12px;
+    border: 2px solid #e0e0e0;
+    border-radius: 12px;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.estilista-dashboard .discharge-option:hover {
+    border-color: #9b59b6;
+    background: #faf4ff;
+}
+
+.estilista-dashboard .discharge-option.selected {
+    border-color: #9b59b6;
+    background: linear-gradient(135deg, #f3e5f5 0%, #e1bee7 100%);
+}
+
+.estilista-dashboard .discharge-option input {
+    display: none;
+}
+
+.estilista-dashboard .option-icon {
+    font-size: 2rem;
+    margin-bottom: 8px;
+}
+
+.estilista-dashboard .option-label {
+    font-size: 0.85rem;
+    font-weight: 600;
+    text-align: center;
+}
+
+.estilista-dashboard textarea {
+    width: 100%;
+    padding: 12px;
+    border: 2px solid #e0e0e0;
+    border-radius: 8px;
+    font-size: 0.95rem;
+    resize: vertical;
+    font-family: inherit;
+}
+
+.estilista-dashboard textarea:focus {
+    outline: none;
+    border-color: #9b59b6;
+}
+
+.estilista-dashboard .modal-footer {
+    display: flex;
+    justify-content: flex-end;
+    gap: 12px;
+    padding: 16px 24px;
+    border-top: 1px solid #eee;
+}
+
+.estilista-dashboard .modal-footer button {
+    padding: 12px 24px;
+    border: none;
+    border-radius: 10px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.estilista-dashboard .modal-footer button:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+/* ============================================================================
+   LOADING SPINNER
+   ============================================================================ */
+
+.estilista-dashboard .loading-spinner {
+    text-align: center;
+}
+
+.estilista-dashboard .spinner {
+    width: 50px;
+    height: 50px;
+    border: 4px solid #e0e0e0;
+    border-top-color: #9b59b6;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+    margin: 0 auto 16px;
+}
+
+@keyframes spin {
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+/* ============================================================================
+   RESPONSIVE
+   ============================================================================ */
+
+@media (max-width: 1200px) {
+    .estilista-dashboard {
+        grid-template-columns: 280px 1fr 260px;
+    }
+}
+
+@media (max-width: 1024px) {
+    .estilista-dashboard {
+        grid-template-columns: 260px 1fr;
+    }
+
+    .estilista-dashboard .right-panel {
+        display: none;
+    }
+}
+
+@media (max-width: 768px) {
+    .estilista-dashboard {
+        grid-template-columns: 1fr;
+        height: auto;
+    }
+
+    .estilista-dashboard .left-panel {
+        max-height: 300px;
+    }
+
+    .estilista-dashboard .services-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .estilista-dashboard .discharge-options {
+        flex-direction: column;
+    }
+}

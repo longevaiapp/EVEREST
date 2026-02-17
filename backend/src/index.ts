@@ -33,6 +33,7 @@ import taskRoutes from './routes/task.routes';
 import notificationRoutes from './routes/notification.routes';
 import dashboardRoutes from './routes/dashboard.routes';
 import medicoRoutes from './routes/medico.routes';
+import groomingRoutes from './routes/grooming.routes';
 
 const app = express();
 const PORT = process.env.PORT || 3001;
@@ -72,8 +73,8 @@ if (process.env.NODE_ENV !== 'test') {
 
 // Health check
 app.get('/health', (req, res) => {
-  res.json({ 
-    status: 'ok', 
+  res.json({
+    status: 'ok',
     timestamp: new Date().toISOString(),
     version: '1.0.0',
     service: 'VET-OS API'
@@ -92,8 +93,8 @@ app.get('/debug/dispenses', async (req, res) => {
       },
       orderBy: { createdAt: 'desc' }
     });
-    res.json({ 
-      totalDispenses: count, 
+    res.json({
+      totalDispenses: count,
       latestDispenses: latest.map(d => ({
         id: d.id,
         petName: d.pet?.nombre,
@@ -127,6 +128,7 @@ app.use(`${API_PREFIX}/tasks`, taskRoutes);
 app.use(`${API_PREFIX}/notifications`, notificationRoutes);
 app.use(`${API_PREFIX}/dashboard`, dashboardRoutes);
 app.use(`${API_PREFIX}/medico`, medicoRoutes);
+app.use(`${API_PREFIX}/grooming`, groomingRoutes);
 
 // ===========================================================================
 // ERROR HANDLING

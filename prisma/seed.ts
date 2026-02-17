@@ -91,7 +91,19 @@ async function main() {
     },
   });
 
-  console.log('✅ Users created:', { admin: admin.id, recepcionista: recepcionista.id });
+  const estilista = await prisma.user.upsert({
+    where: { email: 'estilista@vetos.com' },
+    update: {},
+    create: {
+      email: 'estilista@vetos.com',
+      password: passwordHash,
+      nombre: 'Sofia Estilista',
+      rol: 'ESTILISTA',
+      activo: true,
+    },
+  });
+
+  console.log('✅ Users created:', { admin: admin.id, recepcionista: recepcionista.id, estilista: estilista.id });
 
   // ===========================================================================
   // 2. MEDICATIONS - Create initial inventory
@@ -267,14 +279,14 @@ async function main() {
       const existingAlert = await prisma.stockAlert.findFirst({
         where: { medicationId: med.id, status: 'ACTIVA' },
       });
-      
+
       if (!existingAlert) {
         await prisma.stockAlert.create({
           data: {
             medicationId: med.id,
             type: med.currentStock === 0 ? 'AGOTADO' : 'STOCK_BAJO',
-            message: med.currentStock === 0 
-              ? `${med.name} está agotado` 
+            message: med.currentStock === 0
+              ? `${med.name} está agotado`
               : `${med.name} tiene stock bajo (${med.currentStock}/${med.minStock})`,
             priority: med.currentStock === 0 ? 'ALTA' : 'MEDIA',
             status: 'ACTIVA',
