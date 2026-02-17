@@ -500,7 +500,7 @@
     "every8Hours": "Cada 8 horas",
     "medicalHistory": "Historial Médico",
     "noHistoryFound": "No se encontró historial para este paciente",
-    "status": {
+    "appointmentStatus": {
       "pending": "Pendiente",
       "confirmed": "Confirmada",
       "inConsultation": "En Consulta",
@@ -632,7 +632,7 @@
       "other": "Otra razón",
       "additionalNotes": "Notas adicionales"
     },
-    "medications": {
+    "medicationDetails": {
       "name": "Nombre",
       "genericName": "Nombre Genérico",
       "category": "Categoría",
