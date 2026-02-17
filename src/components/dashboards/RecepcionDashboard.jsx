@@ -984,7 +984,7 @@ function RecepcionDashboard() {
         {activeSection === 'dashboard' && (
           <>
             <div className="dashboard-stats">
-              <div className="stat-card">
+              <div className="stat-card stat-card--arrivals">
                 <div className="stat-icon" style={{background: 'rgba(244, 67, 54, 0.3)'}}>🆕</div>
                 <div className="stat-content">
                   <h3>{newArrivals.length}</h3>
@@ -992,7 +992,7 @@ function RecepcionDashboard() {
                 </div>
               </div>
               
-              <div className="stat-card">
+              <div className="stat-card stat-card--waiting">
                 <div className="stat-icon" style={{background: 'rgba(255, 152, 0, 0.3)'}}>⏳</div>
                 <div className="stat-content">
                   <h3>{waitingPatients.length}</h3>
@@ -1000,7 +1000,7 @@ function RecepcionDashboard() {
                 </div>
               </div>
               
-              <div className="stat-card">
+              <div className="stat-card stat-card--consultation">
                 <div className="stat-icon" style={{background: 'rgba(33, 150, 243, 0.3)'}}>👨‍⚕️</div>
                 <div className="stat-content">
                   <h3>{inConsultPatients.length}</h3>
@@ -1008,7 +1008,7 @@ function RecepcionDashboard() {
                 </div>
               </div>
               
-              <div className="stat-card">
+              <div className="stat-card stat-card--discharge">
                 <div className="stat-icon" style={{background: 'rgba(76, 175, 80, 0.3)'}}>✅</div>
                 <div className="stat-content">
                   <h3>{readyForDischarge.length}</h3>
@@ -1032,7 +1032,7 @@ function RecepcionDashboard() {
               {todayAppointments.length > 0 && (
                 <div className="content-section info">
                   <h2>📅 {t('recepcion.sections.todayAppointments')}</h2>
-                  <p>{todayAppointments.length} {t('recepcion.appointments')}</p>
+                  <p>{todayAppointments.length} {t('recepcion.appointmentLabel')}</p>
                   <button className="btn-action" onClick={() => setActiveSection('citas')}>
                     {t('common.search')}
                   </button>
@@ -2384,7 +2384,7 @@ function RecepcionDashboard() {
       {/* MODAL: DETALLES DEL PACIENTE */}
       {selectedPatient && !showTriageModal && !showDischargeModal && !showExpedienteModal && (
         <div className="modal-overlay" onClick={() => setSelectedPatient(null)}>
-          <div className="modal-content" onClick={e => e.stopPropagation()}>
+          <div className="modal-content patient-detail-modal" onClick={e => e.stopPropagation()}>
               <h2>📄 {t('recepcion.expediente.title')} - {selectedPatient.nombre}</h2>
             <div className="patient-detail-info">
               <div className="detail-row">
@@ -2411,7 +2411,7 @@ function RecepcionDashboard() {
               <div className="detail-row">
                 <strong>{t('common.status')}:</strong> 
                 <span className="status-badge" style={{background: getStatusColor(selectedPatient.estado), marginLeft: '0.5rem'}}>
-                  {selectedPatient.estado.replace(/_/g, ' ')}
+                  {selectedPatient.estado?.replace(/_/g, ' ') || t('common.unknown')}
                 </span>
               </div>
               {selectedPatient.motivo && (
@@ -2660,7 +2660,7 @@ function RecepcionDashboard() {
       {/* MODAL: NUEVA CITA */}
       {showNewAppointmentModal && (
         <div className="modal-overlay" onClick={() => setShowNewAppointmentModal(false)}>
-          <div className="modal-content" onClick={e => e.stopPropagation()}>
+          <div className="modal-content new-appointment-modal" onClick={e => e.stopPropagation()}>
             <h2>📅 {t('recepcion.appointments.scheduleNew')}</h2>
             
             <form onSubmit={handleSubmitNewAppointment} className="appointment-form">

@@ -180,15 +180,6 @@ export const petService = {
   },
 
   /**
-   * Obtener mascotas de un propietario
-   * @param {string} ownerId
-   */
-  async getByOwner(ownerId) {
-    const response = await api.get(`/pets/owner/${ownerId}`);
-    return response.data?.pets || [];
-  },
-
-  /**
    * Obtener calendario de medicina preventiva
    * Mascotas que necesitan vacunas o desparasitación
    */
