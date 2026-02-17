@@ -5,14 +5,15 @@ import { useAuth } from '../context/AuthContext';
 import LanguageSwitch from './LanguageSwitch';
 import './Login.css';
 
-// Usuarios de demo para acceso rápido
+// Demo users for quick access
 const demoUsers = [
   { email: 'admin@vetos.com', nombre: 'Admin', rol: 'ADMIN', avatar: '👨‍💼' },
-  { email: 'recepcion@vetos.com', nombre: 'Recepción', rol: 'RECEPCION', avatar: '👩‍💻' },
+  { email: 'recepcion@vetos.com', nombre: 'Reception', rol: 'RECEPCION', avatar: '👩‍💻' },
   { email: 'drgarcia@vetos.com', nombre: 'Dr. García', rol: 'MEDICO', avatar: '👨‍⚕️' },
   { email: 'dramartinez@vetos.com', nombre: 'Dra. Martínez', rol: 'MEDICO', avatar: '👩‍⚕️' },
+  { email: 'estilista@vetos.com', nombre: 'Stylist', rol: 'ESTILISTA', avatar: '✂️' },
   { email: 'laboratorio@vetos.com', nombre: 'Lab', rol: 'LABORATORIO', avatar: '🔬' },
-  { email: 'farmacia@vetos.com', nombre: 'Farmacia', rol: 'FARMACIA', avatar: '💊' },
+  { email: 'farmacia@vetos.com', nombre: 'Pharmacy', rol: 'FARMACIA', avatar: '💊' },
 ];
 
 function Login() {
@@ -44,7 +45,7 @@ function Login() {
   const quickLogin = async (demoUser) => {
     setLocalError('');
     clearError();
-    
+
     try {
       const user = await login(demoUser.email, 'password123');
       navigateByRole(user.rol);
@@ -58,6 +59,7 @@ function Login() {
       ADMIN: '/admin',
       RECEPCION: '/recepcion',
       MEDICO: '/medico',
+      ESTILISTA: '/estilista',
       LABORATORIO: '/laboratorio',
       FARMACIA: '/farmacia',
     };

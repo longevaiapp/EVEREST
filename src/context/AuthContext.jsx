@@ -25,7 +25,7 @@ export const AuthProvider = ({ children }) => {
       try {
         const savedUser = authService.getCurrentUser();
         const token = authService.getToken();
-        
+
         if (savedUser && token) {
           setUser(savedUser);
         }
@@ -44,7 +44,7 @@ export const AuthProvider = ({ children }) => {
   const login = useCallback(async (email, password) => {
     setLoading(true);
     setError(null);
-    
+
     try {
       const { user: userData, token } = await authService.login(email, password);
       setUser(userData);
@@ -82,6 +82,11 @@ export const AuthProvider = ({ children }) => {
     return hasRole(['MEDICO', 'ADMIN']);
   }, [hasRole]);
 
+  // Verificar si es estilista o admin
+  const canAccessEstilista = useCallback(() => {
+    return hasRole(['ESTILISTA', 'ADMIN']);
+  }, [hasRole]);
+
   // Verificar si es farmacia o admin
   const canAccessFarmacia = useCallback(() => {
     return hasRole(['FARMACIA', 'ADMIN']);
@@ -107,6 +112,7 @@ export const AuthProvider = ({ children }) => {
     hasRole,
     canAccessRecepcion,
     canAccessMedico,
+    canAccessEstilista,
     canAccessFarmacia,
     canAccessLaboratorio,
     clearError,

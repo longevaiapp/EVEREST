@@ -1,0 +1,432 @@
+/* src/components/dashboards/GroomingIntakeForm.css */
+/* Styling for the Grooming Service Request Form */
+
+.grooming-intake-form {
+    max-width: 900px;
+    margin: 0 auto;
+    padding: 20px;
+    background: #fff;
+    border-radius: 12px;
+}
+
+.grooming-intake-form .form-header {
+    text-align: center;
+    margin-bottom: 24px;
+    padding-bottom: 16px;
+    border-bottom: 2px solid #e9ecef;
+}
+
+.grooming-intake-form .form-header h2 {
+    font-size: 1.75rem;
+    color: #7c3aed;
+    margin-bottom: 8px;
+}
+
+.grooming-intake-form .form-meta {
+    display: flex;
+    justify-content: center;
+    gap: 24px;
+    color: #6c757d;
+    font-size: 0.9rem;
+}
+
+/* Sections */
+.grooming-intake-form .form-section {
+    margin-bottom: 24px;
+    padding: 20px;
+    background: #f8f9fa;
+    border-radius: 8px;
+    border-left: 4px solid #7c3aed;
+}
+
+.grooming-intake-form .form-section h3 {
+    font-size: 1.1rem;
+    color: #333;
+    margin-bottom: 16px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.grooming-intake-form .form-section h4 {
+    font-size: 1rem;
+    color: #495057;
+    margin: 16px 0 12px;
+}
+
+.grooming-intake-form .section-note {
+    color: #6c757d;
+    font-size: 0.9rem;
+    margin-bottom: 12px;
+    font-style: italic;
+}
+
+/* Badges */
+.grooming-intake-form .readonly-badge {
+    font-size: 0.75rem;
+    background: #e9ecef;
+    color: #6c757d;
+    padding: 2px 8px;
+    border-radius: 12px;
+    font-weight: normal;
+}
+
+.grooming-intake-form .important-badge {
+    font-size: 0.8rem;
+    background: #fff3cd;
+    color: #856404;
+    padding: 2px 8px;
+    border-radius: 12px;
+    font-weight: normal;
+}
+
+/* Info Grid (Read-only sections) */
+.grooming-intake-form .info-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 12px;
+}
+
+.grooming-intake-form .info-grid.readonly .info-item {
+    background: #fff;
+    padding: 10px 14px;
+    border-radius: 6px;
+    border: 1px solid #dee2e6;
+}
+
+.grooming-intake-form .info-grid.editable-grid .info-item {
+    background: #fff;
+    padding: 10px 14px;
+    border-radius: 6px;
+    border: 1px solid #dee2e6;
+}
+
+.grooming-intake-form .info-item label {
+    display: block;
+    font-size: 0.8rem;
+    color: #6c757d;
+    margin-bottom: 4px;
+}
+
+.grooming-intake-form .info-item span {
+    font-weight: 500;
+    color: #212529;
+}
+
+.grooming-intake-form .info-item .filled-value {
+    font-weight: 500;
+    color: #212529;
+    display: block;
+}
+
+/* Editable input fields for missing data */
+.grooming-intake-form .editable-input {
+    width: 100%;
+    padding: 8px 12px;
+    border: 1px solid #dee2e6;
+    border-radius: 6px;
+    font-size: 0.95rem;
+    background: #fff;
+    color: #212529;
+    transition: all 0.2s ease;
+}
+
+.grooming-intake-form .editable-input:focus {
+    outline: none;
+    border-color: #7c3aed;
+    box-shadow: 0 0 0 2px rgba(124, 58, 237, 0.15);
+}
+
+.grooming-intake-form .editable-input::placeholder {
+    color: #adb5bd;
+    font-style: italic;
+}
+
+.grooming-intake-form select.editable-input {
+    cursor: pointer;
+}
+
+/* Checkbox inline for Spayed/Neutered */
+.grooming-intake-form .checkbox-inline {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.grooming-intake-form .checkbox-inline input[type="checkbox"] {
+    width: 18px;
+    height: 18px;
+    cursor: pointer;
+    accent-color: #7c3aed;
+}
+
+.grooming-intake-form .checkbox-inline label {
+    font-weight: 500;
+    color: #212529;
+    margin-bottom: 0;
+    cursor: pointer;
+}
+
+/* Pet Info with Photo */
+.grooming-intake-form .pet-info {
+    display: flex;
+    gap: 20px;
+    align-items: flex-start;
+}
+
+.grooming-intake-form .pet-photo {
+    flex-shrink: 0;
+}
+
+.grooming-intake-form .pet-photo img {
+    width: 120px;
+    height: 120px;
+    object-fit: cover;
+    border-radius: 12px;
+    border: 3px solid #7c3aed;
+}
+
+.grooming-intake-form .pet-details {
+    flex: 1;
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 12px;
+}
+
+/* Checkbox Grid */
+.grooming-intake-form .checkbox-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 10px;
+}
+
+.grooming-intake-form .checkbox-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 14px;
+    background: #fff;
+    border: 2px solid #dee2e6;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.grooming-intake-form .checkbox-item:hover {
+    border-color: #7c3aed;
+    background: #f8f5ff;
+}
+
+.grooming-intake-form .checkbox-item.checked {
+    border-color: #7c3aed;
+    background: #ede9fe;
+}
+
+.grooming-intake-form .checkbox-item input[type="checkbox"] {
+    width: 18px;
+    height: 18px;
+    accent-color: #7c3aed;
+}
+
+.grooming-intake-form .checkbox-item span {
+    font-size: 0.9rem;
+}
+
+/* Service Subsections */
+.grooming-intake-form .service-subsection {
+    margin-bottom: 20px;
+    padding: 16px;
+    background: #fff;
+    border-radius: 8px;
+}
+
+.grooming-intake-form .service-subsection h4 {
+    margin-top: 0;
+    padding-bottom: 8px;
+    border-bottom: 1px solid #e9ecef;
+}
+
+/* Health Section */
+.grooming-intake-form .health-section {
+    border-left-color: #dc3545;
+    background: #fff5f5;
+}
+
+.grooming-intake-form .checkbox-item.warning {
+    border-color: #ffc107;
+}
+
+.grooming-intake-form .checkbox-item.warning.checked {
+    border-color: #dc3545;
+    background: #ffebee;
+}
+
+/* Consent Section */
+.grooming-intake-form .consent-section {
+    border-left-color: #28a745;
+    background: #f0fff4;
+}
+
+.grooming-intake-form .consent-text {
+    background: #fff;
+    padding: 16px;
+    border-radius: 8px;
+    margin-bottom: 16px;
+    border: 1px solid #c3e6cb;
+}
+
+.grooming-intake-form .consent-text p {
+    margin: 0;
+    color: #495057;
+    line-height: 1.6;
+}
+
+.grooming-intake-form .checkbox-item.consent {
+    border-color: #28a745;
+}
+
+.grooming-intake-form .checkbox-item.consent.checked {
+    border-color: #28a745;
+    background: #d4edda;
+}
+
+.grooming-intake-form .consent-final {
+    margin-top: 16px;
+    padding-top: 16px;
+    border-top: 2px dashed #28a745;
+}
+
+.grooming-intake-form .checkbox-item.consent-main {
+    background: #fff;
+    border: 2px solid #28a745;
+    padding: 16px;
+}
+
+.grooming-intake-form .checkbox-item.consent-main.checked {
+    background: #28a745;
+    color: #fff;
+}
+
+.grooming-intake-form .checkbox-item.consent-main.checked span {
+    color: #fff;
+}
+
+/* Form Groups */
+.grooming-intake-form .form-group {
+    margin-top: 16px;
+}
+
+.grooming-intake-form .form-group.inline {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-top: 12px;
+}
+
+.grooming-intake-form .form-group label {
+    display: block;
+    font-weight: 500;
+    margin-bottom: 8px;
+    color: #495057;
+}
+
+.grooming-intake-form .form-group.inline label {
+    margin-bottom: 0;
+    white-space: nowrap;
+}
+
+.grooming-intake-form .form-group textarea,
+.grooming-intake-form .form-group input[type="text"] {
+    width: 100%;
+    padding: 12px;
+    border: 2px solid #dee2e6;
+    border-radius: 8px;
+    font-size: 0.95rem;
+    transition: border-color 0.2s;
+}
+
+.grooming-intake-form .form-group textarea:focus,
+.grooming-intake-form .form-group input[type="text"]:focus {
+    outline: none;
+    border-color: #7c3aed;
+}
+
+.grooming-intake-form .form-group.signature input {
+    font-family: 'Brush Script MT', cursive;
+    font-size: 1.2rem;
+    padding: 16px;
+}
+
+/* Form Actions */
+.grooming-intake-form .form-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 12px;
+    margin-top: 24px;
+    padding-top: 24px;
+    border-top: 2px solid #e9ecef;
+}
+
+.grooming-intake-form .btn-cancel {
+    padding: 12px 24px;
+    background: #f8f9fa;
+    border: 2px solid #dee2e6;
+    border-radius: 8px;
+    font-size: 1rem;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.grooming-intake-form .btn-cancel:hover {
+    background: #e9ecef;
+}
+
+.grooming-intake-form .btn-submit {
+    padding: 12px 32px;
+    background: #7c3aed;
+    color: #fff;
+    border: none;
+    border-radius: 8px;
+    font-size: 1rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.grooming-intake-form .btn-submit:hover:not(:disabled) {
+    background: #6d28d9;
+}
+
+.grooming-intake-form .btn-submit:disabled {
+    background: #c4b5fd;
+    cursor: not-allowed;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .grooming-intake-form {
+        padding: 12px;
+    }
+
+    .grooming-intake-form .form-section {
+        padding: 16px;
+    }
+
+    .grooming-intake-form .checkbox-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .grooming-intake-form .pet-info {
+        flex-direction: column;
+        align-items: center;
+    }
+
+    .grooming-intake-form .form-actions {
+        flex-direction: column;
+    }
+
+    .grooming-intake-form .btn-cancel,
+    .grooming-intake-form .btn-submit {
+        width: 100%;
+    }
+}

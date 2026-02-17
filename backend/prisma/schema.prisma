@@ -56,6 +56,7 @@ enum UserRole {
   MEDICO
   LABORATORIO
   FARMACIA
+  ESTILISTA
 }
 
 model Notification {
@@ -292,6 +293,8 @@ enum PatientStatus {
   HOSPITALIZADO
   LISTO_PARA_ALTA
   ALTA
+  EN_ESTETICA
+  ESTETICA_COMPLETADA
 }
 
 model Visit {
@@ -301,7 +304,10 @@ model Visit {
   arrivalTime  DateTime    @default(now())
   status       VisitStatus @default(RECIEN_LLEGADO)
   
-  // === TRIAGE ===
+  // === SERVICE TYPE (Medical vs Grooming) ===
+  serviceType  ServiceType @default(MEDICO)
+  
+  // === TRIAGE (for Medical visits) ===
   tipoVisita   VisitType?
   motivo       String?     @db.Text
   prioridad    Priority?
@@ -311,7 +317,8 @@ model Visit {
   antecedentes String?     @db.Text
   
   // === ASIGNACIÓN ===
-  assignedDoctorId String?
+  assignedDoctorId  String?
+  assignedStylistId String?
   
   // === ALTA ===
   dischargeNotes String?   @db.Text
@@ -321,13 +328,15 @@ model Visit {
   updatedAt    DateTime    @updatedAt
 
   // Relaciones
-  consultation Consultation?
-  payment      Payment?
-  tasks        Task[]
+  consultation    Consultation?
+  payment         Payment?
+  tasks           Task[]
+  groomingService GroomingService?
 
   @@index([petId])
   @@index([status])
   @@index([arrivalTime])
+  @@index([serviceType])
 }
 
 enum VisitStatus {
@@ -341,6 +350,13 @@ enum VisitStatus {
   HOSPITALIZADO
   LISTO_PARA_ALTA
   ALTA
+  EN_ESTETICA
+  ESTETICA_COMPLETADA
+}
+
+enum ServiceType {
+  MEDICO
+  ESTETICA
 }
 
 enum VisitType {
@@ -397,6 +413,7 @@ enum AppointmentType {
   VACUNACION
   CIRUGIA
   EMERGENCIA
+  ESTETICA
 }
 
 model Payment {
@@ -417,6 +434,111 @@ enum PaymentMethod {
   EFECTIVO
   TARJETA
   TRANSFERENCIA
+}
+
+// ============================================================================
+// ESTÉTICA / GROOMING - Servicios de estética para mascotas
+// ============================================================================
+
+model GroomingService {
+  id          String   @id @default(cuid())
+  visitId     String   @unique
+  visit       Visit    @relation(fields: [visitId], references: [id])
+  petId       String
+  
+  // === DATE & TIME ===
+  serviceDate DateTime @default(now())
+  checkInTime DateTime @default(now())
+  
+  // === SECTION 3: PET'S GENERAL CONDITION ===
+  conditionCalm         Boolean @default(false)
+  conditionNervous      Boolean @default(false)
+  conditionAggressive   Boolean @default(false)
+  conditionAnxious      Boolean @default(false)
+  conditionBites        Boolean @default(false)
+  conditionNeedsMuzzle  Boolean @default(false)
+  conditionFirstGrooming Boolean @default(false)
+  conditionObservations String? @db.Text
+  
+  // === SECTION 4: BATH SERVICES ===
+  bathBasic         Boolean @default(false)
+  bathMedicated     Boolean @default(false)
+  bathFleaTreatment Boolean @default(false)
+  bathMoisturizing  Boolean @default(false)
+  bathDrying        Boolean @default(false)
+  
+  // === SECTION 4: HAIRCUT & GROOMING ===
+  haircutFull       Boolean @default(false)
+  haircutDeshedding Boolean @default(false)
+  haircutTrimming   Boolean @default(false)
+  haircutSanitary   Boolean @default(false)
+  haircutFace       Boolean @default(false)
+  haircutPaws       Boolean @default(false)
+  
+  // === SECTION 4: DETAILS ===
+  detailsNailTrimming  Boolean @default(false)
+  detailsEarCleaning   Boolean @default(false)
+  detailsAnalGlands    Boolean @default(false)
+  detailsTeethBrushing Boolean @default(false)
+  
+  // === SECTION 4: EXTRAS ===
+  extrasPerfume           Boolean @default(false)
+  extrasBowsBandana       Boolean @default(false)
+  extrasSpecialShampoo    Boolean @default(false)
+  extrasSpecialShampooType String?
+  
+  // === SECTION 5: SPECIAL INSTRUCTIONS ===
+  specialInstructions String? @db.Text
+  
+  // === SECTION 6: HEALTH CONDITIONS ===
+  healthWounds          Boolean @default(false)
+  healthSkinProblems    Boolean @default(false)
+  healthOtitis          Boolean @default(false)
+  healthAllergies       Boolean @default(false)
+  healthFleasTicks      Boolean @default(false)
+  healthChronicIllness  Boolean @default(false)
+  healthUnderTreatment  Boolean @default(false)
+  healthTreatmentDetails String?
+  
+  // === SECTION 7: AUTHORIZATION & CONSENT ===
+  authorizeMuzzle      Boolean @default(false)
+  authorizeAdjustments Boolean @default(false)
+  ownerSignature       String?
+  consentGiven         Boolean @default(false)
+  consentTimestamp     DateTime?
+  
+  // === STATUS TRACKING ===
+  status        GroomingStatus @default(PENDIENTE)
+  completedAt   DateTime?
+  completedById String?
+  notes         String? @db.Text
+  
+  // === SECTION 8: EVERESTVET INTERNAL USE (Stylist fills) ===
+  checkoutTime       DateTime?
+  dischargeCondition DischargeCondition?
+  stylistNotes       String? @db.Text
+  stylistId          String?
+  
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([visitId])
+  @@index([petId])
+  @@index([status])
+  @@index([serviceDate])
+}
+
+enum DischargeCondition {
+  EXCELLENT
+  GOOD
+  REQUIRES_OBSERVATION
+}
+
+enum GroomingStatus {
+  PENDIENTE
+  EN_PROCESO
+  COMPLETADO
+  CANCELADO
 }
 
 // ============================================================================

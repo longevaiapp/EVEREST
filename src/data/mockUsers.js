@@ -40,6 +40,14 @@ export const mockUsers = [
     nombre: "Dr. Roberto Silva",
     rol: "LABORATORIO",
     avatar: "🔬"
+  },
+  {
+    id: 6,
+    username: "estilista",
+    password: "123",
+    nombre: "Sofia Stylist",
+    rol: "ESTILISTA",
+    avatar: "✂️"
   }
 ];
 

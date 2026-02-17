@@ -9,18 +9,18 @@ export const useRecepcion = () => {
   // ============================================================================
   // ESTADO
   // ============================================================================
-  
+
   // Datos principales
   const [owners, setOwners] = useState([]);
   const [pets, setPets] = useState([]);
   const [visits, setVisits] = useState([]);
   const [appointments, setAppointments] = useState([]);
   const [preventiveCalendar, setPreventiveCalendar] = useState([]);
-  
+
   // UI State
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
-  
+
   // Cliente buscado
   const [foundOwner, setFoundOwner] = useState(null);
   const [ownerPets, setOwnerPets] = useState([]);
@@ -78,7 +78,7 @@ export const useRecepcion = () => {
   const loadInitialData = useCallback(async () => {
     setLoading(true);
     setError(null);
-    
+
     try {
       await Promise.all([
         loadTodayVisits(),
@@ -105,7 +105,7 @@ export const useRecepcion = () => {
       loadTodayVisits();
       loadTodayAppointments();
     }, 30000);
-    
+
     return () => clearInterval(interval);
   }, [loadTodayVisits, loadTodayAppointments]);
 
@@ -125,7 +125,7 @@ export const useRecepcion = () => {
 
     try {
       const owner = await ownerService.searchByPhone(phone);
-      
+
       if (owner) {
         setFoundOwner(owner);
         // Cargar mascotas del propietario
@@ -231,7 +231,7 @@ export const useRecepcion = () => {
     if (!searchTerm || searchTerm.length < 2) {
       return [];
     }
-    
+
     try {
       console.log('[useRecepcion] searchPets - buscando:', searchTerm);
       const result = await petService.getAll({ search: searchTerm, limit: 20 });
@@ -259,13 +259,13 @@ export const useRecepcion = () => {
   // VISIT OPERATIONS
   // ============================================================================
 
-  const checkInPet = useCallback(async (petId) => {
+  const checkInPet = useCallback(async (petId, serviceType = 'MEDICO') => {
     setLoading(true);
     setError(null);
 
     try {
-      console.log('[useRecepcion] checkInPet - petId:', petId);
-      const visit = await visitService.create(petId);
+      console.log('[useRecepcion] checkInPet - petId:', petId, 'serviceType:', serviceType);
+      const visit = await visitService.create(petId, serviceType);
       console.log('[useRecepcion] checkInPet - Visita creada:', visit);
       setVisits(prev => [visit, ...prev]);
       console.log('[useRecepcion] checkInPet - Refrescando visitas...');
@@ -395,18 +395,18 @@ export const useRecepcion = () => {
 
   // Pacientes recién llegados (sin triage)
   const newArrivals = visits.filter(v => v.status === 'RECIEN_LLEGADO');
-  
+
   // Pacientes en espera (con triage, esperando doctor)
   const waitingPatients = visits.filter(v => v.status === 'EN_ESPERA');
-  
+
   // Todas las visitas activas
-  const activeVisits = visits.filter(v => 
+  const activeVisits = visits.filter(v =>
     !['ALTA', 'CANCELADO'].includes(v.status)
   );
 
   // Citas confirmadas de hoy
   const confirmedAppointments = appointments.filter(a => a.status === 'CONFIRMADA');
-  
+
   // Citas pendientes de confirmación
   const pendingAppointments = appointments.filter(a => a.status === 'PENDIENTE');
 
@@ -436,36 +436,36 @@ export const useRecepcion = () => {
     preventiveCalendar,
     foundOwner,
     ownerPets,
-    
+
     // Computed
     newArrivals,
     waitingPatients,
     activeVisits,
     confirmedAppointments,
     pendingAppointments,
-    
+
     // Owner operations
     searchOwnerByPhone,
     createOwner,
     updateOwner,
-    
+
     // Pet operations
     createPet,
     updatePet,
     getPetById,
     searchPets,
-    
+
     // Visit operations
     checkInPet,
     completeTriage,
     assignDoctorToVisit,
     dischargeVisit,
-    
+
     // Appointment operations
     createAppointment,
     confirmAppointment,
     cancelAppointment,
-    
+
     // Utils
     clearFoundOwner,
     clearError,
@@ -473,7 +473,7 @@ export const useRecepcion = () => {
     loadTodayVisits,
     loadPreventiveCalendar,
     loadAllPets,
-    
+
     // All pets
     allPets: pets,
   };
