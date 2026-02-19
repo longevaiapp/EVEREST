@@ -1,0 +1,480 @@
+/* PrescriptionPrint.css - Styles for printable prescription */
+
+.prescription-print-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.7);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 2000;
+  padding: 1rem;
+}
+
+.prescription-print-modal {
+  background: white;
+  border-radius: 12px;
+  max-width: 800px;
+  width: 100%;
+  max-height: 90vh;
+  overflow-y: auto;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+}
+
+/* Print Controls */
+.print-controls {
+  display: flex;
+  gap: 1rem;
+  padding: 1rem 1.5rem;
+  background: linear-gradient(135deg, #f0f7ff 0%, #e6f4ff 100%);
+  border-bottom: 1px solid rgba(0, 119, 182, 0.15);
+  border-radius: 12px 12px 0 0;
+  position: sticky;
+  top: 0;
+  z-index: 10;
+}
+
+.print-controls .btn-primary {
+  background: linear-gradient(135deg, #0077b6, #005f91);
+  color: white;
+  border: none;
+  padding: 0.75rem 1.5rem;
+  border-radius: 8px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.print-controls .btn-primary:hover {
+  background: linear-gradient(135deg, #005f91, #004a73);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 15px rgba(0, 119, 182, 0.3);
+}
+
+.print-controls .btn-secondary {
+  background: linear-gradient(135deg, #f5f5f5, #e0e0e0);
+  color: #555;
+  border: 1px solid #ccc;
+  padding: 0.75rem 1.5rem;
+  border-radius: 8px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.print-controls .btn-secondary:hover {
+  background: linear-gradient(135deg, #e0e0e0, #d0d0d0);
+}
+
+/* Prescription Document */
+.prescription-document {
+  padding: 1.5rem;
+  font-family: 'Georgia', 'Times New Roman', serif;
+  color: #333;
+  line-height: 1.4;
+  background: white;
+}
+
+/* Header */
+.prescription-header {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  margin-bottom: 1rem;
+  padding-bottom: 0.75rem;
+  border-bottom: 2px solid #0077b6;
+}
+
+.clinic-logo {
+  max-width: 100px;
+  max-height: 60px;
+  object-fit: contain;
+  margin-bottom: 0.5rem;
+}
+
+.clinic-info h1 {
+  margin: 0;
+  font-size: 1.25rem;
+  color: #0077b6;
+}
+
+.clinic-info p {
+  margin: 0.1rem 0;
+  font-size: 0.75rem;
+  color: #555;
+}
+
+.prescription-header-text {
+  margin-top: 0.5rem;
+  font-style: italic;
+  color: #666;
+  font-size: 0.8rem;
+}
+
+/* Title */
+.prescription-title {
+  text-align: center;
+  margin: 0.75rem 0;
+}
+
+.prescription-title h2 {
+  margin: 0;
+  font-size: 1.1rem;
+  color: #333;
+  letter-spacing: 1px;
+}
+
+.prescription-date {
+  margin: 0.25rem 0 0;
+  font-size: 0.8rem;
+  color: #666;
+}
+
+/* Patient Info */
+.patient-info-section {
+  background: #f8f8f8;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  padding: 0.5rem 0.75rem;
+  margin-bottom: 0.75rem;
+}
+
+.info-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1.5rem;
+  margin-bottom: 0.5rem;
+}
+
+.info-row:last-child {
+  margin-bottom: 0;
+}
+
+.info-item {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.info-item label {
+  font-weight: bold;
+  color: #555;
+}
+
+.info-item span {
+  color: #333;
+}
+
+/* Medications */
+.medications-section {
+  margin-bottom: 0.75rem;
+}
+
+.medications-section h3 {
+  font-size: 1.2rem;
+  font-family: 'Times New Roman', serif;
+  font-style: italic;
+  margin: 0 0 0.5rem;
+  color: #0077b6;
+}
+
+.medications-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.75rem;
+}
+
+.medications-table th,
+.medications-table td {
+  border: 1px solid #ddd;
+  padding: 0.35rem 0.5rem;
+  text-align: left;
+}
+
+.medications-table th {
+  background: #f0f7ff;
+  color: #333;
+  font-weight: 600;
+  font-size: 0.7rem;
+}
+
+.medications-table tbody tr:nth-child(even) {
+  background: #fafafa;
+}
+
+/* Instructions */
+.instructions-section {
+  background: #fff8e6;
+  border: 1px solid #ffe0b2;
+  border-radius: 6px;
+  padding: 0.5rem 0.75rem;
+  margin-bottom: 0.5rem;
+}
+
+.instructions-section h4 {
+  margin: 0 0 0.25rem;
+  color: #e65100;
+  font-size: 0.8rem;
+}
+
+.instructions-section p {
+  margin: 0;
+  color: #555;
+  font-size: 0.75rem;
+}
+
+/* Warnings */
+.warnings-section {
+  background: #ffebee;
+  border: 1px solid #ffcdd2;
+  border-radius: 6px;
+  padding: 0.5rem 0.75rem;
+  margin-bottom: 0.5rem;
+}
+
+.warnings-section p {
+  margin: 0;
+  color: #c62828;
+  font-size: 0.75rem;
+}
+
+/* Signature */
+.signature-section {
+  margin-top: 1rem;
+  display: flex;
+  justify-content: flex-end;
+}
+
+.signature-box {
+  text-align: center;
+  min-width: 200px;
+}
+
+.vet-signature {
+  max-width: 120px;
+  max-height: 40px;
+  object-fit: contain;
+  display: block;
+  margin: 0 auto;
+}
+
+.signature-line {
+  width: 100%;
+  height: 1px;
+  background: #333;
+  margin: 0.3rem 0;
+}
+
+.vet-name {
+  margin: 0;
+  font-weight: bold;
+  color: #333;
+  font-size: 0.85rem;
+}
+
+.vet-license,
+.vet-specialty {
+  margin: 0.1rem 0;
+  font-size: 0.7rem;
+  color: #555;
+}
+
+/* Footer */
+.prescription-footer {
+  margin-top: 0.75rem;
+  padding-top: 0.5rem;
+  border-top: 1px solid #ddd;
+  text-align: center;
+  font-size: 0.7rem;
+  color: #777;
+}
+
+.prescription-footer p {
+  margin: 0.15rem 0;
+}
+
+.tax-info {
+  font-size: 0.65rem;
+}
+
+/* Loading & Error States */
+.loading-state,
+.error-state,
+.empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 3rem 2rem;
+  text-align: center;
+}
+
+.loading-state .spinner {
+  width: 40px;
+  height: 40px;
+  border: 3px solid rgba(0, 119, 182, 0.2);
+  border-top-color: #0077b6;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+  margin-bottom: 1rem;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+/* Print Styles */
+@media print {
+  * {
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+
+  body {
+    margin: 0;
+    padding: 0;
+  }
+
+  .no-print {
+    display: none !important;
+  }
+
+  .prescription-print-overlay {
+    position: static;
+    background: white !important;
+    padding: 0;
+    display: block;
+  }
+
+  .prescription-print-modal {
+    max-height: none;
+    overflow: visible;
+    box-shadow: none;
+    border-radius: 0;
+    max-width: 100%;
+    width: 100%;
+  }
+
+  .prescription-document {
+    padding: 0.5cm;
+    font-size: 10pt;
+    page-break-inside: avoid;
+  }
+
+  .prescription-header {
+    border-bottom-width: 1px;
+    margin-bottom: 0.5cm;
+    padding-bottom: 0.5cm;
+  }
+
+  .clinic-info h1 {
+    font-size: 14pt;
+  }
+
+  .clinic-info p {
+    font-size: 9pt;
+    margin: 2pt 0;
+  }
+
+  .prescription-title h2 {
+    font-size: 12pt;
+    margin: 0.3cm 0;
+  }
+
+  .prescription-date {
+    font-size: 9pt;
+  }
+
+  .patient-info-section {
+    padding: 0.3cm;
+    margin-bottom: 0.5cm;
+    background: #f5f5f5 !important;
+    -webkit-print-color-adjust: exact;
+  }
+
+  .info-row {
+    gap: 0.5cm;
+    margin-bottom: 0.2cm;
+  }
+
+  .info-item label,
+  .info-item span {
+    font-size: 9pt;
+  }
+
+  .medications-section h3 {
+    font-size: 14pt;
+    margin-bottom: 0.3cm;
+  }
+
+  .medications-table {
+    font-size: 9pt;
+    width: 100%;
+  }
+
+  .medications-table th,
+  .medications-table td {
+    padding: 0.2cm 0.3cm;
+    border: 0.5pt solid #999;
+  }
+
+  .medications-table th {
+    background: #e8f4f8 !important;
+    -webkit-print-color-adjust: exact;
+  }
+
+  .instructions-section,
+  .warnings-section {
+    padding: 0.3cm;
+    margin-bottom: 0.3cm;
+    font-size: 9pt;
+  }
+
+  .signature-section {
+    margin-top: 1cm;
+  }
+
+  .signature-box {
+    min-width: 5cm;
+  }
+
+  .vet-name {
+    font-size: 10pt;
+  }
+
+  .vet-license,
+  .vet-specialty {
+    font-size: 8pt;
+  }
+
+  .prescription-footer {
+    margin-top: 0.5cm;
+    padding-top: 0.3cm;
+    font-size: 8pt;
+  }
+
+  @page {
+    margin: 1cm;
+    size: letter portrait;
+  }
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .info-row {
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+
+  .medications-table {
+    font-size: 0.8rem;
+  }
+
+  .medications-table th,
+  .medications-table td {
+    padding: 0.4rem 0.5rem;
+  }
+}

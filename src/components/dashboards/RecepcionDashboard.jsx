@@ -2,9 +2,12 @@ import { useState, useEffect, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useAuth } from '../../context/AuthContext';
 import useRecepcion from '../../hooks/useRecepcion';
-import { petService } from '../../services/recepcion.service';
+import { petService, visitService } from '../../services/recepcion.service';
 import { citaSeguimientoService } from '../../services/medico.service';
+import hospitalizacionService from '../../services/hospitalizacion.service';
 import { QRCodeSVG } from 'qrcode.react';
+import PrescriptionPrint from '../medico/PrescriptionPrint';
+import GroomingIntakeForm from './GroomingIntakeForm';
 import './RecepcionDashboard.css';
 
 function RecepcionDashboard() {
@@ -42,7 +45,10 @@ function RecepcionDashboard() {
   const [showExpedienteModal, setShowExpedienteModal] = useState(false);
   const [showCalendarModal, setShowCalendarModal] = useState(false);
   const [showNewPatientModal, setShowNewPatientModal] = useState(false);
+  const [showServiceTypeSelector, setShowServiceTypeSelector] = useState(false);
+  const [selectedServiceType, setSelectedServiceType] = useState(null);
   const [showNewAppointmentModal, setShowNewAppointmentModal] = useState(false);
+  const [showGroomingIntakeForm, setShowGroomingIntakeForm] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [activeSection, setActiveSection] = useState('dashboard');
   const [clientSearchPhone, setClientSearchPhone] = useState('');
@@ -65,6 +71,10 @@ function RecepcionDashboard() {
   const [citasMedico, setCitasMedico] = useState([]);
   const [loadingCitasMedico, setLoadingCitasMedico] = useState(false);
   
+  // Estado para hospitalizados pendientes de cobro
+  const [pendingHospDischarges, setPendingHospDischarges] = useState([]);
+  const [loadingHospDischarges, setLoadingHospDischarges] = useState(false);
+  
   // Estado para búsqueda de mascotas en modal de citas
   const [petSearchQuery, setPetSearchQuery] = useState('');
   const [petSearchResults, setPetSearchResults] = useState([]);
@@ -74,7 +84,6 @@ function RecepcionDashboard() {
     tipoVisita: 'consulta_general',
     prioridad: 'MEDIA',
     peso: '',
-    temperatura: '',
     antecedentes: '',
     primeraVisita: false
   });
@@ -133,8 +142,17 @@ function RecepcionDashboard() {
     fechaSeguimiento: '',
     horaSeguimiento: '',
     total: '',
-    metodoPago: 'efectivo'
+    metodoPago: 'efectivo',
+    notas: ''
   });
+  const [visitCosts, setVisitCosts] = useState({
+    medications: [],
+    totalMedicationCost: 0,
+    grandTotal: 0,
+    consultationId: null,
+    loading: false,
+  });
+  const [showPrintPrescription, setShowPrintPrescription] = useState(false);
 
   const [newAppointmentData, setNewAppointmentData] = useState({
     pacienteId: '',
@@ -249,7 +267,6 @@ function RecepcionDashboard() {
       tipoVisita: 'consulta_general',
       prioridad: 'MEDIA',
       peso: patient.peso || '',
-      temperatura: '',
       antecedentes: patient.antecedentes || '',
       primeraVisita: patient.primeraVisita !== false // Si no está definido, asumir que es primera visita
     });
@@ -269,7 +286,6 @@ function RecepcionDashboard() {
         motivo: triageData.motivo,
         prioridad: triageData.prioridad,
         peso: triageData.peso,
-        temperatura: triageData.temperatura,
         antecedentes: triageData.antecedentes,
         primeraVisita: triageData.primeraVisita
       });
@@ -611,11 +627,39 @@ function RecepcionDashboard() {
     }
   }, []);
 
+  // Función para cargar hospitalizados pendientes de cobro
+  const loadPendingHospDischarges = useCallback(async () => {
+    setLoadingHospDischarges(true);
+    try {
+      const data = await hospitalizacionService.getPendingDischarges();
+      setPendingHospDischarges(data.hospitalizations || []);
+    } catch (error) {
+      console.error('Error cargando hospitalizados pendientes:', error);
+      setPendingHospDischarges([]);
+    } finally {
+      setLoadingHospDischarges(false);
+    }
+  }, []);
+  
+  // Completar alta de hospitalización después de cobro
+  const handleCompleteHospDischarge = async (hospitalizationId) => {
+    try {
+      await hospitalizacionService.completeDischarge(hospitalizationId);
+      await loadPendingHospDischarges();
+      alert('Alta completada exitosamente');
+    } catch (error) {
+      console.error('Error completando alta:', error);
+      alert('Error: ' + (error.message || 'No se pudo completar el alta'));
+    }
+  };
+
   // URL para el formulario de cliente (puede ser ajustada según el deploy)
   const clientFormURL = `${window.location.origin}/registro-cliente`;
 
   const handleNewAppointment = () => {
-    setShowNewAppointmentModal(true);
+    // Mostrar selector de tipo de servicio primero
+    setShowServiceTypeSelector(true);
+    setSelectedServiceType(null);
     clearFoundOwner?.(); // Limpiar búsqueda anterior
     setPetSearchQuery(''); // Limpiar búsqueda de mascotas
     setPetSearchResults([]); // Limpiar resultados
@@ -629,6 +673,17 @@ function RecepcionDashboard() {
       motivo: '',
       confirmada: false
     });
+  };
+
+  const handleServiceTypeSelection = (serviceType) => {
+    setSelectedServiceType(serviceType);
+    setShowServiceTypeSelector(false);
+    
+    if (serviceType === 'MEDICAL') {
+      setShowNewAppointmentModal(true);
+    } else if (serviceType === 'GROOMING') {
+      setShowGroomingIntakeForm(true);
+    }
   };
   
   // Función para buscar mascotas por nombre
@@ -835,15 +890,45 @@ function RecepcionDashboard() {
     }
   };
 
-  const handleStartDischarge = (patient) => {
+  const handleStartDischarge = async (patient) => {
     setSelectedPatient(patient);
     setShowDischargeModal(true);
+    setVisitCosts(prev => ({ ...prev, loading: true }));
+    
+    // Initialize with default values
     setDischargeData({
       fechaSeguimiento: '',
       horaSeguimiento: '',
-      total: '1200',
-      metodoPago: 'efectivo'
+      total: '0',
+      metodoPago: 'efectivo',
+      notas: ''
     });
+
+    // Load visit costs
+    try {
+      const costs = await visitService.getCosts(patient.visitId);
+      setVisitCosts({
+        medications: costs.medications || [],
+        totalMedicationCost: costs.totalMedicationCost || 0,
+        grandTotal: costs.grandTotal || 0,
+        consultationId: costs.consultationId || null,
+        loading: false,
+      });
+      // Pre-fill total with medication costs
+      setDischargeData(prev => ({
+        ...prev,
+        total: String(costs.grandTotal || 0)
+      }));
+    } catch (err) {
+      console.error('Error loading visit costs:', err);
+      setVisitCosts({
+        medications: [],
+        totalMedicationCost: 0,
+        grandTotal: 0,
+        consultationId: null,
+        loading: false,
+      });
+    }
   };
 
   const handleSubmitDischarge = async (e) => {
@@ -974,12 +1059,15 @@ function RecepcionDashboard() {
           
           <button 
             className={`nav-item ${activeSection === 'alta' ? 'active' : ''}`}
-            onClick={() => setActiveSection('alta')}
+            onClick={() => {
+              setActiveSection('alta');
+              loadPendingHospDischarges();
+            }}
           >
             <span className="nav-icon">✅</span>
             <span>{t('recepcion.sections.readyForDischarge')}</span>
-            {readyForDischarge.length > 0 && (
-              <span className="nav-badge success">{readyForDischarge.length}</span>
+            {(readyForDischarge.length + pendingHospDischarges.length) > 0 && (
+              <span className="nav-badge success">{readyForDischarge.length + pendingHospDischarges.length}</span>
             )}
           </button>
         </nav>
@@ -2299,9 +2387,55 @@ function RecepcionDashboard() {
         {/* SECCIÓN: LISTOS PARA ALTA */}
         {activeSection === 'alta' && (
           <div className="alta-section">
-            {readyForDischarge.length > 0 ? (
-              <div className="patients-grid">
-                {readyForDischarge.map(patient => (
+            {/* Subsección: Hospitalizados Pendientes de Cobro */}
+            {pendingHospDischarges.length > 0 && (
+              <div className="hospitalized-pending-section">
+                <h3 className="section-subtitle">🏥 Hospitalizados Pendientes de Cobro ({pendingHospDischarges.length})</h3>
+                <div className="patients-grid">
+                  {pendingHospDischarges.map(hosp => (
+                    <div key={hosp.id} className="patient-card-alta hospitalized">
+                      <div className="patient-card-header">
+                        <div className="patient-avatar-small">
+                          {hosp.pet?.fotoUrl ? (
+                            <img src={hosp.pet.fotoUrl} alt={hosp.pet?.nombre} className="patient-avatar-photo-small" />
+                          ) : (
+                            hosp.pet?.especie === 'DOG' ? '🐕' : hosp.pet?.especie === 'CAT' ? '🐈' : '🐾'
+                          )}
+                        </div>
+                        <div>
+                          <h4>{hosp.pet?.nombre || 'Sin nombre'}</h4>
+                          <span className="patient-ficha badge-hospital">{hosp.type}</span>
+                        </div>
+                      </div>
+                      <div className="patient-details-small">
+                        <p><strong>Dueño:</strong> {hosp.pet?.owner?.nombre || 'N/A'}</p>
+                        <p><strong>Teléfono:</strong> {hosp.pet?.owner?.telefono || 'N/A'}</p>
+                        <p><strong>Días internado:</strong> {hosp.days}</p>
+                        <p><strong>Costo estimado:</strong> <span className="cost-highlight">${hosp.estimatedCost?.toFixed(2) || '0.00'}</span></p>
+                        {hosp.dischargeSummary && (
+                          <p><strong>Resumen alta:</strong> {hosp.dischargeSummary}</p>
+                        )}
+                      </div>
+                      <div className="card-actions">
+                        <button 
+                          className="btn-action success"
+                          onClick={() => handleCompleteHospDischarge(hosp.id)}
+                        >
+                          💰 Procesar Cobro y Alta
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+            
+            {/* Subsección: Consultas Listas para Alta */}
+            {readyForDischarge.length > 0 && (
+              <div className="consult-discharge-section">
+                <h3 className="section-subtitle">🩺 Consultas Listas para Alta ({readyForDischarge.length})</h3>
+                <div className="patients-grid">
+                  {readyForDischarge.map(patient => (
                     <div key={patient.id} className="patient-card-alta">
                       <div className="patient-card-header">
                         <div className="patient-avatar-small">
@@ -2328,10 +2462,13 @@ function RecepcionDashboard() {
                         💰 {t('recepcion.discharge.processDischarge')}
                       </button>
                     </div>
-                  ))
-                }
+                  ))}
+                </div>
               </div>
-            ) : (
+            )}
+            
+            {/* Empty State si no hay nadie */}
+            {readyForDischarge.length === 0 && pendingHospDischarges.length === 0 && (
               <div className="empty-state">
                 <p>{t('recepcion.messages.noDischargeReady')}</p>
               </div>
@@ -2434,16 +2571,6 @@ function RecepcionDashboard() {
                     required
                   />
                 </div>
-                <div className="form-group">
-                  <label>{t('recepcion.triage.temperature')}</label>
-                  <input
-                    type="number"
-                    step="0.1"
-                    value={triageData.temperatura}
-                    onChange={(e) => setTriageData({...triageData, temperatura: e.target.value})}
-                    placeholder="Ej: 38.5"
-                  />
-                </div>
               </div>
 
               <div className="form-section">
@@ -2486,7 +2613,7 @@ function RecepcionDashboard() {
       {/* MODAL: ALTA Y COBRO */}
       {showDischargeModal && selectedPatient && (
         <div className="modal-overlay" onClick={() => setShowDischargeModal(false)}>
-          <div className="modal-content" onClick={e => e.stopPropagation()}>
+          <div className="modal-content discharge-modal" onClick={e => e.stopPropagation()}>
               <h2>💰 {t('recepcion.discharge.title')} - {selectedPatient.nombre}</h2>
             
             <div className="patient-info-modal">
@@ -2499,6 +2626,47 @@ function RecepcionDashboard() {
             </div>
 
             <form onSubmit={handleSubmitDischarge} className="discharge-form">
+              {/* Medication Costs Breakdown */}
+              <div className="form-section costs-section">
+                <h3>📋 {t('recepcion.discharge.medicationCosts', 'Desglose de Medicamentos')}</h3>
+                {visitCosts.loading ? (
+                  <div className="loading-costs">
+                    <span className="spinner">⏳</span> Cargando costos...
+                  </div>
+                ) : visitCosts.medications.length > 0 ? (
+                  <div className="costs-breakdown">
+                    <table className="costs-table">
+                      <thead>
+                        <tr>
+                          <th>Medicamento</th>
+                          <th>Cantidad</th>
+                          <th>Precio Unit.</th>
+                          <th>Subtotal</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {visitCosts.medications.map((med, idx) => (
+                          <tr key={idx}>
+                            <td>{med.name}</td>
+                            <td>{med.quantity}</td>
+                            <td>{med.unitPrice != null ? `$${med.unitPrice.toFixed(2)}` : '-'}</td>
+                            <td>{med.total != null ? `$${med.total.toFixed(2)}` : '-'}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                      <tfoot>
+                        <tr className="total-row">
+                          <td colSpan="3"><strong>Total Medicamentos:</strong></td>
+                          <td><strong>${visitCosts.totalMedicationCost.toFixed(2)}</strong></td>
+                        </tr>
+                      </tfoot>
+                    </table>
+                  </div>
+                ) : (
+                  <p className="no-medications">No hay medicamentos dispensados en esta visita</p>
+                )}
+              </div>
+
               <div className="form-section">
                 <h3>1. {t('recepcion.discharge.payment')}</h3>
                 <div className="form-row">
@@ -2510,6 +2678,11 @@ function RecepcionDashboard() {
                       onChange={(e) => setDischargeData({...dischargeData, total: e.target.value})}
                       required
                     />
+                    {visitCosts.totalMedicationCost > 0 && (
+                      <span className="cost-hint">
+                        Base de medicamentos: ${visitCosts.totalMedicationCost.toFixed(2)}
+                      </span>
+                    )}
                   </div>
                   <div className="form-group">
                     <label>{t('recepcion.discharge.paymentMethod')}</label>
@@ -2551,6 +2724,15 @@ function RecepcionDashboard() {
                 <button type="button" className="btn-close" onClick={() => setShowDischargeModal(false)}>
                   {t('common.cancel')}
                 </button>
+                {visitCosts.consultationId && (
+                  <button 
+                    type="button" 
+                    className="btn-print"
+                    onClick={() => setShowPrintPrescription(true)}
+                  >
+                    🖨️ Imprimir Receta Externa
+                  </button>
+                )}
                 <button type="submit" className="btn-success">
                   ✅ {t('recepcion.discharge.completeDischarge')}
                 </button>
@@ -3045,6 +3227,7 @@ function RecepcionDashboard() {
                     <option value="VACUNACION">{t('recepcion.triage.vaccination')}</option>
                     <option value="CIRUGIA">{t('recepcion.triage.surgery')}</option>
                     <option value="EMERGENCIA">{t('recepcion.triage.emergency')}</option>
+                    <option value="ESTETICA">✂️ Grooming / Estética</option>
                   </select>
                 </div>
 
@@ -3245,6 +3428,124 @@ function RecepcionDashboard() {
                 {savingPhoto ? '⏳ Saving...' : '💾 Save'}
               </button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* MODAL: IMPRIMIR RECETA EXTERNA */}
+      {showPrintPrescription && visitCosts.consultationId && (
+        <PrescriptionPrint
+          consultationId={visitCosts.consultationId}
+          patient={selectedPatient}
+          onClose={() => setShowPrintPrescription(false)}
+        />
+      )}
+
+      {/* MODAL: SELECTOR DE TIPO DE SERVICIO */}
+      {showServiceTypeSelector && (
+        <div className="modal-overlay" onClick={() => setShowServiceTypeSelector(false)}>
+          <div className="modal-content service-type-selector" onClick={e => e.stopPropagation()}>
+            <h2>🏥 ✂️ Select Service Type</h2>
+            <p style={{ color: '#666', marginBottom: '2rem' }}>
+              What type of service does the patient need?
+            </p>
+            
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+              <button 
+                className="service-type-card"
+                onClick={() => handleServiceTypeSelection('MEDICAL')}
+                style={{
+                  padding: '2rem',
+                  border: '2px solid #4CAF50',
+                  borderRadius: '8px',
+                  background: 'white',
+                  cursor: 'pointer',
+                  transition: 'all 0.3s',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  alignItems: 'center',
+                  gap: '0.5rem'
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.background = '#f1f8f4';
+                  e.currentTarget.style.transform = 'scale(1.05)';
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.background = 'white';
+                  e.currentTarget.style.transform = 'scale(1)';
+                }}
+              >
+                <span style={{ fontSize: '3rem' }}>🩺</span>
+                <h3 style={{ margin: 0 }}>Medical Consultation</h3>
+                <p style={{ margin: 0, fontSize: '0.9rem', color: '#666' }}>
+                  General consultation, follow-up, vaccination, surgery, emergency
+                </p>
+              </button>
+
+              <button 
+                className="service-type-card"
+                onClick={() => handleServiceTypeSelection('GROOMING')}
+                style={{
+                  padding: '2rem',
+                  border: '2px solid #FF9800',
+                  borderRadius: '8px',
+                  background: 'white',
+                  cursor: 'pointer',
+                  transition: 'all 0.3s',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  alignItems: 'center',
+                  gap: '0.5rem'
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.background = '#fff8f0';
+                  e.currentTarget.style.transform = 'scale(1.05)';
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.background = 'white';
+                  e.currentTarget.style.transform = 'scale(1)';
+                }}
+              >
+                <span style={{ fontSize: '3rem' }}>✂️</span>
+                <h3 style={{ margin: 0 }}>Grooming Service</h3>
+                <p style={{ margin: 0, fontSize: '0.9rem', color: '#666' }}>
+                  Bath, haircut, brushing, nail trim, ear cleaning
+                </p>
+              </button>
+            </div>
+
+            <div className="modal-actions" style={{ marginTop: '1.5rem' }}>
+              <button 
+                className="btn-close" 
+                onClick={() => setShowServiceTypeSelector(false)}
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* MODAL/FORM: GROOMING INTAKE */}
+      {showGroomingIntakeForm && (
+        <div className="modal-overlay">
+          <div className="modal-content" style={{ maxWidth: '900px', maxHeight: '90vh', overflow: 'auto' }}>
+            <GroomingIntakeForm
+              pet={null}
+              owner={foundOwner || null}
+              visit={null}
+              onSubmit={async (groomingData) => {
+                console.log('Grooming intake submitted:', groomingData);
+                // TODO: Implementar la creación de cita de grooming
+                alert('Grooming service request created successfully!');
+                setShowGroomingIntakeForm(false);
+                setSelectedServiceType(null);
+              }}
+              onCancel={() => {
+                setShowGroomingIntakeForm(false);
+                setSelectedServiceType(null);
+              }}
+            />
           </div>
         </div>
       )}

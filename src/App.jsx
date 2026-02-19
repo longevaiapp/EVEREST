@@ -11,6 +11,7 @@ import FarmaciaDashboard from './components/dashboards/FarmaciaDashboard';
 import LaboratorioDashboard from './components/dashboards/LaboratorioDashboard';
 import EstilistaDashboard from './components/dashboards/EstilistaDashboard';
 import AdminDashboard from './components/dashboards/AdminDashboard';
+import HospitalizacionDashboard from './components/dashboards/HospitalizacionDashboard';
 import RegistroCliente from './components/RegistroCliente';
 import './App.css';
 
@@ -36,6 +37,7 @@ function RoleBasedRedirect() {
     ADMIN: '/admin',
     RECEPCION: '/recepcion',
     MEDICO: '/medico',
+    HOSPITALIZACION: '/hospitalizacion',
     LABORATORIO: '/laboratorio',
     FARMACIA: '/farmacia',
     ESTILISTA: '/estilista',
@@ -99,6 +101,14 @@ function App() {
                 <ProtectedRoute roles={['ADMIN']}>
                   <AuthenticatedLayout>
                     <AdminDashboard />
+                  </AuthenticatedLayout>
+                </ProtectedRoute>
+              } />
+
+              <Route path="/hospitalizacion" element={
+                <ProtectedRoute roles={['HOSPITALIZACION', 'MEDICO', 'ADMIN']}>
+                  <AuthenticatedLayout>
+                    <HospitalizacionDashboard />
                   </AuthenticatedLayout>
                 </ProtectedRoute>
               } />

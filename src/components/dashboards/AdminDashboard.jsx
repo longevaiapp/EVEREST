@@ -1,18 +1,67 @@
-import { useState } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useApp } from '../../context/AppContext';
+import { useAuth } from '../../context/AuthContext';
+import { useToast } from '../Toast';
 import { mockUsers } from '../../data/mockUsers';
+import adminService from '../../services/admin.service';
 import './AdminDashboard.css';
 
 function AdminDashboard() {
   const { t } = useTranslation();
   const { currentUser, systemState } = useApp();
+  const { user } = useAuth();
+  const toast = useToast();
+  
   const [activeSection, setActiveSection] = useState('dashboard');
   const [searchQuery, setSearchQuery] = useState('');
   const [showNewUserModal, setShowNewUserModal] = useState(false);
   const [showEditUserModal, setShowEditUserModal] = useState(false);
   const [selectedUser, setSelectedUser] = useState(null);
   const [showConfigModal, setShowConfigModal] = useState(false);
+  
+  // Business Info State
+  const [businessLoading, setBusinessLoading] = useState(false);
+  const [businessSaving, setBusinessSaving] = useState(false);
+  const [businessConfigured, setBusinessConfigured] = useState(false);
+  const logoInputRef = useRef(null);
+  const signatureInputRef = useRef(null);
+  
+  const [businessForm, setBusinessForm] = useState({
+    clinicName: '',
+    clinicAddress: '',
+    clinicCity: '',
+    clinicState: '',
+    clinicZip: '',
+    clinicPhone: '',
+    clinicEmail: '',
+    clinicWebsite: '',
+    clinicLogo: '',
+    taxId: '',
+    taxName: '',
+    vetName: '',
+    vetLicense: '',
+    vetSpecialty: '',
+    vetSignature: '',
+    prescriptionHeader: '',
+    prescriptionFooter: '',
+    prescriptionWarnings: '',
+    // Hospitalization rates
+    tarifaHospGeneral: '',
+    tarifaHospUCI: '',
+    tarifaHospNeonatos: '',
+    tarifaHospInfecciosos: '',
+    tarifaConsultaGeneral: '',
+    // Study rates
+    tarifaBH: '',
+    tarifaQS: '',
+    tarifaRX: '',
+    tarifaUS: '',
+    tarifaEGO: '',
+    tarifaECG: '',
+    tarifaElectrolitos: '',
+    tarifaSNAP: '',
+  });
 
   // Datos de usuarios (usando mockUsers)
   const allUsers = mockUsers;
@@ -48,6 +97,125 @@ function AdminDashboard() {
   const handleDeleteUser = (user) => {
     if (window.confirm(`Are you sure you want to delete user ${user.nombre}?`)) {
       alert('User deleted (demo function)');
+    }
+  };
+
+  // ==================== BUSINESS INFO FUNCTIONS ====================
+  
+  const loadBusinessInfo = useCallback(async () => {
+    setBusinessLoading(true);
+    try {
+      const result = await adminService.getBusinessInfo();
+      if (result.businessInfo) {
+        setBusinessForm({
+          clinicName: result.businessInfo.clinicName || '',
+          clinicAddress: result.businessInfo.clinicAddress || '',
+          clinicCity: result.businessInfo.clinicCity || '',
+          clinicState: result.businessInfo.clinicState || '',
+          clinicZip: result.businessInfo.clinicZip || '',
+          clinicPhone: result.businessInfo.clinicPhone || '',
+          clinicEmail: result.businessInfo.clinicEmail || '',
+          clinicWebsite: result.businessInfo.clinicWebsite || '',
+          clinicLogo: result.businessInfo.clinicLogo || '',
+          taxId: result.businessInfo.taxId || '',
+          taxName: result.businessInfo.taxName || '',
+          vetName: result.businessInfo.vetName || '',
+          vetLicense: result.businessInfo.vetLicense || '',
+          vetSpecialty: result.businessInfo.vetSpecialty || '',
+          vetSignature: result.businessInfo.vetSignature || '',
+          prescriptionHeader: result.businessInfo.prescriptionHeader || '',
+          prescriptionFooter: result.businessInfo.prescriptionFooter || '',
+          prescriptionWarnings: result.businessInfo.prescriptionWarnings || '',
+          // Hospitalization rates
+          tarifaHospGeneral: result.businessInfo.tarifaHospGeneral || '',
+          tarifaHospUCI: result.businessInfo.tarifaHospUCI || '',
+          tarifaHospNeonatos: result.businessInfo.tarifaHospNeonatos || '',
+          tarifaHospInfecciosos: result.businessInfo.tarifaHospInfecciosos || '',
+          tarifaConsultaGeneral: result.businessInfo.tarifaConsultaGeneral || '',
+          // Study rates
+          tarifaBH: result.businessInfo.tarifaBH || '',
+          tarifaQS: result.businessInfo.tarifaQS || '',
+          tarifaRX: result.businessInfo.tarifaRX || '',
+          tarifaUS: result.businessInfo.tarifaUS || '',
+          tarifaEGO: result.businessInfo.tarifaEGO || '',
+          tarifaECG: result.businessInfo.tarifaECG || '',
+          tarifaElectrolitos: result.businessInfo.tarifaElectrolitos || '',
+          tarifaSNAP: result.businessInfo.tarifaSNAP || '',
+        });
+        setBusinessConfigured(true);
+      }
+    } catch (err) {
+      console.error('[AdminDashboard] Error loading business info:', err);
+    } finally {
+      setBusinessLoading(false);
+    }
+  }, []);
+  
+  useEffect(() => {
+    if (activeSection === 'negocio') {
+      loadBusinessInfo();
+    }
+  }, [activeSection, loadBusinessInfo]);
+  
+  const handleBusinessFormChange = (field, value) => {
+    setBusinessForm(prev => ({ ...prev, [field]: value }));
+  };
+  
+  const handleLogoUpload = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    if (!file.type.startsWith('image/')) {
+      toast?.error?.('Please select an image file') || alert('Please select an image file');
+      return;
+    }
+    if (file.size > 2 * 1024 * 1024) {
+      toast?.error?.('Image must be less than 2MB') || alert('Image must be less than 2MB');
+      return;
+    }
+    try {
+      const base64 = await adminService.fileToBase64(file);
+      setBusinessForm(prev => ({ ...prev, clinicLogo: base64 }));
+    } catch (err) {
+      console.error('Error loading logo:', err);
+    }
+  };
+  
+  const handleSignatureUpload = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    if (!file.type.startsWith('image/')) {
+      toast?.error?.('Please select an image file') || alert('Please select an image file');
+      return;
+    }
+    if (file.size > 1 * 1024 * 1024) {
+      toast?.error?.('Signature must be less than 1MB') || alert('Signature must be less than 1MB');
+      return;
+    }
+    try {
+      const base64 = await adminService.fileToBase64(file);
+      setBusinessForm(prev => ({ ...prev, vetSignature: base64 }));
+    } catch (err) {
+      console.error('Error loading signature:', err);
+    }
+  };
+  
+  const handleSaveBusinessInfo = async (e) => {
+    e.preventDefault();
+    if (!businessForm.clinicName || !businessForm.clinicAddress || 
+        !businessForm.clinicPhone || !businessForm.vetName || !businessForm.vetLicense) {
+      toast?.error?.('Please fill in all required fields') || alert('Please fill in all required fields');
+      return;
+    }
+    setBusinessSaving(true);
+    try {
+      await adminService.saveBusinessInfo(businessForm);
+      setBusinessConfigured(true);
+      toast?.success?.('Clinic configuration saved!') || alert('Clinic configuration saved!');
+    } catch (err) {
+      console.error('[AdminDashboard] Error saving:', err);
+      toast?.error?.('Error saving configuration') || alert('Error saving configuration');
+    } finally {
+      setBusinessSaving(false);
     }
   };
 
@@ -103,6 +271,15 @@ function AdminDashboard() {
           </button>
           
           <button 
+            className={`nav-item ${activeSection === 'negocio' ? 'active' : ''}`}
+            onClick={() => setActiveSection('negocio')}
+          >
+            <span className="nav-icon">🏥</span>
+            <span>{t('admin.business', 'Clinic Info')}</span>
+            {businessConfigured && <span className="nav-check">✓</span>}
+          </button>
+          
+          <button 
             className={`nav-item ${activeSection === 'configuracion' ? 'active' : ''}`}
             onClick={() => setActiveSection('configuracion')}
           >
@@ -122,9 +299,10 @@ function AdminDashboard() {
               {activeSection === 'pacientes' && t('admin.patientDatabase')}
               {activeSection === 'reportes' && 'System Reports'}
               {activeSection === 'auditoria' && 'System Audit'}
+              {activeSection === 'negocio' && t('admin.businessInfo', 'Clinic Configuration')}
               {activeSection === 'configuracion' && 'System Configuration'}
             </h1>
-            <p>{currentUser.nombre} - System Administrator</p>
+            <p>{currentUser?.nombre || user?.nombre || 'Admin'} - System Administrator</p>
           </div>
         </div>
 
@@ -567,6 +745,507 @@ function AdminDashboard() {
                 </div>
               </div>
             </div>
+          </div>
+        )}
+
+        {/* NEGOCIO / CLINIC INFO VIEW */}
+        {activeSection === 'negocio' && (
+          <div className="dashboard-content">
+            {businessLoading ? (
+              <div className="loading-state">
+                <div className="spinner"></div>
+                <p>Loading clinic configuration...</p>
+              </div>
+            ) : (
+              <form onSubmit={handleSaveBusinessInfo} className="business-info-form">
+                <div className="content-section full-width">
+                  <h2>🏢 Clinic Data</h2>
+                  <p className="section-description">This information will appear on prescriptions and official documents.</p>
+                  
+                  <div className="form-grid">
+                    <div className="form-group required">
+                      <label>Clinic Name *</label>
+                      <input
+                        type="text"
+                        className="form-control"
+                        value={businessForm.clinicName}
+                        onChange={(e) => handleBusinessFormChange('clinicName', e.target.value)}
+                        placeholder="Veterinary Clinic Name"
+                        required
+                      />
+                    </div>
+                    
+                    <div className="form-group required">
+                      <label>Phone *</label>
+                      <input
+                        type="tel"
+                        className="form-control"
+                        value={businessForm.clinicPhone}
+                        onChange={(e) => handleBusinessFormChange('clinicPhone', e.target.value)}
+                        placeholder="+52 555 123 4567"
+                        required
+                      />
+                    </div>
+                  </div>
+                  
+                  <div className="form-group required">
+                    <label>Address *</label>
+                    <textarea
+                      className="form-control"
+                      value={businessForm.clinicAddress}
+                      onChange={(e) => handleBusinessFormChange('clinicAddress', e.target.value)}
+                      placeholder="Full clinic address"
+                      rows={2}
+                      required
+                    />
+                  </div>
+                  
+                  <div className="form-grid three-cols">
+                    <div className="form-group">
+                      <label>City</label>
+                      <input
+                        type="text"
+                        className="form-control"
+                        value={businessForm.clinicCity}
+                        onChange={(e) => handleBusinessFormChange('clinicCity', e.target.value)}
+                        placeholder="City"
+                      />
+                    </div>
+                    <div className="form-group">
+                      <label>State</label>
+                      <input
+                        type="text"
+                        className="form-control"
+                        value={businessForm.clinicState}
+                        onChange={(e) => handleBusinessFormChange('clinicState', e.target.value)}
+                        placeholder="State/Province"
+                      />
+                    </div>
+                    <div className="form-group">
+                      <label>ZIP Code</label>
+                      <input
+                        type="text"
+                        className="form-control"
+                        value={businessForm.clinicZip}
+                        onChange={(e) => handleBusinessFormChange('clinicZip', e.target.value)}
+                        placeholder="12345"
+                      />
+                    </div>
+                  </div>
+                  
+                  <div className="form-grid">
+                    <div className="form-group">
+                      <label>Email</label>
+                      <input
+                        type="email"
+                        className="form-control"
+                        value={businessForm.clinicEmail}
+                        onChange={(e) => handleBusinessFormChange('clinicEmail', e.target.value)}
+                        placeholder="clinic@email.com"
+                      />
+                    </div>
+                    <div className="form-group">
+                      <label>Website</label>
+                      <input
+                        type="url"
+                        className="form-control"
+                        value={businessForm.clinicWebsite}
+                        onChange={(e) => handleBusinessFormChange('clinicWebsite', e.target.value)}
+                        placeholder="https://www.clinic.com"
+                      />
+                    </div>
+                  </div>
+                  
+                  {/* Logo Upload */}
+                  <div className="form-group">
+                    <label>Clinic Logo</label>
+                    <div className="upload-area">
+                      {businessForm.clinicLogo ? (
+                        <div className="preview-container">
+                          <img src={businessForm.clinicLogo} alt="Logo" className="logo-preview" />
+                          <button 
+                            type="button" 
+                            className="btn-remove"
+                            onClick={() => handleBusinessFormChange('clinicLogo', '')}
+                          >
+                            ✕ Remove
+                          </button>
+                        </div>
+                      ) : (
+                        <div className="upload-placeholder" onClick={() => logoInputRef.current?.click()}>
+                          <span className="upload-icon">📷</span>
+                          <span>Click to upload logo (Max 2MB)</span>
+                        </div>
+                      )}
+                      <input
+                        ref={logoInputRef}
+                        type="file"
+                        accept="image/*"
+                        onChange={handleLogoUpload}
+                        hidden
+                      />
+                    </div>
+                  </div>
+                </div>
+                
+                <div className="content-section full-width">
+                  <h2>💼 Tax Information</h2>
+                  
+                  <div className="form-grid">
+                    <div className="form-group">
+                      <label>Tax ID (RFC/EIN)</label>
+                      <input
+                        type="text"
+                        className="form-control"
+                        value={businessForm.taxId}
+                        onChange={(e) => handleBusinessFormChange('taxId', e.target.value)}
+                        placeholder="XAXX010101000"
+                      />
+                    </div>
+                    <div className="form-group">
+                      <label>Legal/Tax Name</label>
+                      <input
+                        type="text"
+                        className="form-control"
+                        value={businessForm.taxName}
+                        onChange={(e) => handleBusinessFormChange('taxName', e.target.value)}
+                        placeholder="Legal business name"
+                      />
+                    </div>
+                  </div>
+                </div>
+                
+                <div className="content-section full-width">
+                  <h2>👨‍⚕️ Responsible Veterinarian</h2>
+                  <p className="section-description">This information will appear on prescriptions with signature.</p>
+                  
+                  <div className="form-grid">
+                    <div className="form-group required">
+                      <label>Full Name *</label>
+                      <input
+                        type="text"
+                        className="form-control"
+                        value={businessForm.vetName}
+                        onChange={(e) => handleBusinessFormChange('vetName', e.target.value)}
+                        placeholder="Dr. Juan Pérez López"
+                        required
+                      />
+                    </div>
+                    <div className="form-group required">
+                      <label>Professional License *</label>
+                      <input
+                        type="text"
+                        className="form-control"
+                        value={businessForm.vetLicense}
+                        onChange={(e) => handleBusinessFormChange('vetLicense', e.target.value)}
+                        placeholder="Cédula Profesional: 12345678"
+                        required
+                      />
+                    </div>
+                  </div>
+                  
+                  <div className="form-group">
+                    <label>Specialty</label>
+                    <input
+                      type="text"
+                      className="form-control"
+                      value={businessForm.vetSpecialty}
+                      onChange={(e) => handleBusinessFormChange('vetSpecialty', e.target.value)}
+                      placeholder="Small Animal Medicine"
+                    />
+                  </div>
+                  
+                  {/* Signature Upload */}
+                  <div className="form-group">
+                    <label>Digital Signature</label>
+                    <div className="upload-area signature">
+                      {businessForm.vetSignature ? (
+                        <div className="preview-container">
+                          <img src={businessForm.vetSignature} alt="Signature" className="signature-preview" />
+                          <button 
+                            type="button" 
+                            className="btn-remove"
+                            onClick={() => handleBusinessFormChange('vetSignature', '')}
+                          >
+                            ✕ Remove
+                          </button>
+                        </div>
+                      ) : (
+                        <div className="upload-placeholder" onClick={() => signatureInputRef.current?.click()}>
+                          <span className="upload-icon">✍️</span>
+                          <span>Click to upload signature (PNG with transparent background)</span>
+                        </div>
+                      )}
+                      <input
+                        ref={signatureInputRef}
+                        type="file"
+                        accept="image/*"
+                        onChange={handleSignatureUpload}
+                        hidden
+                      />
+                    </div>
+                  </div>
+                </div>
+                
+                <div className="content-section full-width">
+                  <h2>📋 Prescription Settings</h2>
+                  
+                  <div className="form-group">
+                    <label>Header Text</label>
+                    <textarea
+                      className="form-control"
+                      value={businessForm.prescriptionHeader}
+                      onChange={(e) => handleBusinessFormChange('prescriptionHeader', e.target.value)}
+                      placeholder="Additional text for prescription header..."
+                      rows={2}
+                    />
+                  </div>
+                  
+                  <div className="form-group">
+                    <label>Footer / General Instructions</label>
+                    <textarea
+                      className="form-control"
+                      value={businessForm.prescriptionFooter}
+                      onChange={(e) => handleBusinessFormChange('prescriptionFooter', e.target.value)}
+                      placeholder="General instructions for all prescriptions..."
+                      rows={3}
+                    />
+                  </div>
+                  
+                  <div className="form-group">
+                    <label>Standard Warnings</label>
+                    <textarea
+                      className="form-control"
+                      value={businessForm.prescriptionWarnings}
+                      onChange={(e) => handleBusinessFormChange('prescriptionWarnings', e.target.value)}
+                      placeholder="Standard warnings (allergies, storage, etc.)..."
+                      rows={3}
+                    />
+                  </div>
+                </div>
+                
+                <div className="content-section full-width">
+                  <h2>💰 Hospitalization & Study Fees</h2>
+                  <p className="section-description">Configure daily hospitalization rates and study fees. These are used to calculate costs at discharge.</p>
+                  
+                  <h3 style={{ marginTop: '1.5rem', marginBottom: '1rem', color: '#2c5aa0' }}>🏥 Hospitalization (per day)</h3>
+                  <div className="form-grid four-cols">
+                    <div className="form-group">
+                      <label>General Ward</label>
+                      <div className="input-with-prefix">
+                        <span className="prefix">$</span>
+                        <input
+                          type="number"
+                          className="form-control"
+                          value={businessForm.tarifaHospGeneral}
+                          onChange={(e) => handleBusinessFormChange('tarifaHospGeneral', e.target.value)}
+                          placeholder="350"
+                          min="0"
+                          step="0.01"
+                        />
+                      </div>
+                    </div>
+                    <div className="form-group">
+                      <label>ICU / Intensive Care</label>
+                      <div className="input-with-prefix">
+                        <span className="prefix">$</span>
+                        <input
+                          type="number"
+                          className="form-control"
+                          value={businessForm.tarifaHospUCI}
+                          onChange={(e) => handleBusinessFormChange('tarifaHospUCI', e.target.value)}
+                          placeholder="650"
+                          min="0"
+                          step="0.01"
+                        />
+                      </div>
+                    </div>
+                    <div className="form-group">
+                      <label>Neonatal Care</label>
+                      <div className="input-with-prefix">
+                        <span className="prefix">$</span>
+                        <input
+                          type="number"
+                          className="form-control"
+                          value={businessForm.tarifaHospNeonatos}
+                          onChange={(e) => handleBusinessFormChange('tarifaHospNeonatos', e.target.value)}
+                          placeholder="550"
+                          min="0"
+                          step="0.01"
+                        />
+                      </div>
+                    </div>
+                    <div className="form-group">
+                      <label>Infectious Isolation</label>
+                      <div className="input-with-prefix">
+                        <span className="prefix">$</span>
+                        <input
+                          type="number"
+                          className="form-control"
+                          value={businessForm.tarifaHospInfecciosos}
+                          onChange={(e) => handleBusinessFormChange('tarifaHospInfecciosos', e.target.value)}
+                          placeholder="500"
+                          min="0"
+                          step="0.01"
+                        />
+                      </div>
+                    </div>
+                  </div>
+                  
+                  <div className="form-group" style={{ maxWidth: '300px' }}>
+                    <label>Consultation Fee</label>
+                    <div className="input-with-prefix">
+                      <span className="prefix">$</span>
+                      <input
+                        type="number"
+                        className="form-control"
+                        value={businessForm.tarifaConsultaGeneral}
+                        onChange={(e) => handleBusinessFormChange('tarifaConsultaGeneral', e.target.value)}
+                        placeholder="500"
+                        min="0"
+                        step="0.01"
+                      />
+                    </div>
+                  </div>
+                  
+                  <h3 style={{ marginTop: '2rem', marginBottom: '1rem', color: '#2c5aa0' }}>🔬 Laboratory Studies</h3>
+                  <div className="form-grid four-cols">
+                    <div className="form-group">
+                      <label>CBC (BH)</label>
+                      <div className="input-with-prefix">
+                        <span className="prefix">$</span>
+                        <input
+                          type="number"
+                          className="form-control"
+                          value={businessForm.tarifaBH}
+                          onChange={(e) => handleBusinessFormChange('tarifaBH', e.target.value)}
+                          placeholder="350"
+                          min="0"
+                          step="0.01"
+                        />
+                      </div>
+                    </div>
+                    <div className="form-group">
+                      <label>Chemistry Panel (QS)</label>
+                      <div className="input-with-prefix">
+                        <span className="prefix">$</span>
+                        <input
+                          type="number"
+                          className="form-control"
+                          value={businessForm.tarifaQS}
+                          onChange={(e) => handleBusinessFormChange('tarifaQS', e.target.value)}
+                          placeholder="450"
+                          min="0"
+                          step="0.01"
+                        />
+                      </div>
+                    </div>
+                    <div className="form-group">
+                      <label>X-Ray (RX)</label>
+                      <div className="input-with-prefix">
+                        <span className="prefix">$</span>
+                        <input
+                          type="number"
+                          className="form-control"
+                          value={businessForm.tarifaRX}
+                          onChange={(e) => handleBusinessFormChange('tarifaRX', e.target.value)}
+                          placeholder="400"
+                          min="0"
+                          step="0.01"
+                        />
+                      </div>
+                    </div>
+                    <div className="form-group">
+                      <label>Ultrasound (US)</label>
+                      <div className="input-with-prefix">
+                        <span className="prefix">$</span>
+                        <input
+                          type="number"
+                          className="form-control"
+                          value={businessForm.tarifaUS}
+                          onChange={(e) => handleBusinessFormChange('tarifaUS', e.target.value)}
+                          placeholder="600"
+                          min="0"
+                          step="0.01"
+                        />
+                      </div>
+                    </div>
+                  </div>
+                  
+                  <div className="form-grid four-cols">
+                    <div className="form-group">
+                      <label>Urinalysis (EGO)</label>
+                      <div className="input-with-prefix">
+                        <span className="prefix">$</span>
+                        <input
+                          type="number"
+                          className="form-control"
+                          value={businessForm.tarifaEGO}
+                          onChange={(e) => handleBusinessFormChange('tarifaEGO', e.target.value)}
+                          placeholder="250"
+                          min="0"
+                          step="0.01"
+                        />
+                      </div>
+                    </div>
+                    <div className="form-group">
+                      <label>ECG</label>
+                      <div className="input-with-prefix">
+                        <span className="prefix">$</span>
+                        <input
+                          type="number"
+                          className="form-control"
+                          value={businessForm.tarifaECG}
+                          onChange={(e) => handleBusinessFormChange('tarifaECG', e.target.value)}
+                          placeholder="400"
+                          min="0"
+                          step="0.01"
+                        />
+                      </div>
+                    </div>
+                    <div className="form-group">
+                      <label>Electrolytes</label>
+                      <div className="input-with-prefix">
+                        <span className="prefix">$</span>
+                        <input
+                          type="number"
+                          className="form-control"
+                          value={businessForm.tarifaElectrolitos}
+                          onChange={(e) => handleBusinessFormChange('tarifaElectrolitos', e.target.value)}
+                          placeholder="300"
+                          min="0"
+                          step="0.01"
+                        />
+                      </div>
+                    </div>
+                    <div className="form-group">
+                      <label>SNAP Test</label>
+                      <div className="input-with-prefix">
+                        <span className="prefix">$</span>
+                        <input
+                          type="number"
+                          className="form-control"
+                          value={businessForm.tarifaSNAP}
+                          onChange={(e) => handleBusinessFormChange('tarifaSNAP', e.target.value)}
+                          placeholder="500"
+                          min="0"
+                          step="0.01"
+                        />
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                
+                <div className="form-actions sticky">
+                  <button type="submit" className="btn-primary" disabled={businessSaving}>
+                    {businessSaving ? '⏳ Saving...' : '💾 Save Configuration'}
+                  </button>
+                  {businessConfigured && (
+                    <span className="save-status">✓ Configured</span>
+                  )}
+                </div>
+              </form>
+            )}
           </div>
         )}
 

@@ -310,6 +310,15 @@ export const visitService = {
     const response = await api.put(`/visits/${visitId}/discharge`, mappedData);
     return response.data?.visit;
   },
+
+  /**
+   * Obtener desglose de costos de una visita (medicamentos dispensados)
+   * @param {string} visitId
+   */
+  async getCosts(visitId) {
+    const response = await api.get(`/visits/${visitId}/costs`);
+    return response.data;
+  },
 };
 
 // ============================================================================

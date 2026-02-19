@@ -596,6 +596,7 @@ router.post('/hospitalizacion', authenticate, isMedico, async (req: Request, res
   const schema = z.object({
     consultationId: z.string().cuid(),
     petId: z.string().cuid(),
+    type: z.enum(['GENERAL', 'UCI', 'NEONATOS', 'INFECCIOSOS']).default('GENERAL'),
     reason: z.string().min(1),
     location: z.string().optional(),
     frecuenciaMonitoreo: z.string().optional(),
@@ -625,6 +626,7 @@ router.post('/hospitalizacion', authenticate, isMedico, async (req: Request, res
     data: {
       petId: data.petId,
       consultationId: data.consultationId,
+      type: data.type as any,
       reason: data.reason,
       location: data.location,
       frecuenciaMonitoreo: data.frecuenciaMonitoreo,
@@ -732,10 +734,12 @@ router.put('/hospitalizacion/:id', authenticate, isMedico, async (req: Request, 
     });
 
     // Update visit and pet status
-    await prisma.visit.update({
-      where: { id: hospitalization.consultation.visitId },
-      data: { status: 'LISTO_PARA_ALTA', dischargeNotes: data.dischargeNotes },
-    });
+    if (hospitalization.consultation?.visitId) {
+      await prisma.visit.update({
+        where: { id: hospitalization.consultation.visitId },
+        data: { status: 'LISTO_PARA_ALTA', dischargeNotes: data.dischargeNotes },
+      });
+    }
     await prisma.pet.update({
       where: { id: hospitalization.petId },
       data: { estado: 'LISTO_PARA_ALTA' },
@@ -841,7 +845,7 @@ router.get('/lab-results', authenticate, isMedico, async (req: Request, res: Res
   // Include patient and owner info for easy access
   const labResults = await prisma.labRequest.findMany({
     where: {
-      status: status as string,
+      status: status as any,
     },
     include: {
       pet: {
@@ -886,7 +890,7 @@ router.post('/cita-seguimiento', authenticate, isMedico, async (req: Request, re
     labRequestId: z.string().cuid().optional(),
     fecha: z.string(), // Date string YYYY-MM-DD
     hora: z.string(), // Time string HH:MM
-    tipo: z.enum(['SEGUIMIENTO', 'REVISION_RESULTADOS', 'CONSULTA']).default('SEGUIMIENTO'),
+    tipo: z.enum(['SEGUIMIENTO', 'CONSULTA_GENERAL']).default('SEGUIMIENTO'),
     motivo: z.string().min(1),
     notas: z.string().optional(),
   });
@@ -923,7 +927,7 @@ router.post('/cita-seguimiento', authenticate, isMedico, async (req: Request, re
       userId: req.user!.userId, // For now, notify the doctor who created it
       tipo: 'CITA_AGENDADA_MEDICO',
       titulo: 'Nueva cita de seguimiento',
-      mensaje: `El Dr. ${req.user!.nombre || 'Médico'} agendó una cita de seguimiento para ${appointment.pet.nombre} el ${data.fecha} a las ${data.hora}`,
+      mensaje: `Médico agendó una cita de seguimiento para ${(appointment as any).pet?.nombre || 'paciente'} el ${data.fecha} a las ${data.hora}`,
       data: { 
         appointmentId: appointment.id, 
         petId: data.petId,

@@ -11,6 +11,7 @@ const demoUsers = [
   { email: 'recepcion@vetos.com', nombre: 'Reception', rol: 'RECEPCION', avatar: '👩‍💻' },
   { email: 'drgarcia@vetos.com', nombre: 'Dr. García', rol: 'MEDICO', avatar: '👨‍⚕️' },
   { email: 'dramartinez@vetos.com', nombre: 'Dra. Martínez', rol: 'MEDICO', avatar: '👩‍⚕️' },
+  { email: 'hospitalizacion@vetos.com', nombre: 'Hospitalization', rol: 'HOSPITALIZACION', avatar: '🏥' },
   { email: 'estilista@vetos.com', nombre: 'Stylist', rol: 'ESTILISTA', avatar: '✂️' },
   { email: 'laboratorio@vetos.com', nombre: 'Lab', rol: 'LABORATORIO', avatar: '🔬' },
   { email: 'farmacia@vetos.com', nombre: 'Pharmacy', rol: 'FARMACIA', avatar: '💊' },
@@ -59,6 +60,7 @@ function Login() {
       ADMIN: '/admin',
       RECEPCION: '/recepcion',
       MEDICO: '/medico',
+      HOSPITALIZACION: '/hospitalizacion',
       ESTILISTA: '/estilista',
       LABORATORIO: '/laboratorio',
       FARMACIA: '/farmacia',
@@ -74,9 +76,9 @@ function Login() {
         </div>
         <div className="login-header">
           <div className="login-logo">
-            <img src="/logo login.png" alt="VET-OS Logo" />
+            <img src="/logo.png" alt="Everest Vet Logo" />
           </div>
-          <h1>VET-OS</h1>
+          <h1>Everest Vet</h1>
           <p>{t('auth.systemTitle')}</p>
         </div>
 

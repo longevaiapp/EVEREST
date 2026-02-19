@@ -45,6 +45,9 @@ model User {
   alertsResolved    StockAlert[]
   purchaseOrdersCreated  PurchaseOrder[]  @relation("POCreator")
   purchaseOrdersReceived PurchaseOrder[]  @relation("POReceiver")
+  therapyPlanItems       TherapyPlanItem[]
+  medicationAdmins       MedicationAdministration[]
+  neonateRecords         NeonateRecord[]
 
   @@index([email])
   @@index([rol])
@@ -57,6 +60,66 @@ enum UserRole {
   LABORATORIO
   FARMACIA
   ESTILISTA
+  HOSPITALIZACION
+}
+
+// ============================================================================
+// CONFIGURACIÓN DE LA CLÍNICA
+// ============================================================================
+
+model BusinessInfo {
+  id                String   @id @default(cuid())
+  
+  // === DATOS DE LA CLÍNICA ===
+  clinicName        String
+  clinicAddress     String   @db.Text
+  clinicCity        String?
+  clinicState       String?
+  clinicZip         String?
+  clinicPhone       String
+  clinicEmail       String?
+  clinicWebsite     String?
+  clinicLogo        String?  @db.Text // Base64 o URL
+  
+  // === DATOS FISCALES ===
+  taxId             String?  // RFC en México, EIN en USA, etc.
+  taxName           String?  // Razón social
+  
+  // === VETERINARIO RESPONSABLE ===
+  vetName           String   // Nombre del veterinario responsable
+  vetLicense        String   // Cédula profesional / Licencia
+  vetSpecialty      String?  // Especialidad
+  vetSignature      String?  @db.LongText // Firma digital (base64)
+  
+  // === CONFIGURACIÓN DE RECETAS ===
+  prescriptionHeader    String? @db.Text  // Texto adicional en header
+  prescriptionFooter    String? @db.Text  // Instrucciones generales
+  prescriptionWarnings  String? @db.Text  // Advertencias estándar
+  
+  // === TARIFAS DE HOSPITALIZACIÓN ===
+  tarifaHospGeneral       Decimal?  @db.Decimal(10, 2)
+  tarifaHospUCI           Decimal?  @db.Decimal(10, 2)
+  tarifaHospNeonatos      Decimal?  @db.Decimal(10, 2)
+  tarifaHospInfecciosos   Decimal?  @db.Decimal(10, 2)
+  
+  // === TARIFAS DE CONSULTA ===
+  tarifaConsultaGeneral       Decimal?  @db.Decimal(10, 2)
+  tarifaConsultaEspecializada Decimal?  @db.Decimal(10, 2)
+  tarifaUrgencias             Decimal?  @db.Decimal(10, 2)
+  
+  // === TARIFAS DE ESTUDIOS ===
+  tarifaBH              Decimal?  @db.Decimal(10, 2)  // Biometría Hemática
+  tarifaQS              Decimal?  @db.Decimal(10, 2)  // Química Sanguínea
+  tarifaRX              Decimal?  @db.Decimal(10, 2)  // Rayos X
+  tarifaUS              Decimal?  @db.Decimal(10, 2)  // Ultrasonido
+  tarifaEGO             Decimal?  @db.Decimal(10, 2)  // Examen General de Orina
+  tarifaECG             Decimal?  @db.Decimal(10, 2)  // Electrocardiograma
+  tarifaElectrolitos    Decimal?  @db.Decimal(10, 2)
+  tarifaSNAP            Decimal?  @db.Decimal(10, 2)
+  
+  // === AUDITORÍA ===
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
 }
 
 model Notification {
@@ -791,6 +854,11 @@ model PrescriptionItem {
   prescriptionId String
   prescription   Prescription @relation(fields: [prescriptionId], references: [id], onDelete: Cascade)
   
+  // === TIPO DE MEDICAMENTO ===
+  type           PrescriptionItemType @default(USO_INMEDIATO)
+  
+  // === DATOS DEL MEDICAMENTO ===
+  medicationId   String?      // Referencia a Medication si existe en inventario
   name           String
   dosage         String
   frequency      String
@@ -798,9 +866,21 @@ model PrescriptionItem {
   quantity       Int
   instructions   String?      @db.Text
   
+  // === DISPENSACIÓN ===
+  dispensedQuantity Int       @default(0)  // Cantidad ya dispensada por farmacia
+  
+  // === PRECIOS (para cálculo en alta) ===
+  unitPrice      Decimal?     @db.Decimal(10, 2)
+  
   createdAt      DateTime     @default(now())
 
   @@index([prescriptionId])
+  @@index([type])
+}
+
+enum PrescriptionItemType {
+  USO_INMEDIATO    // Medicamento para usar en clínica, va a farmacia interna
+  RECETA_EXTERNA   // Medicamento para comprar afuera, se genera PDF
 }
 
 enum PrescriptionStatus {
@@ -880,41 +960,80 @@ model Hospitalization {
   id              String              @id @default(cuid())
   petId           String
   pet             Pet                 @relation(fields: [petId], references: [id])
-  consultationId  String              @unique
-  consultation    Consultation        @relation(fields: [consultationId], references: [id])
+  consultationId  String?             @unique
+  consultation    Consultation?       @relation(fields: [consultationId], references: [id])
   surgeryId       String?             @unique
   surgery         Surgery?            @relation(fields: [surgeryId], references: [id])
+  visitId         String?             @unique
   
   // === ADMISIÓN ===
   admittedById    String
   admittedBy      User                @relation(fields: [admittedById], references: [id])
   admittedAt      DateTime            @default(now())
-  dischargedAt    DateTime?
-  reason          String              @db.Text
+  admissionTime   String?             // Hora de ingreso "HH:MM"
+  
+  // === DIAGNÓSTICO ===
+  presumptiveDiagnosis  String?       @db.Text
+  finalDiagnosis        String?       @db.Text
+  reason                String        @db.Text
+  
+  // === TIPO DE HOSPITALIZACIÓN ===
+  type            HospitalizationType @default(GENERAL)
   location        String?
   
+  // === ESTUDIOS SOLICITADOS ===
+  studyBH         Boolean             @default(false)
+  studyQS         Boolean             @default(false)
+  studyRX         Boolean             @default(false)
+  studyUS         Boolean             @default(false)
+  studyEGO        Boolean             @default(false)
+  studyECG        Boolean             @default(false)
+  studyElectrolitos Boolean           @default(false)
+  studySNAP       Boolean             @default(false)
+  
   // === DETALLES DE HOSPITALIZACIÓN ===
+  fluidTherapy          String?       @db.Text  // Terapia de líquidos
   frecuenciaMonitoreo   String?       // "1h", "2h", "4h", "6h", "8h"
   cuidadosEspeciales    String?       @db.Text
   estimacionDias        Int?
-  dischargeNotes        String?       @db.Text
+  admissionNotes        String?       @db.Text
   
-  // === ESTADO ===
+  // === ALTA ===
   status          HospitalizationStatus @default(ACTIVA)
+  dischargedAt    DateTime?
+  dischargeTime   String?
+  dischargedById  String?
+  dischargeSummary      String?       @db.Text
+  dischargeInstructions String?       @db.Text
+  dischargeNotes        String?       @db.Text
   
   createdAt       DateTime            @default(now())
   updatedAt       DateTime            @updatedAt
 
   // Relaciones
   monitorings     Monitoring[]
+  therapyItems    TherapyPlanItem[]
+  medicationAdmins MedicationAdministration[]
+  neonates        Neonate[]
 
   @@index([petId])
   @@index([status])
+  @@index([admittedAt])
+}
+
+enum HospitalizationType {
+  GENERAL
+  UCI
+  NEONATOS
+  INFECCIOSOS
 }
 
 enum HospitalizationStatus {
   ACTIVA
+  ALTA_PENDIENTE
   ALTA
+  FALLECIDO
+  TRANSFERIDO
 }
 
 model Monitoring {
@@ -934,6 +1053,16 @@ model Monitoring {
   // === ESTADO GENERAL ===
   nivelConciencia       ConsciousnessLevel?
   escalaDolor           Int?
+  
+  // === CAMPOS ADICIONALES ===
+  capillaryRefillTime   String?       // TRC - Tiempo de Relleno Capilar
+  mucousMembranes       String?       // MM - Membranas Mucosas
+  activityLevel         String?       // NAC - Nivel de Actividad
+  
+  // === FUNCIONES FISIOLÓGICAS ===
+  urination             String?       // Micción
+  defecation            String?       // Evacuaciones
+  feeding               String?       // Alimento consumido
   
   // === OBSERVACIONES ===
   observaciones         String?       @db.Text
@@ -1028,6 +1157,7 @@ model Medication {
   stockAlerts           StockAlert[]
   dispenseItems         DispenseItem[]
   purchaseOrderItems    PurchaseOrderItem[]
+  therapyPlanItems      TherapyPlanItem[]
 
   @@index([name])
   @@index([category])
@@ -1236,4 +1366,152 @@ enum PurchaseOrderStatus {
   PARCIAL
   RECIBIDA
   CANCELADA
+}
+
+// ============================================================================
+// HOSPITALIZACIÓN - Plan Terapéutico y Administración de Medicamentos
+// ============================================================================
+
+model TherapyPlanItem {
+  id                    String          @id @default(cuid())
+  
+  hospitalizationId     String
+  hospitalization       Hospitalization @relation(fields: [hospitalizationId], references: [id], onDelete: Cascade)
+  
+  // === MEDICAMENTO ===
+  medicationId          String?
+  medication            Medication?     @relation(fields: [medicationId], references: [id])
+  medicationName        String          // Nombre (por si no está en catálogo)
+  
+  // === DOSIFICACIÓN ===
+  dose                  String          // "10mg", "5ml", etc.
+  route                 String          // "IV", "IM", "SC", "PO"
+  frequency             String          // "cada 8 horas", "BID", "TID"
+  
+  // === HORARIOS ===
+  scheduledTimes        Json?           // ["08:00", "16:00", "00:00"]
+  
+  // === ESTADO ===
+  isActive              Boolean         @default(true)
+  startDate             DateTime        @default(now())
+  endDate               DateTime?       // Null = indefinido hasta alta
+  
+  // === RELACIÓN CON PRESCRIPCIÓN ===
+  prescriptionId        String?
+  
+  // === QUIEN PRESCRIBIÓ ===
+  prescribedById        String
+  prescribedBy          User            @relation(fields: [prescribedById], references: [id])
+  
+  // Relaciones
+  administrations       MedicationAdministration[]
+  
+  createdAt             DateTime        @default(now())
+  updatedAt             DateTime        @updatedAt
+  
+  @@index([hospitalizationId])
+  @@index([isActive])
+}
+
+model MedicationAdministration {
+  id                    String          @id @default(cuid())
+  
+  therapyItemId         String
+  therapyItem           TherapyPlanItem @relation(fields: [therapyItemId], references: [id], onDelete: Cascade)
+  
+  hospitalizationId     String
+  hospitalization       Hospitalization @relation(fields: [hospitalizationId], references: [id], onDelete: Cascade)
+  
+  // === HORARIO PROGRAMADO ===
+  scheduledTime         DateTime        // Fecha y hora programada
+  
+  // === ADMINISTRACIÓN REAL ===
+  administeredAt        DateTime?       // Fecha y hora real
+  administeredById      String?
+  administeredBy        User?           @relation(fields: [administeredById], references: [id])
+  
+  // === ESTADO ===
+  status                MedicationAdminStatus @default(PENDIENTE)
+  
+  // === SI FUE OMITIDO O RETRASADO ===
+  reason                String?
+  notes                 String?
+  
+  createdAt             DateTime        @default(now())
+  updatedAt             DateTime        @updatedAt
+  
+  @@index([hospitalizationId])
+  @@index([scheduledTime])
+  @@index([status])
+}
+
+enum MedicationAdminStatus {
+  PENDIENTE
+  ADMINISTRADO
+  OMITIDO
+  RETRASADO
+}
+
+// ============================================================================
+// HOSPITALIZACIÓN - Neonatos
+// ============================================================================
+
+model Neonate {
+  id                    String          @id @default(cuid())
+  
+  hospitalizationId     String
+  hospitalization       Hospitalization @relation(fields: [hospitalizationId], references: [id], onDelete: Cascade)
+  
+  // === IDENTIFICACIÓN ===
+  number                Int             // Neonato No. (1, 2, 3...)
+  identification        String?         // "Collar rojo", "Marca en oreja", etc.
+  identificationType    String?         // "Collar", "Marca", "Color", "Otro"
+  sex                   String?         // "Macho", "Hembra"
+  
+  // Relaciones
+  records               NeonateRecord[]
+  
+  createdAt             DateTime        @default(now())
+  updatedAt             DateTime        @updatedAt
+  
+  @@index([hospitalizationId])
+}
+
+model NeonateRecord {
+  id                    String          @id @default(cuid())
+  
+  neonateId             String
+  neonate               Neonate         @relation(fields: [neonateId], references: [id], onDelete: Cascade)
+  
+  // === QUIEN REGISTRÓ ===
+  recordedById          String
+  recordedBy            User            @relation(fields: [recordedById], references: [id])
+  recordedAt            DateTime        @default(now())
+  
+  // === MEDICIONES ===
+  weight                Decimal?        @db.Decimal(6, 2)  // Peso en gramos
+  temperature           Decimal?        @db.Decimal(4, 2)  // Temperatura °C
+  heartRate             Int?            // FC (lpm)
+  respiratoryRate       Int?            // FR (rpm)
+  
+  // === ESTADO ===
+  suction               NeonateSuction?
+  activity              NeonateActivity?
+  
+  notes                 String?
+  
+  createdAt             DateTime        @default(now())
+  
+  @@index([neonateId])
+  @@index([recordedAt])
+}
+
+enum NeonateSuction {
+  ADECUADA
+  DEBIL
+}
+
+enum NeonateActivity {
+  ACTIVO
+  LETARGICO
 }

@@ -192,6 +192,16 @@ const farmaciaService = {
   },
 
   /**
+   * Get pending medications from hospitalization
+   * These are medications that need to be prepared for hospitalized patients
+   * @returns {Promise<Object>} { count, items: [...] }
+   */
+  getHospitalizationPendingMeds: async () => {
+    const response = await api.get('/hospitalizations/pharmacy/pending');
+    return response.data?.data || { count: 0, items: [] };
+  },
+
+  /**
    * Reject a prescription
    * @param {string} id - Prescription ID
    * @param {string} reason - Rejection reason

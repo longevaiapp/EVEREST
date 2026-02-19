@@ -59,6 +59,44 @@ enum UserRole {
   ESTILISTA
 }
 
+// ============================================================================
+// CONFIGURACIÓN DE LA CLÍNICA
+// ============================================================================
+
+model BusinessInfo {
+  id                String   @id @default(cuid())
+  
+  // === DATOS DE LA CLÍNICA ===
+  clinicName        String
+  clinicAddress     String   @db.Text
+  clinicCity        String?
+  clinicState       String?
+  clinicZip         String?
+  clinicPhone       String
+  clinicEmail       String?
+  clinicWebsite     String?
+  clinicLogo        String?  @db.Text // Base64 o URL
+  
+  // === DATOS FISCALES ===
+  taxId             String?  // RFC en México, EIN en USA, etc.
+  taxName           String?  // Razón social
+  
+  // === VETERINARIO RESPONSABLE ===
+  vetName           String   // Nombre del veterinario responsable
+  vetLicense        String   // Cédula profesional / Licencia
+  vetSpecialty      String?  // Especialidad
+  vetSignature      String?  @db.LongText // Firma digital (base64)
+  
+  // === CONFIGURACIÓN DE RECETAS ===
+  prescriptionHeader    String? @db.Text  // Texto adicional en header
+  prescriptionFooter    String? @db.Text  // Instrucciones generales
+  prescriptionWarnings  String? @db.Text  // Advertencias estándar
+  
+  // === AUDITORÍA ===
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+}
+
 model Notification {
   id        String             @id @default(cuid())
   userId    String
@@ -791,6 +829,11 @@ model PrescriptionItem {
   prescriptionId String
   prescription   Prescription @relation(fields: [prescriptionId], references: [id], onDelete: Cascade)
   
+  // === TIPO DE MEDICAMENTO ===
+  type           PrescriptionItemType @default(USO_INMEDIATO)
+  
+  // === DATOS DEL MEDICAMENTO ===
+  medicationId   String?      // Referencia a Medication si existe en inventario
   name           String
   dosage         String
   frequency      String
@@ -798,9 +841,21 @@ model PrescriptionItem {
   quantity       Int
   instructions   String?      @db.Text
   
+  // === DISPENSACIÓN ===
+  dispensedQuantity Int       @default(0)  // Cantidad ya dispensada por farmacia
+  
+  // === PRECIOS (para cálculo en alta) ===
+  unitPrice      Decimal?     @db.Decimal(10, 2)
+  
   createdAt      DateTime     @default(now())
 
   @@index([prescriptionId])
+  @@index([type])
+}
+
+enum PrescriptionItemType {
+  USO_INMEDIATO    // Medicamento para usar en clínica, va a farmacia interna
+  RECETA_EXTERNA   // Medicamento para comprar afuera, se genera PDF
 }
 
 enum PrescriptionStatus {

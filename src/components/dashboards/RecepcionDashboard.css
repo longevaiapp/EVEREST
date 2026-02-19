@@ -2443,25 +2443,26 @@
 
 /* Patient Info Modal */
 .patient-info-modal {
-  background: rgba(255, 255, 255, 0.1);
+  background: rgba(255, 255, 255, 0.95);
   backdrop-filter: blur(10px) saturate(180%);
   -webkit-backdrop-filter: blur(10px) saturate(180%);
   padding: 1.5rem;
   border-radius: 12px;
   margin-bottom: 1.5rem;
-  border: 1px solid rgba(255, 255, 255, 0.2);
+  border: 1px solid rgba(0, 0, 0, 0.1);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
 }
 
 .patient-info-modal .info-row {
   margin-bottom: 0.75rem;
-  color: rgba(255, 255, 255, 0.95);
-  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+  color: #333;
+  font-size: 1rem;
 }
 
 .patient-info-modal .info-row strong {
-  color: white;
+  color: #5a6a7a;
   margin-right: 0.5rem;
-  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+  font-weight: 600;
 }
 
 /* Buscador de Pacientes */
@@ -2535,6 +2536,23 @@
 .btn-success:hover {
   transform: translateY(-2px);
   box-shadow: 0 6px 20px rgba(76, 175, 80, 0.4);
+}
+
+.btn-print {
+  padding: 0.875rem 1.5rem;
+  background: linear-gradient(135deg, #2196F3 0%, #1976D2 100%);
+  color: white;
+  border: none;
+  border-radius: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s;
+  box-shadow: 0 4px 15px rgba(33, 150, 243, 0.3);
+}
+
+.btn-print:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(33, 150, 243, 0.4);
 }
 
 /* Modal Actions */
@@ -3615,7 +3633,7 @@
 }
 
 /* ===========================================
-   CITAS POR MÉDICO SECTION
+   CITAS POR MÉDICO SECTION - Light Theme
    =========================================== */
 
 .nav-badge.doctor {
@@ -3623,7 +3641,33 @@
 }
 
 .citas-medico-section {
-  padding: 1rem;
+  padding: 1.5rem;
+  background: linear-gradient(135deg, #f8f9fc 0%, #eef2f7 100%);
+  min-height: calc(100vh - 200px);
+}
+
+.citas-medico-section .section-header {
+  background: linear-gradient(135deg, #7b1fa2, #9c27b0);
+  padding: 1.5rem 2rem;
+  border-radius: 16px;
+  margin-bottom: 1.5rem;
+  box-shadow: 0 4px 20px rgba(123, 31, 162, 0.25);
+}
+
+.citas-medico-section .section-header h2 {
+  margin: 0;
+  color: white;
+  font-size: 1.5rem;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.citas-medico-section .section-header p {
+  margin: 0.5rem 0 0 0;
+  color: rgba(255, 255, 255, 0.85);
+  font-size: 0.95rem;
 }
 
 .citas-medico-section .section-actions {
@@ -3633,18 +3677,20 @@
 }
 
 .citas-medico-section .btn-secondary {
-  background: rgba(255, 255, 255, 0.1);
-  border: 1px solid rgba(255, 255, 255, 0.2);
+  background: linear-gradient(135deg, #9c27b0, #7b1fa2);
+  border: none;
   color: #fff;
-  padding: 0.6rem 1.2rem;
-  border-radius: 8px;
+  padding: 0.7rem 1.5rem;
+  border-radius: 10px;
   cursor: pointer;
-  font-weight: 500;
-  transition: all 0.2s;
+  font-weight: 600;
+  transition: all 0.3s;
+  box-shadow: 0 4px 15px rgba(156, 39, 176, 0.3);
 }
 
 .citas-medico-section .btn-secondary:hover:not(:disabled) {
-  background: rgba(255, 255, 255, 0.2);
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(156, 39, 176, 0.4);
 }
 
 .citas-medico-section .btn-secondary:disabled {
@@ -3657,7 +3703,7 @@
   flex-direction: column;
   align-items: center;
   padding: 3rem;
-  color: rgba(255, 255, 255, 0.6);
+  color: #666;
 }
 
 .citas-medico-section .loading-state .spinner {
@@ -3668,47 +3714,61 @@
 .citas-medico-section .empty-state {
   text-align: center;
   padding: 4rem 2rem;
-  background: rgba(255, 255, 255, 0.05);
-  border-radius: 16px;
-  border: 1px dashed rgba(255, 255, 255, 0.2);
+  background: white;
+  border-radius: 20px;
+  border: 2px dashed rgba(156, 39, 176, 0.3);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
 }
 
 .citas-medico-section .empty-state .empty-icon {
-  font-size: 3rem;
+  font-size: 4rem;
   display: block;
   margin-bottom: 1rem;
 }
 
 .citas-medico-section .empty-state p {
-  font-size: 1.1rem;
-  color: rgba(255, 255, 255, 0.8);
+  font-size: 1.2rem;
+  color: #333;
   margin: 0 0 0.5rem 0;
+  font-weight: 500;
 }
 
 .citas-medico-section .empty-state small {
-  color: rgba(255, 255, 255, 0.5);
-  font-size: 0.85rem;
+  color: #888;
+  font-size: 0.9rem;
 }
 
 .citas-medico-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(360px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(380px, 1fr));
   gap: 1.5rem;
 }
 
 .cita-medico-card {
-  background: rgba(255, 255, 255, 0.08);
-  border: 1px solid rgba(156, 39, 176, 0.3);
-  border-radius: 16px;
-  padding: 1.25rem;
-  transition: all 0.2s;
+  background: white;
+  border: 1px solid rgba(156, 39, 176, 0.15);
+  border-radius: 20px;
+  padding: 1.5rem;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.06);
+  position: relative;
+  overflow: hidden;
+}
+
+.cita-medico-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 4px;
+  background: linear-gradient(90deg, #9c27b0, #673ab7);
 }
 
 .cita-medico-card:hover {
-  background: rgba(255, 255, 255, 0.12);
-  border-color: rgba(156, 39, 176, 0.5);
-  transform: translateY(-2px);
-  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.2);
+  transform: translateY(-4px);
+  box-shadow: 0 12px 35px rgba(156, 39, 176, 0.15);
+  border-color: rgba(156, 39, 176, 0.3);
 }
 
 .cita-medico-header {
@@ -3716,8 +3776,8 @@
   justify-content: space-between;
   align-items: center;
   margin-bottom: 1rem;
-  padding-bottom: 0.75rem;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  padding-bottom: 1rem;
+  border-bottom: 1px solid rgba(156, 39, 176, 0.1);
 }
 
 .cita-datetime {
@@ -3728,17 +3788,23 @@
 
 .cita-fecha {
   font-size: 0.9rem;
-  color: rgba(255, 255, 255, 0.7);
+  color: #666;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
 }
 
 .cita-hora {
-  font-size: 1.1rem;
-  font-weight: 600;
-  color: #fff;
+  font-size: 1.2rem;
+  font-weight: 700;
+  color: #333;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
 }
 
 .cita-medico-patient {
-  margin-bottom: 0.75rem;
+  margin-bottom: 1rem;
 }
 
 .cita-medico-patient .patient-row {
@@ -3748,7 +3814,10 @@
 }
 
 .cita-medico-patient .pet-icon {
-  font-size: 1.5rem;
+  font-size: 2rem;
+  background: linear-gradient(135deg, #fff3e0, #ffe0b2);
+  padding: 0.5rem;
+  border-radius: 12px;
 }
 
 .cita-medico-patient .patient-details {
@@ -3757,20 +3826,21 @@
 }
 
 .cita-medico-patient .patient-details strong {
-  font-size: 1rem;
-  color: #fff;
+  font-size: 1.1rem;
+  color: #333;
+  font-weight: 600;
 }
 
 .cita-medico-patient .breed {
-  font-size: 0.8rem;
-  color: rgba(255, 255, 255, 0.6);
+  font-size: 0.85rem;
+  color: #888;
 }
 
 .cita-medico-owner {
-  background: rgba(255, 255, 255, 0.05);
-  border-radius: 10px;
-  padding: 0.75rem;
-  margin-bottom: 0.75rem;
+  background: linear-gradient(135deg, #f5f5f5, #eeeeee);
+  border-radius: 12px;
+  padding: 1rem;
+  margin-bottom: 1rem;
 }
 
 .cita-medico-owner .owner-info-line,
@@ -3779,7 +3849,8 @@
   display: flex;
   align-items: center;
   gap: 0.5rem;
-  margin-bottom: 0.4rem;
+  margin-bottom: 0.5rem;
+  color: #555;
 }
 
 .cita-medico-owner .owner-info-line:last-child,
@@ -3791,13 +3862,14 @@
 .cita-medico-owner .owner-icon,
 .cita-medico-owner .phone-icon,
 .cita-medico-owner .email-icon {
-  font-size: 0.9rem;
+  font-size: 1rem;
 }
 
 .cita-medico-owner .phone-number,
 .cita-medico-owner .email {
-  color: rgba(255, 255, 255, 0.8);
+  color: #444;
   font-size: 0.9rem;
+  font-weight: 500;
 }
 
 .cita-medico-owner .btn-call {
@@ -3805,108 +3877,363 @@
   background: linear-gradient(135deg, #4caf50, #43a047);
   color: #fff;
   border: none;
-  padding: 0.3rem 0.75rem;
-  border-radius: 15px;
-  font-size: 0.75rem;
+  padding: 0.4rem 1rem;
+  border-radius: 20px;
+  font-size: 0.8rem;
   font-weight: 600;
   cursor: pointer;
-  transition: all 0.2s;
+  transition: all 0.3s;
+  box-shadow: 0 2px 8px rgba(76, 175, 80, 0.3);
 }
 
 .cita-medico-owner .btn-call:hover {
   transform: scale(1.05);
-  box-shadow: 0 4px 12px rgba(76, 175, 80, 0.4);
+  box-shadow: 0 4px 15px rgba(76, 175, 80, 0.4);
 }
 
 .cita-medico-motivo {
-  background: rgba(156, 39, 176, 0.1);
-  border-radius: 8px;
-  padding: 0.75rem;
-  margin-bottom: 0.75rem;
+  background: linear-gradient(135deg, #f3e5f5, #e1bee7);
+  border-radius: 12px;
+  padding: 1rem;
+  margin-bottom: 1rem;
+  border-left: 4px solid #9c27b0;
 }
 
 .cita-medico-motivo strong {
-  color: #e1bee7;
+  color: #7b1fa2;
   font-size: 0.85rem;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
 }
 
 .cita-medico-motivo p {
-  margin: 0.4rem 0 0 0;
-  color: rgba(255, 255, 255, 0.9);
-  font-size: 0.9rem;
+  margin: 0.5rem 0 0 0;
+  color: #333;
+  font-size: 0.95rem;
+  font-weight: 500;
 }
 
 .cita-medico-lab-context {
-  margin-bottom: 0.75rem;
+  margin-bottom: 1rem;
 }
 
 .cita-medico-lab-context .lab-badge {
-  display: inline-block;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
   background: linear-gradient(135deg, #9c27b0, #673ab7);
   color: #fff;
-  padding: 0.3rem 0.75rem;
-  border-radius: 15px;
-  font-size: 0.75rem;
+  padding: 0.4rem 1rem;
+  border-radius: 20px;
+  font-size: 0.8rem;
   font-weight: 600;
+  box-shadow: 0 2px 10px rgba(156, 39, 176, 0.3);
 }
 
 .cita-medico-notas {
-  padding: 0.5rem;
-  background: rgba(0, 0, 0, 0.2);
-  border-radius: 6px;
-  margin-bottom: 0.75rem;
+  padding: 1rem;
+  background: linear-gradient(135deg, #fff8e1, #ffecb3);
+  border-radius: 12px;
+  margin-bottom: 1rem;
+  border-left: 4px solid #ffc107;
 }
 
 .cita-medico-notas small {
-  color: rgba(255, 255, 255, 0.6);
-  font-size: 0.8rem;
+  color: #795548;
+  font-size: 0.85rem;
+  font-style: italic;
 }
 
 .cita-medico-actions {
   display: flex;
-  gap: 0.5rem;
-  margin-top: 0.75rem;
-  padding-top: 0.75rem;
-  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  gap: 0.75rem;
+  margin-top: 1rem;
+  padding-top: 1rem;
+  border-top: 1px solid rgba(156, 39, 176, 0.1);
 }
 
 .cita-medico-actions button {
   flex: 1;
-  padding: 0.6rem;
-  border-radius: 8px;
-  font-size: 0.8rem;
+  padding: 0.75rem;
+  border-radius: 10px;
+  font-size: 0.85rem;
   font-weight: 600;
   cursor: pointer;
-  transition: all 0.2s;
+  transition: all 0.3s;
   border: none;
 }
 
 .cita-medico-actions .btn-confirm {
   background: linear-gradient(135deg, #4caf50, #43a047);
   color: #fff;
+  box-shadow: 0 2px 8px rgba(76, 175, 80, 0.3);
 }
 
 .cita-medico-actions .btn-confirm:hover {
-  transform: translateY(-1px);
-  box-shadow: 0 4px 12px rgba(76, 175, 80, 0.4);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 15px rgba(76, 175, 80, 0.4);
 }
 
 .cita-medico-actions .btn-checkin {
   background: linear-gradient(135deg, #2196f3, #1976d2);
   color: #fff;
+  box-shadow: 0 2px 8px rgba(33, 150, 243, 0.3);
 }
 
 .cita-medico-actions .btn-checkin:hover {
-  transform: translateY(-1px);
-  box-shadow: 0 4px 12px rgba(33, 150, 243, 0.4);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 15px rgba(33, 150, 243, 0.4);
 }
 
 .cita-medico-actions .btn-cancel {
-  background: rgba(244, 67, 54, 0.2);
+  background: #fff;
   color: #f44336;
-  border: 1px solid rgba(244, 67, 54, 0.3);
+  border: 2px solid #f44336;
 }
 
 .cita-medico-actions .btn-cancel:hover {
-  background: rgba(244, 67, 54, 0.3);
+  background: #ffebee;
+  transform: translateY(-2px);
+}
+
+/* ============================================
+   DISCHARGE MODAL - MEDICATION COSTS
+   ============================================ */
+
+.discharge-modal {
+  max-width: 600px;
+}
+
+.costs-section {
+  background: linear-gradient(135deg, #f0f7ff 0%, #e6f4ff 100%);
+  border-radius: 12px;
+  padding: 1rem;
+  margin-bottom: 1rem;
+}
+
+.costs-section h3 {
+  color: #0077b6;
+  margin-bottom: 0.75rem;
+}
+
+.loading-costs {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  color: #666;
+  padding: 1rem;
+  justify-content: center;
+}
+
+.costs-breakdown {
+  overflow-x: auto;
+}
+
+.costs-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.9rem;
+  background: white;
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.costs-table th,
+.costs-table td {
+  padding: 0.6rem 0.75rem;
+  text-align: left;
+  border-bottom: 1px solid rgba(0, 119, 182, 0.1);
+}
+
+.costs-table th {
+  background: linear-gradient(135deg, #0077b6, #005f91);
+  color: white;
+  font-weight: 600;
+  font-size: 0.8rem;
+}
+
+.costs-table tbody tr:hover {
+  background: rgba(0, 119, 182, 0.05);
+}
+
+.costs-table tfoot .total-row {
+  background: linear-gradient(135deg, #e6fff9 0%, #b8f5e5 100%);
+}
+
+.costs-table tfoot .total-row td {
+  border-bottom: none;
+  color: #00a67e;
+  font-size: 1rem;
+}
+
+.no-medications {
+  color: #888;
+  font-style: italic;
+  text-align: center;
+  padding: 1rem;
+}
+
+.cost-hint {
+  display: block;
+  font-size: 0.75rem;
+  color: #00a67e;
+  margin-top: 0.3rem;
+}
+
+/* ============================================
+   HOSPITALIZED PENDING DISCHARGE SECTION
+   ============================================ */
+
+.hospitalized-pending-section {
+  margin-bottom: 2rem;
+  padding: 1.5rem;
+  background: linear-gradient(135deg, rgba(156, 39, 176, 0.08) 0%, rgba(186, 104, 200, 0.12) 100%);
+  border-radius: 16px;
+  border: 2px solid rgba(156, 39, 176, 0.25);
+}
+
+.section-subtitle {
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: #7b1fa2;
+  margin-bottom: 1rem;
+  padding-bottom: 0.5rem;
+  border-bottom: 2px solid rgba(156, 39, 176, 0.2);
+}
+
+.hosp-patient-card {
+  background: linear-gradient(180deg, rgba(156, 39, 176, 0.55) 0%, rgba(186, 104, 200, 0.35) 100%);
+  backdrop-filter: blur(20px) saturate(180%);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
+  border: 2px solid rgba(186, 104, 200, 0.5);
+  border-radius: 14px;
+  padding: 1.25rem;
+  margin-bottom: 1rem;
+  box-shadow: 0 8px 32px rgba(156, 39, 176, 0.2);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.hosp-patient-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 12px 40px rgba(156, 39, 176, 0.3);
+  border-color: rgba(186, 104, 200, 0.8);
+}
+
+.hosp-patient-header {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin-bottom: 0.75rem;
+}
+
+.hosp-patient-header h4 {
+  margin: 0;
+  font-size: 1.1rem;
+  color: #fff;
+  font-weight: 600;
+}
+
+.hosp-type-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.25rem 0.75rem;
+  border-radius: 20px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.hosp-type-badge.general {
+  background: linear-gradient(135deg, #4caf50, #66bb6a);
+  color: white;
+}
+
+.hosp-type-badge.uci {
+  background: linear-gradient(135deg, #f44336, #ef5350);
+  color: white;
+}
+
+.hosp-type-badge.neonatal {
+  background: linear-gradient(135deg, #ff9800, #ffb74d);
+  color: white;
+}
+
+.hosp-type-badge.parto {
+  background: linear-gradient(135deg, #e91e63, #f06292);
+  color: white;
+}
+
+.hosp-patient-info {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 0.75rem;
+  margin-bottom: 1rem;
+}
+
+.hosp-patient-details {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.hosp-patient-details span {
+  color: rgba(255, 255, 255, 0.9);
+  font-size: 0.9rem;
+}
+
+.hosp-patient-details strong {
+  color: #fff;
+}
+
+.hosp-patient-details .cost-highlight {
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: #fff;
+  background: linear-gradient(135deg, rgba(255,255,255,0.2) 0%, rgba(255,255,255,0.1) 100%);
+  padding: 0.5rem 1rem;
+  border-radius: 8px;
+  display: inline-block;
+  margin-top: 0.25rem;
+}
+
+.hosp-patient-actions {
+  display: flex;
+  gap: 0.75rem;
+  justify-content: flex-end;
+  margin-top: 0.5rem;
+}
+
+.hosp-patient-actions button {
+  padding: 0.6rem 1.25rem;
+  border-radius: 8px;
+  font-weight: 600;
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  border: none;
+}
+
+.hosp-patient-actions .btn-complete-discharge {
+  background: linear-gradient(135deg, #4caf50, #66bb6a);
+  color: white;
+  box-shadow: 0 4px 15px rgba(76, 175, 80, 0.3);
+}
+
+.hosp-patient-actions .btn-complete-discharge:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(76, 175, 80, 0.4);
+}
+
+.consult-discharge-section {
+  margin-top: 1.5rem;
+}
+
+.consult-discharge-section h3 {
+  font-size: 1.15rem;
+  font-weight: 600;
+  color: #2e7d32;
+  margin-bottom: 1rem;
+  padding-bottom: 0.5rem;
+  border-bottom: 2px solid rgba(76, 175, 80, 0.2);
 }
