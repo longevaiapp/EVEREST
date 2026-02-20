@@ -5,6 +5,7 @@ import useRecepcion from '../../hooks/useRecepcion';
 import { petService, visitService } from '../../services/recepcion.service';
 import { citaSeguimientoService } from '../../services/medico.service';
 import hospitalizacionService from '../../services/hospitalizacion.service';
+import groomingService from '../../services/grooming.service';
 import { QRCodeSVG } from 'qrcode.react';
 import PrescriptionPrint from '../medico/PrescriptionPrint';
 import GroomingIntakeForm from './GroomingIntakeForm';
@@ -600,9 +601,20 @@ function RecepcionDashboard() {
   // Función para hacer check-in de mascota existente (usando API real)
   const handleCheckInExistingPet = async (pet) => {
     try {
-      await checkInPet(pet.id);
+      // Detectar si la mascota tiene una cita de tipo ESTETICA hoy
+      const groomingAppointment = appointments.find(
+        apt => apt.pacienteId === pet.id && apt.tipo === 'ESTETICA'
+      );
+      
+      const serviceType = groomingAppointment ? 'ESTETICA' : 'MEDICO';
+      const serviceIcon = groomingAppointment ? '✂️' : '🏥';
+      const serviceName = groomingAppointment ? 'Grooming' : 'Medical Consultation';
+      
+      console.log(`[Check-in] Pet: ${pet.nombre}, Service Type: ${serviceType}`);
+      
+      await checkInPet(pet.id, serviceType);
       await refreshData(); // Update visits list
-      alert(`✅ Check-in completed for ${pet.nombre}\nThe patient is ready for triage.`);
+      alert(`✅ Check-in completed for ${pet.nombre}\n${serviceIcon} Service: ${serviceName}\nThe patient is ready for service.`);
       setFoundClient(null);
       setClientSearchPhone('');
       setShowClientPets(false);
@@ -657,8 +669,9 @@ function RecepcionDashboard() {
   const clientFormURL = `${window.location.origin}/registro-cliente`;
 
   const handleNewAppointment = () => {
-    // Mostrar selector de tipo de servicio primero
-    setShowServiceTypeSelector(true);
+    // NO mostrar selector de tipo de servicio al principio
+    // Mostrar el modal de nueva cita donde se busca al paciente primero
+    setShowNewAppointmentModal(true);
     setSelectedServiceType(null);
     clearFoundOwner?.(); // Limpiar búsqueda anterior
     setPetSearchQuery(''); // Limpiar búsqueda de mascotas
@@ -679,9 +692,26 @@ function RecepcionDashboard() {
     setSelectedServiceType(serviceType);
     setShowServiceTypeSelector(false);
     
+    // Verificar que hay un paciente seleccionado
+    if (!newAppointmentData.pacienteId) {
+      alert('⚠️ Please select a patient first');
+      setShowNewAppointmentModal(true);
+      return;
+    }
+    
     if (serviceType === 'MEDICAL') {
+      // Actualizar tipo de cita a CONSULTA_GENERAL para médico
+      setNewAppointmentData(prev => ({
+        ...prev,
+        tipo: 'CONSULTA_GENERAL'
+      }));
       setShowNewAppointmentModal(true);
     } else if (serviceType === 'GROOMING') {
+      // Actualizar tipo de cita a ESTETICA para grooming
+      setNewAppointmentData(prev => ({
+        ...prev,
+        tipo: 'ESTETICA'
+      }));
       setShowGroomingIntakeForm(true);
     }
   };
@@ -1959,16 +1989,22 @@ function RecepcionDashboard() {
                             title={t('recepcion.checkIn', 'Check-in')}
                             onClick={async () => {
                               try {
-                                await checkInPet(cita.pacienteId);
+                                // Determinar tipo de servicio basándose en el tipo de cita
+                                const serviceType = cita.tipo === 'ESTETICA' ? 'ESTETICA' : 'MEDICO';
+                                await checkInPet(cita.pacienteId, serviceType);
                                 await refreshData();
-                                alert(`✅ Check-in completed for ${cita.pacienteNombre}\nThe patient is ready for triage.`);
-                                setActiveSection('triage');
+                                const nextSection = serviceType === 'ESTETICA' ? 'grooming' : 'triage';
+                                const message = serviceType === 'ESTETICA' 
+                                  ? `✅ Check-in completed for ${cita.pacienteNombre}\nThe patient is ready for grooming service.`
+                                  : `✅ Check-in completed for ${cita.pacienteNombre}\nThe patient is ready for triage.`;
+                                alert(message);
+                                // No cambiar de sección automáticamente
                               } catch (err) {
                                 alert('Check-in error: ' + (err.message || 'Please try again'));
                               }
                             }}
                           >
-                            🏥
+                            {cita.tipo === 'ESTETICA' ? '✂️' : '🏥'}
                           </button>
                         )}
                         {!cita.confirmada && !cita.cancelada && (
@@ -2103,17 +2139,21 @@ function RecepcionDashboard() {
                           className="btn-checkin"
                           onClick={async () => {
                             try {
-                              await checkInPet(cita.pet.id);
+                              const serviceType = cita.tipo === 'ESTETICA' ? 'ESTETICA' : 'MEDICO';
+                              await checkInPet(cita.pet.id, serviceType);
                               await refreshData();
                               await loadCitasMedico();
-                              alert(`✅ Check-in completado para ${cita.pet.nombre}`);
-                              setActiveSection('triage');
+                              const message = serviceType === 'ESTETICA'
+                                ? `✅ Check-in completado para ${cita.pet.nombre}\nListo para servicio de estética`
+                                : `✅ Check-in completado para ${cita.pet.nombre}`;
+                              alert(message);
+                              // No cambiar de sección automáticamente
                             } catch (err) {
                               alert('Error: ' + (err.message || 'No se pudo hacer check-in'));
                             }
                           }}
                         >
-                          🏥 Check-in
+                          {cita.tipo === 'ESTETICA' ? '✂️ Check-in' : '🏥 Check-in'}
                         </button>
                       )}
                       <button 
@@ -3189,6 +3229,88 @@ function RecepcionDashboard() {
                 )}
               </div>
 
+              {/* SELECTOR DE TIPO DE SERVICIO - Solo cuando hay paciente seleccionado */}
+              {newAppointmentData.pacienteId && !selectedServiceType && (
+                <div className="form-section">
+                  <h3>🏥 ✂️ Select Service Type</h3>
+                  <p style={{ color: '#666', marginBottom: '1rem' }}>
+                    What type of service does the patient need?
+                  </p>
+                  
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+                    <button 
+                      type="button"
+                      className="service-type-card"
+                      onClick={() => {
+                        setSelectedServiceType('MEDICAL');
+                        setNewAppointmentData({...newAppointmentData, tipo: 'CONSULTA_GENERAL'});
+                      }}
+                      style={{
+                        padding: '1.5rem',
+                        border: '2px solid #4CAF50',
+                        borderRadius: '8px',
+                        background: 'white',
+                        cursor: 'pointer',
+                        transition: 'all 0.3s'
+                      }}
+                      onMouseEnter={(e) => {
+                        e.currentTarget.style.background = '#f1f8f4';
+                        e.currentTarget.style.transform = 'scale(1.05)';
+                      }}
+                      onMouseLeave={(e) => {
+                        e.currentTarget.style.background = 'white';
+                        e.currentTarget.style.transform = 'scale(1)';
+                      }}
+                    >
+                      <div style={{ fontSize: '3rem' }}>🩺</div>
+                      <div style={{ fontSize: '1.2rem', fontWeight: 'bold', marginTop: '0.5rem' }}>
+                        Medical Consultation
+                      </div>
+                      <div style={{ fontSize: '0.9rem', color: '#666', marginTop: '0.25rem' }}>
+                        Checkup, treatment, surgery
+                      </div>
+                    </button>
+
+                    <button 
+                      type="button"
+                      className="service-type-card"
+                      onClick={() => {
+                        setNewAppointmentData({...newAppointmentData, tipo: 'ESTETICA'});
+                        setSelectedServiceType('GROOMING');
+                        setShowNewAppointmentModal(false);
+                        setShowGroomingIntakeForm(true);
+                      }}
+                      style={{
+                        padding: '1.5rem',
+                        border: '2px solid #FF9800',
+                        borderRadius: '8px',
+                        background: 'white',
+                        cursor: 'pointer',
+                        transition: 'all 0.3s'
+                      }}
+                      onMouseEnter={(e) => {
+                        e.currentTarget.style.background = '#fff8f1';
+                        e.currentTarget.style.transform = 'scale(1.05)';
+                      }}
+                      onMouseLeave={(e) => {
+                        e.currentTarget.style.background = 'white';
+                        e.currentTarget.style.transform = 'scale(1)';
+                      }}
+                    >
+                      <div style={{ fontSize: '3rem' }}>✂️</div>
+                      <div style={{ fontSize: '1.2rem', fontWeight: 'bold', marginTop: '0.5rem' }}>
+                        Grooming Service
+                      </div>
+                      <div style={{ fontSize: '0.9rem', color: '#666', marginTop: '0.25rem' }}>
+                        Bath, haircut, nail trim
+                      </div>
+                    </button>
+                  </div>
+                </div>
+              )}
+
+              {selectedServiceType === 'MEDICAL' && (
+              <>
               <div className="form-section">
                 <h3>{t('recepcion.appointments.dateTime')}</h3>
                 <div className="form-row">
@@ -3253,18 +3375,23 @@ function RecepcionDashboard() {
                   </label>
                 </div>
               </div>
+              </>
+              )}
 
+              {selectedServiceType && (
               <div className="modal-actions">
                 <button 
                   type="button" 
                   className="btn-close" 
                   onClick={() => {
                     setShowNewAppointmentModal(false);
+                    setSelectedServiceType(null);
                     clearFoundOwner?.();
                   }}
                 >
                   {t('common.cancel')}
                 </button>
+                {selectedServiceType === 'MEDICAL' && (
                 <button 
                   type="submit" 
                   className="btn-success"
@@ -3272,7 +3399,9 @@ function RecepcionDashboard() {
                 >
                   ✅ {t('recepcion.appointments.scheduleAppointment')}
                 </button>
+                )}
               </div>
+              )}
             </form>
           </div>
         </div>
@@ -3531,15 +3660,92 @@ function RecepcionDashboard() {
         <div className="modal-overlay">
           <div className="modal-content" style={{ maxWidth: '900px', maxHeight: '90vh', overflow: 'auto' }}>
             <GroomingIntakeForm
-              pet={null}
+              pet={newAppointmentData.pacienteId ? allPets.find(p => p.id === newAppointmentData.pacienteId) : null}
               owner={foundOwner || null}
               visit={null}
               onSubmit={async (groomingData) => {
-                console.log('Grooming intake submitted:', groomingData);
-                // TODO: Implementar la creación de cita de grooming
-                alert('Grooming service request created successfully!');
-                setShowGroomingIntakeForm(false);
-                setSelectedServiceType(null);
+                try {
+                  console.log('Grooming intake submitted:', groomingData);
+                  
+                  // Verificar que hay una mascota seleccionada
+                  if (!newAppointmentData.pacienteId) {
+                    alert('⚠️ Please select a pet first');
+                    return;
+                  }
+
+                  // Validar que se hayan seleccionado fecha y hora
+                  if (!groomingData.serviceDate) {
+                    alert('⚠️ Please select a service date');
+                    return;
+                  }
+                  if (!groomingData.dropoffTime) {
+                    alert('⚠️ Please select a drop-off time');
+                    return;
+                  }
+                  if (!groomingData.pickupTime) {
+                    alert('⚠️ Please select an expected pickup time');
+                    return;
+                  }
+
+                  // Crear descripción de servicios solicitados para la cita
+                  const services = [];
+                  if (groomingData.bathType !== 'NONE') services.push(`Bath (${groomingData.bathType})`);
+                  if (groomingData.haircutStyle !== 'NONE') services.push(`Haircut (${groomingData.haircutStyle})`);
+                  if (groomingData.brushing) services.push('Brushing');
+                  if (groomingData.deShedding) services.push('De-shedding');
+                  if (groomingData.nailTrim) services.push('Nail trim');
+                  if (groomingData.nailGrinding) services.push('Nail grinding');
+                  if (groomingData.earCleaning) services.push('Ear cleaning');
+                  if (groomingData.teethBrushing) services.push('Teeth brushing');
+                  if (groomingData.analGlands) services.push('Anal glands');
+                  if (groomingData.cologne) services.push('Cologne');
+                  if (groomingData.bandana) services.push('Bandana');
+                  const serviceDescription = services.length > 0 
+                    ? `Grooming Services: ${services.join(', ')}`
+                    : 'Grooming Services: Basic grooming';
+
+                  // Paso 1: Crear CITA con tipo ESTETICA
+                  console.log('[Grooming] Creando cita de tipo ESTETICA...');
+                  await createAppointment({
+                    petId: newAppointmentData.pacienteId,
+                    fecha: groomingData.serviceDate,
+                    hora: groomingData.dropoffTime,
+                    tipo: 'ESTETICA',
+                    motivo: serviceDescription
+                  });
+                  console.log('[Grooming] Cita creada exitosamente');
+
+                  // Paso 2: Crear la VISITA (check-in automático)
+                  console.log('[Grooming] Creando visita de tipo ESTETICA...');
+                  const visit = await checkInPet(newAppointmentData.pacienteId, 'ESTETICA');
+                  console.log('[Grooming] Visita creada:', visit);
+
+                  if (!visit || !visit.id) {
+                    throw new Error('Failed to create visit');
+                  }
+
+                  // Paso 3: Crear el GROOMING SERVICE con todos los datos del formulario
+                  console.log('[Grooming] Creando grooming service...');
+                  const groomingServiceData = {
+                    visitId: visit.id,
+                    petId: newAppointmentData.pacienteId,
+                    ...groomingData
+                  };
+
+                  await groomingService.create(groomingServiceData);
+                  console.log('[Grooming] Grooming service creado exitosamente');
+
+                  await refreshData();
+                  alert(`✅ Grooming service created successfully!\nPatient: ${newAppointmentData.pacienteNombre}\nDate: ${groomingData.serviceDate}\nDrop-off: ${groomingData.dropoffTime}\nPickup: ${groomingData.pickupTime}\nServices: ${services.join(', ') || 'Basic grooming'}\n\n✂️ The patient is now in the Grooming Queue!`);
+                  setShowGroomingIntakeForm(false);
+                  setSelectedServiceType(null);
+                  
+                  // Opcional: cambiar a la sección de triage o mantener en citas
+                  // setActiveSection('triage');
+                } catch (error) {
+                  console.error('Error creating grooming service:', error);
+                  alert('❌ Error creating grooming service: ' + (error.message || 'Please try again.'));
+                }
               }}
               onCancel={() => {
                 setShowGroomingIntakeForm(false);
