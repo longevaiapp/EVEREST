@@ -3262,12 +3262,12 @@ function RecepcionDashboard() {
               {/* SELECTOR DE TIPO DE SERVICIO - Solo cuando hay paciente seleccionado */}
               {newAppointmentData.pacienteId && !selectedServiceType && (
                 <div className="form-section">
-                  <h3>🏥 ✂️ Select Service Type</h3>
+                  <h3>🏥 💉 ✂️ Select Service Type</h3>
                   <p style={{ color: '#666', marginBottom: '1rem' }}>
                     What type of service does the patient need?
                   </p>
                   
-                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '1rem' }}>
                     <button 
                       type="button"
                       className="service-type-card"
@@ -3298,6 +3298,39 @@ function RecepcionDashboard() {
                       </div>
                       <div style={{ fontSize: '0.9rem', color: '#666', marginTop: '0.25rem' }}>
                         Checkup, treatment, surgery
+                      </div>
+                    </button>
+
+                    <button 
+                      type="button"
+                      className="service-type-card"
+                      onClick={() => {
+                        setSelectedServiceType('PREVENTIVE');
+                        setNewAppointmentData({...newAppointmentData, tipo: 'MEDICINA_PREVENTIVA'});
+                      }}
+                      style={{
+                        padding: '1.5rem',
+                        border: '2px solid #10b981',
+                        borderRadius: '8px',
+                        background: 'white',
+                        cursor: 'pointer',
+                        transition: 'all 0.3s'
+                      }}
+                      onMouseEnter={(e) => {
+                        e.currentTarget.style.background = '#ecfdf5';
+                        e.currentTarget.style.transform = 'scale(1.05)';
+                      }}
+                      onMouseLeave={(e) => {
+                        e.currentTarget.style.background = 'white';
+                        e.currentTarget.style.transform = 'scale(1)';
+                      }}
+                    >
+                      <div style={{ fontSize: '3rem' }}>💉</div>
+                      <div style={{ fontSize: '1.2rem', fontWeight: 'bold', marginTop: '0.5rem' }}>
+                        Preventive Medicine
+                      </div>
+                      <div style={{ fontSize: '0.9rem', color: '#666', marginTop: '0.25rem' }}>
+                        Vaccines, deworming
                       </div>
                     </button>
 
@@ -3339,7 +3372,7 @@ function RecepcionDashboard() {
                 </div>
               )}
 
-              {selectedServiceType === 'MEDICAL' && (
+              {(selectedServiceType === 'MEDICAL' || selectedServiceType === 'PREVENTIVE') && (
               <>
               <div className="form-section">
                 <h3>{t('recepcion.appointments.dateTime')}</h3>
@@ -3421,7 +3454,7 @@ function RecepcionDashboard() {
                 >
                   {t('common.cancel')}
                 </button>
-                {selectedServiceType === 'MEDICAL' && (
+                {(selectedServiceType === 'MEDICAL' || selectedServiceType === 'PREVENTIVE') && (
                 <button 
                   type="submit" 
                   className="btn-success"
