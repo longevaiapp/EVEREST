@@ -601,14 +601,27 @@ function RecepcionDashboard() {
   // Función para hacer check-in de mascota existente (usando API real)
   const handleCheckInExistingPet = async (pet) => {
     try {
-      // Detectar si la mascota tiene una cita de tipo ESTETICA hoy
+      // Detectar si la mascota tiene una cita hoy y determinar el tipo de servicio
       const groomingAppointment = appointments.find(
         apt => apt.pacienteId === pet.id && apt.tipo === 'ESTETICA'
       );
+      const preventiveAppointment = appointments.find(
+        apt => apt.pacienteId === pet.id && apt.tipo === 'MEDICINA_PREVENTIVA'
+      );
       
-      const serviceType = groomingAppointment ? 'ESTETICA' : 'MEDICO';
-      const serviceIcon = groomingAppointment ? '✂️' : '🏥';
-      const serviceName = groomingAppointment ? 'Grooming' : 'Medical Consultation';
+      let serviceType = 'MEDICO';
+      let serviceIcon = '🏥';
+      let serviceName = 'Medical Consultation';
+      
+      if (groomingAppointment) {
+        serviceType = 'ESTETICA';
+        serviceIcon = '✂️';
+        serviceName = 'Grooming';
+      } else if (preventiveAppointment) {
+        serviceType = 'MEDICINA_PREVENTIVA';
+        serviceIcon = '💉';
+        serviceName = 'Preventive Medicine';
+      }
       
       console.log(`[Check-in] Pet: ${pet.nombre}, Service Type: ${serviceType}`);
       
@@ -713,6 +726,13 @@ function RecepcionDashboard() {
         tipo: 'ESTETICA'
       }));
       setShowGroomingIntakeForm(true);
+    } else if (serviceType === 'PREVENTIVE') {
+      // Medicina Preventiva - Vacunas y Desparasitación
+      setNewAppointmentData(prev => ({
+        ...prev,
+        tipo: 'MEDICINA_PREVENTIVA'
+      }));
+      setShowNewAppointmentModal(true);
     }
   };
   
@@ -1990,13 +2010,18 @@ function RecepcionDashboard() {
                             onClick={async () => {
                               try {
                                 // Determinar tipo de servicio basándose en el tipo de cita
-                                const serviceType = cita.tipo === 'ESTETICA' ? 'ESTETICA' : 'MEDICO';
+                                let serviceType = 'MEDICO';
+                                if (cita.tipo === 'ESTETICA') serviceType = 'ESTETICA';
+                                else if (cita.tipo === 'MEDICINA_PREVENTIVA') serviceType = 'MEDICINA_PREVENTIVA';
+                                
                                 await checkInPet(cita.pacienteId, serviceType);
                                 await refreshData();
-                                const nextSection = serviceType === 'ESTETICA' ? 'grooming' : 'triage';
-                                const message = serviceType === 'ESTETICA' 
-                                  ? `✅ Check-in completed for ${cita.pacienteNombre}\nThe patient is ready for grooming service.`
-                                  : `✅ Check-in completed for ${cita.pacienteNombre}\nThe patient is ready for triage.`;
+                                
+                                let message = `✅ Check-in completed for ${cita.pacienteNombre}\nThe patient is ready for `;
+                                if (serviceType === 'ESTETICA') message += 'grooming service.';
+                                else if (serviceType === 'MEDICINA_PREVENTIVA') message += 'preventive medicine.';
+                                else message += 'triage.';
+                                
                                 alert(message);
                                 // No cambiar de sección automáticamente
                               } catch (err) {
@@ -2004,7 +2029,7 @@ function RecepcionDashboard() {
                               }
                             }}
                           >
-                            {cita.tipo === 'ESTETICA' ? '✂️' : '🏥'}
+                            {cita.tipo === 'ESTETICA' ? '✂️' : cita.tipo === 'MEDICINA_PREVENTIVA' ? '💉' : '🏥'}
                           </button>
                         )}
                         {!cita.confirmada && !cita.cancelada && (
@@ -2139,13 +2164,18 @@ function RecepcionDashboard() {
                           className="btn-checkin"
                           onClick={async () => {
                             try {
-                              const serviceType = cita.tipo === 'ESTETICA' ? 'ESTETICA' : 'MEDICO';
+                              let serviceType = 'MEDICO';
+                              if (cita.tipo === 'ESTETICA') serviceType = 'ESTETICA';
+                              else if (cita.tipo === 'MEDICINA_PREVENTIVA') serviceType = 'MEDICINA_PREVENTIVA';
+                              
                               await checkInPet(cita.pet.id, serviceType);
                               await refreshData();
                               await loadCitasMedico();
-                              const message = serviceType === 'ESTETICA'
-                                ? `✅ Check-in completado para ${cita.pet.nombre}\nListo para servicio de estética`
-                                : `✅ Check-in completado para ${cita.pet.nombre}`;
+                              
+                              let message = `✅ Check-in completado para ${cita.pet.nombre}`;
+                              if (serviceType === 'ESTETICA') message += '\nListo para servicio de estética';
+                              else if (serviceType === 'MEDICINA_PREVENTIVA') message += '\nListo para medicina preventiva';
+                              
                               alert(message);
                               // No cambiar de sección automáticamente
                             } catch (err) {
@@ -2153,7 +2183,7 @@ function RecepcionDashboard() {
                             }
                           }}
                         >
-                          {cita.tipo === 'ESTETICA' ? '✂️ Check-in' : '🏥 Check-in'}
+                          {cita.tipo === 'ESTETICA' ? '✂️ Check-in' : cita.tipo === 'MEDICINA_PREVENTIVA' ? '💉 Check-in' : '🏥 Check-in'}
                         </button>
                       )}
                       <button 
@@ -3574,12 +3604,12 @@ function RecepcionDashboard() {
       {showServiceTypeSelector && (
         <div className="modal-overlay" onClick={() => setShowServiceTypeSelector(false)}>
           <div className="modal-content service-type-selector" onClick={e => e.stopPropagation()}>
-            <h2>🏥 ✂️ Select Service Type</h2>
+            <h2>🏥 ✂️ 💉 Select Service Type</h2>
             <p style={{ color: '#666', marginBottom: '2rem' }}>
               What type of service does the patient need?
             </p>
             
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '1rem' }}>
               <button 
                 className="service-type-card"
                 onClick={() => handleServiceTypeSelection('MEDICAL')}
@@ -3607,7 +3637,38 @@ function RecepcionDashboard() {
                 <span style={{ fontSize: '3rem' }}>🩺</span>
                 <h3 style={{ margin: 0 }}>Medical Consultation</h3>
                 <p style={{ margin: 0, fontSize: '0.9rem', color: '#666' }}>
-                  General consultation, follow-up, vaccination, surgery, emergency
+                  General consultation, follow-up, surgery, emergency
+                </p>
+              </button>
+
+              <button 
+                className="service-type-card"
+                onClick={() => handleServiceTypeSelection('PREVENTIVE')}
+                style={{
+                  padding: '2rem',
+                  border: '2px solid #10b981',
+                  borderRadius: '8px',
+                  background: 'white',
+                  cursor: 'pointer',
+                  transition: 'all 0.3s',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  alignItems: 'center',
+                  gap: '0.5rem'
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.background = '#ecfdf5';
+                  e.currentTarget.style.transform = 'scale(1.05)';
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.background = 'white';
+                  e.currentTarget.style.transform = 'scale(1)';
+                }}
+              >
+                <span style={{ fontSize: '3rem' }}>💉</span>
+                <h3 style={{ margin: 0 }}>Preventive Medicine</h3>
+                <p style={{ margin: 0, fontSize: '0.9rem', color: '#666' }}>
+                  Vaccines, deworming, preventive health
                 </p>
               </button>
 

@@ -14,7 +14,7 @@ router.post('/', authenticate, isRecepcion, async (req, res) => {
   const schema = z.object({
     petId: z.string().or(z.number()).transform(val => String(val)),
     appointmentId: z.string().cuid().optional(), // Link to scheduled appointment
-    serviceType: z.enum(['MEDICO', 'ESTETICA']).optional().default('MEDICO'), // Medical or Grooming
+    serviceType: z.enum(['MEDICO', 'ESTETICA', 'MEDICINA_PREVENTIVA']).optional().default('MEDICO'), // Medical, Grooming, or Preventive
   });
 
   const { petId, appointmentId, serviceType } = schema.parse(req.body);
@@ -101,7 +101,7 @@ router.get('/today', authenticate, async (req, res) => {
     arrivalTime: { gte: today, lt: tomorrow },
   };
 
-  if (serviceType && (serviceType === 'MEDICO' || serviceType === 'ESTETICA')) {
+  if (serviceType && (serviceType === 'MEDICO' || serviceType === 'ESTETICA' || serviceType === 'MEDICINA_PREVENTIVA')) {
     whereClause.serviceType = serviceType;
   }
 

@@ -6,6 +6,7 @@ import farmaciaService from '../../services/farmacia.service';
 import recepcionService from '../../services/recepcion.service';
 import { laboratorioService, citaSeguimientoService } from '../../services/medico.service';
 import ExamenFisico from '../medico/ExamenFisico';
+import PreventiveMedicinePanel from '../medico/PreventiveMedicinePanel';
 import './MedicoDashboard.css';
 
 function MedicoDashboard() {
@@ -49,6 +50,7 @@ function MedicoDashboard() {
   const [showHospitalizationModal, setShowHospitalizationModal] = useState(false);
   const [showHistoryModal, setShowHistoryModal] = useState(false);
   const [showFollowUpModal, setShowFollowUpModal] = useState(false);
+  const [showPreventiveMedicine, setShowPreventiveMedicine] = useState(false); // Medicina Preventiva
   
   // Estado para formulario de cita de seguimiento
   const [followUpForm, setFollowUpForm] = useState({
@@ -524,6 +526,29 @@ function MedicoDashboard() {
       setLocalLoading(false);
     }
   }, [selectedPatient, activeConsultation, completarConsulta, t]);
+
+  // Handler for completing preventive medicine
+  const handleCompletePreventiveMedicine = useCallback((result) => {
+    console.log('[handleCompletePreventiveMedicine] result:', result);
+    setShowPreventiveMedicine(false);
+    setSelectedPatient(null);
+    // Reload dashboard to reflect changes
+    loadDashboardData();
+  }, [loadDashboardData]);
+
+  // Handler for cancelling preventive medicine
+  const handleCancelPreventiveMedicine = useCallback(() => {
+    setShowPreventiveMedicine(false);
+    setSelectedPatient(null);
+  }, []);
+
+  // Handler for starting preventive medicine (when patient with MEDICINA_PREVENTIVA is selected)
+  const handleStartPreventiveMedicine = useCallback((patient) => {
+    console.log('[handleStartPreventiveMedicine] patient:', patient);
+    setSelectedPatient(patient);
+    setShowPreventiveMedicine(true);
+    setActiveConsultation(null);
+  }, []);
 
   const handleSaveVitals = useCallback(async () => {
     if (!activeConsultation) {
@@ -1182,8 +1207,10 @@ function MedicoDashboard() {
               {waitingPatients.map(patient => (
                 <div 
                   key={patient.id}
-                  className={`appointment-card waiting ${selectedPatient?.id === patient.id ? 'selected' : ''}`}
-                  onClick={() => handleSelectPatient(patient)}
+                  className={`appointment-card waiting ${selectedPatient?.id === patient.id ? 'selected' : ''} ${patient.serviceType === 'MEDICINA_PREVENTIVA' ? 'preventive' : ''}`}
+                  onClick={() => patient.serviceType === 'MEDICINA_PREVENTIVA' 
+                    ? handleStartPreventiveMedicine(patient) 
+                    : handleSelectPatient(patient)}
                 >
                   <div className="appointment-time">{patient.horaRegistro || '--:--'}</div>
                   <div className="appointment-info">
@@ -1194,6 +1221,9 @@ function MedicoDashboard() {
                         <span className="pet-icon">{patient.especie === 'Perro' ? '🐕' : '🐈'}</span>
                       )}
                       {patient.nombre}
+                      {patient.serviceType === 'MEDICINA_PREVENTIVA' && (
+                        <span className="service-badge preventive">💉</span>
+                      )}
                     </div>
                     <div className="patient-details-small">{patient.raza} • {patient.propietario}</div>
                     <div className="appointment-reason">{patient.motivo}</div>
@@ -1410,15 +1440,27 @@ function MedicoDashboard() {
       <main className="center-panel">
         <div className="panel-header">
           <h2>
-            {activeConsultation 
-              ? `🏥 ${t('medico.activeConsultation', 'Consulta Activa')}`
-              : `👨‍⚕️ ${t('medico.consultationWorkspace', 'Consultation Area')}`
+            {showPreventiveMedicine
+              ? `💉 ${t('medico.preventiveMedicine', 'Medicina Preventiva')}`
+              : activeConsultation 
+                ? `🏥 ${t('medico.activeConsultation', 'Consulta Activa')}`
+                : `👨‍⚕️ ${t('medico.consultationWorkspace', 'Consultation Area')}`
             }
           </h2>
           <p>{t('medico.doctor', 'Dr.')} {user?.nombre} - {user?.especialidad || t('medico.generalPractice', 'Medicina General')}</p>
         </div>
 
-        {!selectedPatient && !activeConsultation && (
+        {/* PREVENTIVE MEDICINE PANEL */}
+        {showPreventiveMedicine && selectedPatient && (
+          <PreventiveMedicinePanel
+            patient={selectedPatient}
+            visit={{ id: selectedPatient.visitId, serviceType: selectedPatient.serviceType }}
+            onComplete={handleCompletePreventiveMedicine}
+            onCancel={handleCancelPreventiveMedicine}
+          />
+        )}
+
+        {!showPreventiveMedicine && !selectedPatient && !activeConsultation && (
           <div className="consultation-empty">
             <div className="empty-consultation-content">
               <span className="empty-icon-large">👨‍⚕️</span>
@@ -1447,7 +1489,7 @@ function MedicoDashboard() {
           </div>
         )}
 
-        {selectedPatient && !activeConsultation && (
+        {!showPreventiveMedicine && selectedPatient && !activeConsultation && (
           <div className="consultation-preview">
             <div className="preview-header">
               {selectedPatient.fotoUrl ? (
@@ -1599,7 +1641,7 @@ function MedicoDashboard() {
           </div>
         )}
 
-        {selectedPatient && activeConsultation && (
+        {!showPreventiveMedicine && selectedPatient && activeConsultation && (
           <div className="consultation-active">
             <div className="consultation-header">
               <div className="patient-summary">

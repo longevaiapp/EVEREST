@@ -35,6 +35,7 @@ import dashboardRoutes from "./routes/dashboard.routes";
 import medicoRoutes from "./routes/medico.routes";
 import groomingRoutes from "./routes/grooming.routes";
 import businessInfoRoutes from "./routes/businessInfo.routes";
+import preventiveMedicineRoutes from "./routes/preventiveMedicine.routes";
 
 const app = express();
 const PORT = process.env.PORT || 3001;
@@ -146,6 +147,7 @@ app.use(`${API_PREFIX}/dashboard`, dashboardRoutes);
 app.use(`${API_PREFIX}/medico`, medicoRoutes);
 app.use(`${API_PREFIX}/grooming`, groomingRoutes);
 app.use(`${API_PREFIX}/business-info`, businessInfoRoutes);
+app.use(`${API_PREFIX}/preventive-medicine`, preventiveMedicineRoutes);
 
 // ===========================================================================
 // ERROR HANDLING

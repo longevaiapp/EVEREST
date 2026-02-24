@@ -240,7 +240,7 @@ export const visitService = {
   /**
    * Crear nueva visita (check-in)
    * @param {string|number} petId
-   * @param {string} serviceType - 'MEDICO' o 'ESTETICA'
+   * @param {string} serviceType - 'MEDICO', 'ESTETICA', or 'MEDICINA_PREVENTIVA'
    */
   async create(petId, serviceType = 'MEDICO') {
     console.log('[visitService] create - petId:', petId, 'serviceType:', serviceType);

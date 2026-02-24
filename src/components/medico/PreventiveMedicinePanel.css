@@ -1,0 +1,464 @@
+/* PreventiveMedicinePanel.css */
+
+.preventive-medicine-panel {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  background: #f8fafc;
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+.preventive-medicine-panel.loading {
+  justify-content: center;
+  align-items: center;
+  gap: 1rem;
+  min-height: 400px;
+}
+
+.loading-spinner {
+  width: 40px;
+  height: 40px;
+  border: 4px solid #e2e8f0;
+  border-top-color: #3b82f6;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+/* Panel Header */
+.preventive-medicine-panel .panel-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1.25rem 1.5rem;
+  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+  color: white;
+}
+
+.preventive-medicine-panel .patient-info {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.preventive-medicine-panel .pet-icon {
+  font-size: 2.5rem;
+}
+
+.preventive-medicine-panel .patient-info h2 {
+  margin: 0;
+  font-size: 1.5rem;
+}
+
+.preventive-medicine-panel .patient-info p {
+  margin: 0;
+  opacity: 0.9;
+  font-size: 0.9rem;
+}
+
+.preventive-medicine-panel .header-badge {
+  background: rgba(255,255,255,0.2);
+  padding: 0.5rem 1rem;
+  border-radius: 20px;
+  font-weight: 600;
+  font-size: 0.95rem;
+}
+
+/* Error Alert */
+.error-alert {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.75rem 1rem;
+  background: #fef2f2;
+  border-left: 4px solid #ef4444;
+  color: #dc2626;
+  font-size: 0.9rem;
+}
+
+.error-alert button {
+  background: none;
+  border: none;
+  color: #dc2626;
+  cursor: pointer;
+  font-size: 1rem;
+}
+
+/* Panel Content */
+.panel-content {
+  flex: 1;
+  overflow-y: auto;
+  padding: 1.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+/* Sections */
+.panel-content section {
+  background: white;
+  border-radius: 10px;
+  padding: 1.25rem;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+}
+
+.panel-content section h3 {
+  margin: 0 0 1rem 0;
+  font-size: 1.1rem;
+  color: #334155;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+/* Exam Grid */
+.exam-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 1rem;
+}
+
+.exam-grid .full-width {
+  grid-column: 1 / -1;
+}
+
+.form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.form-group label {
+  font-size: 0.85rem;
+  color: #64748b;
+  font-weight: 500;
+}
+
+.form-group input,
+.form-group select {
+  padding: 0.6rem 0.8rem;
+  border: 1px solid #e2e8f0;
+  border-radius: 6px;
+  font-size: 0.95rem;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.form-group input:focus,
+.form-group select:focus {
+  outline: none;
+  border-color: #10b981;
+  box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.1);
+}
+
+/* Products Grid */
+.products-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 1rem;
+}
+
+.product-card {
+  border: 2px solid #e2e8f0;
+  border-radius: 10px;
+  padding: 1rem;
+  cursor: pointer;
+  transition: all 0.2s;
+  background: white;
+}
+
+.product-card:hover {
+  border-color: #10b981;
+  box-shadow: 0 4px 12px rgba(16, 185, 129, 0.15);
+}
+
+.product-card.selected {
+  border-color: #10b981;
+  background: linear-gradient(135deg, #ecfdf5 0%, #d1fae5 100%);
+}
+
+.product-card.dewormer:hover,
+.product-card.dewormer.selected {
+  border-color: #8b5cf6;
+}
+
+.product-card.dewormer.selected {
+  background: linear-gradient(135deg, #f5f3ff 0%, #ede9fe 100%);
+}
+
+.product-card.low-stock {
+  border-style: dashed;
+}
+
+.product-card.low-stock::before {
+  content: '⚠️ Stock bajo';
+  font-size: 0.7rem;
+  color: #f59e0b;
+  display: block;
+  margin-bottom: 0.5rem;
+}
+
+.product-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 0.5rem;
+}
+
+.product-name {
+  font-weight: 600;
+  color: #1e293b;
+  font-size: 0.95rem;
+}
+
+.check-mark {
+  background: #10b981;
+  color: white;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.75rem;
+  font-weight: bold;
+}
+
+.product-card.dewormer .check-mark {
+  background: #8b5cf6;
+}
+
+.product-details {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+}
+
+.comercial-name {
+  font-size: 0.8rem;
+  color: #64748b;
+  font-style: italic;
+}
+
+.product-meta {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.85rem;
+  margin-top: 0.25rem;
+}
+
+.product-meta .stock {
+  color: #64748b;
+}
+
+.product-meta .price {
+  color: #059669;
+  font-weight: 600;
+}
+
+.interval, .weight-range, .last-applied {
+  font-size: 0.8rem;
+  color: #64748b;
+}
+
+.last-applied {
+  color: #3b82f6;
+  font-weight: 500;
+}
+
+/* Empty State */
+.empty-state {
+  padding: 2rem;
+  text-align: center;
+  color: #94a3b8;
+  background: #f8fafc;
+  border-radius: 8px;
+  border: 2px dashed #e2e8f0;
+}
+
+/* Selected Products Detail */
+.selected-products {
+  margin-top: 1.25rem;
+  padding-top: 1rem;
+  border-top: 1px solid #e2e8f0;
+}
+
+.selected-products h4 {
+  margin: 0 0 1rem 0;
+  font-size: 0.95rem;
+  color: #475569;
+}
+
+.selected-product-detail {
+  background: #f1f5f9;
+  border-radius: 8px;
+  padding: 1rem;
+  margin-bottom: 0.75rem;
+}
+
+.selected-product-detail:last-child {
+  margin-bottom: 0;
+}
+
+.product-title {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.75rem;
+}
+
+.product-title strong {
+  color: #1e293b;
+}
+
+.btn-remove {
+  background: #fef2f2;
+  border: none;
+  color: #ef4444;
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  cursor: pointer;
+  font-size: 0.8rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.2s;
+}
+
+.btn-remove:hover {
+  background: #fee2e2;
+}
+
+.detail-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 0.75rem;
+}
+
+.detail-grid .form-group input,
+.detail-grid .form-group select {
+  padding: 0.5rem 0.6rem;
+  font-size: 0.85rem;
+}
+
+/* Observations */
+.observations-section textarea {
+  width: 100%;
+  padding: 0.75rem;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  font-size: 0.95rem;
+  font-family: inherit;
+  resize: vertical;
+  min-height: 80px;
+}
+
+.observations-section textarea:focus {
+  outline: none;
+  border-color: #10b981;
+  box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.1);
+}
+
+/* Panel Footer */
+.panel-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1rem 1.5rem;
+  background: white;
+  border-top: 1px solid #e2e8f0;
+  box-shadow: 0 -2px 10px rgba(0,0,0,0.05);
+}
+
+.totals {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.total-items {
+  display: flex;
+  gap: 1rem;
+  font-size: 0.9rem;
+  color: #64748b;
+}
+
+.total-cost {
+  font-size: 1.25rem;
+  color: #059669;
+}
+
+.actions {
+  display: flex;
+  gap: 0.75rem;
+}
+
+.btn-cancel,
+.btn-complete {
+  padding: 0.75rem 1.5rem;
+  border: none;
+  border-radius: 8px;
+  font-size: 0.95rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.btn-cancel {
+  background: #f1f5f9;
+  color: #64748b;
+}
+
+.btn-cancel:hover:not(:disabled) {
+  background: #e2e8f0;
+  color: #475569;
+}
+
+.btn-complete {
+  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+  color: white;
+}
+
+.btn-complete:hover:not(:disabled) {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
+}
+
+.btn-cancel:disabled,
+.btn-complete:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  transform: none;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .exam-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  
+  .products-grid {
+    grid-template-columns: 1fr;
+  }
+  
+  .detail-grid {
+    grid-template-columns: 1fr;
+  }
+  
+  .panel-footer {
+    flex-direction: column;
+    gap: 1rem;
+  }
+  
+  .actions {
+    width: 100%;
+  }
+  
+  .btn-cancel, .btn-complete {
+    flex: 1;
+  }
+}

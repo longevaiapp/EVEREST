@@ -1306,6 +1306,20 @@ button:disabled {
   border-left: 3px solid #9c27b0;
 }
 
+.appointment-card.preventive {
+  border-left: 3px solid #10b981;
+  background: linear-gradient(135deg, rgba(16, 185, 129, 0.1) 0%, rgba(5, 150, 105, 0.05) 100%);
+}
+
+.service-badge.preventive {
+  background: #10b981;
+  color: white;
+  padding: 0.1rem 0.3rem;
+  border-radius: 4px;
+  font-size: 0.7rem;
+  margin-left: 0.25rem;
+}
+
 .appointment-time {
   color: rgba(255, 255, 255, 0.7);
   font-size: 0.75rem;

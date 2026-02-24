@@ -315,6 +315,7 @@ export const useMedico = () => {
     id: v.pet?.id,
     visitId: v.id,
     consultationId: v.consultation?.id,
+    serviceType: v.serviceType, // Tipo de servicio (CONSULTA, MEDICINA_PREVENTIVA, etc.)
     // Datos del pet
     nombre: v.pet?.nombre || 'Sin nombre',
     especie: v.pet?.especie,
@@ -344,11 +345,12 @@ export const useMedico = () => {
 
   // Pacientes en consulta
   const patientsInConsultation = visits.filter(v => 
-    v.status === 'EN_CONSULTA'
+    v.status === 'EN_CONSULTA' || v.status === 'EN_MEDICINA_PREVENTIVA'
   ).map(v => ({
     id: v.pet?.id,
     visitId: v.id,
     consultationId: v.consultation?.id,
+    serviceType: v.serviceType, // Tipo de servicio (CONSULTA, MEDICINA_PREVENTIVA, etc.)
     // Datos del pet
     nombre: v.pet?.nombre || 'Sin nombre',
     especie: v.pet?.especie,

@@ -48,6 +48,9 @@ model User {
   therapyPlanItems       TherapyPlanItem[]
   medicationAdmins       MedicationAdministration[]
   neonateRecords         NeonateRecord[]
+  preventiveMedicineRecords PreventiveMedicineRecord[]
+  vaccinesApplied        VaccineRecord[]  @relation("VaccineAppliedBy")
+  dewormingsApplied      DewormingRecord[] @relation("DewormingAppliedBy")
 
   @@index([email])
   @@index([rol])
@@ -300,6 +303,8 @@ model Pet {
   medicalNotes    MedicalNote[]
   dispenses       Dispense[]
   vaccineRecords  VaccineRecord[]
+  dewormingRecords DewormingRecord[]
+  preventiveMedicineRecords PreventiveMedicineRecord[]
   tasks           Task[]
 
   @@index([ownerId])
@@ -309,18 +314,121 @@ model Pet {
 }
 
 model VaccineRecord {
-  id          String    @id @default(cuid())
-  petId       String
-  pet         Pet       @relation(fields: [petId], references: [id], onDelete: Cascade)
-  nombre      String
-  fecha       DateTime
-  proximaDosis DateTime?
-  lote        String?
-  aplicadaPor String?
-  notas       String?   @db.Text
-  createdAt   DateTime  @default(now())
-
+  id               String      @id @default(cuid())
+  petId            String
+  pet              Pet         @relation(fields: [petId], references: [id], onDelete: Cascade)
+  
+  // === VACUNA ===
+  nombre           String      // Tipo: Quíntuple, Antirrábica, etc.
+  marca            String?     // Marca del fabricante
+  nombreComercial  String?     // Nombre comercial
+  
+  // === TRAZABILIDAD ===
+  medicationId     String?     // FK → Medication (si viene de inventario)
+  medication       Medication? @relation(fields: [medicationId], references: [id])
+  lote             String?
+  fechaCaducidad   DateTime?   // Fecha de vencimiento del lote
+  
+  // === FECHAS ===
+  fecha            DateTime    // Fecha de aplicación
+  proximaDosis     DateTime?   // Próximo refuerzo
+  
+  // === APLICACIÓN ===
+  aplicadaPor      String?     // Nombre del veterinario
+  aplicadoPorId    String?     // FK → User
+  aplicadoPorUser  User?       @relation("VaccineAppliedBy", fields: [aplicadoPorId], references: [id])
+  viaAdministracion String?    // SC, IM, Intranasal, etc.
+  
+  // === COSTO ===
+  costo            Decimal?    @db.Decimal(10, 2)
+  
+  // === RELACIÓN CON VISITA ===
+  visitId          String?
+  visit            Visit?      @relation(fields: [visitId], references: [id])
+  
+  notas            String?     @db.Text
+  createdAt        DateTime    @default(now())
+  
   @@index([petId, proximaDosis])
+  @@index([medicationId])
+  @@index([visitId])
+}
+
+model DewormingRecord {
+  id                 String      @id @default(cuid())
+  petId              String
+  pet                Pet         @relation(fields: [petId], references: [id], onDelete: Cascade)
+  
+  // === PRODUCTO ===
+  marca              String
+  nombreComercial    String
+  tipo               String      // 'Interna', 'Externa', 'Ambas'
+  
+  // === TRAZABILIDAD ===
+  medicationId       String?     // FK → Medication (si viene de inventario)
+  medication         Medication? @relation(fields: [medicationId], references: [id])
+  lote               String?
+  
+  // === FECHAS ===
+  fecha              DateTime    @default(now())
+  proximaAplicacion  DateTime
+  
+  // === APLICACIÓN ===
+  aplicadoPor        String?
+  aplicadoPorId      String?
+  aplicadoPorUser    User?       @relation("DewormingAppliedBy", fields: [aplicadoPorId], references: [id])
+  
+  // === COSTO ===
+  costo              Decimal?    @db.Decimal(10, 2)
+  
+  // === RELACIÓN CON VISITA ===
+  visitId            String?
+  visit              Visit?      @relation(fields: [visitId], references: [id])
+  
+  notas              String?     @db.Text
+  createdAt          DateTime    @default(now())
+  
+  @@index([petId, proximaAplicacion])
+  @@index([medicationId])
+  @@index([visitId])
+}
+
+model PreventiveMedicineRecord {
+  id              String    @id @default(cuid())
+  visitId         String    @unique
+  visit           Visit     @relation(fields: [visitId], references: [id])
+  petId           String
+  pet             Pet       @relation(fields: [petId], references: [id])
+  
+  // === EXAMEN FÍSICO BÁSICO ===
+  temperatura     Decimal?  @db.Decimal(4, 2)
+  peso            Decimal?  @db.Decimal(6, 2)
+  frecuenciaCardiaca  Int?
+  frecuenciaRespiratoria Int?
+  condicionGeneral String?  // 'Normal', 'Requiere atención'
+  
+  // === SERVICIOS APLICADOS ===
+  vacunasAplicadas        Int       @default(0)
+  desparasitantesAplicados Int      @default(0)
+  
+  // === OBSERVACIONES ===
+  observaciones   String?   @db.Text
+  
+  // === APLICADO POR ===
+  aplicadoPorId   String
+  aplicadoPor     User      @relation(fields: [aplicadoPorId], references: [id])
+  
+  // === COSTO TOTAL ===
+  totalCost       Decimal   @db.Decimal(10, 2) @default(0)
+  
+  // === ESTADO ===
+  status          String    @default("COMPLETADO") // COMPLETADO, PENDIENTE_PAGO
+  
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+  
+  @@index([petId])
+  @@index([aplicadoPorId])
 }
 
 enum Species {
@@ -395,6 +503,9 @@ model Visit {
   payment         Payment?
   tasks           Task[]
   groomingService GroomingService?
+  preventiveMedicineRecord PreventiveMedicineRecord?
+  vaccineRecords  VaccineRecord[]
+  dewormingRecords DewormingRecord[]
 
   @@index([petId])
   @@index([status])
@@ -415,11 +526,14 @@ enum VisitStatus {
   ALTA
   EN_ESTETICA
   ESTETICA_COMPLETADA
+  EN_MEDICINA_PREVENTIVA
+  MEDICINA_PREVENTIVA_COMPLETADA
 }
 
 enum ServiceType {
   MEDICO
   ESTETICA
+  MEDICINA_PREVENTIVA
 }
 
 enum VisitType {
@@ -1146,6 +1260,16 @@ model Medication {
   supplier              String?
   supplierCode          String?
   
+  // === ESPECÍFICO PARA VACUNAS/DESPARASITANTES ===
+  especies              String?            // 'PERRO', 'GATO', 'AMBOS'
+  nombreComercial       String?            // Nombre comercial (ej: Vanguard®)
+  edadMinima            String?            // '6 semanas', '12 semanas'
+  pesoMinimo            Decimal?           @db.Decimal(5, 2)
+  pesoMaximo            Decimal?           @db.Decimal(5, 2)
+  intervaloRefuerzo     String?            // '365 dias', '90 dias', '180 dias'
+  viaAdministracion     String?            // 'SC', 'IM', 'Oral', 'Intranasal', 'Topico'
+  lote                  String?            // Número de lote actual
+  
   // === ESTADO ===
   activo                Boolean            @default(true)
   
@@ -1158,10 +1282,13 @@ model Medication {
   dispenseItems         DispenseItem[]
   purchaseOrderItems    PurchaseOrderItem[]
   therapyPlanItems      TherapyPlanItem[]
+  vaccineRecords        VaccineRecord[]
+  dewormingRecords      DewormingRecord[]
 
   @@index([name])
   @@index([category])
   @@index([currentStock])
+  @@index([especies])
 }
 
 enum MedicationCategory {
