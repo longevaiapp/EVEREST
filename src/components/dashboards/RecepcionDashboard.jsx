@@ -3398,6 +3398,8 @@ function RecepcionDashboard() {
                 </div>
               </div>
 
+              {/* Formulario para MEDICAL */}
+              {selectedServiceType === 'MEDICAL' && (
               <div className="form-section">
                 <h3>{t('recepcion.appointments.appointmentDetails')}</h3>
                 <div className="form-group">
@@ -3409,10 +3411,8 @@ function RecepcionDashboard() {
                   >
                     <option value="CONSULTA_GENERAL">{t('recepcion.triage.general')}</option>
                     <option value="SEGUIMIENTO">{t('recepcion.triage.followUp')}</option>
-                    <option value="VACUNACION">{t('recepcion.triage.vaccination')}</option>
                     <option value="CIRUGIA">{t('recepcion.triage.surgery')}</option>
                     <option value="EMERGENCIA">{t('recepcion.triage.emergency')}</option>
-                    <option value="ESTETICA">✂️ Grooming / Estética</option>
                   </select>
                 </div>
 
@@ -3438,6 +3438,46 @@ function RecepcionDashboard() {
                   </label>
                 </div>
               </div>
+              )}
+
+              {/* Formulario simplificado para PREVENTIVE */}
+              {selectedServiceType === 'PREVENTIVE' && (
+              <div className="form-section">
+                <h3>💉 Preventive Medicine Details</h3>
+                <div style={{ 
+                  background: '#ecfdf5', 
+                  padding: '1rem', 
+                  borderRadius: '8px', 
+                  marginBottom: '1rem',
+                  border: '1px solid #10b981'
+                }}>
+                  <p style={{ margin: 0, color: '#059669', fontWeight: '500' }}>
+                    💉 Type: Preventive Medicine (Vaccines / Deworming)
+                  </p>
+                </div>
+
+                <div className="form-group">
+                  <label>Notes (optional)</label>
+                  <textarea
+                    value={newAppointmentData.motivo}
+                    onChange={(e) => setNewAppointmentData({...newAppointmentData, motivo: e.target.value})}
+                    placeholder="E.g., Annual vaccine, deworming schedule..."
+                    rows="2"
+                  />
+                </div>
+
+                <div className="form-group">
+                  <label>
+                    <input
+                      type="checkbox"
+                      checked={newAppointmentData.confirmada}
+                      onChange={(e) => setNewAppointmentData({...newAppointmentData, confirmada: e.target.checked})}
+                    />
+                    {' '}{t('recepcion.appointments.confirmImmediately')}
+                  </label>
+                </div>
+              </div>
+              )}
               </>
               )}
 
