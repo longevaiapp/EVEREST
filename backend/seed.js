@@ -48,7 +48,19 @@ async function main() {
     create: { email: 'farmacia@vetos.com', password: passwordHash, nombre: 'Ana Torres', rol: 'FARMACIA', activo: true }
   });
 
-  console.log('✅ 6 Users created');
+  await prisma.user.upsert({
+    where: { email: 'estilista@vetos.com' },
+    update: {},
+    create: { email: 'estilista@vetos.com', password: passwordHash, nombre: 'Luis Estrada', rol: 'ESTILISTA', activo: true }
+  });
+
+  await prisma.user.upsert({
+    where: { email: 'hospitalizacion@vetos.com' },
+    update: {},
+    create: { email: 'hospitalizacion@vetos.com', password: passwordHash, nombre: 'Patricia Mendoza', rol: 'HOSPITALIZACION', activo: true }
+  });
+
+  console.log('✅ 8 Users created');
 
   // Owners and Pets
   console.log('🐾 Creating owners and pets...');

@@ -84,8 +84,14 @@ const GroomingIntakeForm = ({
 
         // Section 7: Authorization
         authorized: false,
+        serviceDate: new Date().toISOString().split('T')[0], // Today's date
+        dropoffTime: new Date().toTimeString().slice(0, 5), // Current time
         pickupTime: '',
-        contactPhone: owner?.telefono || ''
+        contactPhone: owner?.telefono || '',
+        authorizeMuzzle: false,
+        authorizeAdjustments: false,
+        consentGiven: false,
+        ownerSignature: owner?.nombre || ''
     });
 
     // Handler for editable owner fields
@@ -701,6 +707,52 @@ const GroomingIntakeForm = ({
             {/* SECTION 7: AUTHORIZATION AND CONSENT */}
             <section className="form-section consent-section">
                 <h3>7️⃣ AUTHORIZATION AND CONSENT</h3>
+                
+                {/* Appointment Date and Time */}
+                <div className="info-grid" style={{ marginBottom: '1.5rem' }}>
+                    <div className="info-item">
+                        <label>📅 Service Date: *</label>
+                        <input
+                            type="date"
+                            value={groomingData.serviceDate || ''}
+                            onChange={(e) => handleInputChange('serviceDate', e.target.value)}
+                            className="editable-input"
+                            required
+                        />
+                    </div>
+                    <div className="info-item">
+                        <label>⏰ Drop-off Time: *</label>
+                        <input
+                            type="time"
+                            value={groomingData.dropoffTime || ''}
+                            onChange={(e) => handleInputChange('dropoffTime', e.target.value)}
+                            className="editable-input"
+                            required
+                        />
+                    </div>
+                    <div className="info-item">
+                        <label>🕐 Expected Pickup Time: *</label>
+                        <input
+                            type="time"
+                            value={groomingData.pickupTime || ''}
+                            onChange={(e) => handleInputChange('pickupTime', e.target.value)}
+                            className="editable-input"
+                            placeholder="Estimated time"
+                            required
+                        />
+                    </div>
+                    <div className="info-item">
+                        <label>📞 Contact Phone:</label>
+                        <input
+                            type="tel"
+                            value={groomingData.contactPhone || ''}
+                            onChange={(e) => handleInputChange('contactPhone', e.target.value)}
+                            className="editable-input"
+                            placeholder="Contact number during service"
+                        />
+                    </div>
+                </div>
+
                 <div className="consent-text">
                     <p>
                         I declare that the information provided is accurate and authorize EverestVet to perform
@@ -764,7 +816,7 @@ const GroomingIntakeForm = ({
                     onClick={handleFormSubmit}
                     disabled={isSubmitting || !groomingData.consentGiven}
                 >
-                    {isSubmitting ? '⏳ Submitting...' : '✓ Complete Check-in'}
+                    {isSubmitting ? '⏳ Submitting...' : '✓ Schedule Grooming Appointment'}
                 </button>
             </div>
         </div>

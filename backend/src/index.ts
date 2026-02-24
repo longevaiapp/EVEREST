@@ -1,39 +1,40 @@
 // src/index.ts
 // VET-OS Backend Entry Point
 
-import * as dotenv from 'dotenv';
-import * as path from 'path';
+import * as dotenv from "dotenv";
+import * as path from "path";
 
 // Cargar .env desde el directorio del backend
-dotenv.config({ path: path.resolve(__dirname, '../.env') });
+dotenv.config({ path: path.resolve(__dirname, "../.env") });
 
-import 'express-async-errors';
-import express from 'express';
-import cors from 'cors';
-import helmet from 'helmet';
-import morgan from 'morgan';
+import "express-async-errors";
+import express from "express";
+import cors from "cors";
+import helmet from "helmet";
+import morgan from "morgan";
 
-import { errorHandler } from './middleware/errorHandler';
-import { notFound } from './middleware/notFound';
+import { errorHandler } from "./middleware/errorHandler";
+import { notFound } from "./middleware/notFound";
 
 // Import routes
-import authRoutes from './routes/auth.routes';
-import ownerRoutes from './routes/owner.routes';
-import petRoutes from './routes/pet.routes';
-import visitRoutes from './routes/visit.routes';
-import appointmentRoutes from './routes/appointment.routes';
-import consultationRoutes from './routes/consultation.routes';
-import labRequestRoutes from './routes/labRequest.routes';
-import prescriptionRoutes from './routes/prescription.routes';
-import surgeryRoutes from './routes/surgery.routes';
-import hospitalizationRoutes from './routes/hospitalization.routes';
-import medicationRoutes from './routes/medication.routes';
-import dispenseRoutes from './routes/dispense.routes';
-import taskRoutes from './routes/task.routes';
-import notificationRoutes from './routes/notification.routes';
-import dashboardRoutes from './routes/dashboard.routes';
-import medicoRoutes from './routes/medico.routes';
-import groomingRoutes from './routes/grooming.routes';
+import authRoutes from "./routes/auth.routes";
+import ownerRoutes from "./routes/owner.routes";
+import petRoutes from "./routes/pet.routes";
+import visitRoutes from "./routes/visit.routes";
+import appointmentRoutes from "./routes/appointment.routes";
+import consultationRoutes from "./routes/consultation.routes";
+import labRequestRoutes from "./routes/labRequest.routes";
+import prescriptionRoutes from "./routes/prescription.routes";
+import surgeryRoutes from "./routes/surgery.routes";
+import hospitalizationRoutes from "./routes/hospitalization.routes";
+import medicationRoutes from "./routes/medication.routes";
+import dispenseRoutes from "./routes/dispense.routes";
+import taskRoutes from "./routes/task.routes";
+import notificationRoutes from "./routes/notification.routes";
+import dashboardRoutes from "./routes/dashboard.routes";
+import medicoRoutes from "./routes/medico.routes";
+import groomingRoutes from "./routes/grooming.routes";
+import businessInfoRoutes from "./routes/businessInfo.routes";
 
 const app = express();
 const PORT = process.env.PORT || 3001;
@@ -46,25 +47,32 @@ const PORT = process.env.PORT || 3001;
 app.use(helmet());
 
 // CORS - Allow frontend (multiple ports for development)
-app.use(cors({
-  origin: [
-    'http://localhost:5173',
-    'http://localhost:5174',
-    'http://localhost:5175',
-    'http://localhost:5176',
-    'http://localhost:3000',
-    process.env.FRONTEND_URL || 'http://localhost:5173'
-  ],
-  credentials: true,
-}));
+app.use(
+  cors({
+    origin: [
+      "http://localhost:5173",
+      "http://localhost:5174",
+      "http://localhost:5175",
+      "http://localhost:5176",
+      "http://localhost:3000",
+      "http://127.0.0.1:5173",
+      "http://127.0.0.1:5174",
+      "http://127.0.0.1:5175",
+      "http://127.0.0.1:5176",
+      "http://127.0.0.1:3000",
+      process.env.FRONTEND_URL || "http://localhost:5173",
+    ],
+    credentials: true,
+  }),
+);
 
 // Body parsing - increased limit for Base64 images
-app.use(express.json({ limit: '50mb' }));
-app.use(express.urlencoded({ extended: true, limit: '50mb' }));
+app.use(express.json({ limit: "50mb" }));
+app.use(express.urlencoded({ extended: true, limit: "50mb" }));
 
 // Logging
-if (process.env.NODE_ENV !== 'test') {
-  app.use(morgan('dev'));
+if (process.env.NODE_ENV !== "test") {
+  app.use(morgan("dev"));
 }
 
 // ===========================================================================
@@ -72,37 +80,45 @@ if (process.env.NODE_ENV !== 'test') {
 // ===========================================================================
 
 // Health check
-app.get('/health', (req, res) => {
+app.get("/health", (req, res) => {
   res.json({
-    status: 'ok',
+    status: "ok",
     timestamp: new Date().toISOString(),
-    version: '1.0.0',
-    service: 'VET-OS API'
+    version: "1.0.0",
+    service: "VET-OS API",
   });
 });
 
 // Debug endpoint - CHECK DISPENSES
-app.get('/debug/dispenses', async (req, res) => {
+app.get("/debug/dispenses", async (req, res) => {
   try {
     const count = await prisma.dispense.count();
     const latest = await prisma.dispense.findMany({
       take: 5,
       include: {
-        pet: { select: { nombre: true, especie: true, owner: { select: { nombre: true, telefono: true } } } },
-        items: { select: { medicationName: true, dispensedQty: true, unitPrice: true } }
+        pet: {
+          select: {
+            nombre: true,
+            especie: true,
+            owner: { select: { nombre: true, telefono: true } },
+          },
+        },
+        items: {
+          select: { medicationName: true, dispensedQty: true, unitPrice: true },
+        },
       },
-      orderBy: { createdAt: 'desc' }
+      orderBy: { createdAt: "desc" },
     });
     res.json({
       totalDispenses: count,
-      latestDispenses: latest.map(d => ({
+      latestDispenses: latest.map((d) => ({
         id: d.id,
         petName: d.pet?.nombre,
         ownerName: d.pet?.owner?.nombre,
         createdAt: d.createdAt,
         itemCount: d.items.length,
-        items: d.items
-      }))
+        items: d.items,
+      })),
     });
   } catch (e: any) {
     res.json({ error: e.message });
@@ -110,7 +126,7 @@ app.get('/debug/dispenses', async (req, res) => {
 });
 
 // API Routes
-const API_PREFIX = '/api/v1';
+const API_PREFIX = "/api/v1";
 
 app.use(`${API_PREFIX}/auth`, authRoutes);
 app.use(`${API_PREFIX}/owners`, ownerRoutes);
@@ -129,6 +145,7 @@ app.use(`${API_PREFIX}/notifications`, notificationRoutes);
 app.use(`${API_PREFIX}/dashboard`, dashboardRoutes);
 app.use(`${API_PREFIX}/medico`, medicoRoutes);
 app.use(`${API_PREFIX}/grooming`, groomingRoutes);
+app.use(`${API_PREFIX}/business-info`, businessInfoRoutes);
 
 // ===========================================================================
 // ERROR HANDLING
@@ -141,13 +158,13 @@ app.use(errorHandler);
 // START SERVER
 // ===========================================================================
 
-import { prisma } from './lib/prisma';
+import { prisma } from "./lib/prisma";
 
 const startServer = async () => {
   try {
     // Test database connection
     await prisma.$connect();
-    console.log('✅ Database connected successfully');
+    console.log("✅ Database connected successfully");
 
     const server = app.listen(PORT, () => {
       console.log(`
@@ -156,7 +173,7 @@ const startServer = async () => {
   📍 Running on: http://localhost:${PORT}
   📋 Health:     http://localhost:${PORT}/health
   🔗 API:        http://localhost:${PORT}${API_PREFIX}
-  🌍 Environment: ${process.env.NODE_ENV || 'development'}
+  🌍 Environment: ${process.env.NODE_ENV || "development"}
   =====================
       `);
     });
@@ -166,16 +183,15 @@ const startServer = async () => {
       console.log(`\n${signal} received. Shutting down gracefully...`);
       server.close(async () => {
         await prisma.$disconnect();
-        console.log('Server closed.');
+        console.log("Server closed.");
         process.exit(0);
       });
     };
 
-    process.on('SIGINT', () => shutdown('SIGINT'));
-    process.on('SIGTERM', () => shutdown('SIGTERM'));
-
+    process.on("SIGINT", () => shutdown("SIGINT"));
+    process.on("SIGTERM", () => shutdown("SIGTERM"));
   } catch (error) {
-    console.error('❌ Failed to start server:', error);
+    console.error("❌ Failed to start server:", error);
     await prisma.$disconnect();
     process.exit(1);
   }

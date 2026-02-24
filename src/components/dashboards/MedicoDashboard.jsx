@@ -117,7 +117,8 @@ function MedicoDashboard() {
     frecuencia: '',
     via: 'ORAL',
     duracion: '',
-    cantidad: 1
+    cantidad: 1,
+    type: 'USO_INMEDIATO' // USO_INMEDIATO = farmacia interna, RECETA_EXTERNA = receta para imprimir
   });
 
   // Prescription medication search states
@@ -217,6 +218,7 @@ function MedicoDashboard() {
   });
 
   const [hospitalizationForm, setHospitalizationForm] = useState({
+    type: 'GENERAL',
     motivo: '',
     frecuenciaMonitoreo: '4h',
     cuidadosEspeciales: '',
@@ -615,7 +617,8 @@ function MedicoDashboard() {
       frecuencia: '',
       via: 'ORAL',
       duracion: '',
-      cantidad: 1
+      cantidad: 1,
+      type: 'USO_INMEDIATO'
     });
   }, [currentMedication]);
 
@@ -652,13 +655,16 @@ function MedicoDashboard() {
           frecuencia: m.frecuencia,
           via: m.via,
           duracion: m.duracion || '7 días',
-          cantidad: m.cantidad || 1
+          cantidad: m.cantidad || 1,
+          type: m.type || 'USO_INMEDIATO'
         })),
         instruccionesGenerales: prescriptionForm.instrucciones || undefined
       });
       
       setShowPrescriptionModal(false);
       setPrescriptionForm({ medicamentos: [], instrucciones: '', duracion: '' });
+      
+      // External prescriptions will be printed at reception during discharge
     } catch (err) {
       setLocalError(err.message || t('medico.errors.createPrescription', 'Error creating prescription'));
     } finally {
@@ -718,6 +724,7 @@ function MedicoDashboard() {
     try {
       await hospitalizarPaciente(activeConsultation.id, {
         petId: selectedPatient.id,
+        type: hospitalizationForm.type,
         motivo: hospitalizationForm.motivo,
         frecuenciaMonitoreo: hospitalizationForm.frecuenciaMonitoreo,
         cuidadosEspeciales: hospitalizationForm.cuidadosEspeciales || null,
@@ -726,6 +733,7 @@ function MedicoDashboard() {
       
       setShowHospitalizationModal(false);
       setHospitalizationForm({
+        type: 'GENERAL',
         motivo: '',
         frecuenciaMonitoreo: '4h',
         cuidadosEspeciales: '',
@@ -2101,6 +2109,35 @@ function MedicoDashboard() {
                   />
                 </div>
               </div>
+              
+              {/* Prescription Type Selector */}
+              <div className="form-row type-selector-row">
+                <div className="form-group prescription-type-group">
+                  <label>{t('medico.prescriptionType', 'Type')} *</label>
+                  <div className="type-toggle">
+                    <button 
+                      type="button"
+                      className={`type-btn ${currentMedication.type === 'USO_INMEDIATO' ? 'active' : ''}`}
+                      onClick={() => setCurrentMedication(prev => ({ ...prev, type: 'USO_INMEDIATO' }))}
+                    >
+                      🏥 {t('medico.internalUse', 'Uso Interno')}
+                    </button>
+                    <button 
+                      type="button"
+                      className={`type-btn external ${currentMedication.type === 'RECETA_EXTERNA' ? 'active' : ''}`}
+                      onClick={() => setCurrentMedication(prev => ({ ...prev, type: 'RECETA_EXTERNA' }))}
+                    >
+                      📄 {t('medico.externalPrescription', 'Receta Externa')}
+                    </button>
+                  </div>
+                  <span className="type-hint">
+                    {currentMedication.type === 'USO_INMEDIATO' 
+                      ? t('medico.internalHint', 'Se dispensará de farmacia interna') 
+                      : t('medico.externalHint', 'Se generará receta para comprar fuera')}
+                  </span>
+                </div>
+              </div>
+              
               <button 
                 className="btn-add-medication" 
                 onClick={handleAddMedication} 
@@ -2115,9 +2152,14 @@ function MedicoDashboard() {
               <div className="medications-list">
                 <h4>{t('medico.prescribedMedications', 'Prescription medications')}:</h4>
                 {prescriptionForm.medicamentos.map(med => (
-                  <div key={med.id} className="medication-item">
+                  <div key={med.id} className={`medication-item ${med.type === 'RECETA_EXTERNA' ? 'external-type' : 'internal-type'}`}>
                     <div className="medication-info">
-                      <strong>{med.nombre}</strong>
+                      <div className="med-header">
+                        <strong>{med.nombre}</strong>
+                        <span className={`type-badge ${med.type === 'RECETA_EXTERNA' ? 'external' : 'internal'}`}>
+                          {med.type === 'RECETA_EXTERNA' ? '📄 Externa' : '🏥 Interna'}
+                        </span>
+                      </div>
                       {med.presentacion && <span className="med-presentation">{med.presentacion}</span>}
                       <span className="med-dosage">{med.dosis} - {med.frecuencia} - {med.via}</span>
                       {med.duracion && <span className="med-duration">{t('medico.duration', 'Duration')}: {med.duracion}</span>}
@@ -2182,6 +2224,25 @@ function MedicoDashboard() {
         <div className="modal-overlay" onClick={() => setShowHospitalizationModal(false)}>
           <div className="modal-content" onClick={e => e.stopPropagation()}>
             <h2>🏥 {t('medico.hospitalizePatient', 'Hospitalize Patient')}</h2>
+            
+            {/* Tipo de Hospitalización */}
+            <div className="form-group">
+              <label>{t('medico.hospitalizationType', 'Tipo de Hospitalización')} *</label>
+              <select className="form-control" value={hospitalizationForm.type} onChange={(e) => setHospitalizationForm(prev => ({ ...prev, type: e.target.value }))}>
+                <option value="GENERAL">🏥 General - Hospitalización estándar</option>
+                <option value="UCI">❤️‍🩹 UCI - Cuidados Intensivos</option>
+                <option value="NEONATOS">🍼 Neonatos - Camada/recién nacidos</option>
+                <option value="INFECCIOSOS">⚠️ Infecciosos - Aislamiento</option>
+              </select>
+            </div>
+            
+            {/* Nota para neonatos */}
+            {hospitalizationForm.type === 'NEONATOS' && (
+              <div className="info-note" style={{ background: '#fff3e0', padding: '0.75rem', borderRadius: '6px', marginBottom: '1rem', borderLeft: '3px solid #ff9800' }}>
+                🍼 <strong>Hospitalización de Neonatos:</strong> Después de crear la hospitalización, ve al Dashboard de Hospitalización para registrar cada neonato de la camada con su monitoreo periódico.
+              </div>
+            )}
+            
             <div className="form-group">
               <label>{t('medico.hospitalizationReason', 'Hospitalization Reason')} *</label>
               <textarea className="form-control" placeholder={t('medico.hospitalizationReasonPlaceholder', 'Reason for hospitalizing the patient...')} rows="3" value={hospitalizationForm.motivo} onChange={(e) => setHospitalizationForm(prev => ({ ...prev, motivo: e.target.value }))} />

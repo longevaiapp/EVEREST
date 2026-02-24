@@ -83,7 +83,7 @@ export const isAdmin = authorize('ADMIN');
 export const isRecepcion = authorize('RECEPCION', 'ADMIN');
 
 // Check if user is doctor or admin
-export const isMedico = authorize('MEDICO', 'ADMIN');
+export const isMedico = authorize('MEDICO', 'ADMIN', 'HOSPITALIZACION');
 
 // Check if user is lab tech or admin
 export const isLaboratorio = authorize('LABORATORIO', 'ADMIN');
@@ -93,3 +93,6 @@ export const isFarmacia = authorize('FARMACIA', 'ADMIN');
 
 // Check if user is stylist or admin
 export const isEstilista = authorize('ESTILISTA', 'ADMIN');
+
+// Check if user is hospitalization staff or admin
+export const isHospitalizacion = authorize('HOSPITALIZACION', 'MEDICO', 'ADMIN');

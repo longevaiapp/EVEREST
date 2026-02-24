@@ -62,8 +62,8 @@ function Navbar({ onLogout }) {
     <nav className="navbar">
       <div className="navbar-content">
         <div className="navbar-brand">
-          <img src="/VET OS logo.png" alt="VET-OS Logo" className="navbar-logo" />
-          <span>VET-OS</span>
+          <img src="/logo.png" alt="Everest Vet Logo" className="navbar-logo" />
+          <span>Everest Vet</span>
         </div>
 
         <div className="navbar-user">

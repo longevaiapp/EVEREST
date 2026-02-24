@@ -81,12 +81,11 @@ export const useEstilista = () => {
         }
 
         setLoading(true);
+        setError(null);
         try {
             console.log('[useEstilista] Selecting patient:', visit.pet?.nombre);
 
-            // Get full grooming details
-            const groomingDetails = await groomingService.getByVisit(visit.id);
-
+            // Set patient info first (always available from visit)
             setSelectedPatient({
                 ...visit.pet,
                 owner: visit.pet?.owner,
@@ -95,7 +94,15 @@ export const useEstilista = () => {
                 serviceType: visit.serviceType,
             });
 
-            setSelectedGrooming(groomingDetails);
+            // Try to get grooming details (may not exist if form not filled yet)
+            try {
+                const groomingDetails = await groomingService.getByVisit(visit.id);
+                setSelectedGrooming(groomingDetails);
+            } catch (groomingErr) {
+                // Grooming service doesn't exist yet - use data from visit.groomingService if available
+                console.log('[useEstilista] No grooming service record yet, using visit data:', visit.groomingService);
+                setSelectedGrooming(visit.groomingService || null);
+            }
 
         } catch (err) {
             console.error('[useEstilista] Error selecting patient:', err);

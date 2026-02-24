@@ -22,11 +22,10 @@ export const ownerService = {
    * @param {string} phone
    */
   async searchByPhone(phone) {
-    const response = await api.get('/owners', {
-      params: { search: phone }
+    const response = await api.get('/owners', { 
+      params: { search: phone } 
     });
-    // Backend returns { status, data: { owners, pagination } }
-    return response.data?.data?.owners?.[0] || response.data?.owners?.[0] || null;
+    return response.data?.owners?.[0] || null;
   },
 
   /**
@@ -35,8 +34,7 @@ export const ownerService = {
    */
   async getById(id) {
     const response = await api.get(`/owners/${id}`);
-    // Backend returns { status: 'success', data: { owner } }
-    return response.data?.data?.owner || response.data?.owner;
+    return response.data?.owner;
   },
 
   /**
@@ -45,8 +43,7 @@ export const ownerService = {
    */
   async create(data) {
     const response = await api.post('/owners', data);
-    // Backend returns { status: 'success', data: { owner } }
-    return response.data?.data?.owner || response.data?.owner;
+    return response.data?.owner;
   },
 
   /**
@@ -56,8 +53,7 @@ export const ownerService = {
    */
   async update(id, data) {
     const response = await api.put(`/owners/${id}`, data);
-    // Backend returns { status: 'success', data: { owner } }
-    return response.data?.data?.owner || response.data?.owner;
+    return response.data?.owner;
   },
 
   /**
@@ -158,10 +154,9 @@ export const petService = {
 
     console.log('[petService] CREATE - fotoUrl length:', mappedData.fotoUrl?.length || 0);
     console.log('[petService] CREATE - fotoUrl first 100 chars:', mappedData.fotoUrl?.substring(0, 100));
-
+    
     const response = await api.post('/pets', mappedData);
-    // Backend returns { status: 'success', data: { pet } }
-    return response.data?.data?.pet || response.data?.pet;
+    return response.data?.pet;
   },
 
   /**
@@ -171,8 +166,7 @@ export const petService = {
    */
   async update(id, data) {
     const response = await api.put(`/pets/${id}`, data);
-    // Backend returns { status: 'success', data: { pet } }
-    return response.data?.data?.pet || response.data?.pet;
+    return response.data?.pet;
   },
 
   /**
@@ -182,17 +176,7 @@ export const petService = {
    */
   async updateStatus(id, estado) {
     const response = await api.patch(`/pets/${id}/status`, { estado });
-    // Backend returns { status: 'success', data: { pet } }
-    return response.data?.data?.pet || response.data?.pet;
-  },
-
-  /**
-   * Obtener mascotas de un propietario
-   * @param {string} ownerId
-   */
-  async getByOwner(ownerId) {
-    const response = await api.get(`/pets/by-owner/${ownerId}`);
-    return response.data?.pets || response.data?.data?.pets || [];
+    return response.data?.pet;
   },
 
   /**
@@ -231,7 +215,7 @@ export const visitService = {
     console.log('[visitService] getToday - response.data:', response.data);
     const visits = response.data?.visits || [];
     console.log('[visitService] getToday - Visitas extraídas:', visits.length, visits);
-
+    
     // Transformar para aplanar datos del pet y owner en la raíz
     const transformedVisits = visits.map(v => ({
       ...v,
@@ -249,25 +233,24 @@ export const visitService = {
       telefono: v.pet?.owner?.telefono,
       email: v.pet?.owner?.email,
     }));
-
+    
     return transformedVisits;
   },
 
   /**
    * Crear nueva visita (check-in)
    * @param {string|number} petId
-   * @param {string} serviceType - 'MEDICO' or 'ESTETICA' (default: 'MEDICO')
+   * @param {string} serviceType - 'MEDICO' o 'ESTETICA'
    */
   async create(petId, serviceType = 'MEDICO') {
     console.log('[visitService] create - petId:', petId, 'serviceType:', serviceType);
-    const response = await api.post('/visits', {
+    const response = await api.post('/visits', { 
       petId: String(petId),
       serviceType: serviceType
     });
     console.log('[visitService] create - Respuesta completa:', response);
     console.log('[visitService] create - response.data:', response.data);
-    // Backend returns { status: 'success', data: { visit } }
-    const visit = response.data?.data?.visit || response.data?.visit;
+    const visit = response.data?.visit;
     console.log('[visitService] create - Visita extraída:', visit);
     return visit;
   },
@@ -282,7 +265,7 @@ export const visitService = {
     if (isNaN(peso) || peso <= 0) {
       throw new Error('El peso es requerido y debe ser un número positivo');
     }
-
+    
     const mappedData = {
       tipoVisita: mapTipoVisita(data.tipoVisita),
       motivo: data.motivo || 'Consulta general',
@@ -292,7 +275,7 @@ export const visitService = {
       antecedentes: data.antecedentes || undefined,
       primeraVisita: data.primeraVisita || false,
     };
-
+    
     const response = await api.put(`/visits/${visitId}/triage`, mappedData);
     return response.data?.visit;
   },
@@ -327,9 +310,18 @@ export const visitService = {
       total: parseFloat(data.total),
       metodoPago: mapMetodoPago(data.metodoPago),
     };
-
+    
     const response = await api.put(`/visits/${visitId}/discharge`, mappedData);
     return response.data?.visit;
+  },
+
+  /**
+   * Obtener desglose de costos de una visita (medicamentos dispensados)
+   * @param {string} visitId
+   */
+  async getCosts(visitId) {
+    const response = await api.get(`/visits/${visitId}/costs`);
+    return response.data;
   },
 };
 
@@ -355,7 +347,7 @@ export const appointmentService = {
   async create(data) {
     // Mapear campos si vienen en formato alternativo
     let mappedData;
-
+    
     if (data.scheduledDate) {
       // Formato alternativo del frontend
       const date = new Date(data.scheduledDate);
@@ -378,7 +370,7 @@ export const appointmentService = {
         notas: data.notas || undefined,
       };
     }
-
+    
     const response = await api.post('/appointments', mappedData);
     return response.data?.appointment;
   },
@@ -416,8 +408,8 @@ export const appointmentService = {
    */
   async getToday() {
     const today = new Date().toISOString().split('T')[0];
-    const response = await api.get('/appointments', {
-      params: { fecha: today }
+    const response = await api.get('/appointments', { 
+      params: { fecha: today } 
     });
     return response.data?.appointments || [];
   },
@@ -466,7 +458,7 @@ function mapTipoCita(tipo) {
   if (validTypes.includes(tipo)) {
     return tipo;
   }
-
+  
   // Mapeo de formatos alternativos
   const map = {
     'consulta_general': 'CONSULTA_GENERAL',

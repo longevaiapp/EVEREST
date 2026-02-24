@@ -31,6 +31,13 @@ const initialGeneralExam = {
   boca: [], // Normales, Sarro, Gingivitis, Úlceras, Halitosis
   linfonodos: [], // Normales, Aumentados, Dolorosos
   
+  // Linfonodos palpables específicos
+  linfonodoSubmandibular: [], // Normal, Aumentado, Doloroso
+  linfonodoPreescapular: [], // Normal, Aumentado, Doloroso
+  linfonodoAxilar: [], // Normal, Aumentado, Doloroso
+  linfonodoInguinal: [], // Normal, Aumentado, Doloroso
+  linfonodoPopliteo: [], // Normal, Aumentado, Doloroso
+  
   // 6. Sistema Cardiorespiratorio
   corazon: [], // Ruidos normales, Soplo, Arritmia
   pulmones: [], // Campos limpios, Estertores, Sibilancias, Crepitaciones
@@ -173,6 +180,7 @@ const OPTIONS = {
   nariz: ['Húmeda', 'Seca', 'Secreción', 'Epistaxis'],
   boca: ['Normales', 'Sarro', 'Gingivitis', 'Úlceras', 'Halitosis'],
   linfonodos: ['Normales', 'Aumentados', 'Dolorosos'],
+  linfonodoEstado: ['Normal', 'Aumentado', 'Doloroso', 'No palpable'],
   corazon: ['Ruidos normales', 'Soplo', 'Arritmia'],
   pulmones: ['Campos limpios', 'Estertores', 'Sibilancias', 'Crepitaciones'],
   abdomen: ['Normal', 'Doloroso', 'Distendido', 'Masa palpable', 'Ascitis'],
@@ -592,13 +600,63 @@ function ExamenFisico({ onSave, initialData, consultationId, loading, triageData
                 />
               </div>
               <div className="subsection">
-                <h5>🔘 Linfonodos</h5>
+                <h5>🔘 Linfonodos (Estado General)</h5>
                 <CheckboxGroup
                   options={OPTIONS.linfonodos}
                   values={generalExam.linfonodos}
                   onChange={(v) => toggleArrayValue(setGeneralExam, 'linfonodos', v)}
                   columns={3}
                 />
+              </div>
+              <div className="subsection linfonodos-palpables">
+                <h5>🔬 Linfonodos Palpables (Especificar)</h5>
+                <div className="linfonodos-grid">
+                  <div className="linfonodo-item">
+                    <label>Submandibulares</label>
+                    <CheckboxGroup
+                      options={OPTIONS.linfonodoEstado}
+                      values={generalExam.linfonodoSubmandibular}
+                      onChange={(v) => toggleArrayValue(setGeneralExam, 'linfonodoSubmandibular', v)}
+                      columns={4}
+                    />
+                  </div>
+                  <div className="linfonodo-item">
+                    <label>Preescapulares</label>
+                    <CheckboxGroup
+                      options={OPTIONS.linfonodoEstado}
+                      values={generalExam.linfonodoPreescapular}
+                      onChange={(v) => toggleArrayValue(setGeneralExam, 'linfonodoPreescapular', v)}
+                      columns={4}
+                    />
+                  </div>
+                  <div className="linfonodo-item">
+                    <label>Axilares</label>
+                    <CheckboxGroup
+                      options={OPTIONS.linfonodoEstado}
+                      values={generalExam.linfonodoAxilar}
+                      onChange={(v) => toggleArrayValue(setGeneralExam, 'linfonodoAxilar', v)}
+                      columns={4}
+                    />
+                  </div>
+                  <div className="linfonodo-item">
+                    <label>Inguinales</label>
+                    <CheckboxGroup
+                      options={OPTIONS.linfonodoEstado}
+                      values={generalExam.linfonodoInguinal}
+                      onChange={(v) => toggleArrayValue(setGeneralExam, 'linfonodoInguinal', v)}
+                      columns={4}
+                    />
+                  </div>
+                  <div className="linfonodo-item">
+                    <label>Poplíteos</label>
+                    <CheckboxGroup
+                      options={OPTIONS.linfonodoEstado}
+                      values={generalExam.linfonodoPopliteo}
+                      onChange={(v) => toggleArrayValue(setGeneralExam, 'linfonodoPopliteo', v)}
+                      columns={4}
+                    />
+                  </div>
+                </div>
               </div>
             </Section>
 
@@ -1593,6 +1651,271 @@ function ExamenFisico({ onSave, initialData, consultationId, loading, triageData
             </Section>
           </div>
         )}
+      </div>
+
+      {/* ========== RESUMEN DEL EXAMEN ========== */}
+      <div className="exam-summary">
+        <h3 className="summary-title">📋 Resumen del Examen Físico</h3>
+        <div className="summary-content">
+          {/* Datos Generales */}
+          {(generalExam.peso || generalExam.condicionCorporal) && (
+            <div className="summary-section">
+              <h4>⚖️ Peso y Condición</h4>
+              <div className="summary-items">
+                {generalExam.peso && <span className="summary-item">Peso: <strong>{generalExam.peso} kg</strong></span>}
+                {generalExam.condicionCorporal && <span className="summary-item bcs">BCS: <strong>{generalExam.condicionCorporal}/9</strong></span>}
+              </div>
+            </div>
+          )}
+
+          {/* Estado Mental */}
+          {generalExam.estadoMental.length > 0 && (
+            <div className="summary-section">
+              <h4>🧠 Estado Mental</h4>
+              <div className="summary-tags">
+                {generalExam.estadoMental.map(item => (
+                  <span key={item} className="summary-tag mental">{item}</span>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Constantes Fisiológicas */}
+          {(generalExam.temperatura || generalExam.frecuenciaCardiaca || generalExam.frecuenciaRespiratoria || generalExam.pulso) && (
+            <div className="summary-section">
+              <h4>💓 Constantes Fisiológicas</h4>
+              <div className="summary-vitals">
+                {generalExam.temperatura && (
+                  <span className={`summary-vital ${generalExam.temperaturaEstado === 'Hipertermia' ? 'alert' : generalExam.temperaturaEstado === 'Hipotermia' ? 'warning' : ''}`}>
+                    🌡️ {generalExam.temperatura}°C {generalExam.temperaturaEstado && `(${generalExam.temperaturaEstado})`}
+                  </span>
+                )}
+                {generalExam.frecuenciaCardiaca && (
+                  <span className={`summary-vital ${generalExam.frecuenciaCardiacaEstado === 'Taquicardia' ? 'alert' : generalExam.frecuenciaCardiacaEstado === 'Bradicardia' ? 'warning' : ''}`}>
+                    ❤️ FC: {generalExam.frecuenciaCardiaca} lpm {generalExam.frecuenciaCardiacaEstado && `(${generalExam.frecuenciaCardiacaEstado})`}
+                  </span>
+                )}
+                {generalExam.frecuenciaRespiratoria && (
+                  <span className={`summary-vital ${generalExam.frecuenciaRespiratoriaEstado === 'Taquipnea' ? 'alert' : generalExam.frecuenciaRespiratoriaEstado === 'Bradipnea' ? 'warning' : ''}`}>
+                    🫁 FR: {generalExam.frecuenciaRespiratoria} rpm {generalExam.frecuenciaRespiratoriaEstado && `(${generalExam.frecuenciaRespiratoriaEstado})`}
+                  </span>
+                )}
+                {generalExam.pulso && <span className="summary-vital">💗 Pulso: {generalExam.pulso}</span>}
+              </div>
+            </div>
+          )}
+
+          {/* Hidratación */}
+          {generalExam.hidratacion && (
+            <div className="summary-section">
+              <h4>💧 Hidratación</h4>
+              <span className={`summary-tag ${generalExam.hidratacion.includes('severa') ? 'alert' : generalExam.hidratacion.includes('moderada') ? 'warning' : 'normal'}`}>
+                {generalExam.hidratacion}
+              </span>
+            </div>
+          )}
+
+          {/* Linfonodos Palpables */}
+          {(generalExam.linfonodoSubmandibular.length > 0 || generalExam.linfonodoPreescapular.length > 0 || 
+            generalExam.linfonodoAxilar.length > 0 || generalExam.linfonodoInguinal.length > 0 || 
+            generalExam.linfonodoPopliteo.length > 0) && (
+            <div className="summary-section">
+              <h4>🔬 Linfonodos Palpables</h4>
+              <div className="summary-linfonodos">
+                {generalExam.linfonodoSubmandibular.length > 0 && (
+                  <div className="linfonodo-summary">
+                    <span className="linfonodo-name">Submandibulares:</span>
+                    {generalExam.linfonodoSubmandibular.map(item => (
+                      <span key={item} className={`summary-tag ${item === 'Aumentado' || item === 'Doloroso' ? 'warning' : 'normal'}`}>{item}</span>
+                    ))}
+                  </div>
+                )}
+                {generalExam.linfonodoPreescapular.length > 0 && (
+                  <div className="linfonodo-summary">
+                    <span className="linfonodo-name">Preescapulares:</span>
+                    {generalExam.linfonodoPreescapular.map(item => (
+                      <span key={item} className={`summary-tag ${item === 'Aumentado' || item === 'Doloroso' ? 'warning' : 'normal'}`}>{item}</span>
+                    ))}
+                  </div>
+                )}
+                {generalExam.linfonodoAxilar.length > 0 && (
+                  <div className="linfonodo-summary">
+                    <span className="linfonodo-name">Axilares:</span>
+                    {generalExam.linfonodoAxilar.map(item => (
+                      <span key={item} className={`summary-tag ${item === 'Aumentado' || item === 'Doloroso' ? 'warning' : 'normal'}`}>{item}</span>
+                    ))}
+                  </div>
+                )}
+                {generalExam.linfonodoInguinal.length > 0 && (
+                  <div className="linfonodo-summary">
+                    <span className="linfonodo-name">Inguinales:</span>
+                    {generalExam.linfonodoInguinal.map(item => (
+                      <span key={item} className={`summary-tag ${item === 'Aumentado' || item === 'Doloroso' ? 'warning' : 'normal'}`}>{item}</span>
+                    ))}
+                  </div>
+                )}
+                {generalExam.linfonodoPopliteo.length > 0 && (
+                  <div className="linfonodo-summary">
+                    <span className="linfonodo-name">Poplíteos:</span>
+                    {generalExam.linfonodoPopliteo.map(item => (
+                      <span key={item} className={`summary-tag ${item === 'Aumentado' || item === 'Doloroso' ? 'warning' : 'normal'}`}>{item}</span>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+
+          {/* Hallazgos por Sistema */}
+          {(generalExam.ojos.length > 0 || generalExam.oidos.length > 0 || generalExam.nariz.length > 0 || 
+            generalExam.boca.length > 0 || generalExam.corazon.length > 0 || generalExam.pulmones.length > 0 ||
+            generalExam.abdomen.length > 0 || generalExam.musculoesqueletico.length > 0 || 
+            generalExam.neurologico.length > 0 || generalExam.piel.length > 0 || 
+            generalExam.urogenital.length > 0 || generalExam.perianal.length > 0) && (
+            <div className="summary-section">
+              <h4>🩺 Hallazgos por Sistema</h4>
+              <div className="summary-systems">
+                {generalExam.ojos.length > 0 && generalExam.ojos.some(o => o !== 'Normales') && (
+                  <div className="system-finding">
+                    <span className="system-icon">👁️</span>
+                    <span className="system-name">Ojos:</span>
+                    <div className="system-values">
+                      {generalExam.ojos.map(item => (
+                        <span key={item} className={`summary-tag ${item !== 'Normales' ? 'finding' : 'normal'}`}>{item}</span>
+                      ))}
+                    </div>
+                  </div>
+                )}
+                {generalExam.oidos.length > 0 && generalExam.oidos.some(o => o !== 'Normales') && (
+                  <div className="system-finding">
+                    <span className="system-icon">👂</span>
+                    <span className="system-name">Oídos:</span>
+                    <div className="system-values">
+                      {generalExam.oidos.map(item => (
+                        <span key={item} className={`summary-tag ${item !== 'Normales' ? 'finding' : 'normal'}`}>{item}</span>
+                      ))}
+                    </div>
+                  </div>
+                )}
+                {generalExam.corazon.length > 0 && generalExam.corazon.some(o => o !== 'Ruidos normales') && (
+                  <div className="system-finding">
+                    <span className="system-icon">💓</span>
+                    <span className="system-name">Corazón:</span>
+                    <div className="system-values">
+                      {generalExam.corazon.map(item => (
+                        <span key={item} className={`summary-tag ${item !== 'Ruidos normales' ? 'alert' : 'normal'}`}>{item}</span>
+                      ))}
+                    </div>
+                  </div>
+                )}
+                {generalExam.pulmones.length > 0 && generalExam.pulmones.some(o => o !== 'Campos limpios') && (
+                  <div className="system-finding">
+                    <span className="system-icon">🫁</span>
+                    <span className="system-name">Pulmones:</span>
+                    <div className="system-values">
+                      {generalExam.pulmones.map(item => (
+                        <span key={item} className={`summary-tag ${item !== 'Campos limpios' ? 'warning' : 'normal'}`}>{item}</span>
+                      ))}
+                    </div>
+                  </div>
+                )}
+                {generalExam.abdomen.length > 0 && generalExam.abdomen.some(o => o !== 'Normal') && (
+                  <div className="system-finding">
+                    <span className="system-icon">🔍</span>
+                    <span className="system-name">Abdomen:</span>
+                    <div className="system-values">
+                      {generalExam.abdomen.map(item => (
+                        <span key={item} className={`summary-tag ${item !== 'Normal' ? 'warning' : 'normal'}`}>{item}</span>
+                      ))}
+                    </div>
+                  </div>
+                )}
+                {generalExam.neurologico.length > 0 && generalExam.neurologico.some(o => o !== 'Normal') && (
+                  <div className="system-finding">
+                    <span className="system-icon">🧠</span>
+                    <span className="system-name">Neurológico:</span>
+                    <div className="system-values">
+                      {generalExam.neurologico.map(item => (
+                        <span key={item} className={`summary-tag ${item !== 'Normal' ? 'alert' : 'normal'}`}>{item}</span>
+                      ))}
+                    </div>
+                  </div>
+                )}
+                {generalExam.piel.length > 0 && generalExam.piel.some(o => o !== 'Piel normal') && (
+                  <div className="system-finding">
+                    <span className="system-icon">🔬</span>
+                    <span className="system-name">Piel:</span>
+                    <div className="system-values">
+                      {generalExam.piel.map(item => (
+                        <span key={item} className={`summary-tag ${item !== 'Piel normal' ? 'finding' : 'normal'}`}>{item}</span>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+
+          {/* Observaciones */}
+          {generalExam.observaciones && (
+            <div className="summary-section">
+              <h4>📝 Observaciones</h4>
+              <p className="summary-observations">{generalExam.observaciones}</p>
+            </div>
+          )}
+
+          {/* Exámenes Especializados */}
+          {(neuroExam.estadoMental || neuroExam.localizacion.length > 0 || 
+            dermaExam.condicionPiel.length > 0 || dermaExam.impresion.length > 0 ||
+            oftalmoExam.impresion.length > 0 || ortoExam.impresion.length > 0) && (
+            <div className="summary-section specialized">
+              <h4>🔬 Exámenes Especializados</h4>
+              <div className="specialized-tags">
+                {neuroExam.localizacion.length > 0 && (
+                  <div className="specialized-item">
+                    <span className="spec-label">🧠 Neuro:</span>
+                    {neuroExam.localizacion.map(item => (
+                      <span key={item} className="summary-tag neuro">{item}</span>
+                    ))}
+                  </div>
+                )}
+                {dermaExam.impresion.length > 0 && (
+                  <div className="specialized-item">
+                    <span className="spec-label">🔬 Derma:</span>
+                    {dermaExam.impresion.map(item => (
+                      <span key={item} className="summary-tag derma">{item}</span>
+                    ))}
+                  </div>
+                )}
+                {oftalmoExam.impresion.length > 0 && (
+                  <div className="specialized-item">
+                    <span className="spec-label">👁️ Oftalmo:</span>
+                    {oftalmoExam.impresion.map(item => (
+                      <span key={item} className="summary-tag oftalmo">{item}</span>
+                    ))}
+                  </div>
+                )}
+                {ortoExam.impresion.length > 0 && (
+                  <div className="specialized-item">
+                    <span className="spec-label">🦴 Orto:</span>
+                    {ortoExam.impresion.map(item => (
+                      <span key={item} className="summary-tag orto">{item}</span>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+
+          {/* Mensaje si no hay datos */}
+          {!generalExam.peso && !generalExam.condicionCorporal && generalExam.estadoMental.length === 0 && 
+           !generalExam.temperatura && !generalExam.frecuenciaCardiaca && (
+            <div className="summary-empty">
+              <span className="empty-icon">📋</span>
+              <p>Complete el examen físico para ver el resumen aquí</p>
+            </div>
+          )}
+        </div>
       </div>
 
       {/* Botón de guardar */}

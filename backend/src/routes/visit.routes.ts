@@ -169,4 +169,85 @@ router.put('/:id/discharge', authenticate, isRecepcion, async (req, res) => {
   res.json({ status: 'success', data: { visit } });
 });
 
+// GET /visits/:id/costs - Get visit costs breakdown (medications, services)
+router.get('/:id/costs', authenticate, async (req, res) => {
+  const visitId = req.params.id as string;
+
+  // Get visit with consultation and dispenses
+  const visit = await prisma.visit.findUnique({
+    where: { id: visitId },
+    include: {
+      consultation: {
+        include: {
+          prescriptions: {
+            include: {
+              items: true,
+              dispenses: {
+                include: {
+                  items: {
+                    include: { medication: true },
+                  },
+                },
+              },
+            },
+          },
+        },
+      },
+    },
+  });
+
+  if (!visit) {
+    throw new AppError('Visit not found', 404);
+  }
+
+  // Calculate medication costs from dispensed items
+  const medicationCosts: Array<{
+    name: string;
+    quantity: number;
+    unitPrice: number | null;
+    total: number | null;
+  }> = [];
+
+  let totalMedicationCost = 0;
+
+  // Visit has singular consultation (1:1)
+  const consultation = visit.consultation;
+  if (consultation) {
+    for (const prescription of consultation.prescriptions) {
+      // Get costs from DispenseItems (actual dispensed medications)
+      for (const dispense of (prescription as any).dispenses || []) {
+        for (const dispenseItem of dispense.items || []) {
+          const itemTotal = dispenseItem.subtotal 
+            ? Number(dispenseItem.subtotal) 
+            : (dispenseItem.unitPrice ? Number(dispenseItem.unitPrice) * dispenseItem.dispensedQty : null);
+          
+          medicationCosts.push({
+            name: dispenseItem.medicationName || dispenseItem.medication?.name || 'Unknown',
+            quantity: dispenseItem.dispensedQty,
+            unitPrice: dispenseItem.unitPrice ? Number(dispenseItem.unitPrice) : null,
+            total: itemTotal,
+          });
+
+          if (itemTotal) {
+            totalMedicationCost += itemTotal;
+          }
+        }
+      }
+    }
+  }
+
+  res.json({
+    status: 'success',
+    data: {
+      visitId,
+      consultationId: consultation?.id || null,
+      medications: medicationCosts,
+      totalMedicationCost,
+      // Placeholder for other costs (services, procedures) that can be added later
+      totalServiceCost: 0,
+      grandTotal: totalMedicationCost,
+    },
+  });
+});
+
 export default router;

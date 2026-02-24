@@ -333,7 +333,7 @@ const useFarmacia = () => {
   // ==================== PRESCRIPTIONS ====================
 
   /**
-   * Fetch pending prescriptions
+   * Fetch pending prescriptions (from consultations)
    */
   const fetchPendingPrescriptions = useCallback(async () => {
     setLoading(prev => ({ ...prev, prescriptions: true }));
@@ -346,6 +346,26 @@ const useFarmacia = () => {
     } catch (err) {
       console.error('[useFarmacia] Error fetching prescriptions:', err);
       setError(err.message || 'Failed to load prescriptions');
+      return [];
+    } finally {
+      setLoading(prev => ({ ...prev, prescriptions: false }));
+    }
+  }, []);
+
+  /**
+   * Fetch pending medications from hospitalizations
+   * These are medications that need to be prepared for hospitalized patients
+   */
+  const fetchHospitalizationMeds = useCallback(async () => {
+    setLoading(prev => ({ ...prev, prescriptions: true }));
+    setError(null);
+    try {
+      const result = await farmaciaService.getHospitalizationPendingMeds();
+      console.log('[useFarmacia] Hospitalization pending meds:', result.count);
+      return result.items || [];
+    } catch (err) {
+      console.error('[useFarmacia] Error fetching hospitalization meds:', err);
+      setError(err.message || 'Failed to load hospitalization medications');
       return [];
     } finally {
       setLoading(prev => ({ ...prev, prescriptions: false }));
@@ -576,6 +596,7 @@ const useFarmacia = () => {
     
     // Prescription actions
     fetchPendingPrescriptions,
+    fetchHospitalizationMeds,
     rejectPrescription,
     dispensePrescription,
     

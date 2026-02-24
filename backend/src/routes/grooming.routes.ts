@@ -177,13 +177,10 @@ router.get('/:visitId', authenticate, async (req, res) => {
         }
     });
 
-    if (!groomingService) {
-        throw new AppError('Grooming service not found for this visit', 404);
-    }
-
+    // Return null if not found (instead of 404) - grooming service may not exist yet
     res.json({
         status: 'success',
-        data: { groomingService }
+        data: { groomingService: groomingService || null }
     });
 });
 

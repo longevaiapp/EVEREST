@@ -43,7 +43,7 @@ router.post('/', authenticate, isRecepcion, async (req, res) => {
     petId: z.string().or(z.number()).transform(val => String(val)),
     fecha: z.string(),
     hora: z.string().regex(/^\d{2}:\d{2}$/),
-    tipo: z.enum(['CONSULTA_GENERAL', 'SEGUIMIENTO', 'VACUNACION', 'CIRUGIA', 'EMERGENCIA']),
+    tipo: z.enum(['CONSULTA_GENERAL', 'SEGUIMIENTO', 'VACUNACION', 'CIRUGIA', 'EMERGENCIA', 'ESTETICA']),
     motivo: z.string().min(1),
     notas: z.string().optional(),
   });

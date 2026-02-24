@@ -116,10 +116,12 @@ function FarmaciaDashboard() {
     refreshAll,
     fetchPharmacyStats,
     pharmacyStats,
+    fetchHospitalizationMeds,
   } = useFarmacia();
 
   const [selectedOrder, setSelectedOrder] = useState(null);
   const [preparingMeds, setPreparingMeds] = useState({});
+  const [hospitalizationMeds, setHospitalizationMeds] = useState([]);
   const [activeSection, setActiveSection] = useState('dashboard');
   const [searchQuery, setSearchQuery] = useState('');
   const [categoryFilter, setCategoryFilter] = useState('');
@@ -232,6 +234,22 @@ function FarmaciaDashboard() {
     notes: ''
   });
 
+  // Load hospitalization medications
+  const loadHospitalizationMeds = useCallback(async () => {
+    try {
+      const meds = await fetchHospitalizationMeds();
+      // Mark each item as hospitalization source
+      const markedMeds = (meds || []).map(item => ({
+        ...item,
+        isHospitalization: true,
+        sourceType: 'HOSPITALIZACION'
+      }));
+      setHospitalizationMeds(markedMeds);
+    } catch (err) {
+      console.error('[FarmaciaDashboard] Error loading hospitalization meds:', err);
+    }
+  }, [fetchHospitalizationMeds]);
+
   // Fetch medications on mount
   useEffect(() => {
     fetchMedications();
@@ -244,7 +262,8 @@ function FarmaciaDashboard() {
     fetchDispenseHistory({});
     fetchStockAlerts();
     fetchPharmacyStats();
-  }, [fetchPendingPrescriptions, fetchDispenseHistory, fetchStockAlerts, fetchPharmacyStats]);
+    loadHospitalizationMeds();
+  }, [fetchPendingPrescriptions, fetchDispenseHistory, fetchStockAlerts, fetchPharmacyStats, loadHospitalizationMeds]);
   
   // Refetch dispense history when date changes
   useEffect(() => {
@@ -277,9 +296,15 @@ function FarmaciaDashboard() {
     };
   }, [searchQuery, categoryFilter, fetchMedications]);
 
-  // Legacy compatibility - merge API prescriptions with context tasks
+  // Legacy compatibility - merge API prescriptions with context tasks and hospitalization meds
   const myTasks = systemState?.tareasPendientes?.FARMACIA || [];
-  const allPendingOrders = [...pendingPrescriptions, ...myTasks];
+  // Mark regular prescriptions as consultation type
+  const markedPrescriptions = pendingPrescriptions.map(p => ({
+    ...p,
+    isHospitalization: false,
+    sourceType: 'CONSULTA'
+  }));
+  const allPendingOrders = [...markedPrescriptions, ...hospitalizationMeds, ...myTasks];
   const pharmacyPatients = systemState?.pacientes?.filter(p => p.estado === 'EN_FARMACIA') || [];
   
   // Filter orders
@@ -946,8 +971,18 @@ function FarmaciaDashboard() {
     setSelectedPrescription(prescription);
     
     // Initialize dispense form with prescription items
+    // ONLY include USO_INMEDIATO items - external prescriptions are handled by reception
+    const internalItems = (prescription.items || []).filter(item => 
+      !item.type || item.type === 'USO_INMEDIATO'
+    );
+    
+    if (internalItems.length === 0) {
+      toast.info('Esta receta solo tiene medicamentos externos. La receta se imprime en Recepción.');
+      return;
+    }
+    
     // Try to auto-match prescription items to inventory medications
-    const items = (prescription.items || []).map(item => {
+    const items = internalItems.map(item => {
       const prescribedName = (item.name || item.nombre || '').toLowerCase().trim();
       
       // Try to find a matching medication in inventory
@@ -1277,7 +1312,7 @@ function FarmaciaDashboard() {
             
             <div className="dashboard-stats">
               <div className="stat-card">
-                <div className="stat-icon" style={{background: '#9c27b0'}}>💊</div>
+                <div className="stat-icon" style={{background: '#0077b6'}}>💊</div>
                 <div className="stat-content">
                   <h3>{loading.prescriptions ? '...' : allPendingOrders.length}</h3>
                   <p>{t('farmacia.stats.pendingOrders')}</p>
@@ -1347,9 +1382,15 @@ function FarmaciaDashboard() {
                             <strong>{t('farmacia.prescriptions.medications')}:</strong>
                             {task.items ? (
                               <ul className="medication-list">
-                                {task.items.map((item, idx) => (
-                                  <li key={idx}>{item.name || item.nombre} - {item.quantity || item.cantidad} {item.dosage || ''}</li>
-                                ))}
+                                {task.items.map((item, idx) => {
+                                  const isExternal = item.type === 'RECETA_EXTERNA';
+                                  return (
+                                    <li key={idx} className={isExternal ? 'external-item' : ''}>
+                                      {item.name || item.nombre} - {item.quantity || item.cantidad} {item.dosage || ''}
+                                      {isExternal && <span className="med-type-badge external"> 📄 Ext</span>}
+                                    </li>
+                                  );
+                                })}
                               </ul>
                             ) : (
                               <p>{task.descripcion || task.generalInstructions || t('farmacia.empty.noDetails')}</p>
@@ -1363,19 +1404,27 @@ function FarmaciaDashboard() {
                             >
                               👁️ {t('farmacia.prescriptions.details')}
                             </button>
-                            <button 
-                              className="btn-danger-outline"
-                              onClick={() => handleOpenRejectModal(task)}
-                            >
-                              ❌ {t('farmacia.prescriptions.reject')}
-                            </button>
-                            <button 
-                              className={`btn-prepare ${isPreparing ? 'preparing' : ''}`}
-                              onClick={() => task.items ? handleOpenDispenseModal(task) : handlePrepare(task.id, task.pacienteId)}
-                              disabled={isPreparing}
-                            >
-                              {isPreparing ? `⏳ ${t('farmacia.prescriptions.preparing')}...` : `📦 ${t('farmacia.prescriptions.prepare')}`}
-                            </button>
+                            {task.internalCount > 0 ? (
+                              <>
+                                <button 
+                                  className="btn-danger-outline"
+                                  onClick={() => handleOpenRejectModal(task)}
+                                >
+                                  ❌ {t('farmacia.prescriptions.reject')}
+                                </button>
+                                <button 
+                                  className={`btn-prepare ${isPreparing ? 'preparing' : ''}`}
+                                  onClick={() => task.items ? handleOpenDispenseModal(task) : handlePrepare(task.id, task.pacienteId)}
+                                  disabled={isPreparing}
+                                >
+                                  {isPreparing ? `⏳ ${t('farmacia.prescriptions.preparing')}...` : `📦 Dispense (${task.internalCount})`}
+                                </button>
+                              </>
+                            ) : (
+                              <div className="external-only-notice">
+                                📄 Solo receta externa
+                              </div>
+                            )}
                           </div>
                         </div>
                       );
@@ -1473,7 +1522,7 @@ function FarmaciaDashboard() {
         {/* RECETAS PENDIENTES VIEW */}
         {activeSection === 'recetas' && (
           <div className="dashboard-content">
-            <div className="content-section full-width" style={{background: 'linear-gradient(135deg, rgba(30, 60, 114, 0.95) 0%, rgba(42, 82, 152, 0.9) 100%)', borderRadius: '20px', border: '1px solid rgba(100, 150, 255, 0.3)'}}>
+            <div className="content-section full-width" style={{background: '#ffffff', borderRadius: '20px', border: '1px solid #e2e8f0'}}>
               <div className="section-header">
                 <h2>📝 {t('farmacia.prescriptions.allPendingOrders')}</h2>
                 <button 
@@ -1503,13 +1552,18 @@ function FarmaciaDashboard() {
                       const patient = getPatientForPrescription(task) || systemState?.pacientes?.find(p => p.id === task.pacienteId);
                       const isPreparing = preparingMeds[task.id];
                       const isUrgent = task.prioridad === 'ALTA' || task.prioridad === 'URGENTE' || task.priority === 'urgent';
+                      const isHosp = task.isHospitalization || task.sourceType === 'HOSPITALIZACION';
                       
                       return (
-                        <div key={task.id} className={`order-card ${isUrgent ? 'urgent' : ''}`}>
+                        <div key={task.id} className={`order-card ${isUrgent ? 'urgent' : ''} ${isHosp ? 'hospitalization' : ''}`}>
                           <div className="order-header">
                             <div className="order-info">
                               <span className={`order-priority ${isUrgent ? 'urgent' : ''}`}>
                                 {task.prioridad || task.priority || 'NORMAL'}
+                              </span>
+                              {/* Destination indicator */}
+                              <span className={`destination-badge ${isHosp ? 'hospital' : 'consult'}`}>
+                                {isHosp ? '🏥 Hospitalización' : '🩺 Consulta'}
                               </span>
                               <span className="order-time">{new Date(task.timestamp || task.createdAt).toLocaleTimeString()}</span>
                               {task.status === 'PARCIAL' && (
@@ -1537,17 +1591,28 @@ function FarmaciaDashboard() {
                             <strong>Prescribed Medications:</strong>
                             {task.items && task.items.length > 0 ? (
                               <ul className="medication-list">
-                                {task.items.map((item, idx) => (
-                                  <li key={idx}>
-                                    <span className="med-name">{item.name || item.nombre}</span>
-                                    <span className="med-qty">x{item.quantity || item.cantidad}</span>
-                                    {item.dosage && <span className="med-dosage">{item.dosage}</span>}
-                                    {item.frequency && <span className="med-freq">{item.frequency}</span>}
-                                  </li>
-                                ))}
+                                {task.items.map((item, idx) => {
+                                  const isExternal = item.type === 'RECETA_EXTERNA';
+                                  return (
+                                    <li key={idx} className={isExternal ? 'external-item' : 'internal-item'}>
+                                      <span className="med-name">{item.name || item.nombre}</span>
+                                      <span className="med-qty">x{item.quantity || item.cantidad}</span>
+                                      {item.dosage && <span className="med-dosage">{item.dosage}</span>}
+                                      {item.frequency && <span className="med-freq">{item.frequency}</span>}
+                                      <span className={`med-type-badge ${isExternal ? 'external' : 'internal'}`}>
+                                        {isExternal ? '📄 Receta Externa' : '🏥 Uso Interno'}
+                                      </span>
+                                    </li>
+                                  );
+                                })}
                               </ul>
                             ) : (
                               <p>{task.descripcion || task.generalInstructions || 'No details available'}</p>
+                            )}
+                            {task.externalCount > 0 && (
+                              <div className="external-notice">
+                                ℹ️ {task.externalCount} medicamento(s) de receta externa - La receta se entrega en Recepción
+                              </div>
                             )}
                           </div>
                           
@@ -1565,19 +1630,27 @@ function FarmaciaDashboard() {
                             >
                               👁️ View Details
                             </button>
-                            <button 
-                              className="btn-danger-outline"
-                              onClick={() => handleOpenRejectModal(task)}
-                            >
-                              ❌ Reject
-                            </button>
-                            <button 
-                              className={`btn-prepare ${isPreparing ? 'preparing' : ''}`}
-                              onClick={() => task.items ? handleOpenDispenseModal(task) : handlePrepare(task.id, task.pacienteId)}
-                              disabled={isPreparing}
-                            >
-                              {isPreparing ? '⏳ Preparing...' : '📦 Prepare & Deliver'}
-                            </button>
+                            {task.internalCount > 0 ? (
+                              <>
+                                <button 
+                                  className="btn-danger-outline"
+                                  onClick={() => handleOpenRejectModal(task)}
+                                >
+                                  ❌ Reject
+                                </button>
+                                <button 
+                                  className={`btn-prepare ${isPreparing ? 'preparing' : ''}`}
+                                  onClick={() => task.items ? handleOpenDispenseModal(task) : handlePrepare(task.id, task.pacienteId)}
+                                  disabled={isPreparing}
+                                >
+                                  {isPreparing ? '⏳ Preparing...' : `📦 Dispense (${task.internalCount})`}
+                                </button>
+                              </>
+                            ) : (
+                              <div className="external-only-notice">
+                                📄 Solo receta externa - Se imprime en Recepción
+                              </div>
+                            )}
                           </div>
                         </div>
                       );
@@ -1592,7 +1665,7 @@ function FarmaciaDashboard() {
         {/* INVENTARIO VIEW */}
         {activeSection === 'inventario' && (
           <div className="dashboard-content">
-            <div className="content-section full-width" style={{background: 'linear-gradient(135deg, rgba(30, 60, 114, 0.95) 0%, rgba(42, 82, 152, 0.9) 100%)', borderRadius: '20px', border: '1px solid rgba(100, 150, 255, 0.3)'}}>
+            <div className="content-section full-width" style={{background: '#ffffff', borderRadius: '20px', border: '1px solid #e2e8f0'}}>
               <div className="section-header">
                 <h2>Inventory Control</h2>
                 <div className="section-actions">
@@ -1634,7 +1707,7 @@ function FarmaciaDashboard() {
                       setShowNewMedicationModal(true);
                     }}
                   >
-                    + {t('farmacia.medications.addNew')}
+                    + {t('farmacia.medicationDetails.addNew')}
                   </button>
                 </div>
               </div>
@@ -1683,31 +1756,31 @@ function FarmaciaDashboard() {
                             </div>
                             <div className="inventory-badges">
                               <span className="inventory-category">{item.categoria}</span>
-                              {item.isControlled && <span className="badge-controlled">⚠️ {t('farmacia.medications.controlled')}</span>}
+                              {item.isControlled && <span className="badge-controlled">⚠️ {t('farmacia.medicationDetails.controlled')}</span>}
                               {item.requiresRefrigeration && <span className="badge-refrigeration">❄️</span>}
                             </div>
                           </div>
                           
                           {expiringSoon && (
                             <div className="expiration-warning">
-                              ⚠️ {t('farmacia.medications.expiresInDays', { days: daysUntilExp })}
+                              ⚠️ {t('farmacia.medicationDetails.expiresInDays', { days: daysUntilExp })}
                             </div>
                           )}
                           
                           <div className="inventory-details">
                             <div className="detail-row">
-                              <span>{t('farmacia.medications.stock')}:</span>
+                              <span>{t('farmacia.medicationDetails.stock')}:</span>
                               <strong className={isLowStock ? 'text-danger' : 'text-success'}>
                                 {item.stock} / {item.minimo}
                               </strong>
                             </div>
                             <div className="detail-row">
-                              <span>{t('farmacia.medications.price')}:</span>
+                              <span>{t('farmacia.medicationDetails.salePrice')}:</span>
                               <strong>${(Number(item.precio) || 0).toFixed(2)}</strong>
                             </div>
                             {item.location && (
                               <div className="detail-row">
-                                <span>{t('farmacia.medications.location')}:</span>
+                                <span>{t('farmacia.medicationDetails.location')}:</span>
                                 <strong>{item.location}</strong>
                               </div>
                             )}
@@ -1727,14 +1800,14 @@ function FarmaciaDashboard() {
 
                           {isLowStock && (
                             <div className="low-stock-alert">
-                              🔴 {t('farmacia.medications.lowStockAlert')}
+                              🔴 {t('farmacia.medicationDetails.lowStockAlert')}
                             </div>
                           )}
 
                           {/* Show mark as expired option for expired medications */}
                           {isExpired(item) && (
                             <div className="expired-warning">
-                              ☠️ {t('farmacia.medications.expired')} - 
+                              ☠️ {t('farmacia.medicationDetails.expired')} - 
                               <button 
                                 className="btn-link"
                                 onClick={() => handleOpenMarkExpired(item)}
@@ -1844,13 +1917,25 @@ function FarmaciaDashboard() {
                           const dispenseTime = dispense.createdAt 
                             ? new Date(dispense.createdAt).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })
                             : dispense.time || '--:--';
-                          const patientName = dispense.patient?.name || dispense.patientName || 'Unknown';
-                          const patientSpecies = dispense.patient?.species || dispense.species || 'dog';
-                          const ownerName = dispense.patient?.owner?.name || dispense.ownerName || 'Unknown';
-                          const medsDisplay = dispense.items?.map(i => i.medication?.name || i.medicationName).join(', ') 
+                          
+                          // Get patient info from nested prescription structure
+                          const pet = dispense.prescription?.consultation?.visit?.pet;
+                          const owner = pet?.owner;
+                          
+                          const patientName = pet?.nombre || dispense.patient?.name || dispense.patientName || 'Unknown';
+                          const patientSpecies = pet?.especie || dispense.patient?.species || dispense.species || 'dog';
+                          const ownerName = owner?.nombre || dispense.patient?.owner?.name || dispense.ownerName || 'Unknown';
+                          
+                          // Get medications list and calculate total
+                          const medsDisplay = dispense.items?.map(i => i.medication?.name || i.medicationName).filter(Boolean).join(', ') 
                             || dispense.medications || 'N/A';
                           const itemCount = dispense.items?.length || dispense.itemCount || 1;
-                          const total = dispense.total || dispense.valorTotal || 0;
+                          
+                          // Calculate total from items
+                          const total = dispense.items?.reduce((sum, item) => {
+                            return sum + (item.subtotal ? Number(item.subtotal) : (item.unitPrice * item.dispensedQty) || 0);
+                          }, 0) || dispense.total || dispense.valorTotal || 0;
+                          
                           const status = dispense.status || 'COMPLETO';
                           
                           return (
@@ -1868,7 +1953,7 @@ function FarmaciaDashboard() {
                                 {medsDisplay.length > 40 ? medsDisplay.substring(0, 40) + '...' : medsDisplay}
                               </td>
                               <td className="qty-cell">{itemCount} {itemCount === 1 ? t('farmacia.dispenseHistory.item') : t('farmacia.dispenseHistory.items')}</td>
-                              <td>{ownerName}</td>
+                              <td className="owner-cell">{ownerName}</td>
                               <td className="total-cell">${total.toFixed(2)}</td>
                               <td>
                                 <span className={`status-badge ${status === 'COMPLETO' ? 'success' : 'warning'}`}>
@@ -2301,7 +2386,7 @@ function FarmaciaDashboard() {
           <div className="modal-overlay" onClick={() => setShowNewMedicationModal(false)}>
             <div className="modal-content large medication-modal" onClick={e => e.stopPropagation()}>
               <div className="modal-header">
-                <h2>➕ {t('farmacia.medications.addNew')}</h2>
+                <h2>➕ {t('farmacia.medicationDetails.addNew')}</h2>
                 <button className="close-btn" onClick={() => setShowNewMedicationModal(false)}>✕</button>
               </div>
               

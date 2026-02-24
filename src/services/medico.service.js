@@ -199,6 +199,8 @@ export const recetaService = {
       duration: item.duracion || item.duration || '7 días',
       quantity: item.cantidad || item.quantity || 1,
       instructions: item.instrucciones || item.instructions,
+      type: item.type || 'USO_INMEDIATO',
+      medicationId: item.medicationId || undefined,
     }));
 
     const payload = {
@@ -231,6 +233,18 @@ export const recetaService = {
   async getPendientes() {
     const response = await api.get('/prescriptions/pending');
     return response.data?.prescriptions || [];
+  },
+
+  /**
+   * Obtener recetas externas para PDF (RECETA_EXTERNA)
+   * @param {string} consultationId
+   */
+  async getExternalForPdf(consultationId) {
+    const response = await api.get(`/prescriptions/external/${consultationId}`);
+    return {
+      prescriptions: response.data?.prescriptions || [],
+      businessInfo: response.data?.businessInfo || null,
+    };
   },
 };
 
@@ -344,7 +358,7 @@ export const citaSeguimientoService = {
 export const hospitalizacionService = {
   /**
    * Hospitalizar paciente
-   * @param {Object} data - { consultationId, petId, reason, location?, frecuenciaMonitoreo?, cuidadosEspeciales?, estimacionDias? }
+   * @param {Object} data - { consultationId, petId, type?, reason, location?, frecuenciaMonitoreo?, cuidadosEspeciales?, estimacionDias? }
    */
   async hospitalizar(data) {
     console.log('[hospitalizacionService.hospitalizar] data recibida:', JSON.stringify(data, null, 2));
@@ -352,6 +366,7 @@ export const hospitalizacionService = {
     const payload = {
       consultationId: data.consultationId,
       petId: data.petId,
+      type: data.type || 'GENERAL',
       reason: data.motivo || data.reason,
       location: data.ubicacion || data.location,
       frecuenciaMonitoreo: data.frecuenciaMonitoreo,
