@@ -51,28 +51,32 @@ const preventiveMedicineSchema = z.object({
   visitId: z.string().cuid(),
   petId: z.string().cuid(),
   // Basic physical exam
-  temperatura: z.number().optional(),
-  peso: z.number().optional(),
-  frecuenciaCardiaca: z.number().int().optional(),
-  frecuenciaRespiratoria: z.number().int().optional(),
-  condicionGeneral: z.enum(['Normal', 'Requiere atención']).optional(),
-  observaciones: z.string().optional(),
+  temperatura: z.number().optional().nullable(),
+  peso: z.number().optional().nullable(),
+  frecuenciaCardiaca: z.number().int().optional().nullable(),
+  frecuenciaRespiratoria: z.number().int().optional().nullable(),
+  condicionGeneral: z.enum(['Normal', 'Requiere atención']).optional().nullable(),
+  observaciones: z.string().optional().nullable(),
   // Vaccines to apply (array of vaccine records)
   vaccines: z.array(z.object({
     medicationId: z.string().cuid(),
-    lote: z.string().optional(),
-    fechaCaducidad: z.string().datetime().optional(),
-    proximaDosis: z.string().datetime().optional(),
-    viaAdministracion: z.string().optional(),
-    notas: z.string().optional(),
+    marca: z.string().optional().nullable(),
+    nombreComercial: z.string().optional().nullable(),
+    lote: z.string().optional().nullable(),
+    fechaCaducidad: z.string().datetime().optional().nullable(),
+    proximaDosis: z.string().datetime().optional().nullable(),
+    viaAdministracion: z.string().optional().nullable(),
+    notas: z.string().optional().nullable(),
   })).optional().default([]),
   // Dewormings to apply
   dewormings: z.array(z.object({
     medicationId: z.string().cuid(),
+    marca: z.string().optional().nullable(),
+    nombreComercial: z.string().optional().nullable(),
     tipo: z.enum(['Interna', 'Externa', 'Ambas']),
-    lote: z.string().optional(),
+    lote: z.string().optional().nullable(),
     proximaAplicacion: z.string().datetime(),
-    notas: z.string().optional(),
+    notas: z.string().optional().nullable(),
   })).optional().default([]),
 });
 
@@ -220,7 +224,7 @@ router.get('/dewormers', authenticate, async (req, res) => {
 // GET /preventive-medicine/pet/:petId/history - Get pet's vaccine & deworming history
 // ============================================================================
 router.get('/pet/:petId/history', authenticate, async (req, res) => {
-  const { petId } = req.params;
+  const petId = req.params.petId as string;
 
   const [vaccineRecords, dewormingRecords, pet] = await Promise.all([
     prisma.vaccineRecord.findMany({
@@ -366,8 +370,8 @@ router.post('/attend', authenticate, isMedico, async (req, res) => {
           petId: data.petId,
           visitId: data.visitId,
           nombre: vac.medication.name,
-          marca: vac.medication.supplier || '',
-          nombreComercial: vac.medication.nombreComercial || vac.medication.name,
+          marca: vac.marca || vac.medication.supplier || '',
+          nombreComercial: vac.nombreComercial || vac.medication.nombreComercial || vac.medication.name,
           medicationId: vac.medicationId,
           lote: vac.lote || vac.medication.lote,
           fechaCaducidad: vac.fechaCaducidad ? new Date(vac.fechaCaducidad) : vac.medication.expirationDate,
@@ -408,8 +412,8 @@ router.post('/attend', authenticate, isMedico, async (req, res) => {
         data: {
           petId: data.petId,
           visitId: data.visitId,
-          marca: dew.medication.supplier || dew.medication.name,
-          nombreComercial: dew.medication.nombreComercial || dew.medication.name,
+          marca: dew.marca || dew.medication.supplier || dew.medication.name,
+          nombreComercial: dew.nombreComercial || dew.medication.nombreComercial || dew.medication.name,
           tipo: dew.tipo,
           medicationId: dew.medicationId,
           lote: dew.lote || dew.medication.lote,

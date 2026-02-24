@@ -157,6 +157,8 @@ function PreventiveMedicinePanel({
         observaciones: examForm.observaciones,
         vaccines: selectedVaccines.map(v => ({
           medicationId: v.medicationId,
+          marca: v.marca || v.supplier,
+          nombreComercial: v.nombreComercial,
           lote: v.lote,
           fechaCaducidad: v.expirationDate ? new Date(v.expirationDate).toISOString() : undefined,
           proximaDosis: v.proximaDosis ? new Date(v.proximaDosis).toISOString() : undefined,
@@ -165,6 +167,8 @@ function PreventiveMedicinePanel({
         })),
         dewormings: selectedDewormers.map(d => ({
           medicationId: d.medicationId,
+          marca: d.marca || d.supplier,
+          nombreComercial: d.nombreComercial,
           tipo: d.tipo,
           lote: d.lote,
           proximaAplicacion: new Date(d.proximaAplicacion).toISOString(),
@@ -348,7 +352,25 @@ function PreventiveMedicinePanel({
                       }}
                     >✕</button>
                   </div>
-                  <div className="detail-grid">
+                  <div className="detail-grid expanded">
+                    <div className="form-group">
+                      <label>Marca</label>
+                      <input
+                        type="text"
+                        value={vaccine.marca || vaccine.supplier || ''}
+                        onChange={(e) => updateVaccineDetails(vaccine.id, 'marca', e.target.value)}
+                        placeholder="Ej: Zoetis"
+                      />
+                    </div>
+                    <div className="form-group">
+                      <label>Nombre Comercial</label>
+                      <input
+                        type="text"
+                        value={vaccine.nombreComercial || ''}
+                        onChange={(e) => updateVaccineDetails(vaccine.id, 'nombreComercial', e.target.value)}
+                        placeholder="Ej: Vanguard Plus"
+                      />
+                    </div>
                     <div className="form-group">
                       <label>Lote</label>
                       <input
@@ -356,6 +378,14 @@ function PreventiveMedicinePanel({
                         value={vaccine.lote || ''}
                         onChange={(e) => updateVaccineDetails(vaccine.id, 'lote', e.target.value)}
                         placeholder={vaccine.lote || 'N/A'}
+                      />
+                    </div>
+                    <div className="form-group">
+                      <label>Fecha Caducidad</label>
+                      <input
+                        type="date"
+                        value={vaccine.expirationDate ? new Date(vaccine.expirationDate).toISOString().split('T')[0] : ''}
+                        onChange={(e) => updateVaccineDetails(vaccine.id, 'expirationDate', e.target.value)}
                       />
                     </div>
                     <div className="form-group">
@@ -449,7 +479,34 @@ function PreventiveMedicinePanel({
                       }}
                     >✕</button>
                   </div>
-                  <div className="detail-grid">
+                  <div className="detail-grid expanded">
+                    <div className="form-group">
+                      <label>Marca</label>
+                      <input
+                        type="text"
+                        value={dewormer.marca || dewormer.supplier || ''}
+                        onChange={(e) => updateDewormerDetails(dewormer.id, 'marca', e.target.value)}
+                        placeholder="Ej: Bayer"
+                      />
+                    </div>
+                    <div className="form-group">
+                      <label>Nombre Comercial</label>
+                      <input
+                        type="text"
+                        value={dewormer.nombreComercial || ''}
+                        onChange={(e) => updateDewormerDetails(dewormer.id, 'nombreComercial', e.target.value)}
+                        placeholder="Ej: Drontal Plus"
+                      />
+                    </div>
+                    <div className="form-group">
+                      <label>Lote</label>
+                      <input
+                        type="text"
+                        value={dewormer.lote || ''}
+                        onChange={(e) => updateDewormerDetails(dewormer.id, 'lote', e.target.value)}
+                        placeholder="N/A"
+                      />
+                    </div>
                     <div className="form-group">
                       <label>Tipo</label>
                       <select

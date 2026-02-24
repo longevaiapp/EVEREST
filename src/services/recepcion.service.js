@@ -454,7 +454,7 @@ function mapTipoVisita(tipo) {
 
 function mapTipoCita(tipo) {
   // Si ya viene en formato correcto (mayúsculas), retornarlo
-  const validTypes = ['CONSULTA_GENERAL', 'SEGUIMIENTO', 'VACUNACION', 'CIRUGIA', 'EMERGENCIA'];
+  const validTypes = ['CONSULTA_GENERAL', 'SEGUIMIENTO', 'VACUNACION', 'CIRUGIA', 'EMERGENCIA', 'ESTETICA', 'MEDICINA_PREVENTIVA'];
   if (validTypes.includes(tipo)) {
     return tipo;
   }
@@ -467,6 +467,8 @@ function mapTipoCita(tipo) {
     'cirugia': 'CIRUGIA',
     'vacunacion': 'VACUNACION',
     'emergencia': 'EMERGENCIA',
+    'estetica': 'ESTETICA',
+    'medicina_preventiva': 'MEDICINA_PREVENTIVA',
   };
   return map[tipo?.toLowerCase()] || 'CONSULTA_GENERAL';
 }

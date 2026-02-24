@@ -591,6 +591,7 @@ enum AppointmentType {
   CIRUGIA
   EMERGENCIA
   ESTETICA
+  MEDICINA_PREVENTIVA
 }
 
 model Payment {
