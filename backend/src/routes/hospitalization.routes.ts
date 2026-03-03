@@ -29,23 +29,51 @@ function calcularEdad(fechaNacimiento: Date): string {
 }
 
 // GET /hospitalizations/summary/stats - Get hospitalization statistics
+// Maps legacy types to board areas based on pet species
 router.get('/summary/stats', authenticate, async (_req: Request, res: Response) => {
   try {
     const hospitalizations = await prisma.hospitalization.findMany({
       where: { status: 'ACTIVA' },
-      select: { type: true },
+      select: { type: true, pet: { select: { especie: true } } },
+    });
+
+    // Map each hospitalization to the correct board area
+    const counts = {
+      perrosNoInfecciosos: 0,
+      perrosInfecciosos: 0,
+      gatosNoInfecciosos: 0,
+      gatosInfecciosos: 0,
+      maternidad: 0,
+    };
+
+    hospitalizations.forEach((h: any) => {
+      const species = h.pet?.especie?.toLowerCase() || '';
+      const isCat = species === 'gato' || species.includes('gato');
+
+      switch (h.type) {
+        case 'PERROS_NO_INFECCIOSOS': counts.perrosNoInfecciosos++; break;
+        case 'PERROS_INFECCIOSOS': counts.perrosInfecciosos++; break;
+        case 'GATOS_NO_INFECCIOSOS': counts.gatosNoInfecciosos++; break;
+        case 'GATOS_INFECCIOSOS': counts.gatosInfecciosos++; break;
+        case 'MATERNIDAD':
+        case 'NEONATOS':
+          counts.maternidad++; break;
+        case 'GENERAL':
+        case 'UCI':
+          if (isCat) counts.gatosNoInfecciosos++;
+          else counts.perrosNoInfecciosos++;
+          break;
+        case 'INFECCIOSOS':
+          if (isCat) counts.gatosInfecciosos++;
+          else counts.perrosInfecciosos++;
+          break;
+        default:
+          counts.perrosNoInfecciosos++; break;
+      }
     });
 
     const stats = {
-      general: hospitalizations.filter((h: any) => h.type === 'GENERAL').length,
-      uci: hospitalizations.filter((h: any) => h.type === 'UCI').length,
-      neonatos: hospitalizations.filter((h: any) => h.type === 'NEONATOS').length,
-      infecciosos: hospitalizations.filter((h: any) => h.type === 'INFECCIOSOS').length,
-      maternidad: hospitalizations.filter((h: any) => h.type === 'MATERNIDAD').length,
-      perrosNoInfecciosos: hospitalizations.filter((h: any) => h.type === 'PERROS_NO_INFECCIOSOS').length,
-      perrosInfecciosos: hospitalizations.filter((h: any) => h.type === 'PERROS_INFECCIOSOS').length,
-      gatosNoInfecciosos: hospitalizations.filter((h: any) => h.type === 'GATOS_NO_INFECCIOSOS').length,
-      gatosInfecciosos: hospitalizations.filter((h: any) => h.type === 'GATOS_INFECCIOSOS').length,
+      ...counts,
       total: hospitalizations.length,
     };
 
@@ -358,31 +386,49 @@ router.post('/', authenticate, async (req: Request, res: Response) => {
 // ============================================================================
 
 // GET /board/:area - Get board view for a specific area
+// Maps legacy types (GENERAL, UCI, INFECCIOSOS, NEONATOS) to board areas based on pet species
 router.get('/board/:area', authenticate, async (req: Request, res: Response) => {
   try {
     const { area } = req.params;
+    const areaKey = area.toUpperCase();
     const validAreas = [
       'MATERNIDAD',
       'PERROS_NO_INFECCIOSOS',
       'PERROS_INFECCIOSOS',
       'GATOS_NO_INFECCIOSOS',
       'GATOS_INFECCIOSOS',
-      'GENERAL',
-      'UCI',
-      'NEONATOS',
-      'INFECCIOSOS',
     ];
 
-    if (!validAreas.includes(area.toUpperCase())) {
+    if (!validAreas.includes(areaKey)) {
       return res.status(400).json({ error: 'Área no válida' });
     }
 
-    // Get all active hospitalizations in this area
+    // Build type filter: include the specific type PLUS legacy types that map to this area
+    // Legacy mapping:
+    //   PERROS_NO_INFECCIOSOS ← GENERAL dogs, UCI dogs
+    //   PERROS_INFECCIOSOS ← INFECCIOSOS dogs
+    //   GATOS_NO_INFECCIOSOS ← GENERAL cats, UCI cats
+    //   GATOS_INFECCIOSOS ← INFECCIOSOS cats
+    //   MATERNIDAD ← MATERNIDAD, NEONATOS
+    const legacyTypesMap: Record<string, { types: string[], species?: string }> = {
+      'PERROS_NO_INFECCIOSOS': { types: ['PERROS_NO_INFECCIOSOS', 'GENERAL', 'UCI'], species: 'Perro' },
+      'PERROS_INFECCIOSOS': { types: ['PERROS_INFECCIOSOS', 'INFECCIOSOS'], species: 'Perro' },
+      'GATOS_NO_INFECCIOSOS': { types: ['GATOS_NO_INFECCIOSOS', 'GENERAL', 'UCI'], species: 'Gato' },
+      'GATOS_INFECCIOSOS': { types: ['GATOS_INFECCIOSOS', 'INFECCIOSOS'], species: 'Gato' },
+      'MATERNIDAD': { types: ['MATERNIDAD', 'NEONATOS'] },
+    };
+
+    const mapping = legacyTypesMap[areaKey];
+    const whereCondition: any = {
+      status: 'ACTIVA',
+      type: { in: mapping.types },
+    };
+    // For species-specific areas, also filter by pet species for legacy types
+    // We handle this in post-processing since Prisma can't do conditional joins easily
+
+    // Get all active hospitalizations matching any of the mapped types
     const hospitalizations = await prisma.hospitalization.findMany({
-      where: {
-        type: area.toUpperCase() as any,
-        status: 'ACTIVA',
-      },
+      where: whereCondition,
       include: {
         pet: {
           include: {
@@ -416,6 +462,22 @@ router.get('/board/:area', authenticate, async (req: Request, res: Response) => 
       orderBy: { admittedAt: 'asc' },
     });
 
+    // Filter by species for legacy types (GENERAL, UCI, INFECCIOSOS)
+    // New types (PERROS_*, GATOS_*) are species-specific already, no need to filter
+    const legacyTypes = ['GENERAL', 'UCI', 'INFECCIOSOS', 'NEONATOS'];
+    const filteredHospitalizations = mapping.species
+      ? hospitalizations.filter((h: any) => {
+          // If it's already a new type, keep it
+          if (!legacyTypes.includes(h.type)) return true;
+          // If it's a legacy type, check species matches
+          const petSpecies = h.pet?.especie?.toLowerCase();
+          const targetSpecies = mapping.species!.toLowerCase();
+          return petSpecies === targetSpecies ||
+                 petSpecies?.includes(targetSpecies) ||
+                 targetSpecies?.includes(petSpecies);
+        })
+      : hospitalizations; // MATERNIDAD doesn't need species filter
+
     // Build schedule grid - 30 minute slots from 00:00 to 23:30
     const timeSlots: string[] = [];
     for (let h = 0; h < 24; h++) {
@@ -425,7 +487,7 @@ router.get('/board/:area', authenticate, async (req: Request, res: Response) => 
     }
 
     // Build rows: one per patient
-    const rows = hospitalizations.map((hosp: any) => {
+    const rows = filteredHospitalizations.map((hosp: any) => {
       // Gather all scheduled activities for today
       const activities: Record<string, any[]> = {};
 
@@ -514,29 +576,62 @@ router.get('/board/:area', authenticate, async (req: Request, res: Response) => 
 });
 
 // GET /board-summary - Get summary counts for all areas
+// Maps legacy types to board areas based on pet species
 router.get('/board-summary', authenticate, async (_req: Request, res: Response) => {
   try {
     const hospitalizations = await prisma.hospitalization.findMany({
       where: { status: 'ACTIVA' },
-      select: { type: true },
+      select: { type: true, pet: { select: { especie: true } } },
+    });
+
+    // Count each patient into the correct board area
+    const counts: Record<string, number> = {
+      PERROS_NO_INFECCIOSOS: 0,
+      PERROS_INFECCIOSOS: 0,
+      GATOS_NO_INFECCIOSOS: 0,
+      GATOS_INFECCIOSOS: 0,
+      MATERNIDAD: 0,
+    };
+
+    hospitalizations.forEach((h: any) => {
+      const species = h.pet?.especie?.toLowerCase() || '';
+      const isDog = species === 'perro' || species.includes('perro');
+      const isCat = species === 'gato' || species.includes('gato');
+
+      switch (h.type) {
+        case 'PERROS_NO_INFECCIOSOS': counts.PERROS_NO_INFECCIOSOS++; break;
+        case 'PERROS_INFECCIOSOS': counts.PERROS_INFECCIOSOS++; break;
+        case 'GATOS_NO_INFECCIOSOS': counts.GATOS_NO_INFECCIOSOS++; break;
+        case 'GATOS_INFECCIOSOS': counts.GATOS_INFECCIOSOS++; break;
+        case 'MATERNIDAD':
+        case 'NEONATOS':
+          counts.MATERNIDAD++; break;
+        case 'GENERAL':
+        case 'UCI':
+          // Map to species-based area
+          if (isCat) counts.GATOS_NO_INFECCIOSOS++;
+          else counts.PERROS_NO_INFECCIOSOS++; // Default to dogs
+          break;
+        case 'INFECCIOSOS':
+          if (isCat) counts.GATOS_INFECCIOSOS++;
+          else counts.PERROS_INFECCIOSOS++;
+          break;
+        default:
+          counts.PERROS_NO_INFECCIOSOS++; break;
+      }
     });
 
     const areas = [
-      { key: 'MATERNIDAD', label: 'Maternidad', icon: '🤱' },
-      { key: 'PERROS_NO_INFECCIOSOS', label: 'Hospitalización Perros', icon: '🐕' },
-      { key: 'PERROS_INFECCIOSOS', label: 'Infecciosos Perros', icon: '🐕‍🦺' },
-      { key: 'GATOS_NO_INFECCIOSOS', label: 'Hospitalización Gatos', icon: '🐈' },
-      { key: 'GATOS_INFECCIOSOS', label: 'Infecciosos Gatos', icon: '🐈‍⬛' },
+      { key: 'PERROS_NO_INFECCIOSOS', label: 'Hospitalización Perros', icon: '🐕', count: counts.PERROS_NO_INFECCIOSOS },
+      { key: 'PERROS_INFECCIOSOS', label: 'Infecciosos Perros', icon: '🐕‍🦺', count: counts.PERROS_INFECCIOSOS },
+      { key: 'GATOS_NO_INFECCIOSOS', label: 'Hospitalización Gatos', icon: '🐈', count: counts.GATOS_NO_INFECCIOSOS },
+      { key: 'GATOS_INFECCIOSOS', label: 'Infecciosos Gatos', icon: '🐈‍⬛', count: counts.GATOS_INFECCIOSOS },
+      { key: 'MATERNIDAD', label: 'Maternidad / UCI Neo', icon: '🤱', count: counts.MATERNIDAD },
     ];
-
-    const summary = areas.map(area => ({
-      ...area,
-      count: hospitalizations.filter((h: any) => h.type === area.key).length,
-    }));
 
     res.json({
       status: 'success',
-      data: { areas: summary, total: hospitalizations.length },
+      data: { areas, total: hospitalizations.length },
     });
   } catch (error) {
     console.error('Error getting board summary:', error);
