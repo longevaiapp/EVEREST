@@ -145,23 +145,37 @@
 }
 
 /* ═══════════════════════════════════════════════════════════════
-   DRAWER (flex panel on the right inside hd-body)
+   DRAWER (absolute overlay on top of the board inside hd-body)
    ═══════════════════════════════════════════════════════════════ */
+.hd-drawer-backdrop {
+  position: absolute;
+  inset: 0;
+  background: rgba(0,0,0,0.25);
+  z-index: 40;
+  animation: fadeIn 0.2s ease;
+}
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
 .hd-drawer {
-  width: 480px;
-  max-width: 45vw;
-  flex-shrink: 0;
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  width: 520px;
+  max-width: 85%;
   background: #fff;
+  z-index: 41;
   display: flex;
   flex-direction: column;
-  border-left: 1px solid #cbd5e0;
-  box-shadow: -2px 0 16px rgba(0,0,0,0.08);
-  overflow: hidden;
-  animation: drawerSlide 0.2s ease;
+  box-shadow: -4px 0 24px rgba(0,0,0,0.18);
+  animation: slideIn 0.25s ease;
 }
-@keyframes drawerSlide {
-  from { margin-right: -480px; opacity: 0; }
-  to { margin-right: 0; opacity: 1; }
+@keyframes slideIn {
+  from { transform: translateX(100%); }
+  to { transform: translateX(0); }
 }
 
 /* Drawer Header */
@@ -1517,9 +1531,6 @@ fieldset legend {
   .hd-drawer {
     width: 100%;
     max-width: 100%;
-    position: absolute;
-    inset: 0;
-    z-index: 10;
   }
   .hd-grid-3,
   .hd-grid-4 {
