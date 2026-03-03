@@ -487,7 +487,7 @@ function HospitalizacionDashboard() {
 
         {/* RIGHT PANEL: Patient Detail — rendered via portal at body level */}
         {drawerOpen && sel && createPortal(
-          <div className="hd-drawer-portal">
+          <>
             <div className="hd-drawer-backdrop" onClick={handleCloseDrawer} />
             <aside className="hd-drawer">
               {/* Drawer header */}
@@ -774,17 +774,17 @@ function HospitalizacionDashboard() {
                 )}
               </div>
             </aside>
-          </div>,
+          </>,
           document.body
         )}
       </div>
 
       {/* ═══════════════════════════════════════════════════════════════ */}
-      {/* MODALS                                                        */}
+      {/* MODALS — all rendered via portal so they're above the drawer  */}
       {/* ═══════════════════════════════════════════════════════════════ */}
 
       {/* ─── Vitals Modal ─── */}
-      {showVitalsModal && (
+      {showVitalsModal && createPortal(
         <div className="hd-overlay" onClick={() => setShowVitalsModal(false)}>
           <div className="hd-modal hd-modal-lg" onClick={e => e.stopPropagation()}>
             <div className="hd-modal-head">
@@ -847,11 +847,12 @@ function HospitalizacionDashboard() {
               <button className="hd-btn-ok" onClick={handleVitalsSubmit} disabled={loading}>{loading ? '⏳ Guardando...' : '💾 Guardar'}</button>
             </div>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
 
       {/* ─── Therapy Modal ─── */}
-      {showTherapyModal && (
+      {showTherapyModal && createPortal(
         <div className="hd-overlay" onClick={() => setShowTherapyModal(false)}>
           <div className="hd-modal hd-modal-md" onClick={e => e.stopPropagation()}>
             <div className="hd-modal-head">
@@ -932,11 +933,12 @@ function HospitalizacionDashboard() {
               <button className="hd-btn-ok" onClick={handleTherapySubmit} disabled={loading || !therapyForm.medicationId}>{loading ? '⏳...' : '💊 Agregar al Plan'}</button>
             </div>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
 
       {/* ─── Neonate Modal ─── */}
-      {showNeonateModal && (
+      {showNeonateModal && createPortal(
         <div className="hd-overlay" onClick={() => setShowNeonateModal(false)}>
           <div className="hd-modal hd-modal-sm" onClick={e => e.stopPropagation()}>
             <div className="hd-modal-head">
@@ -965,11 +967,12 @@ function HospitalizacionDashboard() {
               <button className="hd-btn-ok" onClick={handleNeonateSubmit} disabled={loading}>{loading ? '⏳...' : '✓ Registrar'}</button>
             </div>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
 
       {/* ─── Neonate Record Modal ─── */}
-      {showNeonateRecordModal && selectedNeonate && (
+      {showNeonateRecordModal && selectedNeonate && createPortal(
         <div className="hd-overlay" onClick={() => setShowNeonateRecordModal(false)}>
           <div className="hd-modal hd-modal-sm" onClick={e => e.stopPropagation()}>
             <div className="hd-modal-head">
@@ -1002,11 +1005,12 @@ function HospitalizacionDashboard() {
               <button className="hd-btn-ok" onClick={handleNeonateRecordSubmit} disabled={loading}>{loading ? '⏳...' : '✓ Registrar'}</button>
             </div>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
 
       {/* ─── Discharge Modal ─── */}
-      {showDischargeModal && (
+      {showDischargeModal && createPortal(
         <div className="hd-overlay" onClick={() => setShowDischargeModal(false)}>
           <div className="hd-modal hd-modal-sm" onClick={e => e.stopPropagation()}>
             <div className="hd-modal-head">
@@ -1029,11 +1033,12 @@ function HospitalizacionDashboard() {
               <button className="hd-btn-ok hd-btn-danger" onClick={handleDischargeSubmit} disabled={loading}>{loading ? '⏳...' : '✓ Confirmar Alta'}</button>
             </div>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
 
       {/* ─── Fluid Therapy Modal ─── */}
-      {fluidCalcTarget && (
+      {fluidCalcTarget && createPortal(
         <div className="hd-overlay" onClick={() => setFluidCalcTarget(null)}>
           <div className="hd-modal hd-modal-xl" onClick={e => e.stopPropagation()}>
             <FluidTherapyCalculator
@@ -1045,7 +1050,8 @@ function HospitalizacionDashboard() {
               onSaved={() => { if (sel) selectHospitalization(sel); }}
             />
           </div>
-        </div>
+        </div>,
+        document.body
       )}
 
       {/* ─── Ronda Rápida Modal ─── */}

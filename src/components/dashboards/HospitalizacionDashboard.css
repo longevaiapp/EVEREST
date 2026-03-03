@@ -146,18 +146,13 @@
 
 /* ═══════════════════════════════════════════════════════════════
    DRAWER (rendered via React Portal at document.body level)
+   z-index 1000–1001  |  modals at 1100
    ═══════════════════════════════════════════════════════════════ */
-.hd-drawer-portal {
-  position: fixed;
-  inset: 0;
-  z-index: 9999;
-}
-
 .hd-drawer-backdrop {
   position: fixed;
   inset: 0;
   background: rgba(0,0,0,0.35);
-  z-index: 9999;
+  z-index: 1000;
   animation: fadeIn 0.2s ease;
 }
 @keyframes fadeIn {
@@ -173,7 +168,7 @@
   width: 520px;
   max-width: 90vw;
   background: #fff;
-  z-index: 10000;
+  z-index: 1001;
   display: flex;
   flex-direction: column;
   box-shadow: -6px 0 30px rgba(0,0,0,0.25);
@@ -789,7 +784,7 @@
   position: fixed;
   inset: 0;
   background: rgba(0,0,0,0.5);
-  z-index: 100;
+  z-index: 1100;
   display: flex;
   align-items: center;
   justify-content: center;
