@@ -382,6 +382,7 @@ export const hospitalizacionService = {
       frecuenciaMonitoreo: data.frecuenciaMonitoreo,
       cuidadosEspeciales: data.cuidadosEspeciales,
       estimacionDias: data.estimacionDias ? parseInt(data.estimacionDias) : undefined,
+      dietaInstrucciones: data.dietaInstrucciones,
     };
     
     // Limpiar campos undefined

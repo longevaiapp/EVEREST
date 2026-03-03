@@ -596,7 +596,7 @@ router.post('/hospitalizacion', authenticate, isMedico, async (req: Request, res
   const schema = z.object({
     consultationId: z.string().cuid(),
     petId: z.string().cuid(),
-    type: z.enum(['GENERAL', 'UCI', 'NEONATOS', 'INFECCIOSOS']).default('GENERAL'),
+    type: z.enum(['GENERAL', 'UCI', 'NEONATOS', 'INFECCIOSOS', 'MATERNIDAD', 'PERROS_NO_INFECCIOSOS', 'PERROS_INFECCIOSOS', 'GATOS_NO_INFECCIOSOS', 'GATOS_INFECCIOSOS']).default('GENERAL'),
     reason: z.string().min(1),
     location: z.string().optional(),
     frecuenciaMonitoreo: z.string().optional(),

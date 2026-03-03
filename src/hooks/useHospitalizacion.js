@@ -7,7 +7,7 @@ import hospitalizacionService from '../services/hospitalizacion.service';
 const useHospitalizacion = () => {
   // ==================== STATE ====================
   const [hospitalizaciones, setHospitalizaciones] = useState([]);
-  const [stats, setStats] = useState({ general: 0, uci: 0, neonatos: 0, infecciosos: 0, total: 0 });
+  const [stats, setStats] = useState({ general: 0, uci: 0, neonatos: 0, infecciosos: 0, maternidad: 0, perrosNoInfecciosos: 0, perrosInfecciosos: 0, gatosNoInfecciosos: 0, gatosInfecciosos: 0, total: 0 });
   const [selectedHospitalization, setSelectedHospitalization] = useState(null);
   const [vitalSigns, setVitalSigns] = useState([]);
   const [therapyPlan, setTherapyPlan] = useState([]);

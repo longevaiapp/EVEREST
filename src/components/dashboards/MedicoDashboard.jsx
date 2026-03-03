@@ -220,11 +220,13 @@ function MedicoDashboard() {
   });
 
   const [hospitalizationForm, setHospitalizationForm] = useState({
-    type: 'GENERAL',
+    type: '',
     motivo: '',
+    ubicacion: '',
     frecuenciaMonitoreo: '4h',
     cuidadosEspeciales: '',
-    estimacionDias: ''
+    estimacionDias: '',
+    dietaInstrucciones: ''
   });
 
   // Derived state - Usando datos de la API
@@ -736,8 +738,12 @@ function MedicoDashboard() {
   }, [activeConsultation, selectedPatient, labOrderForm, crearOrdenLab, t]);
 
   const handleCreateHospitalization = useCallback(async () => {
+    if (!hospitalizationForm.type) {
+      setLocalError('Selecciona el área de hospitalización');
+      return;
+    }
     if (!activeConsultation || !hospitalizationForm.motivo) {
-      setLocalError(t('medico.errors.hospitalizationReasonRequired', 'Hospitalization reason required'));
+      setLocalError(t('medico.errors.hospitalizationReasonRequired', 'Motivo de hospitalización requerido'));
       return;
     }
     if (!selectedPatient?.id) {
@@ -749,20 +755,26 @@ function MedicoDashboard() {
     try {
       await hospitalizarPaciente(activeConsultation.id, {
         petId: selectedPatient.id,
-        type: hospitalizationForm.type,
+        type: hospitalizationForm.type || 'GENERAL',
         motivo: hospitalizationForm.motivo,
+        ubicacion: hospitalizationForm.ubicacion || undefined,
         frecuenciaMonitoreo: hospitalizationForm.frecuenciaMonitoreo,
-        cuidadosEspeciales: hospitalizationForm.cuidadosEspeciales || null,
+        cuidadosEspeciales: [
+          hospitalizationForm.cuidadosEspeciales,
+          hospitalizationForm.dietaInstrucciones ? `DIETA: ${hospitalizationForm.dietaInstrucciones}` : ''
+        ].filter(Boolean).join('\n') || null,
         estimacionDias: hospitalizationForm.estimacionDias ? parseInt(hospitalizationForm.estimacionDias) : null
       });
       
       setShowHospitalizationModal(false);
       setHospitalizationForm({
-        type: 'GENERAL',
+        type: '',
         motivo: '',
+        ubicacion: '',
         frecuenciaMonitoreo: '4h',
         cuidadosEspeciales: '',
-        estimacionDias: ''
+        estimacionDias: '',
+        dietaInstrucciones: ''
       });
       setActiveConsultation(null);
       setSelectedPatient(null);
@@ -2269,53 +2281,128 @@ function MedicoDashboard() {
       {showHospitalizationModal && (
         <div className="modal-overlay" onClick={() => setShowHospitalizationModal(false)}>
           <div className="modal-content" onClick={e => e.stopPropagation()}>
-            <h2>🏥 {t('medico.hospitalizePatient', 'Hospitalize Patient')}</h2>
+            <h2>🏥 {t('medico.hospitalizePatient', 'Hospitalizar Paciente')}</h2>
             
-            {/* Tipo de Hospitalización */}
+            {/* Info del paciente */}
+            {selectedPatient && (
+              <div className="info-note" style={{ background: '#e8f4fd', padding: '0.75rem', borderRadius: '6px', marginBottom: '1rem', borderLeft: '3px solid #2196f3', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                <span style={{ fontSize: '1.3rem' }}>{selectedPatient.especie === 'Gato' ? '🐈' : '🐕'}</span>
+                <div>
+                  <strong>{selectedPatient.nombre}</strong> — {selectedPatient.especie} {selectedPatient.raza && `(${selectedPatient.raza})`}
+                  {selectedPatient.peso && <span style={{ marginLeft: '0.5rem', color: '#666' }}>• {selectedPatient.peso} kg</span>}
+                  <div style={{ fontSize: '0.85rem', color: '#666' }}>Propietario: {selectedPatient.propietario}</div>
+                </div>
+              </div>
+            )}
+            
+            {/* Área de Hospitalización */}
             <div className="form-group">
-              <label>{t('medico.hospitalizationType', 'Tipo de Hospitalización')} *</label>
+              <label>Área de Hospitalización *</label>
               <select className="form-control" value={hospitalizationForm.type} onChange={(e) => setHospitalizationForm(prev => ({ ...prev, type: e.target.value }))}>
-                <option value="GENERAL">🏥 General - Hospitalización estándar</option>
-                <option value="UCI">❤️‍🩹 UCI - Cuidados Intensivos</option>
-                <option value="NEONATOS">🍼 Neonatos - Camada/recién nacidos</option>
-                <option value="INFECCIOSOS">⚠️ Infecciosos - Aislamiento</option>
+                <option value="">-- Seleccionar área --</option>
+                {selectedPatient?.especie === 'Gato' ? (
+                  <>
+                    <optgroup label="🐈 Áreas para Gatos">
+                      <option value="GATOS_NO_INFECCIOSOS">🐈 Hospitalización Gatos (No Infecciosos)</option>
+                      <option value="GATOS_INFECCIOSOS">🐈‍⬛ Gatos Infecciosos (Aislamiento)</option>
+                    </optgroup>
+                    <optgroup label="🐕 Áreas para Perros">
+                      <option value="PERROS_NO_INFECCIOSOS">🐕 Hospitalización Perros (No Infecciosos)</option>
+                      <option value="PERROS_INFECCIOSOS">🐕‍🦺 Perros Infecciosos (Aislamiento)</option>
+                    </optgroup>
+                  </>
+                ) : (
+                  <>
+                    <optgroup label="🐕 Áreas para Perros">
+                      <option value="PERROS_NO_INFECCIOSOS">🐕 Hospitalización Perros (No Infecciosos)</option>
+                      <option value="PERROS_INFECCIOSOS">🐕‍🦺 Perros Infecciosos (Aislamiento)</option>
+                    </optgroup>
+                    <optgroup label="🐈 Áreas para Gatos">
+                      <option value="GATOS_NO_INFECCIOSOS">🐈 Hospitalización Gatos (No Infecciosos)</option>
+                      <option value="GATOS_INFECCIOSOS">🐈‍⬛ Gatos Infecciosos (Aislamiento)</option>
+                    </optgroup>
+                  </>
+                )}
+                <optgroup label="Áreas Especiales">
+                  <option value="UCI">❤️‍🩹 UCI - Cuidados Intensivos</option>
+                  <option value="MATERNIDAD">🤱 Maternidad</option>
+                  <option value="NEONATOS">🍼 Neonatos - Camada/recién nacidos</option>
+                </optgroup>
+                <optgroup label="General">
+                  <option value="GENERAL">🏥 General</option>
+                  <option value="INFECCIOSOS">⚠️ Infecciosos (General)</option>
+                </optgroup>
               </select>
             </div>
             
-            {/* Nota para neonatos */}
+            {/* Notas contextuales */}
             {hospitalizationForm.type === 'NEONATOS' && (
               <div className="info-note" style={{ background: '#fff3e0', padding: '0.75rem', borderRadius: '6px', marginBottom: '1rem', borderLeft: '3px solid #ff9800' }}>
                 🍼 <strong>Hospitalización de Neonatos:</strong> Después de crear la hospitalización, ve al Dashboard de Hospitalización para registrar cada neonato de la camada con su monitoreo periódico.
               </div>
             )}
+            {hospitalizationForm.type === 'UCI' && (
+              <div className="info-note" style={{ background: '#fce4ec', padding: '0.75rem', borderRadius: '6px', marginBottom: '1rem', borderLeft: '3px solid #e91e63' }}>
+                ❤️‍🩹 <strong>Cuidados Intensivos:</strong> Se recomienda monitoreo cada 1-2 horas. La frecuencia se ajustará automáticamente.
+              </div>
+            )}
+            {hospitalizationForm.type === 'MATERNIDAD' && (
+              <div className="info-note" style={{ background: '#f3e5f5', padding: '0.75rem', borderRadius: '6px', marginBottom: '1rem', borderLeft: '3px solid #9c27b0' }}>
+                🤱 <strong>Maternidad:</strong> Paciente en proceso de gestación/parto. Si nacen neonatos, crea una hospitalización de Neonatos separada para la camada.
+              </div>
+            )}
+            {(hospitalizationForm.type === 'PERROS_INFECCIOSOS' || hospitalizationForm.type === 'GATOS_INFECCIOSOS' || hospitalizationForm.type === 'INFECCIOSOS') && (
+              <div className="info-note" style={{ background: '#fff8e1', padding: '0.75rem', borderRadius: '6px', marginBottom: '1rem', borderLeft: '3px solid #ff9800' }}>
+                ⚠️ <strong>Aislamiento:</strong> Paciente con enfermedad infecciosa. Se ubicará en área de aislamiento con protocolo de bioseguridad.
+              </div>
+            )}
             
             <div className="form-group">
-              <label>{t('medico.hospitalizationReason', 'Hospitalization Reason')} *</label>
-              <textarea className="form-control" placeholder={t('medico.hospitalizationReasonPlaceholder', 'Reason for hospitalizing the patient...')} rows="3" value={hospitalizationForm.motivo} onChange={(e) => setHospitalizationForm(prev => ({ ...prev, motivo: e.target.value }))} />
+              <label>Motivo de Hospitalización *</label>
+              <textarea className="form-control" placeholder="Motivo detallado de la hospitalización..." rows="3" value={hospitalizationForm.motivo} onChange={(e) => setHospitalizationForm(prev => ({ ...prev, motivo: e.target.value }))} />
             </div>
+
             <div className="form-row">
               <div className="form-group">
-                <label>{t('medico.monitoringFrequency', 'Monitoring Frequency')}</label>
-                <select className="form-control" value={hospitalizationForm.frecuenciaMonitoreo} onChange={(e) => setHospitalizationForm(prev => ({ ...prev, frecuenciaMonitoreo: e.target.value }))}>
-                  <option value="1h">{t('medico.every1Hour', 'Every 1 hour')}</option>
-                  <option value="2h">{t('medico.every2Hours', 'Every 2 hours')}</option>
-                  <option value="4h">{t('medico.every4Hours', 'Every 4 hours')}</option>
-                  <option value="6h">{t('medico.every6Hours', 'Every 6 hours')}</option>
-                  <option value="8h">{t('medico.every8Hours', 'Every 8 hours')}</option>
-                </select>
+                <label>Ubicación / Jaula</label>
+                <input type="text" className="form-control" placeholder="Ej: Jaula 3, Kennel A" value={hospitalizationForm.ubicacion} onChange={(e) => setHospitalizationForm(prev => ({ ...prev, ubicacion: e.target.value }))} />
               </div>
               <div className="form-group">
-                <label>{t('medico.estimatedDays', 'Estimated Days')}</label>
+                <label>Días Estimados</label>
                 <input type="number" className="form-control" placeholder="3" min="1" value={hospitalizationForm.estimacionDias} onChange={(e) => setHospitalizationForm(prev => ({ ...prev, estimacionDias: e.target.value }))} />
               </div>
             </div>
-            <div className="form-group">
-              <label>{t('medico.specialCare', 'Special Care')}</label>
-              <textarea className="form-control" placeholder={t('medico.specialCarePlaceholder', 'Special care instructions...')} rows="3" value={hospitalizationForm.cuidadosEspeciales} onChange={(e) => setHospitalizationForm(prev => ({ ...prev, cuidadosEspeciales: e.target.value }))} />
+
+            <div className="form-row">
+              <div className="form-group">
+                <label>Frecuencia de Monitoreo</label>
+                <select className="form-control" value={hospitalizationForm.frecuenciaMonitoreo} onChange={(e) => setHospitalizationForm(prev => ({ ...prev, frecuenciaMonitoreo: e.target.value }))}>
+                  <option value="30min">Cada 30 minutos (Crítico)</option>
+                  <option value="1h">Cada 1 hora</option>
+                  <option value="2h">Cada 2 horas</option>
+                  <option value="4h">Cada 4 horas</option>
+                  <option value="6h">Cada 6 horas</option>
+                  <option value="8h">Cada 8 horas</option>
+                  <option value="12h">Cada 12 horas</option>
+                </select>
+              </div>
             </div>
+
+            <div className="form-group">
+              <label>Cuidados Especiales</label>
+              <textarea className="form-control" placeholder="Instrucciones de cuidado especial, restricciones, precauciones..." rows="2" value={hospitalizationForm.cuidadosEspeciales} onChange={(e) => setHospitalizationForm(prev => ({ ...prev, cuidadosEspeciales: e.target.value }))} />
+            </div>
+
+            <div className="form-group">
+              <label>🍽️ Instrucciones de Dieta</label>
+              <textarea className="form-control" placeholder="Ayuno, dieta blanda, hidratación forzada, etc." rows="2" value={hospitalizationForm.dietaInstrucciones} onChange={(e) => setHospitalizationForm(prev => ({ ...prev, dietaInstrucciones: e.target.value }))} />
+            </div>
+
             <div className="modal-actions">
-              <button className="btn-secondary" onClick={() => setShowHospitalizationModal(false)}>{t('common.cancel', 'Cancel')}</button>
-              <button className="btn-warning" onClick={handleCreateHospitalization} disabled={!hospitalizationForm.motivo}>🏥 {t('medico.confirmHospitalization', 'Confirm Hospitalization')}</button>
+              <button className="btn-secondary" onClick={() => setShowHospitalizationModal(false)}>{t('common.cancel', 'Cancelar')}</button>
+              <button className="btn-warning" onClick={handleCreateHospitalization} disabled={!hospitalizationForm.motivo || !hospitalizationForm.type}>
+                🏥 Confirmar Hospitalización
+              </button>
             </div>
           </div>
         </div>
