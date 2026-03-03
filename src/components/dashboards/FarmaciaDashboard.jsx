@@ -4,6 +4,7 @@ import { useApp } from '../../context/AppContext';
 import { useAuth } from '../../context/AuthContext';
 import { useToast } from '../Toast';
 import useFarmacia from '../../hooks/useFarmacia';
+import farmaciaService from '../../services/farmacia.service';
 import './FarmaciaDashboard.css';
 
 // Skeleton Loader Components
@@ -219,6 +220,12 @@ function FarmaciaDashboard() {
   const [medicationForm, setMedicationForm] = useState({ ...EMPTY_MEDICATION_FORM });
   const [formErrors, setFormErrors] = useState({});
   const [isSaving, setIsSaving] = useState(false);
+
+  // Dosing management state
+  const [dosingRecords, setDosingRecords] = useState([]);
+  const [dosingForm, setDosingForm] = useState({ species: 'PERRO', doseMin: '', doseMax: '', doseUnit: 'mg/kg', routes: '[]', frequencyHours: '', notes: '' });
+  const [editingDosingSpecies, setEditingDosingSpecies] = useState(null);
+  const [dosingLoading, setDosingLoading] = useState(false);
   
   // Dispense form state
   const [dispenseForm, setDispenseForm] = useState({
@@ -475,10 +482,78 @@ function FarmaciaDashboard() {
     }
   };
 
+  // ---- Dosing management handlers ----
+  const fetchDosingRecords = async (medicationId) => {
+    setDosingLoading(true);
+    try {
+      const res = await farmaciaService.getMedicationDosing(medicationId);
+      setDosingRecords(res || []);
+    } catch (err) {
+      console.error('Error loading dosing:', err);
+      setDosingRecords([]);
+    } finally {
+      setDosingLoading(false);
+    }
+  };
+
+  const resetDosingForm = () => {
+    setDosingForm({ species: 'PERRO', doseMin: '', doseMax: '', doseUnit: 'mg/kg', routes: '[]', frequencyHours: '', notes: '' });
+    setEditingDosingSpecies(null);
+  };
+
+  const handleEditDosing = (record) => {
+    setDosingForm({
+      species: record.species,
+      doseMin: record.doseMin,
+      doseMax: record.doseMax,
+      doseUnit: record.doseUnit || 'mg/kg',
+      routes: record.routes || '[]',
+      frequencyHours: record.frequencyHours || '',
+      notes: record.notes || '',
+    });
+    setEditingDosingSpecies(record.species);
+  };
+
+  const handleSaveDosing = async (medicationId) => {
+    if (!dosingForm.doseMin || !dosingForm.doseMax) {
+      toast.error('Ingrese dosis mínima y máxima');
+      return;
+    }
+    if (Number(dosingForm.doseMin) > Number(dosingForm.doseMax)) {
+      toast.error('Dosis mínima no puede ser mayor que la máxima');
+      return;
+    }
+    try {
+      await farmaciaService.saveMedicationDosing(medicationId, {
+        ...dosingForm,
+        doseMin: Number(dosingForm.doseMin),
+        doseMax: Number(dosingForm.doseMax),
+        frequencyHours: dosingForm.frequencyHours ? Number(dosingForm.frequencyHours) : undefined,
+      });
+      await fetchDosingRecords(medicationId);
+      resetDosingForm();
+      toast.success(`Dosificación ${editingDosingSpecies ? 'actualizada' : 'agregada'}`);
+    } catch (err) {
+      toast.error('Error guardando dosificación: ' + (err.message || ''));
+    }
+  };
+
+  const handleDeleteDosing = async (medicationId, species) => {
+    try {
+      await farmaciaService.deleteMedicationDosing(medicationId, species);
+      await fetchDosingRecords(medicationId);
+      toast.success('Dosificación eliminada');
+    } catch (err) {
+      toast.error('Error eliminando dosificación');
+    }
+  };
+
   // Handle edit medication click
   const handleEditClick = (item) => {
     const original = item._original || item;
     setSelectedMedicationForEdit(item);
+    fetchDosingRecords(item.id);
+    resetDosingForm();
     setMedicationForm({
       name: original.name || original.nombre || '',
       genericName: original.genericName || original.nombreGenerico || '',
@@ -2654,6 +2729,12 @@ function FarmaciaDashboard() {
                 </div>
               </div>
 
+              {/* DOSING INFO - Nota: se podrá agregar al editar después de crear */}
+              <div className="form-section dosing-section">
+                <h3>💊 Dosificación por Especie</h3>
+                <p style={{fontSize:'0.82rem',color:'#64748b',margin:'0 0 8px'}}>Las fichas de dosificación se pueden agregar después de crear el medicamento, desde la opción Editar.</p>
+              </div>
+
               <div className="modal-actions">
                 <button className="btn-close" onClick={() => setShowNewMedicationModal(false)}>
                   Cancel
@@ -2953,6 +3034,78 @@ function FarmaciaDashboard() {
                         <option value="INACTIVO">Inactive</option>
                         <option value="AGOTADO">Out of Stock</option>
                       </select>
+                    </div>
+                  </div>
+                </div>
+
+                {/* DOSING MANAGEMENT SECTION */}
+                <div className="form-section dosing-section">
+                  <h3>💊 Dosificación por Especie</h3>
+                  <p style={{fontSize:'0.82rem',color:'#64748b',margin:'0 0 12px'}}>Define rangos de dosis (mg/kg) por especie. El médico verá estas referencias al prescribir.</p>
+
+                  {/* Existing dosing records */}
+                  {dosingLoading ? (
+                    <div style={{textAlign:'center',padding:'12px',color:'#94a3b8'}}>Cargando dosificaciones...</div>
+                  ) : dosingRecords.length > 0 ? (
+                    <div className="dosing-records-list">
+                      {dosingRecords.map(rec => (
+                        <div key={rec.species} className="dosing-record-card">
+                          <div className="dosing-record-info">
+                            <span className="dosing-species-badge">{rec.species === 'PERRO' ? '🐕' : rec.species === 'GATO' ? '🐈' : '🐾'} {rec.species}</span>
+                            <span className="dosing-range">{rec.doseMin} - {rec.doseMax} {rec.doseUnit}</span>
+                            {rec.frequencyHours && <span className="dosing-freq">c/{rec.frequencyHours}h</span>}
+                            {rec.notes && <span className="dosing-notes" title={rec.notes}>📝</span>}
+                          </div>
+                          <div className="dosing-record-actions">
+                            <button type="button" className="btn-icon-sm" title="Editar" onClick={() => handleEditDosing(rec)}>✏️</button>
+                            <button type="button" className="btn-icon-sm btn-icon-danger" title="Eliminar" onClick={() => handleDeleteDosing(selectedMedicationForEdit.id, rec.species)}>🗑️</button>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <div style={{textAlign:'center',padding:'10px',color:'#94a3b8',fontSize:'0.85rem'}}>No hay dosificaciones configuradas</div>
+                  )}
+
+                  {/* Dosing add/edit form */}
+                  <div className="dosing-form">
+                    <div className="dosing-form-title">{editingDosingSpecies ? `✏️ Editando ${editingDosingSpecies}` : '➕ Agregar dosificación'}</div>
+                    <div className="dosing-form-grid">
+                      <div className="form-group">
+                        <label>Especie</label>
+                        <select className="form-control" value={dosingForm.species} onChange={(e) => setDosingForm(prev => ({...prev, species: e.target.value}))} disabled={!!editingDosingSpecies}>
+                          <option value="PERRO">🐕 Perro</option>
+                          <option value="GATO">🐈 Gato</option>
+                          <option value="AVE">🐦 Ave</option>
+                          <option value="REPTIL">🦎 Reptil</option>
+                          <option value="CONEJO">🐰 Conejo</option>
+                          <option value="HAMSTER">🐹 Hámster</option>
+                        </select>
+                      </div>
+                      <div className="form-group">
+                        <label>Dosis Mín (mg/kg) *</label>
+                        <input type="number" step="0.001" min="0" className="form-control" placeholder="ej: 5" value={dosingForm.doseMin} onChange={(e) => setDosingForm(prev => ({...prev, doseMin: e.target.value}))} />
+                      </div>
+                      <div className="form-group">
+                        <label>Dosis Máx (mg/kg) *</label>
+                        <input type="number" step="0.001" min="0" className="form-control" placeholder="ej: 10" value={dosingForm.doseMax} onChange={(e) => setDosingForm(prev => ({...prev, doseMax: e.target.value}))} />
+                      </div>
+                      <div className="form-group">
+                        <label>Frecuencia (horas)</label>
+                        <input type="number" min="1" max="72" className="form-control" placeholder="ej: 12" value={dosingForm.frequencyHours} onChange={(e) => setDosingForm(prev => ({...prev, frequencyHours: e.target.value}))} />
+                      </div>
+                    </div>
+                    <div className="form-group" style={{marginTop:'6px'}}>
+                      <label>Notas / Precauciones</label>
+                      <input type="text" className="form-control" placeholder="ej: No usar en cachorros < 1 año, ajustar en insuficiencia renal" value={dosingForm.notes} onChange={(e) => setDosingForm(prev => ({...prev, notes: e.target.value}))} />
+                    </div>
+                    <div className="dosing-form-actions">
+                      {editingDosingSpecies && (
+                        <button type="button" className="btn-close btn-sm" onClick={resetDosingForm}>Cancelar</button>
+                      )}
+                      <button type="button" className="btn-success btn-sm" onClick={() => handleSaveDosing(selectedMedicationForEdit.id)}>
+                        {editingDosingSpecies ? '💾 Actualizar' : '➕ Agregar'}
+                      </button>
                     </div>
                   </div>
                 </div>

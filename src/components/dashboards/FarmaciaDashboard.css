@@ -3026,3 +3026,150 @@
   background: rgba(255, 152, 0, 1);
 }
 
+/* ============================================================================
+   DOSING MANAGEMENT SECTION - dentro de modales de medicamento
+   ============================================================================ */
+
+.dosing-section {
+  background: linear-gradient(135deg, #f0f9ff 0%, #e8f4f8 100%) !important;
+  border-color: #bae6fd !important;
+}
+
+.dosing-records-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-bottom: 12px;
+}
+
+.dosing-record-card {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 12px;
+  background: #fff;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  transition: border-color 0.2s;
+}
+
+.dosing-record-card:hover {
+  border-color: #0ea5e9;
+}
+
+.dosing-record-info {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.dosing-species-badge {
+  font-weight: 700;
+  font-size: 0.85rem;
+  color: #0369a1;
+  background: #e0f2fe;
+  padding: 2px 10px;
+  border-radius: 12px;
+}
+
+.dosing-range {
+  font-weight: 600;
+  font-size: 0.9rem;
+  color: #334155;
+}
+
+.dosing-freq {
+  font-size: 0.8rem;
+  color: #64748b;
+  background: #f1f5f9;
+  padding: 2px 8px;
+  border-radius: 10px;
+}
+
+.dosing-notes {
+  cursor: help;
+  font-size: 0.9rem;
+}
+
+.dosing-record-actions {
+  display: flex;
+  gap: 4px;
+}
+
+.btn-icon-sm {
+  width: 28px;
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid #e2e8f0;
+  border-radius: 6px;
+  background: #fff;
+  cursor: pointer;
+  font-size: 0.75rem;
+  transition: all 0.15s;
+}
+
+.btn-icon-sm:hover {
+  background: #f0f9ff;
+  border-color: #0ea5e9;
+}
+
+.btn-icon-sm.btn-icon-danger:hover {
+  background: #fef2f2;
+  border-color: #ef4444;
+}
+
+.dosing-form {
+  background: #fff;
+  border: 1px dashed #cbd5e1;
+  border-radius: 8px;
+  padding: 12px;
+  margin-top: 8px;
+}
+
+.dosing-form-title {
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: #0369a1;
+  margin-bottom: 8px;
+}
+
+.dosing-form-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr 1fr;
+  gap: 8px;
+}
+
+.dosing-form-grid .form-group label {
+  font-size: 0.72rem;
+}
+
+.dosing-form-grid .form-control {
+  padding: 6px 8px;
+  font-size: 0.85rem;
+}
+
+.dosing-form-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 6px;
+  margin-top: 8px;
+}
+
+.btn-sm {
+  padding: 4px 14px !important;
+  font-size: 0.8rem !important;
+  min-height: unset !important;
+}
+
+@media (max-width: 700px) {
+  .dosing-form-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+  .dosing-record-info {
+    gap: 6px;
+  }
+}
+

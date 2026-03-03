@@ -76,6 +76,17 @@ const farmaciaService = {
   },
 
   /**
+   * Delete dosing record for a medication + species
+   * @param {string} medicationId - Medication ID
+   * @param {string} species - Species (PERRO, GATO, etc.)
+   * @returns {Promise<Object>}
+   */
+  deleteMedicationDosing: async (medicationId, species) => {
+    const response = await api.delete(`/medications/${medicationId}/dosing/${species}`);
+    return response.data;
+  },
+
+  /**
    * Create a new medication
    * @param {Object} data - Medication data
    * @returns {Promise<Object>} Created medication
