@@ -675,6 +675,75 @@ router.delete('/:id/dosing/:species', authenticate, async (req, res) => {
   res.json({ status: 'success', message: 'Dosificación eliminada' });
 });
 
+// ===== Narrow Therapeutic Index drugs (require precise dosing) =====
+const NARROW_THERAPEUTIC_INDEX: string[] = [
+  'fenobarbital', 'phenobarbital', 'digoxina', 'digoxin',
+  'ciclosporina', 'cyclosporine', 'metotrexato', 'methotrexate',
+  'gentamicina', 'gentamycin', 'amikacina', 'amikacin',
+  'tobramicina', 'tobramycin', 'vancomicina', 'vancomycin',
+  'teofilina', 'theophylline', 'warfarina', 'warfarin',
+  'litio', 'lithium', 'cisplatino', 'cisplatin',
+];
+
+// ===== Common veterinary drug interactions =====
+const DRUG_INTERACTIONS: Record<string, { drugs: string[]; severity: 'alta' | 'media' | 'baja'; message: string }[]> = {
+  'meloxicam': [
+    { drugs: ['carprofeno', 'ibuprofeno', 'piroxicam', 'ketoprofeno', 'firocoxib'], severity: 'alta', message: 'No combinar AINEs — riesgo de úlcera GI y nefrotoxicidad' },
+    { drugs: ['dexametasona', 'prednisolona', 'prednisona', 'metilprednisolona'], severity: 'alta', message: 'AINE + corticoide: riesgo alto de úlcera gastrointestinal' },
+    { drugs: ['furosemida'], severity: 'media', message: 'AINEs reducen eficacia de furosemida' },
+  ],
+  'carprofeno': [
+    { drugs: ['meloxicam', 'ibuprofeno', 'piroxicam', 'ketoprofeno', 'firocoxib'], severity: 'alta', message: 'No combinar AINEs — riesgo de úlcera GI y nefrotoxicidad' },
+    { drugs: ['dexametasona', 'prednisolona', 'prednisona', 'metilprednisolona'], severity: 'alta', message: 'AINE + corticoide: riesgo alto de úlcera gastrointestinal' },
+  ],
+  'dexametasona': [
+    { drugs: ['meloxicam', 'carprofeno', 'ibuprofeno', 'piroxicam', 'firocoxib'], severity: 'alta', message: 'Corticoide + AINE: riesgo de úlcera GI' },
+    { drugs: ['insulina'], severity: 'media', message: 'Corticoides aumentan glucemia — ajustar insulina' },
+  ],
+  'prednisolona': [
+    { drugs: ['meloxicam', 'carprofeno', 'ibuprofeno', 'piroxicam', 'firocoxib'], severity: 'alta', message: 'Corticoide + AINE: riesgo de úlcera GI' },
+    { drugs: ['insulina'], severity: 'media', message: 'Corticoides aumentan glucemia — ajustar insulina' },
+  ],
+  'metronidazol': [
+    { drugs: ['fenobarbital', 'phenobarbital'], severity: 'media', message: 'Fenobarbital acelera metabolismo de metronidazol — puede requerir mayor dosis' },
+  ],
+  'enrofloxacina': [
+    { drugs: ['teofilina', 'theophylline'], severity: 'media', message: 'Fluoroquinolonas aumentan niveles de teofilina' },
+    { drugs: ['sucralfato'], severity: 'media', message: 'Sucralfato reduce absorción de fluoroquinolonas — administrar con 2h de separación' },
+  ],
+  'doxiciclina': [
+    { drugs: ['sucralfato'], severity: 'media', message: 'Sucralfato reduce absorción de doxiciclina — separar 2h' },
+    { drugs: ['metoxiflurano'], severity: 'media', message: 'Tetraciclinas potencian nefrotoxicidad de anestésicos' },
+  ],
+  'furosemida': [
+    { drugs: ['gentamicina', 'amikacina', 'tobramicina'], severity: 'alta', message: 'Furosemida + aminoglucósido: riesgo de ototoxicidad y nefrotoxicidad' },
+    { drugs: ['enalapril'], severity: 'media', message: 'Monitorear presión arterial y función renal con esta combinación' },
+  ],
+  'gentamicina': [
+    { drugs: ['furosemida'], severity: 'alta', message: 'Aminoglucósido + furosemida: riesgo de ototoxicidad y nefrotoxicidad' },
+    { drugs: ['amikacina', 'tobramicina'], severity: 'alta', message: 'No combinar aminoglucósidos' },
+  ],
+  'fenobarbital': [
+    { drugs: ['metronidazol'], severity: 'media', message: 'Fenobarbital reduce niveles de metronidazol' },
+    { drugs: ['doxiciclina'], severity: 'media', message: 'Fenobarbital reduce vida media de doxiciclina' },
+  ],
+  'tramadol': [
+    { drugs: ['acepromazina', 'xilacina'], severity: 'media', message: 'Sedación potenciada — reducir dosis de sedante' },
+  ],
+  'acepromazina': [
+    { drugs: ['tramadol', 'gabapentina'], severity: 'media', message: 'Sedación potenciada — monitorear depresión respiratoria' },
+  ],
+  'ketamina': [
+    { drugs: ['tramadol'], severity: 'media', message: 'Riesgo de síndrome serotoninérgico con la combinación' },
+  ],
+  'enalapril': [
+    { drugs: ['furosemida'], severity: 'media', message: 'IECA + diurético: monitorear función renal y presión arterial' },
+  ],
+  'ciclosporina': [
+    { drugs: ['ketoconazol', 'itraconazol'], severity: 'media', message: 'Azoles aumentan niveles de ciclosporina — puede ser intencional pero monitorear' },
+  ],
+};
+
 // POST /medications/:id/calculate-dose - Calculate dose for a patient
 router.post('/:id/calculate-dose', authenticate, async (req, res) => {
   const schema = z.object({
@@ -682,6 +751,7 @@ router.post('/:id/calculate-dose', authenticate, async (req, res) => {
     weightKg: z.number().positive().optional(),
     species: z.string().optional(),
     route: z.string().optional(),
+    bodyCondition: z.string().optional(),
     adjustments: z.object({
       renal: z.boolean().default(false),
       hepatic: z.boolean().default(false),
@@ -689,6 +759,8 @@ router.post('/:id/calculate-dose', authenticate, async (req, res) => {
       geriatric: z.boolean().default(false),
       pediatric: z.boolean().default(false),
       pregnant: z.boolean().default(false),
+      lactating: z.boolean().default(false),
+      neonatal: z.boolean().default(false),
     }).optional(),
   });
 
@@ -708,6 +780,8 @@ router.post('/:id/calculate-dose', authenticate, async (req, res) => {
   let patientAge = '';
   let patientConditions: string[] = [];
   let patientAllergies = '';
+  let patientBodyCondition = input.bodyCondition || '';
+  let currentMedications: string[] = [];
 
   if (input.petId) {
     const pet = await prisma.pet.findUnique({ where: { id: input.petId } });
@@ -716,6 +790,7 @@ router.post('/:id/calculate-dose', authenticate, async (req, res) => {
       patientSpecies = patientSpecies || pet.especie;
       patientWeight = patientWeight || pet.peso || undefined;
       patientAllergies = pet.alergias || '';
+      patientBodyCondition = patientBodyCondition || (pet as any).condicionCorporal || '';
       if (pet.enfermedadesCronicas) {
         const conds = pet.enfermedadesCronicas.toLowerCase();
         if (conds.includes('renal')) patientConditions.push('renal');
@@ -728,6 +803,28 @@ router.post('/:id/calculate-dose', authenticate, async (req, res) => {
         const ageYears = Math.floor(ageMonths / 12);
         const remainMonths = ageMonths % 12;
         patientAge = ageYears > 0 ? `${ageYears} año${ageYears > 1 ? 's' : ''}${remainMonths > 0 ? ` ${remainMonths} mes${remainMonths > 1 ? 'es' : ''}` : ''}` : `${ageMonths} mes${ageMonths > 1 ? 'es' : ''}`;
+      }
+
+      // Look up patient's ACTIVE prescriptions for drug interaction checking
+      try {
+        const activePrescriptions = await prisma.prescription.findMany({
+          where: {
+            petId: pet.id,
+            status: { in: ['PENDIENTE', 'PARCIAL'] },
+            prescribedAt: { gte: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000) }, // last 30 days
+          },
+          include: { items: true },
+        });
+        for (const rx of activePrescriptions) {
+          for (const item of rx.items) {
+            if (item.name && item.medicationId !== req.params.id) {
+              currentMedications.push(item.name.toLowerCase());
+            }
+          }
+        }
+      } catch (e) {
+        // Non-critical: if we can't fetch prescriptions, continue without interaction check
+        console.warn('Could not fetch active prescriptions for interaction check:', e);
       }
     }
   }
@@ -780,10 +877,75 @@ router.post('/:id/calculate-dose', authenticate, async (req, res) => {
       age: patientAge,
       conditions: patientConditions,
       allergies: patientAllergies,
+      bodyCondition: patientBodyCondition,
+      currentMedications,
     },
     dosing: null as any,
+    interactions: [] as any[],
+    narrowTherapeuticIndex: false,
     warnings,
   };
+
+  // ===== NARROW THERAPEUTIC INDEX CHECK =====
+  const medNameLower = (medication.name || '').toLowerCase();
+  const medGenericLower = (medication.genericName || '').toLowerCase();
+  const isNTI = NARROW_THERAPEUTIC_INDEX.some(nti => medNameLower.includes(nti) || medGenericLower.includes(nti));
+  if (isNTI) {
+    result.narrowTherapeuticIndex = true;
+    warnings.push('⚠️ MARGEN TERAPÉUTICO ESTRECHO: Este fármaco requiere dosificación precisa. No redondear dosis.');
+  }
+
+  // ===== DRUG INTERACTION CHECK =====
+  if (currentMedications.length > 0) {
+    // Normalize current medication name to match interaction keys
+    const checkInteractions = (drugKey: string) => {
+      const interactions = DRUG_INTERACTIONS[drugKey];
+      if (!interactions) return;
+      for (const interaction of interactions) {
+        for (const interactingDrug of interaction.drugs) {
+          if (currentMedications.some(cm => cm.includes(interactingDrug))) {
+            result.interactions.push({
+              drug: interactingDrug,
+              severity: interaction.severity,
+              message: interaction.message,
+            });
+            const severityIcon = interaction.severity === 'alta' ? '🚨' : '⚠️';
+            warnings.push(`${severityIcon} INTERACCIÓN (${interaction.severity.toUpperCase()}): ${interaction.message}`);
+          }
+        }
+      }
+    };
+
+    // Check interactions for this medication (by name and generic)
+    for (const key of Object.keys(DRUG_INTERACTIONS)) {
+      if (medNameLower.includes(key) || medGenericLower.includes(key)) {
+        checkInteractions(key);
+      }
+    }
+  }
+
+  // ===== UNIT VALIDATION (mg vs mcg) =====
+  if (medication.concentration) {
+    const concLower = medication.concentration.toLowerCase();
+    if (concLower.includes('mcg') || concLower.includes('µg') || concLower.includes('ug')) {
+      warnings.push('⚠️ ATENCIÓN UNIDADES: La concentración está en mcg (microgramos), no mg. Verificar que la dosis use las mismas unidades.');
+    }
+  }
+
+  // Check dosing unit mismatch
+  if (dosing) {
+    const dosingUnit = (dosing.doseUnit || 'mg/kg').toLowerCase();
+    if (dosingUnit.includes('mcg') || dosingUnit.includes('µg')) {
+      warnings.push('⚠️ La dosis de referencia está en mcg/kg (microgramos). 1 mg = 1000 mcg. No confundir.');
+    }
+    if (medication.concentration) {
+      const concHasMcg = medication.concentration.toLowerCase().includes('mcg') || medication.concentration.toLowerCase().includes('µg');
+      const dosHasMcg = dosingUnit.includes('mcg') || dosingUnit.includes('µg');
+      if (concHasMcg !== dosHasMcg) {
+        warnings.push('🚨 UNIDADES DIFERENTES: La concentración y la dosis usan unidades distintas (mg vs mcg). Convertir antes de calcular.');
+      }
+    }
+  }
 
   if (!dosing) {
     warnings.push('No hay ficha de dosificación para esta especie. Ingrese la dosis manualmente.');
@@ -814,12 +976,12 @@ router.post('/:id/calculate-dose', authenticate, async (req, res) => {
 
   let adjustmentFactor = 1.0;
   const adjustmentReasons: string[] = [];
-  const adjustments = input.adjustments || { renal: false, hepatic: false, cardiac: false, geriatric: false, pediatric: false, pregnant: false };
+  const adjustments = input.adjustments || { renal: false, hepatic: false, cardiac: false, geriatric: false, pediatric: false, pregnant: false, lactating: false, neonatal: false };
 
   // Clinical adjustments
   if (adjustments.geriatric || patientConditions.includes('geriatric')) {
     adjustmentFactor *= 0.75;
-    adjustmentReasons.push('Geriátrico: -25%');
+    adjustmentReasons.push('Geriátrico: -25% (metabolismo reducido)');
   }
   if (adjustments.renal || patientConditions.includes('renal')) {
     adjustmentFactor *= 0.5;
@@ -840,13 +1002,44 @@ router.post('/:id/calculate-dose', authenticate, async (req, res) => {
     }
   }
   if (adjustments.pediatric) {
+    adjustmentFactor *= 0.75;
+    adjustmentReasons.push('Pediátrico: -25% (usar dosis mínima)');
     if (!dosing.safeInPediatric) {
-      warnings.push('⚠️ No confirmado seguro para pacientes pediátricos');
+      warnings.push('⚠️ No confirmado seguro para pacientes pediátricos — usar con precaución');
+    }
+    if (dosing.minAgeMonths && patientAge) {
+      warnings.push(`Edad mínima recomendada: ${dosing.minAgeMonths} meses`);
+    }
+  }
+  if (adjustments.neonatal) {
+    adjustmentFactor *= 0.5;
+    adjustmentReasons.push('Neonato: -50% (función hepática/renal inmadura)');
+    if (!dosing.safeInPediatric) {
+      warnings.push('🚨 Precaución extrema en neonatos — confirmar seguridad del fármaco');
     }
   }
   if (adjustments.pregnant) {
     if (!dosing.safeInPregnancy) {
       warnings.push('⚠️ No confirmado seguro durante gestación');
+    }
+  }
+  if (adjustments.lactating) {
+    if (!dosing.safeInLactation) {
+      warnings.push('⚠️ No confirmado seguro durante lactancia — puede pasar a crías');
+    }
+  }
+
+  // ===== BODY CONDITION ADJUSTMENT =====
+  if (patientBodyCondition) {
+    if (patientBodyCondition === 'OBESO') {
+      adjustmentFactor *= 0.85;
+      adjustmentReasons.push('Obeso: -15% (dosificar sobre peso magro estimado)');
+      warnings.push('⚠️ Paciente obeso: la dosis se basa en peso magro estimado, no peso total');
+    } else if (patientBodyCondition === 'SOBREPESO') {
+      adjustmentFactor *= 0.9;
+      adjustmentReasons.push('Sobrepeso: -10%');
+    } else if (patientBodyCondition === 'MUY_DELGADO') {
+      warnings.push('⚠️ Paciente muy delgado/emaciado: verificar hidratación y estado metabólico antes de dosificar');
     }
   }
 

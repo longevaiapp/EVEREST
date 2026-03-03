@@ -37,12 +37,17 @@ const DoseCalculator = ({
     geriatric: false,
     pediatric: false,
     pregnant: false,
+    lactating: false,
+    neonatal: false,
     renal: false,
     hepatic: false,
     cardiac: false,
   });
+  const [bodyCondition, setBodyCondition] = useState('');
   const [calculationResult, setCalculationResult] = useState(null);
   const [warnings, setWarnings] = useState([]);
+  const [interactions, setInteractions] = useState([]);
+  const [isNTI, setIsNTI] = useState(false);
 
   // Determine best weight: currentWeight > patient.peso
   const bestWeight = useMemo(() => {
@@ -72,6 +77,10 @@ const DoseCalculator = ({
       if (ageYears < 0.5) {
         newAdj.pediatric = true;
       }
+      // Neonatal: <8 weeks
+      if (ageYears < (8 / 52)) {
+        newAdj.neonatal = true;
+      }
     }
 
     // Parse chronic diseases
@@ -83,6 +92,11 @@ const DoseCalculator = ({
     }
 
     setAdjustments(newAdj);
+
+    // Body condition from patient record
+    if (patient.condicionCorporal && !bodyCondition) {
+      setBodyCondition(patient.condicionCorporal);
+    }
   }, [patient]);
 
   // Fetch dosing data when medication or species changes
@@ -100,12 +114,15 @@ const DoseCalculator = ({
           petId: patient?.id,
           weightKg: parseFloat(weightKg) || undefined,
           species: effectiveSpecies,
+          bodyCondition: bodyCondition || undefined,
           adjustments,
         });
         
         if (response?.data) {
           setDosingData(response.data);
           setWarnings(response.data.warnings || []);
+          setInteractions(response.data.interactions || []);
+          setIsNTI(response.data.narrowTherapeuticIndex || false);
           
           if (response.data.dosing && !response.data.dosing.needsWeight) {
             setCalculationResult(response.data.dosing);
@@ -127,7 +144,7 @@ const DoseCalculator = ({
     };
 
     fetchDosing();
-  }, [medication?.id, effectiveSpecies, patient?.id]);
+  }, [medication?.id, effectiveSpecies, patient?.id, bodyCondition]);
 
   // Recalculate when weight or adjustments change (locally, no API call)
   const localCalc = useMemo(() => {
@@ -149,9 +166,15 @@ const DoseCalculator = ({
     let factor = 1.0;
     const reasons = [];
     if (adjustments.geriatric) { factor *= 0.75; reasons.push('Geriátrico -25%'); }
+    if (adjustments.pediatric) { factor *= 0.75; reasons.push('Pediátrico -25%'); }
+    if (adjustments.neonatal) { factor *= 0.5; reasons.push('Neonato -50%'); }
     if (adjustments.renal) { factor *= 0.5; reasons.push('Renal -50%'); }
     if (adjustments.hepatic) { factor *= 0.7; reasons.push('Hepático -30%'); }
     if (adjustments.cardiac) { factor *= 0.8; reasons.push('Cardíaco -20%'); }
+
+    // Body condition adjustment (local calc)
+    if (bodyCondition === 'OBESO') { factor *= 0.85; reasons.push('Obeso -15%'); }
+    else if (bodyCondition === 'SOBREPESO') { factor *= 0.9; reasons.push('Sobrepeso -10%'); }
 
     const adjustedMg = selectedMg * factor;
 
@@ -204,7 +227,7 @@ const DoseCalculator = ({
       routes: d.routes || [],
       estimatedQty,
     };
-  }, [dosingData, weightKg, selectedDosePerKg, adjustments, medication]);
+  }, [dosingData, weightKg, selectedDosePerKg, adjustments, bodyCondition, medication]);
 
   // Notify parent of calculated dose
   useEffect(() => {
@@ -250,10 +273,11 @@ const DoseCalculator = ({
   const weightSource = currentWeight ? 'triage/vitals' : patient?.peso ? 'registro' : null;
 
   return (
-    <div className={`dose-calc ${compact ? 'dose-calc-compact' : ''}`}>
+    <div className={`dose-calc ${compact ? 'dose-calc-compact' : ''} ${isNTI ? 'dose-calc-nti' : ''}`}>
       <div className="dose-calc-header">
         <span className="dose-calc-icon">⚖️</span>
         <span className="dose-calc-title">Calculadora de Dosis</span>
+        {isNTI && <span className="dose-calc-nti-badge">🚨 Margen Estrecho</span>}
         {loading && <span className="dose-calc-loading">Cargando...</span>}
       </div>
 
@@ -306,7 +330,9 @@ const DoseCalculator = ({
           {[
             { key: 'geriatric', label: 'Geriátrico', icon: '👴' },
             { key: 'pediatric', label: 'Pediátrico', icon: '🍼' },
+            { key: 'neonatal', label: 'Neonato', icon: '👶' },
             { key: 'pregnant', label: 'Gestante', icon: '🤰' },
+            { key: 'lactating', label: 'Lactante', icon: '🤱' },
             { key: 'renal', label: 'Insuf. Renal', icon: '🫘' },
             { key: 'hepatic', label: 'Insuf. Hepática', icon: '🫁' },
             { key: 'cardiac', label: 'Cardiopatía', icon: '❤️' },
@@ -322,6 +348,41 @@ const DoseCalculator = ({
           ))}
         </div>
       </div>
+
+      {/* Body Condition */}
+      <div className="dose-calc-body-condition">
+        <label>Condición corporal</label>
+        <select
+          className="form-control"
+          value={bodyCondition}
+          onChange={(e) => setBodyCondition(e.target.value)}
+        >
+          <option value="">No especificada</option>
+          <option value="MUY_DELGADO">🦴 Muy delgado / Emaciado</option>
+          <option value="DELGADO">Delgado</option>
+          <option value="IDEAL">✅ Ideal</option>
+          <option value="SOBREPESO">Sobrepeso</option>
+          <option value="OBESO">⚠️ Obeso</option>
+        </select>
+        {bodyCondition === 'OBESO' && <span className="dose-calc-bcs-note">⚠️ Dosis ajustada -15% (peso magro)</span>}
+        {bodyCondition === 'SOBREPESO' && <span className="dose-calc-bcs-note">⚠️ Dosis ajustada -10%</span>}
+        {bodyCondition === 'MUY_DELGADO' && <span className="dose-calc-bcs-note">⚠️ Verificar hidratación</span>}
+      </div>
+
+      {/* Drug Interactions */}
+      {interactions.length > 0 && (
+        <div className="dose-calc-interactions">
+          <div className="dose-calc-interactions-header">🚨 Interacciones medicamentosas detectadas</div>
+          {interactions.map((inter, i) => (
+            <div key={i} className={`dose-calc-interaction dose-calc-interaction-${inter.severity}`}>
+              <span className="dose-calc-interaction-severity">
+                {inter.severity === 'alta' ? '🔴' : inter.severity === 'media' ? '🟡' : '🟢'} {inter.severity.toUpperCase()}
+              </span>
+              <span className="dose-calc-interaction-msg">{inter.message}</span>
+            </div>
+          ))}
+        </div>
+      )}
 
       {/* Dosing Reference */}
       {hasDosingRecord && (
