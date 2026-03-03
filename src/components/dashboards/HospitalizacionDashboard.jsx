@@ -109,6 +109,7 @@ function HospitalizacionDashboard() {
   volumeMl: null, concentrationUsed: null, _autoFilledDose: false,
   });
   const [medicationResults, setMedicationResults] = useState([]);
+  const [medicationSearch, setMedicationSearch] = useState('');
   const [searchingMedications, setSearchingMedications] = useState(false);
   const [showMedicationDropdown, setShowMedicationDropdown] = useState(false);
   const medicationSearchRef = useRef(null);
