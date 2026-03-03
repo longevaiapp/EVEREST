@@ -28,6 +28,11 @@ const DoseCalculator = ({
   const [dosingData, setDosingData] = useState(null);
   const [weightKg, setWeightKg] = useState('');
   const [selectedDosePerKg, setSelectedDosePerKg] = useState('');
+  const [overrideSpecies, setOverrideSpecies] = useState('');
+
+  // Effective species: override > patient.especie (skip OTRO)
+  const needsSpeciesSelect = !patient?.especie || patient.especie === 'OTRO' || patient.especie === 'otro';
+  const effectiveSpecies = overrideSpecies || (needsSpeciesSelect ? '' : patient?.especie) || '';
   const [adjustments, setAdjustments] = useState({
     geriatric: false,
     pediatric: false,
@@ -80,9 +85,9 @@ const DoseCalculator = ({
     setAdjustments(newAdj);
   }, [patient]);
 
-  // Fetch dosing data when medication changes
+  // Fetch dosing data when medication or species changes
   useEffect(() => {
-    if (!medication?.id || !patient?.especie) {
+    if (!medication?.id || !effectiveSpecies) {
       setDosingData(null);
       setCalculationResult(null);
       return;
@@ -92,9 +97,9 @@ const DoseCalculator = ({
       setLoading(true);
       try {
         const response = await farmaciaService.calculateDose(medication.id, {
-          petId: patient.id,
+          petId: patient?.id,
           weightKg: parseFloat(weightKg) || undefined,
-          species: patient.especie,
+          species: effectiveSpecies,
           adjustments,
         });
         
@@ -122,7 +127,7 @@ const DoseCalculator = ({
     };
 
     fetchDosing();
-  }, [medication?.id, patient?.especie, patient?.id]);
+  }, [medication?.id, effectiveSpecies, patient?.id]);
 
   // Recalculate when weight or adjustments change (locally, no API call)
   const localCalc = useMemo(() => {
@@ -239,7 +244,7 @@ const DoseCalculator = ({
   // Don't render if no medication selected from inventory
   if (!medication?.id) return null;
 
-  const species = patient?.especie || '';
+  const species = effectiveSpecies || patient?.especie || '';
   const hasDosingRecord = dosingData?.dosing && dosingData.dosing.doseMinMgKg;
   const w = parseFloat(weightKg);
   const weightSource = currentWeight ? 'triage/vitals' : patient?.peso ? 'registro' : null;
@@ -256,8 +261,26 @@ const DoseCalculator = ({
       <div className="dose-calc-patient">
         <div className="dose-calc-field">
           <label>Paciente</label>
-          <span>{patient?.nombre || '—'} ({species}{patient?.raza ? ` • ${patient.raza}` : ''}{patient?.edad ? ` • ${patient.edad}` : ''})</span>
+          <span>{patient?.nombre || '—'} ({species || 'Sin especie'}{patient?.raza ? ` • ${patient.raza}` : ''}{patient?.edad ? ` • ${patient.edad}` : ''})</span>
         </div>
+        {needsSpeciesSelect && (
+          <div className="dose-calc-field dose-calc-species">
+            <label>Especie (para dosis) *</label>
+            <select
+              className={`form-control ${!overrideSpecies ? 'dose-calc-missing' : ''}`}
+              value={overrideSpecies}
+              onChange={(e) => setOverrideSpecies(e.target.value)}
+            >
+              <option value="">Seleccionar...</option>
+              <option value="PERRO">🐕 Perro</option>
+              <option value="GATO">🐈 Gato</option>
+              <option value="AVE">🐦 Ave</option>
+              <option value="REPTIL">🦎 Reptil</option>
+              <option value="CONEJO">🐰 Conejo</option>
+              <option value="HAMSTER">🐹 Hámster</option>
+            </select>
+          </div>
+        )}
         <div className="dose-calc-field dose-calc-weight">
           <label>Peso (kg) *</label>
           <div className="dose-calc-weight-input">
