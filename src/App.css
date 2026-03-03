@@ -90,14 +90,15 @@ body::before {
 }
 
 /* Global Form Controls Styling */
-select,
-input[type="text"],
-input[type="email"],
-input[type="password"],
-input[type="number"],
-input[type="date"],
-input[type="time"],
-textarea {
+/* White text only inside glass-block (dark bg) contexts */
+.glass-block select,
+.glass-block input[type="text"],
+.glass-block input[type="email"],
+.glass-block input[type="password"],
+.glass-block input[type="number"],
+.glass-block input[type="date"],
+.glass-block input[type="time"],
+.glass-block textarea {
   color: #fff;
 }
 

@@ -911,6 +911,13 @@ fieldset legend {
   color: #2d3748;
   transition: border-color 0.15s, box-shadow 0.15s;
 }
+
+/* Force dark text in all modal form controls (override global glass-block white) */
+.hd-modal input,
+.hd-modal select,
+.hd-modal textarea {
+  color: #2d3748;
+}
 .hd-field input:focus,
 .hd-field select:focus,
 .hd-field textarea:focus {

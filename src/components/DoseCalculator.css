@@ -9,6 +9,22 @@
   padding: 16px;
   margin: 12px 0;
   font-size: 0.92rem;
+  color: #1e293b;
+}
+
+/* Force dark text on all form controls inside calculator */
+.dose-calc input,
+.dose-calc select,
+.dose-calc textarea,
+.dose-calc label,
+.dose-calc span {
+  color: inherit;
+}
+.dose-calc input[type="number"],
+.dose-calc input[type="text"],
+.dose-calc select {
+  color: #1e293b;
+  background: #fff;
 }
 
 .dose-calc-compact {
