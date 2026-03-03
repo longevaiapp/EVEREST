@@ -1124,6 +1124,311 @@ fieldset legend {
 }
 
 /* ═══════════════════════════════════════════════════════════════
+   HOSPITAL BOARD — Full styling for the main board view
+   ═══════════════════════════════════════════════════════════════ */
+.hospital-board {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-height: 0;
+}
+
+/* ─── Area Tabs ─── */
+.board-area-tabs {
+  display: flex;
+  gap: 6px;
+  padding: 0 0 12px;
+  overflow-x: auto;
+  scrollbar-width: thin;
+  flex-shrink: 0;
+}
+
+.board-area-tab {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 18px;
+  background: white;
+  border: 2px solid #e2e8f0;
+  border-radius: 10px;
+  cursor: pointer;
+  transition: all 0.2s;
+  white-space: nowrap;
+  font-size: 0.85rem;
+}
+.board-area-tab:hover {
+  border-color: var(--area-color, #3b82f6);
+  transform: translateY(-1px);
+  box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+}
+.board-area-tab.active {
+  border-color: var(--area-color, #3b82f6);
+  background: color-mix(in srgb, var(--area-color, #3b82f6) 8%, white);
+  font-weight: 600;
+  box-shadow: 0 2px 8px color-mix(in srgb, var(--area-color, #3b82f6) 20%, transparent);
+}
+
+.area-icon { font-size: 1.2rem; }
+.area-label { font-size: 0.82rem; }
+.area-count {
+  background: var(--area-color, #3b82f6);
+  color: white;
+  padding: 2px 8px;
+  border-radius: 12px;
+  font-size: 0.72rem;
+  font-weight: 700;
+  min-width: 22px;
+  text-align: center;
+}
+
+/* ─── Controls ─── */
+.board-controls {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 0 10px;
+  gap: 10px;
+  flex-shrink: 0;
+}
+
+.board-time-range {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.82rem;
+  color: #475569;
+}
+.board-time-range label {
+  font-weight: 600;
+}
+.board-time-range select {
+  padding: 5px 10px;
+  border: 1px solid #cbd5e1;
+  border-radius: 6px;
+  font-size: 0.82rem;
+  background: white;
+  cursor: pointer;
+}
+.board-time-range select:focus {
+  outline: none;
+  border-color: #3182ce;
+}
+
+.btn-refresh {
+  padding: 7px 16px;
+  border: 1px solid #cbd5e1;
+  border-radius: 8px;
+  background: white;
+  cursor: pointer;
+  font-size: 0.82rem;
+  font-weight: 600;
+  transition: all 0.2s;
+  color: #334155;
+}
+.btn-refresh:hover { background: #f1f5f9; border-color: #94a3b8; }
+.btn-refresh:disabled { opacity: 0.5; cursor: not-allowed; }
+
+/* ─── Error & Empty ─── */
+.board-error {
+  padding: 10px 16px;
+  background: #fef2f2;
+  border: 1px solid #fecaca;
+  border-radius: 8px;
+  color: #dc2626;
+  font-size: 0.85rem;
+  margin-bottom: 8px;
+}
+
+.board-empty {
+  padding: 80px 20px;
+  text-align: center;
+  color: #94a3b8;
+}
+.board-empty-icon { font-size: 3.5rem; margin-bottom: 12px; }
+.board-empty p { font-size: 1rem; margin: 0; }
+
+/* ─── Grid wrapper ─── */
+.board-grid-wrapper {
+  flex: 1;
+  overflow: auto;
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  background: white;
+  min-height: 0;
+}
+
+.board-grid {
+  display: grid;
+  min-width: max-content;
+}
+
+/* ─── Grid cells ─── */
+.board-cell {
+  padding: 6px 8px;
+  border-bottom: 1px solid #f1f5f9;
+  border-right: 1px solid #f1f5f9;
+  font-size: 0.78rem;
+}
+
+/* Header cells */
+.board-cell.board-header {
+  background: #f8fafc;
+  font-weight: 600;
+  color: #475569;
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  border-bottom: 2px solid #e2e8f0;
+  white-space: nowrap;
+}
+.board-cell.board-header.board-patient-col {
+  position: sticky;
+  left: 0;
+  z-index: 3;
+  min-width: 200px;
+  font-size: 0.85rem;
+  color: #1e293b;
+  padding: 10px 12px;
+}
+.board-cell.board-header.board-time-col {
+  text-align: center;
+  padding: 8px 4px;
+  font-size: 0.72rem;
+  min-width: 80px;
+}
+.board-cell.board-header.board-time-col.now {
+  background: #dbeafe;
+  color: #1d4ed8;
+  font-weight: 700;
+}
+
+/* Patient cells */
+.board-cell.board-patient-cell {
+  position: sticky;
+  left: 0;
+  z-index: 1;
+  background: white;
+  min-width: 200px;
+  padding: 8px 12px;
+  cursor: pointer;
+  transition: background 0.15s;
+  border-bottom: 1px solid #e2e8f0;
+}
+.board-cell.board-patient-cell:hover {
+  background: #f0fdf4;
+}
+
+.board-pet-name {
+  font-weight: 700;
+  font-size: 0.88rem;
+  color: #1e293b;
+  margin-bottom: 2px;
+}
+.board-pet-info {
+  font-size: 0.72rem;
+  color: #64748b;
+  margin-bottom: 2px;
+}
+.board-pet-meta {
+  font-size: 0.7rem;
+  color: #94a3b8;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+.board-fluid-badge {
+  font-size: 0.75rem;
+}
+.board-fluid-btn {
+  margin-top: 4px;
+  padding: 3px 8px;
+  border: 1px solid #90cdf4;
+  border-radius: 4px;
+  background: #ebf8ff;
+  color: #2b6cb0;
+  font-size: 0.7rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.board-fluid-btn:hover {
+  background: #bee3f8;
+}
+
+/* Time slot cells */
+.board-cell.board-slot {
+  min-width: 80px;
+  padding: 4px;
+  vertical-align: top;
+  transition: background 0.1s;
+  border-bottom: 1px solid #e2e8f0;
+}
+.board-cell.board-slot.now-col {
+  background: #eff6ff;
+}
+.board-cell.board-slot.has-activity {
+  background: #fafafa;
+}
+.board-cell.board-slot.now-col.has-activity {
+  background: #e8f0fe;
+}
+
+/* Activity chips inside time slots */
+.board-activities {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.board-activity {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  padding: 2px 5px;
+  border-radius: 4px;
+  font-size: 0.68rem;
+  background: color-mix(in srgb, var(--act-color, #94a3b8) 15%, white);
+  border-left: 3px solid var(--act-color, #94a3b8);
+  cursor: default;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.act-icon { font-size: 0.72rem; flex-shrink: 0; }
+.act-name { 
+  overflow: hidden;
+  text-overflow: ellipsis;
+  color: #334155;
+  font-weight: 500;
+}
+
+/* ─── Legend ─── */
+.board-legend {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 10px 0 0;
+  flex-shrink: 0;
+}
+.legend-title {
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: #64748b;
+}
+.legend-item {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 0.75rem;
+  color: #475569;
+}
+.legend-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  display: inline-block;
+}
+
+/* ═══════════════════════════════════════════════════════════════
    HOSPITAL BOARD OVERRIDES (inside .hd-center)
    Make the board fill the center area properly
    ═══════════════════════════════════════════════════════════════ */
@@ -1131,6 +1436,78 @@ fieldset legend {
   height: 100%;
   min-height: 0;
 }
+
+/* ═══════════════════════════════════════════════════════════════
+   FLUID THERAPY CALCULATOR
+   ═══════════════════════════════════════════════════════════════ */
+.fluid-therapy-calc { padding: 1.25rem; }
+.ftc-header { margin-bottom: 1rem; }
+.ftc-header h3 { margin: 0; font-size: 1.1rem; color: #0c4a6e; }
+.ftc-close-btn { float: right; background: none; border: none; font-size: 1.3rem; cursor: pointer; color: #64748b; }
+.ftc-close-btn:hover { color: #1e293b; }
+.ftc-patient-info { display: flex; gap: 0.75rem; padding: 0.75rem; background: #f0f9ff; border-radius: 10px; margin-bottom: 1rem; align-items: center; }
+.ftc-pet-icon { font-size: 1.5rem; }
+.ftc-pet-name { font-weight: 600; }
+.ftc-pet-details { font-size: 0.82rem; color: #64748b; }
+.ftc-section { margin-bottom: 1rem; }
+.ftc-section h4 { margin: 0 0 0.5rem; font-size: 0.9rem; color: #0c4a6e; }
+.ftc-grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.75rem; }
+.ftc-field { display: flex; flex-direction: column; gap: 0.2rem; }
+.ftc-field label { font-size: 0.75rem; color: #475569; font-weight: 500; }
+.ftc-field input, .ftc-field select { padding: 0.5rem 0.65rem; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 0.9rem; }
+.ftc-field input:focus, .ftc-field select:focus { outline: none; border-color: #0ea5e9; }
+.ftc-alert { padding: 0.5rem 0.75rem; border-radius: 6px; font-size: 0.82rem; margin-bottom: 0.75rem; }
+.ftc-alert-warning { background: #fff7ed; color: #c2410c; }
+.ftc-formula { font-size: 0.72rem; color: #64748b; margin-left: 8px; }
+.ftc-dehydration-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+.ftc-dehyd-btn { padding: 10px; border: 2px solid #e2e8f0; border-radius: 10px; background: white; cursor: pointer; transition: all 0.15s; text-align: center; }
+.ftc-dehyd-btn:hover { border-color: #94a3b8; transform: translateY(-1px); }
+.ftc-dehyd-btn.active { border-color: #0ea5e9; background: #e0f2fe; }
+.ftc-dehyd-btn.moderate { border-color: #fbbf24; }
+.ftc-dehyd-btn.moderate.active { background: #fef3c7; border-color: #f59e0b; }
+.ftc-dehyd-btn.severe { border-color: #f97316; }
+.ftc-dehyd-btn.severe.active { background: #fff7ed; border-color: #ea580c; }
+.ftc-dehyd-btn.critical { border-color: #ef4444; }
+.ftc-dehyd-btn.critical.active { background: #fef2f2; border-color: #dc2626; }
+.dehyd-pct { display: block; font-size: 1.2rem; font-weight: 700; color: #1e293b; }
+.dehyd-label { display: block; font-size: 0.75rem; font-weight: 500; color: #475569; }
+.dehyd-desc { display: block; font-size: 0.65rem; color: #94a3b8; margin-top: 2px; }
+.ftc-losses-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; }
+.ftc-loss-item { padding: 10px; background: white; border: 1px solid #e2e8f0; border-radius: 10px; text-align: center; }
+.ftc-loss-header { font-weight: 600; font-size: 0.82rem; margin-bottom: 2px; }
+.ftc-loss-detail { font-size: 0.68rem; color: #64748b; margin-bottom: 6px; }
+.ftc-counter { display: flex; align-items: center; justify-content: center; gap: 12px; }
+.ftc-counter button { width: 30px; height: 30px; border: 1px solid #cbd5e1; border-radius: 50%; background: white; font-size: 1.1rem; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: all 0.15s; }
+.ftc-counter button:hover { background: #f1f5f9; }
+.ftc-counter span { font-size: 1.1rem; font-weight: 700; min-width: 22px; text-align: center; }
+.ftc-adjustments { display: flex; flex-direction: column; gap: 6px; }
+.ftc-slider-row { display: flex; align-items: center; gap: 12px; }
+.ftc-slider { flex: 1; accent-color: #0ea5e9; height: 6px; }
+.ftc-slider-value { font-weight: 700; font-size: 1rem; color: #0ea5e9; min-width: 40px; }
+.ftc-results { border: 2px solid #0ea5e9; border-radius: 12px; padding: 14px; background: linear-gradient(135deg, #f0f9ff, #e0f2fe); }
+.ftc-results h4 { margin: 0 0 10px; font-size: 0.95rem; color: #0c4a6e; }
+.ftc-results-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 8px; margin-bottom: 12px; }
+.ftc-result-card { padding: 10px; border-radius: 10px; text-align: center; }
+.ftc-result-card.blue { background: #dbeafe; }
+.ftc-result-card.orange { background: #fed7aa; }
+.ftc-result-card.yellow { background: #fef3c7; }
+.ftc-result-card.green { background: #d1fae5; }
+.ftc-result-card.purple { background: #ede9fe; }
+.ftc-result-card.total { border: 2px solid #10b981; }
+.ftc-result-card.adjusted { border: 2px solid #8b5cf6; }
+.ftc-result-label { font-size: 0.68rem; color: #475569; font-weight: 500; }
+.ftc-result-value { font-size: 1.3rem; font-weight: 800; color: #1e293b; margin: 3px 0; }
+.ftc-result-sub { font-size: 0.65rem; color: #64748b; }
+.ftc-drip-summary { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-bottom: 12px; }
+.ftc-drip-card { display: flex; align-items: center; gap: 8px; padding: 10px; background: white; border-radius: 10px; border: 1px solid #e2e8f0; }
+.ftc-drip-icon { font-size: 1.3rem; }
+.ftc-drip-label { font-size: 0.68rem; color: #64748b; }
+.ftc-drip-value { font-size: 1rem; font-weight: 700; color: #0c4a6e; }
+.ftc-actions { text-align: center; margin-top: 0.75rem; }
+.ftc-actions .btn-submit { padding: 10px 28px; background: #0ea5e9; color: white; border: none; border-radius: 10px; font-size: 0.95rem; font-weight: 600; cursor: pointer; transition: all 0.2s; }
+.ftc-actions .btn-submit:hover { background: #0284c7; transform: translateY(-1px); }
+.ftc-actions .btn-submit:disabled { opacity: 0.6; cursor: not-allowed; transform: none; }
+.ftc-actions .btn-submit.btn-saved { background: #10b981; }
 
 /* ═══════════════════════════════════════════════════════════════
    RESPONSIVE
@@ -1170,4 +1547,9 @@ fieldset legend {
   .hd-grid-4 {
     grid-template-columns: 1fr;
   }
+  .board-area-tabs { flex-wrap: wrap; }
+  .ftc-grid-3,
+  .ftc-dehydration-grid { grid-template-columns: 1fr 1fr; }
+  .ftc-losses-grid { grid-template-columns: 1fr; }
+  .ftc-drip-summary { grid-template-columns: 1fr; }
 }

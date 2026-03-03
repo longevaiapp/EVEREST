@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useMemo } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import hospitalizacionService from '../../services/hospitalizacion.service';
 
 const AREAS = [
@@ -183,10 +183,9 @@ function HospitalBoard({ onSelectPatient, onOpenFluidCalc }) {
 
             {/* Patient rows */}
             {boardData.rows.map((row) => (
-              <>
+              <React.Fragment key={`row-${row.hospitalizationId}`}>
                 {/* Patient info cell */}
                 <div
-                  key={`patient-${row.hospitalizationId}`}
                   className="board-cell board-patient-cell"
                   onClick={() => onSelectPatient && onSelectPatient(row)}
                 >
@@ -239,7 +238,7 @@ function HospitalBoard({ onSelectPatient, onOpenFluidCalc }) {
                     </div>
                   );
                 })}
-              </>
+              </React.Fragment>
             ))}
           </div>
         )}
