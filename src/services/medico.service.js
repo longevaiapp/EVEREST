@@ -211,6 +211,12 @@ export const recetaService = {
       instructions: item.instrucciones || item.instructions,
       type: item.type || 'USO_INMEDIATO',
       medicationId: item.medicationId || undefined,
+      // Dose calculation traceability
+      patientWeightKg: item.patientWeightKg || undefined,
+      dosePerKg: item.dosePerKg || undefined,
+      calculatedDoseMg: item.calculatedDoseMg || undefined,
+      volumeMl: item.volumeMl || undefined,
+      concentrationUsed: item.concentrationUsed || undefined,
     }));
 
     const payload = {

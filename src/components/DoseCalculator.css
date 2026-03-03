@@ -1,0 +1,410 @@
+/* ============================================================================
+   DoseCalculator.css - Calculadora de Dosis Veterinaria
+   ============================================================================ */
+
+.dose-calc {
+  background: linear-gradient(135deg, #f0f9ff 0%, #e8f4f8 100%);
+  border: 1px solid #bae6fd;
+  border-radius: 12px;
+  padding: 16px;
+  margin: 12px 0;
+  font-size: 0.92rem;
+}
+
+.dose-calc-compact {
+  padding: 12px;
+  margin: 8px 0;
+}
+
+/* Header */
+.dose-calc-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 12px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid #bae6fd;
+}
+
+.dose-calc-icon {
+  font-size: 1.3rem;
+}
+
+.dose-calc-title {
+  font-weight: 700;
+  color: #0369a1;
+  font-size: 0.95rem;
+}
+
+.dose-calc-loading {
+  margin-left: auto;
+  color: #0ea5e9;
+  font-size: 0.8rem;
+  animation: doseCalcPulse 1.5s infinite;
+}
+
+@keyframes doseCalcPulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.4; }
+}
+
+/* Patient Info Row */
+.dose-calc-patient {
+  display: flex;
+  gap: 16px;
+  align-items: flex-end;
+  margin-bottom: 12px;
+  flex-wrap: wrap;
+}
+
+.dose-calc-field {
+  flex: 1;
+  min-width: 0;
+}
+
+.dose-calc-field label {
+  display: block;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: #64748b;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+  margin-bottom: 3px;
+}
+
+.dose-calc-field > span {
+  font-size: 0.88rem;
+  color: #334155;
+  font-weight: 500;
+}
+
+.dose-calc-weight {
+  flex: 0 0 200px;
+}
+
+.dose-calc-weight-input {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.dose-calc-weight-input input {
+  width: 90px;
+  padding: 6px 10px;
+  border: 2px solid #cbd5e1;
+  border-radius: 8px;
+  font-size: 0.95rem;
+  font-weight: 600;
+  text-align: center;
+  background: #fff;
+  transition: border-color 0.2s;
+}
+
+.dose-calc-weight-input input:focus {
+  border-color: #0ea5e9;
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(14, 165, 233, 0.15);
+}
+
+.dose-calc-weight-input input.dose-calc-missing {
+  border-color: #f59e0b;
+  background: #fffbeb;
+  animation: doseCalcPulse 2s infinite;
+}
+
+.dose-calc-weight-src {
+  font-size: 0.72rem;
+  color: #94a3b8;
+  white-space: nowrap;
+}
+
+.dose-calc-alert {
+  color: #f59e0b;
+  font-size: 0.8rem;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+/* Clinical Adjustments */
+.dose-calc-adjustments {
+  margin-bottom: 12px;
+}
+
+.dose-calc-adjustments > label {
+  display: block;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: #64748b;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+  margin-bottom: 6px;
+}
+
+.dose-calc-checks {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.dose-calc-check {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 10px;
+  border-radius: 20px;
+  background: #fff;
+  border: 1px solid #e2e8f0;
+  cursor: pointer;
+  font-size: 0.8rem;
+  color: #64748b;
+  transition: all 0.2s;
+  user-select: none;
+}
+
+.dose-calc-check:hover {
+  border-color: #0ea5e9;
+  background: #f0f9ff;
+}
+
+.dose-calc-check.active {
+  background: #0ea5e9;
+  color: #fff;
+  border-color: #0ea5e9;
+}
+
+.dose-calc-check input[type="checkbox"] {
+  display: none;
+}
+
+/* Dosing Reference */
+.dose-calc-reference {
+  background: #fff;
+  border-radius: 10px;
+  padding: 12px;
+  border: 1px solid #e2e8f0;
+}
+
+.dose-calc-ref-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 10px;
+}
+
+.dose-calc-ref-header > span:first-child {
+  font-weight: 600;
+  color: #334155;
+  font-size: 0.85rem;
+}
+
+.dose-calc-ref-range {
+  background: #0ea5e9;
+  color: #fff;
+  padding: 3px 10px;
+  border-radius: 20px;
+  font-size: 0.78rem;
+  font-weight: 700;
+}
+
+/* Range slider */
+.dose-calc-range-bar {
+  margin-bottom: 14px;
+}
+
+.dose-calc-range-label {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.75rem;
+  color: #94a3b8;
+  margin-bottom: 4px;
+}
+
+.dose-calc-slider-wrap {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.dose-calc-slider {
+  flex: 1;
+  -webkit-appearance: none;
+  appearance: none;
+  height: 6px;
+  background: linear-gradient(90deg, #86efac 0%, #fbbf24 50%, #f87171 100%);
+  border-radius: 3px;
+  outline: none;
+}
+
+.dose-calc-slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: #fff;
+  border: 2px solid #0ea5e9;
+  cursor: pointer;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.15);
+}
+
+.dose-calc-slider::-moz-range-thumb {
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: #fff;
+  border: 2px solid #0ea5e9;
+  cursor: pointer;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.15);
+}
+
+.dose-calc-slider-val {
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: #0369a1;
+  white-space: nowrap;
+  min-width: 70px;
+  text-align: right;
+}
+
+/* Result Cards */
+.dose-calc-result {
+  margin-top: 4px;
+}
+
+.dose-calc-cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+  gap: 8px;
+}
+
+.dose-calc-card {
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  padding: 10px;
+  text-align: center;
+}
+
+.dose-calc-card-label {
+  display: block;
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: #94a3b8;
+  font-weight: 600;
+  margin-bottom: 4px;
+}
+
+.dose-calc-card-value {
+  display: block;
+  font-size: 1.3rem;
+  font-weight: 800;
+  line-height: 1.1;
+}
+
+.dose-calc-card-adj {
+  display: block;
+  font-size: 0.68rem;
+  color: #f59e0b;
+  margin-top: 3px;
+}
+
+.dose-calc-card-sub {
+  display: block;
+  font-size: 0.7rem;
+  color: #94a3b8;
+  margin-top: 2px;
+}
+
+/* Card color variants */
+.dose-calc-card-primary {
+  background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%);
+  border-color: #93c5fd;
+}
+.dose-calc-card-primary .dose-calc-card-value { color: #1d4ed8; }
+
+.dose-calc-card-volume {
+  background: linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%);
+  border-color: #86efac;
+}
+.dose-calc-card-volume .dose-calc-card-value { color: #15803d; }
+
+.dose-calc-card-tablet {
+  background: linear-gradient(135deg, #fefce8 0%, #fef9c3 100%);
+  border-color: #fde047;
+}
+.dose-calc-card-tablet .dose-calc-card-value { color: #a16207; }
+
+.dose-calc-card-qty {
+  background: linear-gradient(135deg, #faf5ff 0%, #f3e8ff 100%);
+  border-color: #c4b5fd;
+}
+.dose-calc-card-qty .dose-calc-card-value { color: #7c3aed; }
+
+/* No weight message */
+.dose-calc-no-weight {
+  text-align: center;
+  padding: 16px;
+  color: #f59e0b;
+  font-weight: 600;
+  font-size: 0.88rem;
+}
+
+/* No dosing record */
+.dose-calc-no-record {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 14px;
+  background: #f8fafc;
+  border-radius: 8px;
+  color: #64748b;
+  font-size: 0.85rem;
+}
+
+/* Warnings */
+.dose-calc-warnings {
+  margin-top: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.dose-calc-warning {
+  display: flex;
+  align-items: flex-start;
+  gap: 6px;
+  padding: 6px 10px;
+  border-radius: 6px;
+  font-size: 0.8rem;
+  background: #fffbeb;
+  color: #92400e;
+  border: 1px solid #fde68a;
+}
+
+.dose-calc-warning.severe {
+  background: #fef2f2;
+  color: #991b1b;
+  border-color: #fecaca;
+  font-weight: 600;
+}
+
+/* Responsive */
+@media (max-width: 600px) {
+  .dose-calc-patient {
+    flex-direction: column;
+  }
+  .dose-calc-weight {
+    flex: 1 1 100%;
+  }
+  .dose-calc-cards {
+    grid-template-columns: 1fr 1fr;
+  }
+  .dose-calc-checks {
+    gap: 4px;
+  }
+  .dose-calc-check {
+    font-size: 0.72rem;
+    padding: 3px 8px;
+  }
+}

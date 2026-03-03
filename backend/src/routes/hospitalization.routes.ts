@@ -935,6 +935,12 @@ router.post('/:id/therapy-items', authenticate, async (req: Request, res: Respon
       route: z.string(),
       scheduledTimes: z.array(z.string()).optional(),
       notes: z.string().optional(),
+      // Dose calculation traceability (optional)
+      patientWeightKg: z.number().positive().optional(),
+      dosePerKg: z.number().positive().optional(),
+      calculatedDoseMg: z.number().positive().optional(),
+      volumeMl: z.number().positive().optional(),
+      concentrationUsed: z.string().optional(),
     });
 
     const data = schema.parse(req.body);
@@ -981,6 +987,12 @@ router.post('/:id/therapy-items', authenticate, async (req: Request, res: Respon
           scheduledTimes: data.scheduledTimes || [],
           isActive: true,
           prescribedById: userId,
+          // Dose calculation traceability
+          patientWeightKg: data.patientWeightKg || null,
+          dosePerKg: data.dosePerKg || null,
+          calculatedDoseMg: data.calculatedDoseMg || null,
+          volumeMl: data.volumeMl || null,
+          concentrationUsed: data.concentrationUsed || null,
         },
         include: { medication: true },
       });

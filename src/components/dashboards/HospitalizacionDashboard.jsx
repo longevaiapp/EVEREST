@@ -7,6 +7,7 @@ import farmaciaService from '../../services/farmacia.service';
 import FluidTherapyCalculator from './FluidTherapyCalculator';
 import HospitalBoard from './HospitalBoard';
 import RondaRapida from './RondaRapida';
+import DoseCalculator from '../DoseCalculator';
 import './HospitalizacionDashboard.css';
 
 // ═══════════════════════════════════════════════════════════════
@@ -102,10 +103,11 @@ function HospitalizacionDashboard() {
   const [therapyForm, setTherapyForm] = useState({
     medicationId: '', medicationName: '', presentacion: '', concentracion: '',
     stockDisponible: 0, dosis: '', unidadDosis: 'mg', frecuenciaHoras: 8,
-    via: 'IV', notas: ''
+  via: 'IV', notas: '',
+  // Dose calculation traceability
+  patientWeightKg: null, dosePerKg: null, calculatedDoseMg: null,
+  volumeMl: null, concentrationUsed: null, _autoFilledDose: false,
   });
-
-  const [medicationSearch, setMedicationSearch] = useState('');
   const [medicationResults, setMedicationResults] = useState([]);
   const [searchingMedications, setSearchingMedications] = useState(false);
   const [showMedicationDropdown, setShowMedicationDropdown] = useState(false);
@@ -289,8 +291,32 @@ function HospitalizacionDashboard() {
 
   // Therapy
   const handleTherapyChange = (e) => {
-    setTherapyForm(prev => ({ ...prev, [e.target.name]: e.target.value }));
+    setTherapyForm(prev => ({ ...prev, [e.target.name]: e.target.value, _autoFilledDose: false }));
   };
+
+  // Dose calculator callback for therapy
+  const handleTherapyDoseCalculated = useCallback((calcResult) => {
+    if (!calcResult) return;
+    setTherapyForm(prev => {
+      const updates = {
+        ...prev,
+        patientWeightKg: calcResult.patientWeightKg,
+        dosePerKg: calcResult.dosePerKg,
+        calculatedDoseMg: calcResult.calculatedDoseMg,
+        volumeMl: calcResult.volumeMl,
+        concentrationUsed: calcResult.concentrationUsed,
+      };
+      if (!prev.dosis || prev._autoFilledDose) {
+        updates.dosis = calcResult.dosis;
+        updates._autoFilledDose = true;
+      }
+      if (calcResult.frequencyHours && prev.frecuenciaHoras === 8) {
+        updates.frecuenciaHoras = calcResult.frequencyHours;
+      }
+      return updates;
+    });
+  }, []);
+
   const handleTherapySubmit = async (e) => {
     if (e) e.preventDefault();
     if (!selectedHospitalization) return;
@@ -300,7 +326,13 @@ function HospitalizacionDashboard() {
       dose: `${therapyForm.dosis} ${therapyForm.unidadDosis}`,
       frequency: `cada ${therapyForm.frecuenciaHoras} horas`,
       route: therapyForm.via,
-      notes: therapyForm.notas
+      notes: therapyForm.notas,
+      // Dose calculation traceability
+      patientWeightKg: therapyForm.patientWeightKg || undefined,
+      dosePerKg: therapyForm.dosePerKg || undefined,
+      calculatedDoseMg: therapyForm.calculatedDoseMg || undefined,
+      volumeMl: therapyForm.volumeMl || undefined,
+      concentrationUsed: therapyForm.concentrationUsed || undefined,
     };
     const ok = await addTherapyItem(selectedHospitalization.id, data);
     if (ok) {
@@ -308,7 +340,9 @@ function HospitalizacionDashboard() {
       setTherapyForm({
         medicationId: '', medicationName: '', presentacion: '', concentracion: '',
         stockDisponible: 0, dosis: '', unidadDosis: 'mg', frecuenciaHoras: 8,
-        via: 'IV', notas: ''
+        via: 'IV', notas: '',
+        patientWeightKg: null, dosePerKg: null, calculatedDoseMg: null,
+        volumeMl: null, concentrationUsed: null, _autoFilledDose: false,
       });
       setMedicationSearch('');
     }
@@ -905,6 +939,21 @@ function HospitalizacionDashboard() {
                   </div>
                 )}
               </div>
+              {/* Dose Calculator */}
+              {therapyForm.medicationId && patient && (
+                <DoseCalculator
+                  patient={patient}
+                  medication={{
+                    id: therapyForm.medicationId,
+                    name: therapyForm.medicationName,
+                    concentration: therapyForm.concentracion,
+                    presentation: therapyForm.presentacion,
+                  }}
+                  currentWeight={patient?.peso || null}
+                  onDoseCalculated={handleTherapyDoseCalculated}
+                  compact={true}
+                />
+              )}
               <div className="hd-grid-4">
                 <div className="hd-field"><label>Dosis *</label><input type="number" step="0.01" name="dosis" value={therapyForm.dosis} onChange={handleTherapyChange} required placeholder="5" /></div>
                 <div className="hd-field"><label>Unidad</label>

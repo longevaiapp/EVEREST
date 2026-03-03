@@ -988,6 +988,13 @@ model PrescriptionItem {
   // === PRECIOS (para cálculo en alta) ===
   unitPrice      Decimal?     @db.Decimal(10, 2)
   
+  // === CÁLCULO DE DOSIS (trazabilidad) ===
+  patientWeightKg   Float?       // Peso del paciente usado para cálculo
+  dosePerKg         Float?       // mg/kg aplicado
+  calculatedDoseMg  Float?       // Dosis total calculada en mg
+  volumeMl          Float?       // Volumen calculado en ml (si aplica)
+  concentrationUsed String?      // Concentración usada para cálculo (ej: "50 mg/ml")
+  
   createdAt      DateTime     @default(now())
 
   @@index([prescriptionId])
@@ -1167,6 +1174,7 @@ model Monitoring {
   recordedAt          DateTime        @default(now())
   
   // === SIGNOS VITALES (EFG) ===
+  peso                  Float?          // Peso en kg (actualizado en cada monitoreo)
   temperatura           Float?
   frecuenciaCardiaca    Int?
   frecuenciaRespiratoria Int?
@@ -1292,6 +1300,7 @@ model Medication {
   therapyPlanItems      TherapyPlanItem[]
   vaccineRecords        VaccineRecord[]
   dewormingRecords      DewormingRecord[]
+  dosings               MedicationDosing[]
 
   @@index([name])
   @@index([category])
@@ -1313,6 +1322,53 @@ enum MedicationCategory {
   CARDIACO
   HORMONAL
   OTRO
+}
+
+// ============================================================================
+// DOSIFICACIÓN - Referencia de dosis por medicamento y especie
+// ============================================================================
+
+model MedicationDosing {
+  id              String   @id @default(cuid())
+  medicationId    String
+  medication      Medication @relation(fields: [medicationId], references: [id], onDelete: Cascade)
+  
+  // === POR ESPECIE ===
+  species         Species    // PERRO, GATO, AVE, etc.
+  
+  // === DOSIS RECOMENDADA ===
+  doseMin         Float      // Dosis mínima (mg/kg)
+  doseMax         Float      // Dosis máxima (mg/kg)
+  doseUnit        String     @default("mg/kg") // "mg/kg", "UI/kg", "mcg/kg"
+  
+  // === ADMINISTRACIÓN ===
+  routes          String     // JSON: '["PO","IV","IM"]'
+  frequencyHours  Int?       // Intervalo estándar en horas (ej: 8, 12, 24)
+  maxDailyDoses   Int?       // Máx administraciones por día
+  durationDays    Int?       // Duración típica del tratamiento
+  
+  // === RESTRICCIONES ===
+  minWeightKg     Float?     // Peso mínimo para usar
+  maxWeightKg     Float?     // Peso máximo (si aplica)
+  minAgeMonths    Int?       // Edad mínima en meses
+  safeInPregnancy Boolean    @default(false)
+  safeInLactation Boolean    @default(false)
+  safeInPediatric Boolean    @default(true)
+  safeInGeriatric Boolean    @default(true)
+  
+  // === AJUSTES CLÍNICOS ===
+  renalAdjustment    String?    // "reducir 50%" o factor numérico
+  hepaticAdjustment  String?    // "reducir 30%"
+  cardiacAdjustment  String?    // "contraindicado" o factor
+  
+  // === NOTAS CLÍNICAS ===
+  notes           String?    @db.Text
+  
+  createdAt       DateTime   @default(now())
+  updatedAt       DateTime   @updatedAt
+
+  @@unique([medicationId, species])
+  @@index([species])
 }
 
 model Dispense {
@@ -1584,6 +1640,13 @@ model TherapyPlanItem {
   dose                  String          // "10mg", "5ml", etc.
   route                 String          // "IV", "IM", "SC", "PO"
   frequency             String          // "cada 8 horas", "BID", "TID"
+  
+  // === CÁLCULO DE DOSIS (trazabilidad) ===
+  patientWeightKg       Float?          // Peso del paciente usado para cálculo
+  dosePerKg             Float?          // mg/kg aplicado
+  calculatedDoseMg      Float?          // Dosis total calculada en mg
+  volumeMl              Float?          // Volumen calculado en ml
+  concentrationUsed     String?         // Concentración usada
   
   // === HORARIOS ===
   scheduledTimes        Json?           // ["08:00", "16:00", "00:00"]

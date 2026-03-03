@@ -7,6 +7,7 @@ import recepcionService from '../../services/recepcion.service';
 import { laboratorioService, citaSeguimientoService } from '../../services/medico.service';
 import ExamenFisico from '../medico/ExamenFisico';
 import PreventiveMedicinePanel from '../medico/PreventiveMedicinePanel';
+import DoseCalculator from '../DoseCalculator';
 import './MedicoDashboard.css';
 
 function MedicoDashboard() {
@@ -120,7 +121,13 @@ function MedicoDashboard() {
     via: 'ORAL',
     duracion: '',
     cantidad: 1,
-    type: 'USO_INMEDIATO' // USO_INMEDIATO = farmacia interna, RECETA_EXTERNA = receta para imprimir
+    type: 'USO_INMEDIATO', // USO_INMEDIATO = farmacia interna, RECETA_EXTERNA = receta para imprimir
+    // Dose calculation traceability
+    patientWeightKg: null,
+    dosePerKg: null,
+    calculatedDoseMg: null,
+    volumeMl: null,
+    concentrationUsed: null,
   });
 
   // Prescription medication search states
@@ -618,6 +625,36 @@ function MedicoDashboard() {
     }
   }, [activeConsultation, diagnosisForm, agregarDiagnostico, t]);
 
+  // Dose calculator callback - auto-fill dose fields
+  const handleDoseCalculated = useCallback((calcResult) => {
+    if (!calcResult) return;
+    setCurrentMedication(prev => {
+      const updates = {
+        ...prev,
+        patientWeightKg: calcResult.patientWeightKg,
+        dosePerKg: calcResult.dosePerKg,
+        calculatedDoseMg: calcResult.calculatedDoseMg,
+        volumeMl: calcResult.volumeMl,
+        concentrationUsed: calcResult.concentrationUsed,
+      };
+      // Auto-fill dose if user hasn't typed one
+      if (!prev.dosis || prev._autoFilledDose) {
+        updates.dosis = calcResult.dosis;
+        updates._autoFilledDose = true;
+      }
+      // Auto-fill frequency from dosing reference
+      if (!prev.frecuencia && calcResult.frequencyHours) {
+        const freqMap = { 6: 'Cada 6 horas', 8: 'Cada 8 horas', 12: 'Cada 12 horas', 24: 'Cada 24 horas' };
+        updates.frecuencia = freqMap[calcResult.frequencyHours] || `Cada ${calcResult.frequencyHours} horas`;
+      }
+      // Auto-fill quantity
+      if (calcResult.estimatedQty && prev.cantidad <= 1) {
+        updates.cantidad = calcResult.estimatedQty;
+      }
+      return updates;
+    });
+  }, []);
+
   const handleAddMedication = useCallback(() => {
     if (!currentMedication.nombre || !currentMedication.dosis || !currentMedication.frecuencia) return;
     
@@ -645,7 +682,12 @@ function MedicoDashboard() {
       via: 'ORAL',
       duracion: '',
       cantidad: 1,
-      type: 'USO_INMEDIATO'
+      type: 'USO_INMEDIATO',
+      patientWeightKg: null,
+      dosePerKg: null,
+      calculatedDoseMg: null,
+      volumeMl: null,
+      concentrationUsed: null,
     });
   }, [currentMedication]);
 
@@ -683,7 +725,13 @@ function MedicoDashboard() {
           via: m.via,
           duracion: m.duracion || '7 días',
           cantidad: m.cantidad || 1,
-          type: m.type || 'USO_INMEDIATO'
+          type: m.type || 'USO_INMEDIATO',
+          // Dose calculation traceability
+          patientWeightKg: m.patientWeightKg || undefined,
+          dosePerKg: m.dosePerKg || undefined,
+          calculatedDoseMg: m.calculatedDoseMg || undefined,
+          volumeMl: m.volumeMl || undefined,
+          concentrationUsed: m.concentrationUsed || undefined,
         })),
         instruccionesGenerales: prescriptionForm.instrucciones || undefined
       });
@@ -2086,6 +2134,22 @@ function MedicoDashboard() {
                   ))}
                 </div>
               </div>
+            )}
+
+            {/* Dose Calculator - shows when medication selected from inventory */}
+            {currentMedication.medicationId && selectedPatient && (
+              <DoseCalculator
+                patient={selectedPatient}
+                medication={{
+                  id: currentMedication.medicationId,
+                  name: currentMedication.nombre,
+                  concentration: currentMedication.concentracion,
+                  presentation: currentMedication.presentacion,
+                }}
+                currentWeight={parseFloat(vitalsForm.peso) || selectedPatient?.peso || null}
+                onDoseCalculated={handleDoseCalculated}
+                onWeightUpdate={(w) => setVitalsForm(prev => ({ ...prev, peso: String(w) }))}
+              />
             )}
             
             {/* Dosage Form */}

@@ -44,6 +44,38 @@ const farmaciaService = {
   },
 
   /**
+   * Calculate dose for a medication given patient data
+   * @param {string} medicationId - Medication ID
+   * @param {Object} data - { petId?, weightKg?, species?, route?, adjustments? }
+   * @returns {Promise<Object>} Calculation result with dosing ranges, warnings
+   */
+  calculateDose: async (medicationId, data) => {
+    const response = await api.post(`/medications/${medicationId}/calculate-dose`, data);
+    return response;
+  },
+
+  /**
+   * Get dosing records for a medication
+   * @param {string} medicationId - Medication ID
+   * @returns {Promise<Array>} Dosing records by species
+   */
+  getMedicationDosing: async (medicationId) => {
+    const response = await api.get(`/medications/${medicationId}/dosing`);
+    return response.data || [];
+  },
+
+  /**
+   * Save/update dosing record for a medication + species
+   * @param {string} medicationId - Medication ID
+   * @param {Object} data - Dosing data
+   * @returns {Promise<Object>} Created/updated dosing record
+   */
+  saveMedicationDosing: async (medicationId, data) => {
+    const response = await api.post(`/medications/${medicationId}/dosing`, data);
+    return response.data;
+  },
+
+  /**
    * Create a new medication
    * @param {Object} data - Medication data
    * @returns {Promise<Object>} Created medication

@@ -150,6 +150,12 @@ router.post('/', authenticate, isMedico, async (req, res) => {
     instructions: z.string().optional(),
     type: z.enum(['USO_INMEDIATO', 'RECETA_EXTERNA']).default('USO_INMEDIATO'),
     medicationId: z.string().cuid().optional(),
+    // Dose calculation traceability (optional)
+    patientWeightKg: z.number().positive().optional(),
+    dosePerKg: z.number().positive().optional(),
+    calculatedDoseMg: z.number().positive().optional(),
+    volumeMl: z.number().positive().optional(),
+    concentrationUsed: z.string().optional(),
   });
 
   const schema = z.object({
@@ -201,6 +207,12 @@ router.post('/', authenticate, isMedico, async (req, res) => {
           type: item.type as any,
           medicationId: item.medicationId || null,
           unitPrice: item.unitPrice,
+          // Dose calculation traceability
+          patientWeightKg: item.patientWeightKg || null,
+          dosePerKg: item.dosePerKg || null,
+          calculatedDoseMg: item.calculatedDoseMg || null,
+          volumeMl: item.volumeMl || null,
+          concentrationUsed: item.concentrationUsed || null,
         })),
       },
     },
