@@ -134,6 +134,7 @@ router.get('/pending', authenticate, async (req, res) => {
     // Count by type for quick reference
     internalCount: p.items.filter((item: any) => !item.type || item.type === 'USO_INMEDIATO').length,
     externalCount: p.items.filter((item: any) => item.type === 'RECETA_EXTERNA').length,
+    applyNowCount: p.items.filter((item: any) => item.type === 'APLICAR_AHORA').length,
   }));
 
   res.json({ status: 'success', data: { prescriptions: prescriptionsWithTypes } });
@@ -148,7 +149,7 @@ router.post('/', authenticate, isMedico, async (req, res) => {
     duration: z.string().min(1),
     quantity: z.number().int().positive(),
     instructions: z.string().optional(),
-    type: z.enum(['USO_INMEDIATO', 'RECETA_EXTERNA']).default('USO_INMEDIATO'),
+    type: z.enum(['USO_INMEDIATO', 'RECETA_EXTERNA', 'APLICAR_AHORA']).default('USO_INMEDIATO'),
     medicationId: z.string().cuid().optional(),
     // Dose calculation traceability (optional)
     patientWeightKg: z.number().positive().optional(),
@@ -188,37 +189,94 @@ router.post('/', authenticate, isMedico, async (req, res) => {
     })
   );
 
-  // Create prescription with items
-  const prescription = await prisma.prescription.create({
-    data: {
-      consultationId: data.consultationId,
-      petId: data.petId,
-      prescribedById: req.user!.userId,
-      generalInstructions: data.generalInstructions,
-      status: 'PENDIENTE',
-      items: {
-        create: itemsWithPrices.map((item) => ({
-          name: item.name,
-          dosage: item.dosage,
-          frequency: item.frequency,
-          duration: item.duration,
-          quantity: item.quantity,
-          instructions: item.instructions,
-          type: item.type as any,
-          medicationId: item.medicationId || null,
-          unitPrice: item.unitPrice,
-          // Dose calculation traceability
-          patientWeightKg: item.patientWeightKg || null,
-          dosePerKg: item.dosePerKg || null,
-          calculatedDoseMg: item.calculatedDoseMg || null,
-          volumeMl: item.volumeMl || null,
-          concentrationUsed: item.concentrationUsed || null,
-        })),
+  // Separate APLICAR_AHORA items for immediate stock deduction
+  const aplicarAhoraItems = itemsWithPrices.filter(item => item.type === 'APLICAR_AHORA' && item.medicationId);
+  const hasOnlyAplicarAhora = data.items.every(item => item.type === 'APLICAR_AHORA');
+
+  // Create prescription with items (use transaction if we need to deduct stock)
+  const prescription = await prisma.$transaction(async (tx) => {
+    // Determine initial status
+    const initialStatus = hasOnlyAplicarAhora ? 'DESPACHADA' : 'PENDIENTE';
+
+    const rx = await tx.prescription.create({
+      data: {
+        consultationId: data.consultationId,
+        petId: data.petId,
+        prescribedById: req.user!.userId,
+        generalInstructions: data.generalInstructions,
+        status: initialStatus as any,
+        items: {
+          create: itemsWithPrices.map((item) => ({
+            name: item.name,
+            dosage: item.dosage,
+            frequency: item.frequency,
+            duration: item.duration,
+            quantity: item.quantity,
+            instructions: item.instructions,
+            type: item.type as any,
+            medicationId: item.medicationId || null,
+            unitPrice: item.unitPrice,
+            // APLICAR_AHORA: mark as already dispensed
+            dispensedQuantity: item.type === 'APLICAR_AHORA' ? item.quantity : 0,
+            // Dose calculation traceability
+            patientWeightKg: item.patientWeightKg || null,
+            dosePerKg: item.dosePerKg || null,
+            calculatedDoseMg: item.calculatedDoseMg || null,
+            volumeMl: item.volumeMl || null,
+            concentrationUsed: item.concentrationUsed || null,
+          })),
+        },
       },
-    },
-    include: {
-      items: true,
-    },
+      include: {
+        items: true,
+      },
+    });
+
+    // Deduct stock for APLICAR_AHORA items
+    for (const item of aplicarAhoraItems) {
+      const medication = await tx.medication.findUnique({
+        where: { id: item.medicationId! },
+      });
+      if (!medication) continue;
+
+      const newStock = Math.max(0, medication.currentStock - item.quantity);
+      await tx.medication.update({
+        where: { id: item.medicationId! },
+        data: { currentStock: newStock },
+      });
+
+      // Log stock movement
+      await tx.stockMovement.create({
+        data: {
+          medicationId: item.medicationId!,
+          type: 'SALIDA',
+          quantity: item.quantity,
+          previousStock: medication.currentStock,
+          newStock,
+          reason: `Aplicado en consulta (prescripción ${rx.id})`,
+          performedById: req.user!.userId,
+        },
+      });
+
+      // Check low stock
+      if (newStock <= medication.minStock) {
+        const existingAlert = await tx.stockAlert.findFirst({
+          where: { medicationId: item.medicationId!, status: 'ACTIVA' },
+        });
+        if (!existingAlert) {
+          await tx.stockAlert.create({
+            data: {
+              medicationId: item.medicationId!,
+              type: 'STOCK_BAJO',
+              priority: 'ALTA',
+              message: `Stock bajo para ${medication.name}: ${newStock} unidades (min: ${medication.minStock})`,
+            },
+          });
+        }
+      }
+    }
+
+    return rx;
   });
 
   res.status(201).json({ status: 'success', data: { prescription } });

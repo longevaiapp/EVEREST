@@ -5382,6 +5382,12 @@ button:disabled {
   color: #e65100;
 }
 
+.type-btn.apply-now.active {
+  border-color: #8e24aa;
+  background: linear-gradient(135deg, #f3e5f5 0%, #e1bee7 100%);
+  color: #6a1b9a;
+}
+
 .type-hint {
   display: block;
   font-size: 0.75rem;
@@ -5397,6 +5403,10 @@ button:disabled {
 
 .medication-item.external-type {
   border-left: 3px solid #ff9800;
+}
+
+.medication-item.apply-now-type {
+  border-left: 3px solid #8e24aa;
 }
 
 .med-header {
@@ -5421,4 +5431,9 @@ button:disabled {
 .type-badge.external {
   background: linear-gradient(135deg, #fff8e6 0%, #ffe0b2 100%);
   color: #e65100;
+}
+
+.type-badge.apply-now {
+  background: linear-gradient(135deg, #f3e5f5 0%, #e1bee7 100%);
+  color: #6a1b9a;
 }

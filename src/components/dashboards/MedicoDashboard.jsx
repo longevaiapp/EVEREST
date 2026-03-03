@@ -2248,6 +2248,13 @@ function MedicoDashboard() {
                     </button>
                     <button 
                       type="button"
+                      className={`type-btn apply-now ${currentMedication.type === 'APLICAR_AHORA' ? 'active' : ''}`}
+                      onClick={() => setCurrentMedication(prev => ({ ...prev, type: 'APLICAR_AHORA' }))}
+                    >
+                      💉 {t('medico.applyNow', 'Aplicar Ahora')}
+                    </button>
+                    <button 
+                      type="button"
                       className={`type-btn external ${currentMedication.type === 'RECETA_EXTERNA' ? 'active' : ''}`}
                       onClick={() => setCurrentMedication(prev => ({ ...prev, type: 'RECETA_EXTERNA' }))}
                     >
@@ -2257,6 +2264,8 @@ function MedicoDashboard() {
                   <span className="type-hint">
                     {currentMedication.type === 'USO_INMEDIATO' 
                       ? t('medico.internalHint', 'Se dispensará de farmacia interna') 
+                      : currentMedication.type === 'APLICAR_AHORA'
+                      ? t('medico.applyNowHint', 'Se aplica ahora y se descuenta del inventario automáticamente')
                       : t('medico.externalHint', 'Se generará receta para comprar fuera')}
                   </span>
                 </div>
@@ -2279,12 +2288,12 @@ function MedicoDashboard() {
               <div className="medications-list">
                 <h4>{t('medico.prescribedMedications', 'Prescription medications')}:</h4>
                 {prescriptionForm.medicamentos.map(med => (
-                  <div key={med.id} className={`medication-item ${med.type === 'RECETA_EXTERNA' ? 'external-type' : 'internal-type'}`}>
+                  <div key={med.id} className={`medication-item ${med.type === 'RECETA_EXTERNA' ? 'external-type' : med.type === 'APLICAR_AHORA' ? 'apply-now-type' : 'internal-type'}`}>
                     <div className="medication-info">
                       <div className="med-header">
                         <strong>{med.nombre}</strong>
-                        <span className={`type-badge ${med.type === 'RECETA_EXTERNA' ? 'external' : 'internal'}`}>
-                          {med.type === 'RECETA_EXTERNA' ? '📄 Externa' : '🏥 Interna'}
+                        <span className={`type-badge ${med.type === 'RECETA_EXTERNA' ? 'external' : med.type === 'APLICAR_AHORA' ? 'apply-now' : 'internal'}`}>
+                          {med.type === 'RECETA_EXTERNA' ? '📄 Externa' : med.type === 'APLICAR_AHORA' ? '💉 Aplicar' : '🏥 Interna'}
                         </span>
                       </div>
                       {med.presentacion && <span className="med-presentation">{med.presentacion}</span>}
@@ -2304,7 +2313,13 @@ function MedicoDashboard() {
             </div>
             <div className="modal-actions">
               <button className="btn-secondary" onClick={() => setShowPrescriptionModal(false)}>{t('common.cancel', 'Cancel')}</button>
-              <button className="btn-primary" onClick={handleCreatePrescription} disabled={prescriptionForm.medicamentos.length === 0}>💊 {t('medico.sendToPharmacy', 'Send to Pharmacy')}</button>
+              <button className="btn-primary" onClick={handleCreatePrescription} disabled={prescriptionForm.medicamentos.length === 0}>
+                {prescriptionForm.medicamentos.length > 0 && prescriptionForm.medicamentos.every(m => m.type === 'APLICAR_AHORA')
+                  ? '💉 Registrar Aplicación'
+                  : prescriptionForm.medicamentos.length > 0 && prescriptionForm.medicamentos.every(m => m.type === 'RECETA_EXTERNA')
+                  ? '📄 Generar Receta'
+                  : `💊 ${t('medico.sendToPharmacy', 'Send to Pharmacy')}`}
+              </button>
             </div>
           </div>
         </div>

@@ -1004,6 +1004,7 @@ model PrescriptionItem {
 enum PrescriptionItemType {
   USO_INMEDIATO    // Medicamento para usar en clínica, va a farmacia interna
   RECETA_EXTERNA   // Medicamento para comprar afuera, se genera PDF
+  APLICAR_AHORA    // Medicamento aplicado en el momento por el médico/enfermero
 }
 
 enum PrescriptionStatus {
