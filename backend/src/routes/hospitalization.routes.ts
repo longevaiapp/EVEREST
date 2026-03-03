@@ -464,17 +464,24 @@ router.get('/board/:area', authenticate, async (req: Request, res: Response) => 
 
     // Filter by species for legacy types (GENERAL, UCI, INFECCIOSOS)
     // New types (PERROS_*, GATOS_*) are species-specific already, no need to filter
+    // For "Perro" areas: include dogs + any species that is NOT explicitly "Gato" (OTRO, etc.)
+    // For "Gato" areas: only include cats (explicitly "Gato")
     const legacyTypes = ['GENERAL', 'UCI', 'INFECCIOSOS', 'NEONATOS'];
     const filteredHospitalizations = mapping.species
       ? hospitalizations.filter((h: any) => {
-          // If it's already a new type, keep it
+          // If it's already a new type (PERROS_*, GATOS_*), keep it
           if (!legacyTypes.includes(h.type)) return true;
-          // If it's a legacy type, check species matches
-          const petSpecies = h.pet?.especie?.toLowerCase();
-          const targetSpecies = mapping.species!.toLowerCase();
-          return petSpecies === targetSpecies ||
-                 petSpecies?.includes(targetSpecies) ||
-                 targetSpecies?.includes(petSpecies);
+          // If it's a legacy type, check species
+          const petSpecies = (h.pet?.especie || '').toLowerCase();
+          const isCat = petSpecies === 'gato' || petSpecies.includes('gato');
+          
+          if (mapping.species === 'Gato') {
+            // Gato areas: only explicitly cats
+            return isCat;
+          } else {
+            // Perro areas: dogs + anything that isn't a cat (OTRO, etc.)
+            return !isCat;
+          }
         })
       : hospitalizations; // MATERNIDAD doesn't need species filter
 
