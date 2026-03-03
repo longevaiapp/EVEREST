@@ -260,16 +260,40 @@ async function seedDosing() {
   let medsNotFound = [];
 
   for (const entry of dosingData) {
-    // Try to find the medication by name (flexible search)
-    const medication = await prisma.medication.findFirst({
-      where: {
-        OR: [
-          { name: { contains: entry.medicationName } },
-          { genericName: { contains: entry.medicationName } },
-          { nombreComercial: { contains: entry.medicationName } },
-        ],
-      },
-    });
+    // Try to find the medication by name (flexible search with multiple keywords)
+    const searchTerms = [entry.medicationName];
+    // Add alternate search terms for common name variations
+    const altNames = {
+      'Amoxicilina con Ácido Clavulánico': ['Amoxicilina + Ác. Clavulánico', 'Amox+Clav', 'Amoxiclav', 'Clavamox'],
+      'Clindamicina': ['Clindamycin', 'Dalacin'],
+      'Maropitant': ['Cerenia'],
+      'Enalapril': ['Enacard'],
+      'Furosemida': ['Furosemide', 'Lasix'],
+      'Pimobendan': ['Vetmedin'],
+      'Acepromazina': ['Acepromazine', 'Acepran'],
+      'Xilacina': ['Xylazine', 'Rompun'],
+      'Fenobarbital': ['Phenobarbital'],
+      'Difenhidramina': ['Diphenhydramine', 'Benadryl'],
+      'Atropina': ['Atropine'],
+      'Adrenalina': ['Epinephrine', 'Epinefrina'],
+    };
+    if (altNames[entry.medicationName]) {
+      searchTerms.push(...altNames[entry.medicationName]);
+    }
+
+    let medication = null;
+    for (const term of searchTerms) {
+      medication = await prisma.medication.findFirst({
+        where: {
+          OR: [
+            { name: { contains: term } },
+            { genericName: { contains: term } },
+            { nombreComercial: { contains: term } },
+          ],
+        },
+      });
+      if (medication) break;
+    }
 
     if (!medication) {
       medsNotFound.push(entry.medicationName);

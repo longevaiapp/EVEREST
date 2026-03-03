@@ -417,10 +417,12 @@ const DoseCalculator = ({
         </div>
       )}
 
-      {/* Warnings */}
+      {/* Warnings - filter out duplicate no-dosing message when we already show dose-calc-no-record */}
       {warnings.length > 0 && (
         <div className="dose-calc-warnings">
-          {warnings.map((w, i) => (
+          {warnings
+            .filter(w => !(!hasDosingRecord && (w.includes('No hay ficha') || w.includes('Sin ficha'))))
+            .map((w, i) => (
             <div key={i} className={`dose-calc-warning ${w.includes('⚠️') || w.includes('CONTRAINDICADO') ? 'severe' : ''}`}>
               {w.includes('⚠️') ? '' : '⚠️ '}{w}
             </div>
