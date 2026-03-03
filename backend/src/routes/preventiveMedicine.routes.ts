@@ -137,8 +137,13 @@ router.get('/vaccines', authenticate, async (req, res) => {
   };
 
   if (especie && typeof especie === 'string') {
+    // Map PERRO/GATO to CANINO/FELINO
+    let especieNormalizada = especie.toUpperCase();
+    if (especieNormalizada === 'PERRO') especieNormalizada = 'CANINO';
+    if (especieNormalizada === 'GATO') especieNormalizada = 'FELINO';
+    
     whereClause.OR = [
-      { especies: especie.toUpperCase() },
+      { especies: especieNormalizada },
       { especies: 'AMBOS' },
       { especies: null }, // Legacy vaccines without species
     ];
@@ -185,8 +190,13 @@ router.get('/dewormers', authenticate, async (req, res) => {
   };
 
   if (especie && typeof especie === 'string') {
+    // Map PERRO/GATO to CANINO/FELINO
+    let especieNormalizada = especie.toUpperCase();
+    if (especieNormalizada === 'PERRO') especieNormalizada = 'CANINO';
+    if (especieNormalizada === 'GATO') especieNormalizada = 'FELINO';
+    
     whereClause.OR = [
-      { especies: especie.toUpperCase() },
+      { especies: especieNormalizada },
       { especies: 'AMBOS' },
       { especies: null },
     ];
@@ -464,11 +474,11 @@ router.post('/attend', authenticate, isMedico, async (req, res) => {
       });
     }
 
-    // 5. Update visit status
+    // 5. Update visit status - LISTO_PARA_ALTA so it shows in Caja
     await tx.visit.update({
       where: { id: data.visitId },
       data: {
-        status: 'MEDICINA_PREVENTIVA_COMPLETADA',
+        status: 'LISTO_PARA_ALTA',
         peso: data.peso,
         temperatura: data.temperatura,
       },

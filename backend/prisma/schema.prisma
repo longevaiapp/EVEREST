@@ -51,6 +51,7 @@ model User {
   preventiveMedicineRecords PreventiveMedicineRecord[]
   vaccinesApplied        VaccineRecord[]  @relation("VaccineAppliedBy")
   dewormingsApplied      DewormingRecord[] @relation("DewormingAppliedBy")
+  fluidTherapies         FluidTherapy[]
 
   @@index([email])
   @@index([rol])
@@ -1130,6 +1131,7 @@ model Hospitalization {
   therapyItems    TherapyPlanItem[]
   medicationAdmins MedicationAdministration[]
   neonates        Neonate[]
+  fluidTherapies  FluidTherapy[]
 
   @@index([petId])
   @@index([status])
@@ -1141,6 +1143,11 @@ enum HospitalizationType {
   UCI
   NEONATOS
   INFECCIOSOS
+  MATERNIDAD
+  PERROS_NO_INFECCIOSOS
+  PERROS_INFECCIOSOS
+  GATOS_NO_INFECCIOSOS
+  GATOS_INFECCIOSOS
 }
 
 enum HospitalizationStatus {
@@ -1494,6 +1501,68 @@ enum PurchaseOrderStatus {
   PARCIAL
   RECIBIDA
   CANCELADA
+}
+
+// ============================================================================
+// HOSPITALIZACIÓN - Terapia de Fluidos
+// ============================================================================
+
+model FluidTherapy {
+  id                    String          @id @default(cuid())
+  
+  hospitalizationId     String
+  hospitalization       Hospitalization @relation(fields: [hospitalizationId], references: [id], onDelete: Cascade)
+  
+  // === DATOS DEL PACIENTE ===
+  pesoKg                Float           // Peso del paciente en kg
+  especie               String          // "PERRO", "GATO"
+  esCachorro            Boolean         @default(false)  // <4 meses
+  
+  // === 1. MANTENIMIENTO ===
+  factorMantenimiento   Float           // 60 (perro), 50 (gato), 80 (cachorro/gatito)
+  mlMantenimiento       Float           // peso × factor
+  
+  // === 2. DÉFICIT POR DESHIDRATACIÓN ===
+  porcentajeDeshidratacion  Float       @default(0)  // 5, 8, 10, 12
+  mlDeficit             Float           @default(0)  // peso × %deshid × 10
+  
+  // === 3. PÉRDIDAS POR VÓMITO/DIARREA ===
+  vomitoPequeno         Int             @default(0)  // nº eventos (2 ml/kg cada uno)
+  vomitoAbundante       Int             @default(0)  // nº eventos (4 ml/kg cada uno)
+  diarreaLeve           Int             @default(0)  // nº eventos (3 ml/kg cada uno)
+  diarreaAbundante      Int             @default(0)  // nº eventos (5 ml/kg cada uno)
+  mlPerdidas            Float           @default(0)  // total pérdidas
+  
+  // === 4. TOTAL Y VELOCIDAD ===
+  mlTotal24h            Float           // mantenimiento + déficit + pérdidas
+  mlPorHora             Float           // total ÷ 24
+  
+  // === 5. AJUSTES ===
+  ajusteGeriatrico      Boolean         @default(false) // Reducir 20-30%
+  ajusteCardiaco        Boolean         @default(false) // Reducir 20-30%
+  ajusteRenal           Boolean         @default(false) // Reducir 20-30%
+  porcentajeReduccion   Float           @default(0)     // 0, 20, 25, 30
+  mlAjustado24h         Float?          // Total ajustado si aplica reducción
+  mlAjustadoPorHora     Float?          // ml/hora ajustado
+  
+  // === SOLUCIÓN ===
+  tipoSolucion          String?         // "Hartmann", "NaCl 0.9%", "Dextrosa 5%", etc.
+  
+  // === NOTAS ===
+  notas                 String?         @db.Text
+  
+  // === ESTADO ===
+  isActive              Boolean         @default(true)
+  
+  // === QUIEN PRESCRIBIÓ ===
+  prescribedById        String
+  prescribedBy          User            @relation(fields: [prescribedById], references: [id])
+  
+  createdAt             DateTime        @default(now())
+  updatedAt             DateTime        @updatedAt
+  
+  @@index([hospitalizationId])
+  @@index([isActive])
 }
 
 // ============================================================================

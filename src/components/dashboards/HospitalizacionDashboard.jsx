@@ -3,6 +3,8 @@ import { useTranslation } from 'react-i18next';
 import { useAuth } from '../../context/AuthContext';
 import useHospitalizacion from '../../hooks/useHospitalizacion';
 import farmaciaService from '../../services/farmacia.service';
+import FluidTherapyCalculator from './FluidTherapyCalculator';
+import HospitalBoard from './HospitalBoard';
 import './HospitalizacionDashboard.css';
 
 // Helper function to calculate time since last monitoring
@@ -97,6 +99,12 @@ function HospitalizacionDashboard() {
   // Filter state
   const [filterType, setFilterType] = useState('');
   const [filterStatus, setFilterStatus] = useState('ACTIVO');
+  
+  // View mode: 'list' (default patient list) or 'board' (grid view)
+  const [viewMode, setViewMode] = useState('list');
+  
+  // Fluid therapy modal from board
+  const [fluidCalcTarget, setFluidCalcTarget] = useState(null);
   
   // Active tab in detail panel
   const [activeTab, setActiveTab] = useState('info');
@@ -535,6 +543,22 @@ function HospitalizacionDashboard() {
           🏥 {t('hospitalizacion.title', 'Hospitalización')}
         </h1>
         <div className="user-info">
+          <div className="view-toggle">
+            <button 
+              className={`view-toggle-btn ${viewMode === 'list' ? 'active' : ''}`}
+              onClick={() => setViewMode('list')}
+              title="Vista de Lista"
+            >
+              📋 Lista
+            </button>
+            <button 
+              className={`view-toggle-btn ${viewMode === 'board' ? 'active' : ''}`}
+              onClick={() => setViewMode('board')}
+              title="Vista de Tablero por Áreas"
+            >
+              📊 Tablero
+            </button>
+          </div>
           <span>{user?.name || 'Usuario'}</span>
           <button className="btn-logout" onClick={logout}>
             {t('common.logout', 'Cerrar sesión')}
@@ -544,21 +568,29 @@ function HospitalizacionDashboard() {
 
       {/* Stats Bar */}
       <div className="stats-bar">
-        <div className="stat-card general">
-          <div className="stat-number">{stats?.general || 0}</div>
-          <div className="stat-label">{t('hospitalizacion.general', 'General')}</div>
+        <div className="stat-card" style={{ '--stat-color': '#3b82f6' }}>
+          <div className="stat-number">{stats?.perrosNoInfecciosos || 0}</div>
+          <div className="stat-label">🐕 Hosp. Perros</div>
         </div>
-        <div className="stat-card uci">
-          <div className="stat-number">{stats?.uci || 0}</div>
-          <div className="stat-label">{t('hospitalizacion.uci', 'UCI')}</div>
+        <div className="stat-card" style={{ '--stat-color': '#ef4444' }}>
+          <div className="stat-number">{stats?.perrosInfecciosos || 0}</div>
+          <div className="stat-label">🐕‍🦺 Infec. Perros</div>
         </div>
-        <div className="stat-card neonatos">
-          <div className="stat-number">{stats?.neonatos || 0}</div>
-          <div className="stat-label">{t('hospitalizacion.neonatos', 'Neonatos')}</div>
+        <div className="stat-card" style={{ '--stat-color': '#8b5cf6' }}>
+          <div className="stat-number">{stats?.gatosNoInfecciosos || 0}</div>
+          <div className="stat-label">🐈 Hosp. Gatos</div>
         </div>
-        <div className="stat-card infecciosos">
-          <div className="stat-number">{stats?.infecciosos || 0}</div>
-          <div className="stat-label">{t('hospitalizacion.infecciosos', 'Infecciosos')}</div>
+        <div className="stat-card" style={{ '--stat-color': '#f97316' }}>
+          <div className="stat-number">{stats?.gatosInfecciosos || 0}</div>
+          <div className="stat-label">🐈‍⬛ Infec. Gatos</div>
+        </div>
+        <div className="stat-card" style={{ '--stat-color': '#ec4899' }}>
+          <div className="stat-number">{stats?.maternidad || 0}</div>
+          <div className="stat-label">🤱 Maternidad</div>
+        </div>
+        <div className="stat-card total">
+          <div className="stat-number">{stats?.total || 0}</div>
+          <div className="stat-label">Total</div>
         </div>
       </div>
 
@@ -613,7 +645,44 @@ function HospitalizacionDashboard() {
         </div>
       )}
 
-      {/* Main Content */}
+      {/* Board View */}
+      {viewMode === 'board' && (
+        <div className="board-view-container">
+          <HospitalBoard
+            onSelectPatient={(row) => {
+              // Switch to list view and select this patient
+              setViewMode('list');
+              // Find the hospitalization from the list
+              const found = hospitalizaciones.find(h => h.id === row.hospitalizationId);
+              if (found) handleSelectPatient(found);
+            }}
+            onOpenFluidCalc={(row) => {
+              setFluidCalcTarget(row);
+            }}
+          />
+        </div>
+      )}
+
+      {/* Fluid Therapy Modal from Board */}
+      {fluidCalcTarget && (
+        <div className="modal-overlay" onClick={() => setFluidCalcTarget(null)}>
+          <div className="modal-content modal-lg" onClick={e => e.stopPropagation()}>
+            <FluidTherapyCalculator
+              hospitalization={{
+                id: fluidCalcTarget.hospitalizationId,
+                pet: fluidCalcTarget.pet,
+              }}
+              onClose={() => setFluidCalcTarget(null)}
+              onSaved={() => {
+                // Refresh board data
+              }}
+            />
+          </div>
+        </div>
+      )}
+
+      {/* Main Content - List View */}
+      {viewMode === 'list' && (
       <div className="dashboard-content">
         {/* Sidebar - Patient List */}
         <aside className="patients-sidebar">
@@ -625,14 +694,19 @@ function HospitalizacionDashboard() {
               <div className="filter-group">
                 <label className="filter-label">{t('hospitalizacion.type', 'Tipo')}</label>
                 <select 
-                  value={filterType} 
+                  value={filterType}
                   onChange={(e) => handleFilterChange(e.target.value, filterStatus)}
                   className="filter-select"
                 >
                   <option value="">{t('hospitalizacion.allTypes', 'Todos')}</option>
-                  <option value="GENERAL">General</option>
+                  <option value="PERROS_NO_INFECCIOSOS">🐕 Hosp. Perros</option>
+                  <option value="PERROS_INFECCIOSOS">🐕‍🦺 Infec. Perros</option>
+                  <option value="GATOS_NO_INFECCIOSOS">🐈 Hosp. Gatos</option>
+                  <option value="GATOS_INFECCIOSOS">🐈‍⬛ Infec. Gatos</option>
+                  <option value="MATERNIDAD">🤱 Maternidad</option>
                   <option value="UCI">UCI</option>
                   <option value="NEONATOS">Neonatos</option>
+                  <option value="GENERAL">General</option>
                   <option value="INFECCIOSOS">Infecciosos</option>
                 </select>
               </div>
@@ -806,6 +880,12 @@ function HospitalizacionDashboard() {
                   onClick={() => setActiveTab('costs')}
                 >
                   💰 {t('hospitalizacion.costs', 'Costos')}
+                </button>
+                <button 
+                  className={`tab-btn ${activeTab === 'fluids' ? 'active' : ''}`}
+                  onClick={() => setActiveTab('fluids')}
+                >
+                  💧 Terapia de Fluidos
                 </button>
               </div>
 
@@ -1325,11 +1405,25 @@ function HospitalizacionDashboard() {
                     </div>
                   </div>
                 )}
+
+                {/* Fluid Therapy Tab */}
+                {activeTab === 'fluids' && (
+                  <div className="fluids-tab">
+                    <FluidTherapyCalculator
+                      hospitalization={selectedHospitalization}
+                      onSaved={() => {
+                        // Optionally refresh
+                        selectHospitalization(selectedHospitalization);
+                      }}
+                    />
+                  </div>
+                )}
               </div>
             </>
           )}
         </main>
       </div>
+      )} {/* end viewMode === 'list' */}
 
       {/* Vitals Modal */}
       {showVitalsModal && (

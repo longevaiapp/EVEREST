@@ -99,14 +99,14 @@
 }
 
 /* Sections */
-.panel-content section {
+.preventive-medicine-panel .panel-content section {
   background: white;
   border-radius: 10px;
   padding: 1.25rem;
   box-shadow: 0 1px 3px rgba(0,0,0,0.05);
 }
 
-.panel-content section h3 {
+.preventive-medicine-panel .panel-content section h3 {
   margin: 0 0 1rem 0;
   font-size: 1.1rem;
   color: #334155;
@@ -115,31 +115,76 @@
   gap: 0.5rem;
 }
 
-/* Exam Grid */
-.exam-grid {
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 1rem;
+/* Exam Section - Preventive Medicine specific (avoid conflicts) */
+.preventive-exam-section {
+  background: white !important;
+  border-radius: 10px;
+  padding: 1.25rem !important;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+  display: block !important;
+  border: none !important;
 }
 
-.exam-grid .full-width {
+.preventive-exam-section h3 {
+  margin: 0 0 1rem 0 !important;
+  font-size: 1.1rem !important;
+  color: #334155 !important;
+  display: flex !important;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+/* Exam Grid - Preventive Medicine */
+.preventive-exam-grid {
+  display: grid !important;
+  grid-template-columns: repeat(4, 1fr) !important;
+  gap: 1rem !important;
+  min-height: 80px;
+}
+
+.preventive-exam-grid .full-width {
   grid-column: 1 / -1;
 }
 
-.form-group {
+/* Form groups inside preventive exam grid */
+.preventive-exam-grid .form-group {
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 0.4rem;
+}
+
+.preventive-exam-grid .form-group label {
+  font-size: 0.85rem !important;
+  color: #64748b !important;
+  font-weight: 500;
+  display: block !important;
+}
+
+.preventive-exam-grid .form-group input,
+.preventive-exam-grid .form-group select {
+  padding: 0.6rem 0.8rem !important;
+  border: 1px solid #e2e8f0 !important;
+  border-radius: 6px !important;
+  font-size: 0.95rem !important;
+  width: 100% !important;
+  box-sizing: border-box;
+  display: block !important;
+}
+
+.preventive-medicine-panel .form-group {
   display: flex;
   flex-direction: column;
   gap: 0.4rem;
 }
 
-.form-group label {
+.preventive-medicine-panel .form-group label {
   font-size: 0.85rem;
   color: #64748b;
   font-weight: 500;
 }
 
-.form-group input,
-.form-group select {
+.preventive-medicine-panel .form-group input,
+.preventive-medicine-panel .form-group select {
   padding: 0.6rem 0.8rem;
   border: 1px solid #e2e8f0;
   border-radius: 6px;
@@ -147,8 +192,8 @@
   transition: border-color 0.2s, box-shadow 0.2s;
 }
 
-.form-group input:focus,
-.form-group select:focus {
+.preventive-medicine-panel .form-group input:focus,
+.preventive-medicine-panel .form-group select:focus {
   outline: none;
   border-color: #10b981;
   box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.1);

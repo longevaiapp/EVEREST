@@ -132,6 +132,35 @@ const hospitalizacionService = {
   completeDischarge: async (hospitalizationId) => {
     return await api.post(`/hospitalizations/${hospitalizationId}/complete-discharge`);
   },
+
+  // ==================== TERAPIA DE FLUIDOS ====================
+
+  // Calcular y guardar terapia de fluidos
+  calculateFluidTherapy: async (hospitalizationId, data) => {
+    return await api.post(`/hospitalizations/${hospitalizationId}/fluid-therapy`, data);
+  },
+
+  // Obtener terapias de fluidos
+  getFluidTherapies: async (hospitalizationId) => {
+    return await api.get(`/hospitalizations/${hospitalizationId}/fluid-therapy`);
+  },
+
+  // Desactivar terapia de fluidos
+  deactivateFluidTherapy: async (hospitalizationId, therapyId) => {
+    return await api.delete(`/hospitalizations/${hospitalizationId}/fluid-therapy/${therapyId}`);
+  },
+
+  // ==================== TABLERO / BOARD ====================
+
+  // Obtener tablero por área
+  getBoard: async (area) => {
+    return await api.get(`/hospitalizations/board/${area}`);
+  },
+
+  // Obtener resumen de áreas
+  getBoardSummary: async () => {
+    return await api.get('/hospitalizations/board-summary');
+  },
 };
 
 export default hospitalizacionService;

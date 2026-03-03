@@ -28,7 +28,12 @@ export const medicoService = {
    */
   async getPaciente(petId) {
     const response = await api.get(`/medico/paciente/${petId}`);
-    return response.data?.paciente;
+    // api interceptor already extracts response.data, so we get { status, data: { paciente } }
+    // or if axios didn't intercept: { data: { status, data: { paciente } } }
+    const paciente = response?.data?.paciente || response?.paciente;
+    console.log('[medicoService.getPaciente] response:', response);
+    console.log('[medicoService.getPaciente] paciente:', paciente);
+    return paciente;
   },
 
   /**
@@ -37,7 +42,12 @@ export const medicoService = {
    */
   async getHistorial(petId) {
     const response = await api.get(`/pets/historial/${petId}`);
-    return response.data;
+    console.log('[medicoService.getHistorial] Raw response:', response);
+    // api interceptor returns response.data, so response is { status, data: { paciente, historial, resumen } }
+    const data = response?.data || response;
+    console.log('[medicoService.getHistorial] Extracted data:', data);
+    console.log('[medicoService.getHistorial] historial:', data?.historial);
+    return data;
   },
 };
 

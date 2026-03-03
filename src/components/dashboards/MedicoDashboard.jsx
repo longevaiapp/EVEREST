@@ -794,10 +794,14 @@ function MedicoDashboard() {
 
   // Transformar historial de la API a formato para mostrar
   const getFormattedHistory = useCallback(() => {
+    console.log('[getFormattedHistory] historialData:', historialData);
+    console.log('[getFormattedHistory] historialData?.historial:', historialData?.historial);
+    
     if (!historialData?.historial) return [];
     
     const history = [];
     const { consultas, cirugias, hospitalizaciones, vacunas, notas } = historialData.historial;
+    console.log('[getFormattedHistory] consultas:', consultas?.length, 'vacunas:', vacunas?.length);
     
     // Agregar consultas con detalles completos
     if (consultas && Array.isArray(consultas)) {
@@ -2349,537 +2353,342 @@ function MedicoDashboard() {
               {loadingHistorial ? (
                 <div className="loading-history">
                   <div className="loading-spinner"></div>
-                  <p>Loading history...</p>
-                </div>
-              ) : getFormattedHistory().length === 0 ? (
-                <div className="empty-history">
-                  <span className="empty-icon">📭</span>
-                  <p>{t('medico.noHistoryFound', 'No history found for this patient')}</p>
-                  <p className="empty-sub">Consultations and procedures will appear here</p>
+                  <p>Cargando historial...</p>
                 </div>
               ) : (
-                getFormattedHistory().map((entry, idx) => (
-                  <div key={idx} className={`history-card history-${entry.tipo}`}>
-                    <div className="history-card-header">
-                      <div className="history-icon">
-                        {entry.tipo === 'consulta' && '🩺'}
-                        {entry.tipo === 'vacuna' && '💉'}
-                        {entry.tipo === 'hospitalizacion' && '🏥'}
-                        {entry.tipo === 'cirugia' && '⚕️'}
-                        {entry.tipo === 'visita' && '📋'}
+                <>
+                  {/* Resumen */}
+                  {historialData?.resumen && (
+                    <div className="history-summary-cards" style={{ display: 'flex', gap: '1rem', marginBottom: '1.5rem', flexWrap: 'wrap' }}>
+                      <div style={{ background: '#e0f2fe', padding: '1rem', borderRadius: '8px', flex: 1, minWidth: '120px', textAlign: 'center' }}>
+                        <div style={{ fontSize: '1.5rem', fontWeight: 'bold', color: '#0369a1' }}>{historialData.resumen.totalConsultas || 0}</div>
+                        <div style={{ fontSize: '0.85rem', color: '#0284c7' }}>Consultas</div>
                       </div>
-                      <div className="history-title">
-                        <h4>{entry.accion}</h4>
-                        <span className="history-date">
-                          {new Date(entry.timestamp).toLocaleDateString('es-MX', { 
-                            weekday: 'long', 
-                            year: 'numeric', 
-                            month: 'long', 
-                            day: 'numeric' 
-                          })}
-                          {' - '}
-                          {new Date(entry.timestamp).toLocaleTimeString('es-MX', { 
-                            hour: '2-digit', 
-                            minute: '2-digit' 
-                          })}
-                        </span>
+                      <div style={{ background: '#fef3c7', padding: '1rem', borderRadius: '8px', flex: 1, minWidth: '120px', textAlign: 'center' }}>
+                        <div style={{ fontSize: '1.5rem', fontWeight: 'bold', color: '#b45309' }}>{historialData.resumen.totalCirugias || 0}</div>
+                        <div style={{ fontSize: '0.85rem', color: '#d97706' }}>Cirugías</div>
                       </div>
-                      <div className="history-meta">
-                        {entry.doctor && <span className="doctor-badge">👨‍⚕️ {entry.doctor}</span>}
-                        {entry.duracion && <span className="duration-badge">⏱️ {entry.duracion}</span>}
+                      <div style={{ background: '#fce7f3', padding: '1rem', borderRadius: '8px', flex: 1, minWidth: '120px', textAlign: 'center' }}>
+                        <div style={{ fontSize: '1.5rem', fontWeight: 'bold', color: '#be185d' }}>{historialData.resumen.totalHospitalizaciones || 0}</div>
+                        <div style={{ fontSize: '0.85rem', color: '#db2777' }}>Hospitalizaciones</div>
                       </div>
                     </div>
-                    
-                    {entry.detalles && (
-                      <div className="history-card-body">
-                        {/* Examen Físico - Solo mostrar secciones con datos */}
-                        {entry.detalles.examenFisico && (
-                          <div className="history-section exam-section">
-                            <h5>🩺 Examen Físico</h5>
-                            <div className="exam-summary">
-                              {/* Signos Vitales del Examen General - solo si hay alguno */}
-                              {entry.detalles.examenFisico.general && (
-                                entry.detalles.examenFisico.general.peso ||
-                                entry.detalles.examenFisico.general.temperatura ||
-                                entry.detalles.examenFisico.general.frecuenciaCardiaca ||
-                                entry.detalles.examenFisico.general.frecuenciaRespiratoria ||
-                                entry.detalles.examenFisico.general.condicionCorporal ||
-                                entry.detalles.examenFisico.general.hidratacion
-                              ) ? (
-                                <div className="exam-subsection">
-                                  <h6>Signos Vitales</h6>
-                                  <div className="exam-vitals-grid">
-                                    {entry.detalles.examenFisico.general.peso && (
-                                      <span>Peso: {entry.detalles.examenFisico.general.peso} kg</span>
-                                    )}
-                                    {entry.detalles.examenFisico.general.temperatura && (
-                                      <span>Temp: {entry.detalles.examenFisico.general.temperatura}°C</span>
-                                    )}
-                                    {entry.detalles.examenFisico.general.frecuenciaCardiaca && (
-                                      <span>FC: {entry.detalles.examenFisico.general.frecuenciaCardiaca} bpm</span>
-                                    )}
-                                    {entry.detalles.examenFisico.general.frecuenciaRespiratoria && (
-                                      <span>FR: {entry.detalles.examenFisico.general.frecuenciaRespiratoria} rpm</span>
-                                    )}
-                                    {entry.detalles.examenFisico.general.condicionCorporal && (
-                                      <span>BCS: {entry.detalles.examenFisico.general.condicionCorporal}/9</span>
-                                    )}
-                                    {entry.detalles.examenFisico.general.hidratacion && (
-                                      <span>Hidratación: {entry.detalles.examenFisico.general.hidratacion}</span>
-                                    )}
-                                  </div>
-                                </div>
-                              ) : null}
-                              
-                              {/* Estado Mental y Actitud */}
-                              {entry.detalles.examenFisico.general?.estadoMental?.length > 0 && (
-                                <div className="exam-subsection">
-                                  <h6>Estado Mental</h6>
-                                  <p>{entry.detalles.examenFisico.general.estadoMental.join(', ')}</p>
-                                </div>
-                              )}
-                              
-                              {/* Hallazgos del Examen General */}
-                              {entry.detalles.examenFisico.general && (
-                                <div className="exam-subsection">
-                                  <h6>Hallazgos</h6>
-                                  {(() => {
-                                    const findings = [];
-                                    const g = entry.detalles.examenFisico.general;
-                                    
-                                    // Ojos
-                                    if (g.ojos?.length > 0) findings.push(`Ojos: ${g.ojos.join(', ')}`);
-                                    // Oídos
-                                    if (g.oidos?.length > 0) findings.push(`Oídos: ${g.oidos.join(', ')}`);
-                                    // Nariz
-                                    if (g.nariz?.length > 0) findings.push(`Nariz: ${g.nariz.join(', ')}`);
-                                    // Boca
-                                    if (g.boca?.length > 0) findings.push(`Boca: ${g.boca.join(', ')}`);
-                                    // Linfonodos
-                                    if (g.linfonodos?.length > 0) findings.push(`Linfonodos: ${g.linfonodos.join(', ')}`);
-                                    // Piel/Pelo
-                                    if (g.pielPelo?.length > 0) findings.push(`Piel/Pelo: ${g.pielPelo.join(', ')}`);
-                                    // Cardiovascular
-                                    if (g.cardiovascular?.length > 0) findings.push(`Cardiovascular: ${g.cardiovascular.join(', ')}`);
-                                    // Respiratorio
-                                    if (g.respiratorio?.length > 0) findings.push(`Respiratorio: ${g.respiratorio.join(', ')}`);
-                                    // Digestivo
-                                    if (g.digestivo?.length > 0) findings.push(`Digestivo: ${g.digestivo.join(', ')}`);
-                                    // Urogenital
-                                    if (g.urogenital?.length > 0) findings.push(`Urogenital: ${g.urogenital.join(', ')}`);
-                                    // Musculoesquelético
-                                    if (g.musculoEsqueletico?.length > 0) findings.push(`Musculoesquelético: ${g.musculoEsqueletico.join(', ')}`);
-                                    // Neurológico
-                                    if (g.neurologico?.length > 0) findings.push(`Neurológico: ${g.neurologico.join(', ')}`);
-                                    
-                                    return findings.length > 0 ? (
-                                      <ul className="exam-findings">
-                                        {findings.map((f, idx) => <li key={idx}>{f}</li>)}
-                                      </ul>
-                                    ) : null;
-                                  })()}
-                                </div>
-                              )}
-                              
-                              {/* Exámenes Especializados - Solo mostrar si tienen datos reales */}
-                              {(() => {
-                                // Función para verificar si un examen tiene datos reales
-                                const hasRealData = (exam) => {
-                                  if (!exam || typeof exam !== 'object') return false;
-                                  return Object.values(exam).some(val => {
-                                    if (Array.isArray(val)) return val.length > 0;
-                                    if (typeof val === 'string') return val.trim() !== '';
-                                    if (typeof val === 'number') return true;
-                                    if (typeof val === 'boolean') return val === true;
-                                    return false;
-                                  });
-                                };
-                                
-                                const hasNeuro = hasRealData(entry.detalles.examenFisico.neurologico);
-                                const hasDerma = hasRealData(entry.detalles.examenFisico.dermatologico);
-                                const hasOftalmo = hasRealData(entry.detalles.examenFisico.oftalmologico);
-                                const hasOrto = hasRealData(entry.detalles.examenFisico.ortopedico);
-                                
-                                if (!hasNeuro && !hasDerma && !hasOftalmo && !hasOrto) return null;
-                                
-                                // Función para renderizar hallazgos de un ojo
-                                const renderEyeFindings = (exam, side) => {
-                                  const findings = [];
-                                  const suffix = side === 'OD' ? 'OD' : 'OI';
-                                  
-                                  if (exam[`parpados${suffix}`]?.length > 0) findings.push(`Párpados: ${exam[`parpados${suffix}`].join(', ')}`);
-                                  if (exam[`conjuntiva${suffix}`]?.length > 0) findings.push(`Conjuntiva: ${exam[`conjuntiva${suffix}`].join(', ')}`);
-                                  if (exam[`cornea${suffix}`]?.length > 0) findings.push(`Córnea: ${exam[`cornea${suffix}`].join(', ')}`);
-                                  if (exam[`camaraAnterior${suffix}`]?.length > 0) findings.push(`Cámara Ant.: ${exam[`camaraAnterior${suffix}`].join(', ')}`);
-                                  if (exam[`irisPupila${suffix}`]?.length > 0) findings.push(`Iris/Pupila: ${exam[`irisPupila${suffix}`].join(', ')}`);
-                                  if (exam[`reflejosPupilares${suffix}`]?.length > 0) findings.push(`Reflejos: ${exam[`reflejosPupilares${suffix}`].join(', ')}`);
-                                  if (exam[`cristalino${suffix}`]?.length > 0) findings.push(`Cristalino: ${exam[`cristalino${suffix}`].join(', ')}`);
-                                  if (exam[`presionIntraocular${suffix}`]) findings.push(`PIO: ${exam[`presionIntraocular${suffix}`]}${exam[`pioValor${suffix}`] ? ` (${exam[`pioValor${suffix}`]} mmHg)` : ''}`);
-                                  if (exam[`fondoOjo${suffix}`]?.length > 0) findings.push(`Fondo: ${exam[`fondoOjo${suffix}`].join(', ')}`);
-                                  
-                                  return findings;
-                                };
-                                
-                                return (
-                                  <div className="exam-subsection specialized-details">
-                                    <h6>Exámenes Especializados Realizados</h6>
-                                    <div className="specialized-exams">
-                                      {hasNeuro && <span className="exam-badge">🧠 Neurológico</span>}
-                                      {hasDerma && <span className="exam-badge">🔬 Dermatológico</span>}
-                                      {hasOftalmo && <span className="exam-badge">👁️ Oftalmológico</span>}
-                                      {hasOrto && <span className="exam-badge">🦴 Ortopédico</span>}
-                                    </div>
-                                    
-                                    {/* Detalle Oftalmológico con OD/OI */}
-                                    {hasOftalmo && entry.detalles.examenFisico.oftalmologico && (
-                                      <div className="exam-detail oftalmo-detail">
-                                        <h6>👁️ Detalle Oftalmológico</h6>
-                                        {entry.detalles.examenFisico.oftalmologico.observacionGeneral?.length > 0 && (
-                                          <p><strong>Observación:</strong> {entry.detalles.examenFisico.oftalmologico.observacionGeneral.join(', ')}</p>
-                                        )}
-                                        <div className="eyes-comparison">
-                                          <div className="eye-findings">
-                                            <span className="eye-header">OD (Derecho)</span>
-                                            {(() => {
-                                              const findings = renderEyeFindings(entry.detalles.examenFisico.oftalmologico, 'OD');
-                                              return findings.length > 0 ? (
-                                                <ul>{findings.map((f, i) => <li key={i}>{f}</li>)}</ul>
-                                              ) : <span className="no-findings">Sin hallazgos</span>;
-                                            })()}
-                                          </div>
-                                          <div className="eye-findings">
-                                            <span className="eye-header">OI (Izquierdo)</span>
-                                            {(() => {
-                                              const findings = renderEyeFindings(entry.detalles.examenFisico.oftalmologico, 'OI');
-                                              return findings.length > 0 ? (
-                                                <ul>{findings.map((f, i) => <li key={i}>{f}</li>)}</ul>
-                                              ) : <span className="no-findings">Sin hallazgos</span>;
-                                            })()}
-                                          </div>
-                                        </div>
-                                        {entry.detalles.examenFisico.oftalmologico.impresion?.length > 0 && (
-                                          <p><strong>Impresión:</strong> {entry.detalles.examenFisico.oftalmologico.impresion.join(', ')}</p>
-                                        )}
-                                        {entry.detalles.examenFisico.oftalmologico.observaciones && (
-                                          <p><strong>Observaciones:</strong> {entry.detalles.examenFisico.oftalmologico.observaciones}</p>
-                                        )}
-                                      </div>
-                                    )}
-                                    
-                                    {/* Detalle Ortopédico con D/I */}
-                                    {hasOrto && entry.detalles.examenFisico.ortopedico && (
-                                      <div className="exam-detail orto-detail">
-                                        <h6>🦴 Detalle Ortopédico</h6>
-                                        {entry.detalles.examenFisico.ortopedico.marcha?.length > 0 && (
-                                          <p><strong>Marcha:</strong> {entry.detalles.examenFisico.ortopedico.marcha.join(', ')}</p>
-                                        )}
-                                        {(() => {
-                                          const orto = entry.detalles.examenFisico.ortopedico;
-                                          const joints = [];
-                                          // Torácicas
-                                          if (orto.hombroD?.length > 0 || orto.hombroI?.length > 0) {
-                                            joints.push({ name: 'Hombro', d: orto.hombroD, i: orto.hombroI });
-                                          }
-                                          if (orto.codoD?.length > 0 || orto.codoI?.length > 0) {
-                                            joints.push({ name: 'Codo', d: orto.codoD, i: orto.codoI });
-                                          }
-                                          if (orto.carpoD?.length > 0 || orto.carpoI?.length > 0) {
-                                            joints.push({ name: 'Carpo', d: orto.carpoD, i: orto.carpoI });
-                                          }
-                                          // Pélvicas
-                                          if (orto.caderaD?.length > 0 || orto.caderaI?.length > 0) {
-                                            joints.push({ name: 'Cadera', d: orto.caderaD, i: orto.caderaI });
-                                          }
-                                          if (orto.rodillaD?.length > 0 || orto.rodillaI?.length > 0) {
-                                            joints.push({ name: 'Rodilla', d: orto.rodillaD, i: orto.rodillaI });
-                                          }
-                                          if (orto.tarsoD?.length > 0 || orto.tarsoI?.length > 0) {
-                                            joints.push({ name: 'Tarso', d: orto.tarsoD, i: orto.tarsoI });
-                                          }
-                                          
-                                          return joints.length > 0 ? (
-                                            <div className="joints-summary">
-                                              {joints.map((j, idx) => (
-                                                <div key={idx} className="joint-item">
-                                                  <strong>{j.name}:</strong>
-                                                  {j.d?.length > 0 && <span> D: {j.d.join(', ')}</span>}
-                                                  {j.i?.length > 0 && <span> I: {j.i.join(', ')}</span>}
-                                                </div>
-                                              ))}
-                                            </div>
-                                          ) : null;
-                                        })()}
-                                        {entry.detalles.examenFisico.ortopedico.columna?.length > 0 && (
-                                          <p><strong>Columna:</strong> {entry.detalles.examenFisico.ortopedico.columna.join(', ')}</p>
-                                        )}
-                                        {entry.detalles.examenFisico.ortopedico.impresion?.length > 0 && (
-                                          <p><strong>Impresión:</strong> {entry.detalles.examenFisico.ortopedico.impresion.join(', ')}</p>
-                                        )}
-                                      </div>
-                                    )}
-                                    
-                                    {/* Detalle Neurológico */}
-                                    {hasNeuro && entry.detalles.examenFisico.neurologico && (
-                                      <div className="exam-detail neuro-detail">
-                                        <h6>🧠 Detalle Neurológico</h6>
-                                        {entry.detalles.examenFisico.neurologico.estadoMental && (
-                                          <p><strong>Estado Mental:</strong> {entry.detalles.examenFisico.neurologico.estadoMental}</p>
-                                        )}
-                                        {entry.detalles.examenFisico.neurologico.postura?.length > 0 && (
-                                          <p><strong>Postura:</strong> {entry.detalles.examenFisico.neurologico.postura.join(', ')}</p>
-                                        )}
-                                        {entry.detalles.examenFisico.neurologico.marcha?.length > 0 && (
-                                          <p><strong>Marcha:</strong> {entry.detalles.examenFisico.neurologico.marcha.join(', ')}</p>
-                                        )}
-                                        {entry.detalles.examenFisico.neurologico.localizacion?.length > 0 && (
-                                          <p><strong>Localización:</strong> {entry.detalles.examenFisico.neurologico.localizacion.join(', ')}</p>
-                                        )}
-                                      </div>
-                                    )}
-                                    
-                                    {/* Detalle Dermatológico */}
-                                    {hasDerma && entry.detalles.examenFisico.dermatologico && (
-                                      <div className="exam-detail derma-detail">
-                                        <h6>🔬 Detalle Dermatológico</h6>
-                                        {entry.detalles.examenFisico.dermatologico.condicionPiel?.length > 0 && (
-                                          <p><strong>Condición:</strong> {entry.detalles.examenFisico.dermatologico.condicionPiel.join(', ')}</p>
-                                        )}
-                                        {entry.detalles.examenFisico.dermatologico.pelaje?.length > 0 && (
-                                          <p><strong>Pelaje:</strong> {entry.detalles.examenFisico.dermatologico.pelaje.join(', ')}</p>
-                                        )}
-                                        {entry.detalles.examenFisico.dermatologico.lesionesPrimarias?.length > 0 && (
-                                          <p><strong>Lesiones Primarias:</strong> {entry.detalles.examenFisico.dermatologico.lesionesPrimarias.join(', ')}</p>
-                                        )}
-                                        {entry.detalles.examenFisico.dermatologico.lesionesSecundarias?.length > 0 && (
-                                          <p><strong>Lesiones Secundarias:</strong> {entry.detalles.examenFisico.dermatologico.lesionesSecundarias.join(', ')}</p>
-                                        )}
-                                        {entry.detalles.examenFisico.dermatologico.impresion?.length > 0 && (
-                                          <p><strong>Impresión:</strong> {entry.detalles.examenFisico.dermatologico.impresion.join(', ')}</p>
-                                        )}
-                                      </div>
-                                    )}
-                                  </div>
-                                );
-                              })()}
+                  )}
+
+                  {/* Consultas */}
+                  {historialData?.historial?.consultas?.length > 0 && (
+                    <div className="history-section" style={{ marginBottom: '1.5rem' }}>
+                      <h4 style={{ borderBottom: '2px solid #0ea5e9', paddingBottom: '0.5rem', marginBottom: '1rem', color: '#0369a1' }}>🩺 Consultas ({historialData.historial.consultas.length})</h4>
+                      {historialData.historial.consultas.map((c, i) => (
+                        <div key={i} style={{ background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: '8px', padding: '1rem', marginBottom: '0.75rem' }}>
+                          {/* Header */}
+                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.75rem', borderBottom: '1px solid #e2e8f0', paddingBottom: '0.5rem' }}>
+                            <div>
+                              <strong style={{ color: '#334155', fontSize: '1rem' }}>
+                                {c.status === 'COMPLETADA' ? '✅' : c.status === 'EN_PROGRESO' ? '🔄' : '📋'} Consulta #{i + 1}
+                              </strong>
+                              <span style={{ marginLeft: '0.75rem', background: c.status === 'COMPLETADA' ? '#dcfce7' : '#fef3c7', color: c.status === 'COMPLETADA' ? '#166534' : '#b45309', padding: '0.15rem 0.5rem', borderRadius: '4px', fontSize: '0.75rem' }}>
+                                {c.status}
+                              </span>
                             </div>
+                            <span style={{ color: '#64748b', fontSize: '0.85rem' }}>📅 {new Date(c.startTime).toLocaleDateString('es-MX', { weekday: 'short', year: 'numeric', month: 'short', day: 'numeric' })}</span>
                           </div>
-                        )}
-                        
-                        {/* Vital Signs */}
-                        {entry.detalles.signosVitales && (
-                          <div className="history-section vitals-section">
-                            <h5>🌡️ Vital Signs</h5>
-                            <div className="vitals-grid">
-                              {entry.detalles.signosVitales.temperatura && (
-                                <div className="vital-item">
-                                  <span className="vital-icon">🌡️</span>
-                                  <span className="vital-value">{entry.detalles.signosVitales.temperatura}°C</span>
-                                  <span className="vital-label">Temp.</span>
-                                </div>
-                              )}
-                              {entry.detalles.signosVitales.frecuenciaCardiaca && (
-                                <div className="vital-item">
-                                  <span className="vital-icon">❤️</span>
-                                  <span className="vital-value">{entry.detalles.signosVitales.frecuenciaCardiaca}</span>
-                                  <span className="vital-label">FC (bpm)</span>
-                                </div>
-                              )}
-                              {entry.detalles.signosVitales.frecuenciaRespiratoria && (
-                                <div className="vital-item">
-                                  <span className="vital-icon">💨</span>
-                                  <span className="vital-value">{entry.detalles.signosVitales.frecuenciaRespiratoria}</span>
-                                  <span className="vital-label">FR (rpm)</span>
-                                </div>
-                              )}
-                              {entry.detalles.signosVitales.peso && (
-                                <div className="vital-item">
-                                  <span className="vital-icon">⚖️</span>
-                                  <span className="vital-value">{entry.detalles.signosVitales.peso} kg</span>
-                                  <span className="vital-label">Weight</span>
-                                </div>
-                              )}
-                              {(entry.detalles.signosVitales.presionSistolica || entry.detalles.signosVitales.presionDiastolica) && (
-                                <div className="vital-item">
-                                  <span className="vital-icon">🩺</span>
-                                  <span className="vital-value">
-                                    {entry.detalles.signosVitales.presionSistolica}/{entry.detalles.signosVitales.presionDiastolica}
+                          
+                          {/* Doctor */}
+                          {c.doctor && (
+                            <p style={{ margin: '0.5rem 0', color: '#4b5563', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                              <span style={{ background: '#dbeafe', borderRadius: '50%', width: '24px', height: '24px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.75rem' }}>👨‍⚕️</span>
+                              <strong>Dr. {c.doctor.nombre}</strong>
+                              {c.doctor.especialidad && <span style={{ color: '#94a3b8', fontSize: '0.8rem' }}>({c.doctor.especialidad})</span>}
+                            </p>
+                          )}
+                          
+                          {/* SOAP Notes */}
+                          <div style={{ marginTop: '0.75rem', display: 'grid', gap: '0.5rem' }}>
+                            {c.soapSubjective && (
+                              <div style={{ background: '#fef3c7', padding: '0.6rem 0.8rem', borderRadius: '6px', borderLeft: '3px solid #f59e0b' }}>
+                                <strong style={{ color: '#b45309', fontSize: '0.75rem', display: 'block', marginBottom: '0.25rem' }}>📝 SUBJETIVO (Motivo de consulta)</strong>
+                                <span style={{ color: '#78350f' }}>{c.soapSubjective}</span>
+                              </div>
+                            )}
+                            {c.soapObjective && (
+                              <div style={{ background: '#e0f2fe', padding: '0.6rem 0.8rem', borderRadius: '6px', borderLeft: '3px solid #0ea5e9' }}>
+                                <strong style={{ color: '#0369a1', fontSize: '0.75rem', display: 'block', marginBottom: '0.25rem' }}>🔍 OBJETIVO (Hallazgos)</strong>
+                                <span style={{ color: '#0c4a6e' }}>{c.soapObjective}</span>
+                              </div>
+                            )}
+                            {c.soapAssessment && (
+                              <div style={{ background: '#fce7f3', padding: '0.6rem 0.8rem', borderRadius: '6px', borderLeft: '3px solid #ec4899' }}>
+                                <strong style={{ color: '#be185d', fontSize: '0.75rem', display: 'block', marginBottom: '0.25rem' }}>🩺 EVALUACIÓN (Diagnóstico)</strong>
+                                <span style={{ color: '#831843' }}>{c.soapAssessment}</span>
+                              </div>
+                            )}
+                            {c.soapPlan && (
+                              <div style={{ background: '#dcfce7', padding: '0.6rem 0.8rem', borderRadius: '6px', borderLeft: '3px solid #22c55e' }}>
+                                <strong style={{ color: '#166534', fontSize: '0.75rem', display: 'block', marginBottom: '0.25rem' }}>📋 PLAN (Tratamiento)</strong>
+                                <span style={{ color: '#14532d' }}>{c.soapPlan}</span>
+                              </div>
+                            )}
+                          </div>
+                          
+                          {/* Diagnósticos formales */}
+                          {c.diagnosticos?.length > 0 && (
+                            <div style={{ marginTop: '0.75rem', background: '#faf5ff', padding: '0.6rem 0.8rem', borderRadius: '6px', border: '1px solid #e9d5ff' }}>
+                              <strong style={{ color: '#7c3aed', fontSize: '0.75rem', display: 'block', marginBottom: '0.4rem' }}>🔬 Diagnósticos Registrados</strong>
+                              <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.4rem' }}>
+                                {c.diagnosticos.map((d, di) => (
+                                  <span key={di} style={{ background: '#e9d5ff', color: '#6b21a8', padding: '0.2rem 0.5rem', borderRadius: '4px', fontSize: '0.8rem' }}>
+                                    {d.descripcion} {d.codigoCIE10 && <small>({d.codigoCIE10})</small>}
                                   </span>
-                                  <span className="vital-label">PA (mmHg)</span>
-                                </div>
-                              )}
-                            </div>
-                          </div>
-                        )}
-                        
-                        {/* Diagnoses */}
-                        {entry.detalles.diagnosticos && entry.detalles.diagnosticos.length > 0 && (
-                          <div className="history-section diagnosis-section">
-                            <h5>🔍 Diagnoses</h5>
-                            <div className="diagnosis-list">
-                              {entry.detalles.diagnosticos.map((d, i) => (
-                                <div key={i} className="diagnosis-item">
-                                  <span className="diagnosis-text">{d.descripcion}</span>
-                                  <div className="diagnosis-badges">
-                                    <span className={`badge tipo-${d.tipo?.toLowerCase()}`}>{d.tipo}</span>
-                                    {d.severidad && <span className={`badge severity-${d.severidad?.toLowerCase()}`}>{d.severidad}</span>}
-                                    {d.codigoCIE10 && <span className="badge code">{d.codigoCIE10}</span>}
-                                  </div>
-                                </div>
-                              ))}
-                            </div>
-                          </div>
-                        )}
-                        
-                        {/* Prescriptions */}
-                        {entry.detalles.recetas && entry.detalles.recetas.length > 0 && (
-                          <div className="history-section prescription-section">
-                            <h5>💊 Prescriptions</h5>
-                            {entry.detalles.recetas.map((receta, ri) => (
-                              <div key={ri} className="prescription-card">
-                                {receta.items.map((item, ii) => (
-                                  <div key={ii} className="medication-item">
-                                    <div className="med-name">{item.medicamento}</div>
-                                    <div className="med-details">
-                                      {item.dosis && <span>📏 {item.dosis}</span>}
-                                      {item.frecuencia && <span>⏰ {item.frecuencia}</span>}
-                                      {item.duracion && <span>📅 {item.duracion}</span>}
-                                      {item.via && <span>💉 Route: {item.via}</span>}
-                                    </div>
-                                    {item.instrucciones && (
-                                      <div className="med-instructions">📝 {item.instrucciones}</div>
-                                    )}
-                                  </div>
                                 ))}
                               </div>
-                            ))}
-                          </div>
-                        )}
-                        
-                        {/* Laboratory Studies */}
-                        {entry.detalles.laboratorios && entry.detalles.laboratorios.length > 0 && (
-                          <div className="history-section lab-section">
-                            <h5>🔬 Estudios de Laboratorio</h5>
-                            <div className="lab-list">
-                              {entry.detalles.laboratorios.map((lab, li) => (
-                                <div key={li} className={`lab-item status-${lab.estado?.toLowerCase()}`}>
-                                  <div className="lab-header">
-                                    <span className="lab-type">{tipoLabToLabel(lab.tipo)}</span>
-                                    <span className={`lab-status ${lab.estado?.toLowerCase()}`}>{lab.estado}</span>
-                                    {lab.prioridad === 'URGENTE' && <span className="urgente-badge">⚡ URGENTE</span>}
-                                  </div>
-                                  <div className="lab-dates">
-                                    <span>Solicitado: {lab.fechaSolicitud ? new Date(lab.fechaSolicitud).toLocaleDateString('es-MX') : '-'}</span>
-                                    {lab.fechaResultado && <span> • Completado: {new Date(lab.fechaResultado).toLocaleDateString('es-MX')}</span>}
-                                  </div>
-                                  {lab.notas && <p className="lab-notes"><strong>Notas:</strong> {lab.notas}</p>}
-                                  {lab.resultados && (
-                                    <div className="lab-results">
-                                      <strong>Resultados:</strong>
-                                      <pre className="results-text">{lab.resultados}</pre>
-                                    </div>
-                                  )}
-                                  {lab.archivos && lab.archivos.length > 0 && (
-                                    <div className="lab-files">
-                                      <strong>Archivos:</strong>
-                                      <div className="files-grid">
-                                        {lab.archivos.map((archivo, fi) => {
-                                          // Detectar si es base64 o URL
-                                          const isBase64 = typeof archivo === 'string' && archivo.startsWith('data:');
-                                          const isBase64Image = isBase64 && archivo.startsWith('data:image/');
-                                          const isUrlImage = !isBase64 && /\.(jpg|jpeg|png|gif|webp)$/i.test(archivo);
-                                          const isImage = isBase64Image || isUrlImage;
-                                          const fileName = isBase64 ? `Archivo ${fi + 1}` : (archivo.split('/').pop() || `Archivo ${fi + 1}`);
-                                          
-                                          return (
-                                            <div key={fi} className="file-item">
-                                              {isImage ? (
-                                                <a href={archivo} target="_blank" rel="noopener noreferrer" className="file-image-link">
-                                                  <img src={archivo} alt={`Resultado ${fi + 1}`} className="file-thumbnail" />
-                                                </a>
-                                              ) : (
-                                                <a href={archivo} target="_blank" rel="noopener noreferrer" className="file-link">
-                                                  📎 {fileName}
-                                                </a>
-                                              )}
-                                            </div>
-                                          );
-                                        })}
-                                      </div>
-                                    </div>
-                                  )}
-                                </div>
-                              ))}
                             </div>
-                          </div>
-                        )}
-                        
-                        {/* Hospitalization details */}
-                        {entry.tipo === 'hospitalizacion' && (
-                          <div className="history-section hosp-section">
-                            {entry.detalles.motivo && (
-                              <p><strong>📝 Reason:</strong> {entry.detalles.motivo}</p>
-                            )}
-                            {entry.detalles.ubicacion && (
-                              <p><strong>📍 Location:</strong> {entry.detalles.ubicacion}</p>
-                            )}
-                            {entry.detalles.cuidadosEspeciales && (
-                              <p><strong>⚠️ Special Care:</strong> {entry.detalles.cuidadosEspeciales}</p>
-                            )}
-                            {entry.detalles.dieta && (
-                              <p><strong>🍽️ Diet:</strong> {entry.detalles.dieta}</p>
-                            )}
-                            {entry.detalles.monitoreos && entry.detalles.monitoreos.length > 0 && (
-                              <div className="monitoring-history">
-                                <h6>📊 Monitoring ({entry.detalles.monitoreos.length})</h6>
-                                <div className="monitoring-list">
-                                  {entry.detalles.monitoreos.slice(-3).map((m, mi) => (
-                                    <div key={mi} className="monitoring-item">
-                                      <span className="monitoring-date">
-                                        {new Date(m.fecha).toLocaleString('es-MX')}
-                                      </span>
-                                      <span>
-                                        {m.temperatura && `🌡️${m.temperatura}°C `}
-                                        {m.frecuenciaCardiaca && `❤️${m.frecuenciaCardiaca} `}
-                                        {m.estado}
-                                      </span>
+                          )}
+                          
+                          {/* Signos Vitales */}
+                          {c.signosVitales?.length > 0 && (
+                            <div style={{ marginTop: '0.75rem', background: '#f0fdf4', padding: '0.6rem 0.8rem', borderRadius: '6px', border: '1px solid #bbf7d0' }}>
+                              <strong style={{ color: '#166534', fontSize: '0.75rem', display: 'block', marginBottom: '0.4rem' }}>🌡️ Signos Vitales</strong>
+                              <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.75rem' }}>
+                                {c.signosVitales[0]?.temperatura && <span style={{ color: '#166534' }}>🌡️ {c.signosVitales[0].temperatura}°C</span>}
+                                {c.signosVitales[0]?.frecuenciaCardiaca && <span style={{ color: '#dc2626' }}>❤️ {c.signosVitales[0].frecuenciaCardiaca} bpm</span>}
+                                {c.signosVitales[0]?.frecuenciaRespiratoria && <span style={{ color: '#0284c7' }}>💨 {c.signosVitales[0].frecuenciaRespiratoria} rpm</span>}
+                                {c.signosVitales[0]?.peso && <span style={{ color: '#7c3aed' }}>⚖️ {c.signosVitales[0].peso} kg</span>}
+                                {(c.signosVitales[0]?.presionSistolica || c.signosVitales[0]?.presionDiastolica) && (
+                                  <span style={{ color: '#ea580c' }}>🩺 {c.signosVitales[0].presionSistolica}/{c.signosVitales[0].presionDiastolica} mmHg</span>
+                                )}
+                              </div>
+                            </div>
+                          )}
+                          
+                          {/* Prescripciones */}
+                          {c.prescriptions?.length > 0 && (
+                            <div style={{ marginTop: '0.75rem', background: '#fff7ed', padding: '0.6rem 0.8rem', borderRadius: '6px', border: '1px solid #fed7aa' }}>
+                              <strong style={{ color: '#c2410c', fontSize: '0.75rem', display: 'block', marginBottom: '0.4rem' }}>💊 Medicamentos Recetados</strong>
+                              {c.prescriptions.map((p, pi) => (
+                                <div key={pi}>
+                                  {p.items?.map((item, ii) => (
+                                    <div key={ii} style={{ background: '#fff', padding: '0.4rem 0.6rem', borderRadius: '4px', marginTop: '0.3rem', border: '1px solid #fdba74' }}>
+                                      <strong style={{ color: '#9a3412' }}>{item.name || item.medicamento || item.medication?.nombre || 'Medicamento'}</strong>
+                                      <div style={{ color: '#78350f', fontSize: '0.8rem', display: 'flex', flexWrap: 'wrap', gap: '0.75rem', marginTop: '0.25rem' }}>
+                                        {(item.dosage || item.dosis) && <span>📏 {item.dosage || item.dosis}</span>}
+                                        {(item.frequency || item.frecuencia) && <span>⏰ {item.frequency || item.frecuencia}</span>}
+                                        {(item.duration || item.duracion) && <span>📅 {item.duration || item.duracion}</span>}
+                                        {item.quantity && <span>📦 x{item.quantity}</span>}
+                                        {item.via && <span>💉 {item.via}</span>}
+                                      </div>
+                                      {(item.instructions || item.instrucciones) && <p style={{ margin: '0.25rem 0 0', color: '#92400e', fontSize: '0.8rem', fontStyle: 'italic' }}>📝 {item.instructions || item.instrucciones}</p>}
                                     </div>
                                   ))}
                                 </div>
+                              ))}
+                            </div>
+                          )}
+                          
+                          {/* Laboratorios */}
+                          {c.labRequests?.length > 0 && (
+                            <div style={{ marginTop: '0.75rem', background: '#eff6ff', padding: '0.6rem 0.8rem', borderRadius: '6px', border: '1px solid #bfdbfe' }}>
+                              <strong style={{ color: '#1e40af', fontSize: '0.75rem', display: 'block', marginBottom: '0.4rem' }}>🔬 Estudios de Laboratorio ({c.labRequests.length})</strong>
+                              <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.4rem' }}>
+                                {c.labRequests.map((lab, li) => (
+                                  <span key={li} style={{ 
+                                    background: lab.estado === 'COMPLETADO' ? '#dcfce7' : lab.estado === 'EN_PROCESO' ? '#fef3c7' : '#e0e7ff', 
+                                    color: lab.estado === 'COMPLETADO' ? '#166534' : lab.estado === 'EN_PROCESO' ? '#b45309' : '#3730a3',
+                                    padding: '0.2rem 0.5rem', 
+                                    borderRadius: '4px', 
+                                    fontSize: '0.8rem' 
+                                  }}>
+                                    {lab.tipo} - {lab.estado}
+                                  </span>
+                                ))}
                               </div>
-                            )}
-                            {entry.detalles.fechaAlta && (
-                              <p className="discharge-info">
-                                <strong>✅ Alta:</strong> {entry.detalles.fechaAlta}
-                                {entry.detalles.notasAlta && ` - ${entry.detalles.notasAlta}`}
+                            </div>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  )}
+
+                  {/* Vacunas */}
+                  {historialData?.historial?.vacunas?.length > 0 && (
+                    <div className="history-section" style={{ marginBottom: '1.5rem' }}>
+                      <h4 style={{ borderBottom: '2px solid #10b981', paddingBottom: '0.5rem', marginBottom: '1rem', color: '#047857' }}>💉 Vacunas ({historialData.historial.vacunas.length})</h4>
+                      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '0.75rem' }}>
+                        {historialData.historial.vacunas.map((v, i) => (
+                          <div key={i} style={{ background: '#f0fdf4', border: '1px solid #bbf7d0', borderRadius: '8px', padding: '1rem' }}>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '0.5rem' }}>
+                              <strong style={{ color: '#166534', fontSize: '1rem' }}>💉 {v.nombre || v.vacuna?.nombre || 'Vacuna'}</strong>
+                              <span style={{ background: '#dcfce7', color: '#15803d', padding: '0.15rem 0.4rem', borderRadius: '4px', fontSize: '0.75rem' }}>
+                                {new Date(v.fecha).toLocaleDateString('es-MX')}
+                              </span>
+                            </div>
+                            {(v.marca || v.nombreComercial) && (
+                              <p style={{ margin: '0.25rem 0', color: '#166534', fontSize: '0.85rem' }}>
+                                🏷️ <strong>Marca:</strong> {v.marca || v.nombreComercial}
                               </p>
                             )}
-                          </div>
-                        )}
-                        
-                        {/* Surgery details */}
-                        {entry.tipo === 'cirugia' && entry.detalles && (
-                          <div className="history-section surgery-section">
-                            {entry.detalles.anestesia && (
-                              <p><strong>💉 Anesthesia:</strong> {entry.detalles.anestesia}</p>
+                            {v.lote && (
+                              <p style={{ margin: '0.25rem 0', color: '#166534', fontSize: '0.85rem' }}>
+                                📋 <strong>Lote:</strong> {v.lote}
+                              </p>
                             )}
-                            {entry.detalles.duracion && (
-                              <p><strong>⏱️ Duration:</strong> {entry.detalles.duracion} min</p>
+                            {v.proximaDosis && (
+                              <div style={{ marginTop: '0.5rem', background: '#fef3c7', padding: '0.4rem 0.6rem', borderRadius: '4px', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                                <span>📅</span>
+                                <span style={{ color: '#92400e', fontSize: '0.85rem' }}>
+                                  <strong>Próxima dosis:</strong> {new Date(v.proximaDosis).toLocaleDateString('es-MX')}
+                                </span>
+                              </div>
                             )}
-                            {entry.detalles.notasPreOp && (
-                              <p><strong>📋 Pre-Op:</strong> {entry.detalles.notasPreOp}</p>
-                            )}
-                            {entry.detalles.notas && (
-                              <p><strong>📝 Notes:</strong> {entry.detalles.notas}</p>
-                            )}
-                            {entry.detalles.notasPostOp && (
-                              <p><strong>✅ Post-Op:</strong> {entry.detalles.notasPostOp}</p>
+                            {v.notas && (
+                              <p style={{ margin: '0.5rem 0 0', color: '#047857', fontSize: '0.8rem', fontStyle: 'italic' }}>📝 {v.notas}</p>
                             )}
                           </div>
-                        )}
+                        ))}
                       </div>
-                    )}
-                  </div>
-                ))
+                    </div>
+                  )}
+
+                  {/* Hospitalizaciones */}
+                  {historialData?.historial?.hospitalizaciones?.length > 0 && (
+                    <div className="history-section" style={{ marginBottom: '1.5rem' }}>
+                      <h4 style={{ borderBottom: '2px solid #f59e0b', paddingBottom: '0.5rem', marginBottom: '1rem', color: '#b45309' }}>🏥 Hospitalizaciones ({historialData.historial.hospitalizaciones.length})</h4>
+                      {historialData.historial.hospitalizaciones.map((h, i) => (
+                        <div key={i} style={{ background: '#fffbeb', border: '1px solid #fde68a', borderRadius: '8px', padding: '1rem', marginBottom: '0.75rem' }}>
+                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.75rem', borderBottom: '1px solid #fde68a', paddingBottom: '0.5rem' }}>
+                            <div>
+                              <strong style={{ color: '#92400e', fontSize: '1rem' }}>🏥 {h.reason || 'Hospitalización'}</strong>
+                              <span style={{ marginLeft: '0.75rem', background: h.status === 'ACTIVE' ? '#fef3c7' : h.status === 'DISCHARGED' ? '#dcfce7' : '#e0e7ff', color: h.status === 'ACTIVE' ? '#b45309' : h.status === 'DISCHARGED' ? '#166534' : '#4338ca', padding: '0.15rem 0.5rem', borderRadius: '4px', fontSize: '0.75rem' }}>
+                                {h.status === 'ACTIVE' ? '🔴 Activa' : h.status === 'DISCHARGED' ? '✅ Alta' : h.status}
+                              </span>
+                            </div>
+                            <span style={{ color: '#b45309', fontSize: '0.85rem' }}>📅 {new Date(h.admittedAt).toLocaleDateString('es-MX')}</span>
+                          </div>
+                          
+                          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.5rem', marginBottom: '0.5rem' }}>
+                            {h.location && <p style={{ margin: 0, color: '#78350f' }}>📍 <strong>Ubicación:</strong> {h.location}</p>}
+                            {h.cage && <p style={{ margin: 0, color: '#78350f' }}>🏠 <strong>Jaula:</strong> {h.cage}</p>}
+                            {h.diet && <p style={{ margin: 0, color: '#78350f' }}>🍽️ <strong>Dieta:</strong> {h.diet}</p>}
+                            {h.admittedBy && <p style={{ margin: 0, color: '#78350f' }}>👨‍⚕️ <strong>Admitió:</strong> {h.admittedBy.nombre}</p>}
+                          </div>
+                          
+                          {h.specialCare && (
+                            <div style={{ background: '#fef3c7', padding: '0.5rem', borderRadius: '4px', marginTop: '0.5rem' }}>
+                              <strong style={{ color: '#b45309', fontSize: '0.8rem' }}>⚠️ Cuidados Especiales:</strong>
+                              <p style={{ margin: '0.25rem 0 0', color: '#92400e' }}>{h.specialCare}</p>
+                            </div>
+                          )}
+                          
+                          {/* Monitoreos */}
+                          {h.monitorings?.length > 0 && (
+                            <div style={{ marginTop: '0.75rem', background: '#fff', padding: '0.5rem', borderRadius: '4px', border: '1px solid #fde68a' }}>
+                              <strong style={{ color: '#b45309', fontSize: '0.8rem', display: 'block', marginBottom: '0.4rem' }}>📊 Últimos Monitoreos ({h.monitorings.length})</strong>
+                              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
+                                {h.monitorings.slice(0, 3).map((m, mi) => (
+                                  <div key={mi} style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem', padding: '0.25rem 0', borderBottom: mi < 2 ? '1px dashed #fde68a' : 'none', fontSize: '0.8rem' }}>
+                                    <span style={{ color: '#78350f' }}>🕐 {new Date(m.recordedAt).toLocaleString('es-MX')}</span>
+                                    {m.temperatura && <span>🌡️ {m.temperatura}°C</span>}
+                                    {m.frecuenciaCardiaca && <span>❤️ {m.frecuenciaCardiaca}</span>}
+                                    {m.estado && <span>📋 {m.estado}</span>}
+                                  </div>
+                                ))}
+                              </div>
+                            </div>
+                          )}
+                          
+                          {h.dischargedAt && (
+                            <div style={{ marginTop: '0.5rem', background: '#dcfce7', padding: '0.5rem', borderRadius: '4px' }}>
+                              <strong style={{ color: '#166534' }}>✅ Alta:</strong> {new Date(h.dischargedAt).toLocaleDateString('es-MX')}
+                              {h.dischargeNotes && <span style={{ color: '#15803d' }}> - {h.dischargeNotes}</span>}
+                            </div>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  )}
+
+                  {/* Cirugías */}
+                  {historialData?.historial?.cirugias?.length > 0 && (
+                    <div className="history-section" style={{ marginBottom: '1.5rem' }}>
+                      <h4 style={{ borderBottom: '2px solid #8b5cf6', paddingBottom: '0.5rem', marginBottom: '1rem', color: '#6d28d9' }}>⚕️ Cirugías ({historialData.historial.cirugias.length})</h4>
+                      {historialData.historial.cirugias.map((s, i) => (
+                        <div key={i} style={{ background: '#f5f3ff', border: '1px solid #ddd6fe', borderRadius: '8px', padding: '1rem', marginBottom: '0.75rem' }}>
+                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.75rem', borderBottom: '1px solid #ddd6fe', paddingBottom: '0.5rem' }}>
+                            <div>
+                              <strong style={{ color: '#5b21b6', fontSize: '1rem' }}>🔪 {s.type || s.procedimiento || 'Cirugía'}</strong>
+                              <span style={{ marginLeft: '0.75rem', background: s.status === 'COMPLETED' ? '#dcfce7' : s.status === 'SCHEDULED' ? '#e0f2fe' : '#fef3c7', color: s.status === 'COMPLETED' ? '#166534' : s.status === 'SCHEDULED' ? '#0369a1' : '#b45309', padding: '0.15rem 0.5rem', borderRadius: '4px', fontSize: '0.75rem' }}>
+                                {s.status === 'COMPLETED' ? '✅ Completada' : s.status === 'SCHEDULED' ? '📅 Programada' : s.status}
+                              </span>
+                            </div>
+                            <span style={{ color: '#7c3aed', fontSize: '0.85rem' }}>📅 {new Date(s.scheduledDate).toLocaleDateString('es-MX')}</span>
+                          </div>
+                          
+                          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.5rem' }}>
+                            {s.surgeon && <p style={{ margin: 0, color: '#5b21b6' }}>👨‍⚕️ <strong>Cirujano:</strong> Dr. {s.surgeon.nombre}</p>}
+                            {s.anesthesiaType && <p style={{ margin: 0, color: '#5b21b6' }}>💉 <strong>Anestesia:</strong> {s.anesthesiaType}</p>}
+                            {s.duration && <p style={{ margin: 0, color: '#5b21b6' }}>⏱️ <strong>Duración:</strong> {s.duration} min</p>}
+                          </div>
+                          
+                          {s.preOpNotes && (
+                            <div style={{ background: '#fef3c7', padding: '0.5rem', borderRadius: '4px', marginTop: '0.5rem' }}>
+                              <strong style={{ color: '#b45309', fontSize: '0.8rem' }}>📋 Pre-operatorio:</strong>
+                              <p style={{ margin: '0.25rem 0 0', color: '#92400e', fontSize: '0.9rem' }}>{s.preOpNotes}</p>
+                            </div>
+                          )}
+                          
+                          {s.postOpNotes && (
+                            <div style={{ background: '#dcfce7', padding: '0.5rem', borderRadius: '4px', marginTop: '0.5rem' }}>
+                              <strong style={{ color: '#166534', fontSize: '0.8rem' }}>✅ Post-operatorio:</strong>
+                              <p style={{ margin: '0.25rem 0 0', color: '#15803d', fontSize: '0.9rem' }}>{s.postOpNotes}</p>
+                            </div>
+                          )}
+                          
+                          {s.complications && (
+                            <div style={{ background: '#fee2e2', padding: '0.5rem', borderRadius: '4px', marginTop: '0.5rem' }}>
+                              <strong style={{ color: '#dc2626', fontSize: '0.8rem' }}>⚠️ Complicaciones:</strong>
+                              <p style={{ margin: '0.25rem 0 0', color: '#b91c1c', fontSize: '0.9rem' }}>{s.complications}</p>
+                            </div>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  )}
+
+                  {/* Notas Médicas */}
+                  {historialData?.historial?.notas?.length > 0 && (
+                    <div className="history-section" style={{ marginBottom: '1.5rem' }}>
+                      <h4 style={{ borderBottom: '2px solid #64748b', paddingBottom: '0.5rem', marginBottom: '1rem', color: '#475569' }}>📝 Notas Médicas ({historialData.historial.notas.length})</h4>
+                      {historialData.historial.notas.map((n, i) => (
+                        <div key={i} style={{ background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: '8px', padding: '1rem', marginBottom: '0.75rem' }}>
+                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem' }}>
+                            <span style={{ background: '#e0e7ff', color: '#4338ca', padding: '0.15rem 0.5rem', borderRadius: '4px', fontSize: '0.75rem' }}>
+                              {n.tipo || 'Nota'}
+                            </span>
+                            <span style={{ color: '#64748b', fontSize: '0.85rem' }}>📅 {new Date(n.createdAt).toLocaleDateString('es-MX')}</span>
+                          </div>
+                          <p style={{ margin: '0.5rem 0', color: '#334155' }}>{n.contenido}</p>
+                          {n.createdBy && <p style={{ margin: '0.25rem 0', color: '#94a3b8', fontSize: '0.8rem' }}>👨‍⚕️ {n.createdBy.nombre}</p>}
+                        </div>
+                      ))}
+                    </div>
+                  )}
+
+                  {/* Sin historial */}
+                  {(!historialData?.historial?.consultas?.length && 
+                    !historialData?.historial?.vacunas?.length && 
+                    !historialData?.historial?.hospitalizaciones?.length &&
+                    !historialData?.historial?.cirugias?.length &&
+                    !historialData?.historial?.notas?.length) && (
+                    <div className="empty-history">
+                      <span className="empty-icon">📭</span>
+                      <p>{t('medico.noHistoryFound', 'No se encontró historial para este paciente')}</p>
+                      <p className="empty-sub">Las consultas y procedimientos aparecerán aquí</p>
+                      <p style={{ fontSize: '0.8rem', color: '#94a3b8', marginTop: '1rem' }}>
+                        Debug: historialData = {JSON.stringify(historialData ? Object.keys(historialData) : 'null')}
+                      </p>
+                    </div>
+                  )}
+                </>
               )}
             </div>
             

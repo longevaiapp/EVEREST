@@ -41,6 +41,11 @@ router.get('/summary/stats', authenticate, async (_req: Request, res: Response) 
       uci: hospitalizations.filter((h: any) => h.type === 'UCI').length,
       neonatos: hospitalizations.filter((h: any) => h.type === 'NEONATOS').length,
       infecciosos: hospitalizations.filter((h: any) => h.type === 'INFECCIOSOS').length,
+      maternidad: hospitalizations.filter((h: any) => h.type === 'MATERNIDAD').length,
+      perrosNoInfecciosos: hospitalizations.filter((h: any) => h.type === 'PERROS_NO_INFECCIOSOS').length,
+      perrosInfecciosos: hospitalizations.filter((h: any) => h.type === 'PERROS_INFECCIOSOS').length,
+      gatosNoInfecciosos: hospitalizations.filter((h: any) => h.type === 'GATOS_NO_INFECCIOSOS').length,
+      gatosInfecciosos: hospitalizations.filter((h: any) => h.type === 'GATOS_INFECCIOSOS').length,
       total: hospitalizations.length,
     };
 
@@ -314,7 +319,7 @@ router.post('/', authenticate, async (req: Request, res: Response) => {
   try {
     const schema = z.object({
       patientId: z.union([z.string(), z.number()]).transform(v => String(v)),
-      type: z.enum(['GENERAL', 'UCI', 'NEONATOS', 'INFECCIOSOS']).default('GENERAL'),
+      type: z.enum(['GENERAL', 'UCI', 'NEONATOS', 'INFECCIOSOS', 'MATERNIDAD', 'PERROS_NO_INFECCIOSOS', 'PERROS_INFECCIOSOS', 'GATOS_NO_INFECCIOSOS', 'GATOS_INFECCIOSOS']).default('GENERAL'),
       reason: z.string().min(1),
       notes: z.string().optional(),
     });
@@ -345,6 +350,197 @@ router.post('/', authenticate, async (req: Request, res: Response) => {
   } catch (error) {
     console.error('Error admitting patient:', error);
     res.status(500).json({ error: 'Error admitting patient' });
+  }
+});
+
+// ============================================================================
+// BOARD/SCHEDULE - Vista de cuadrícula por áreas
+// ============================================================================
+
+// GET /board/:area - Get board view for a specific area
+router.get('/board/:area', authenticate, async (req: Request, res: Response) => {
+  try {
+    const { area } = req.params;
+    const validAreas = [
+      'MATERNIDAD',
+      'PERROS_NO_INFECCIOSOS',
+      'PERROS_INFECCIOSOS',
+      'GATOS_NO_INFECCIOSOS',
+      'GATOS_INFECCIOSOS',
+      'GENERAL',
+      'UCI',
+      'NEONATOS',
+      'INFECCIOSOS',
+    ];
+
+    if (!validAreas.includes(area.toUpperCase())) {
+      return res.status(400).json({ error: 'Área no válida' });
+    }
+
+    // Get all active hospitalizations in this area
+    const hospitalizations = await prisma.hospitalization.findMany({
+      where: {
+        type: area.toUpperCase() as any,
+        status: 'ACTIVA',
+      },
+      include: {
+        pet: {
+          include: {
+            owner: { select: { id: true, nombre: true, telefono: true } },
+          },
+        },
+        admittedBy: { select: { id: true, nombre: true } },
+        therapyItems: {
+          where: { isActive: true },
+          include: {
+            administrations: {
+              where: {
+                scheduledTime: {
+                  gte: new Date(new Date().setHours(0, 0, 0, 0)),
+                  lt: new Date(new Date().setHours(23, 59, 59, 999)),
+                },
+              },
+              orderBy: { scheduledTime: 'asc' },
+            },
+          },
+        },
+        monitorings: {
+          orderBy: { recordedAt: 'desc' },
+          take: 1,
+        },
+        fluidTherapies: {
+          where: { isActive: true },
+          take: 1,
+        },
+      },
+      orderBy: { admittedAt: 'asc' },
+    });
+
+    // Build schedule grid - 30 minute slots from 00:00 to 23:30
+    const timeSlots: string[] = [];
+    for (let h = 0; h < 24; h++) {
+      for (let m = 0; m < 60; m += 30) {
+        timeSlots.push(`${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}`);
+      }
+    }
+
+    // Build rows: one per patient
+    const rows = hospitalizations.map((hosp: any) => {
+      // Gather all scheduled activities for today
+      const activities: Record<string, any[]> = {};
+
+      hosp.therapyItems.forEach((item: any) => {
+        item.administrations.forEach((admin: any) => {
+          const time = new Date(admin.scheduledTime);
+          const slot = `${time.getHours().toString().padStart(2, '0')}:${(Math.floor(time.getMinutes() / 30) * 30).toString().padStart(2, '0')}`;
+          if (!activities[slot]) activities[slot] = [];
+          activities[slot].push({
+            type: 'medication',
+            id: admin.id,
+            name: item.medicationName,
+            dose: item.dose,
+            route: item.route,
+            status: admin.status,
+            scheduledTime: admin.scheduledTime,
+            administeredAt: admin.administeredAt,
+          });
+        });
+      });
+
+      // Add monitoring schedule based on frecuenciaMonitoreo
+      if (hosp.frecuenciaMonitoreo) {
+        const freqMatch = hosp.frecuenciaMonitoreo.match(/(\d+)/);
+        if (freqMatch) {
+          const freqHours = parseInt(freqMatch[1]);
+          for (let h = 0; h < 24; h += freqHours) {
+            const slot = `${h.toString().padStart(2, '0')}:00`;
+            if (!activities[slot]) activities[slot] = [];
+            activities[slot].push({
+              type: 'monitoring',
+              name: 'EFG (Signos Vitales)',
+              status: 'scheduled',
+            });
+          }
+        }
+      }
+
+      // Add fluid therapy indicator
+      if (hosp.fluidTherapies?.length > 0) {
+        const ft = hosp.fluidTherapies[0];
+        // Show fluid therapy as continuous - mark every 2 hours
+        for (let h = 0; h < 24; h += 2) {
+          const slot = `${h.toString().padStart(2, '0')}:00`;
+          if (!activities[slot]) activities[slot] = [];
+          activities[slot].push({
+            type: 'fluid',
+            name: ft.tipoSolucion || 'Fluidos',
+            mlPorHora: ft.mlAjustadoPorHora || ft.mlPorHora,
+            status: 'continuous',
+          });
+        }
+      }
+
+      return {
+        hospitalizationId: hosp.id,
+        pet: {
+          id: hosp.pet.id,
+          nombre: hosp.pet.nombre,
+          especie: hosp.pet.especie,
+          raza: hosp.pet.raza,
+          owner: hosp.pet.owner?.nombre,
+        },
+        reason: hosp.reason,
+        admittedAt: hosp.admittedAt,
+        frecuenciaMonitoreo: hosp.frecuenciaMonitoreo,
+        lastMonitoring: hosp.monitorings?.[0] || null,
+        hasFluidTherapy: hosp.fluidTherapies?.length > 0,
+        activities,
+      };
+    });
+
+    res.json({
+      status: 'success',
+      data: {
+        area: area.toUpperCase(),
+        timeSlots,
+        rows,
+        totalPatients: rows.length,
+      },
+    });
+  } catch (error) {
+    console.error('Error getting board:', error);
+    res.status(500).json({ error: 'Error al obtener tablero' });
+  }
+});
+
+// GET /board-summary - Get summary counts for all areas
+router.get('/board-summary', authenticate, async (_req: Request, res: Response) => {
+  try {
+    const hospitalizations = await prisma.hospitalization.findMany({
+      where: { status: 'ACTIVA' },
+      select: { type: true },
+    });
+
+    const areas = [
+      { key: 'MATERNIDAD', label: 'Maternidad', icon: '🤱' },
+      { key: 'PERROS_NO_INFECCIOSOS', label: 'Hospitalización Perros', icon: '🐕' },
+      { key: 'PERROS_INFECCIOSOS', label: 'Infecciosos Perros', icon: '🐕‍🦺' },
+      { key: 'GATOS_NO_INFECCIOSOS', label: 'Hospitalización Gatos', icon: '🐈' },
+      { key: 'GATOS_INFECCIOSOS', label: 'Infecciosos Gatos', icon: '🐈‍⬛' },
+    ];
+
+    const summary = areas.map(area => ({
+      ...area,
+      count: hospitalizations.filter((h: any) => h.type === area.key).length,
+    }));
+
+    res.json({
+      status: 'success',
+      data: { areas: summary, total: hospitalizations.length },
+    });
+  } catch (error) {
+    console.error('Error getting board summary:', error);
+    res.status(500).json({ error: 'Error al obtener resumen del tablero' });
   }
 });
 
@@ -1472,6 +1668,164 @@ router.post('/:id/complete-discharge', authenticate, async (req: Request, res: R
   } catch (error) {
     console.error('Error completing discharge:', error);
     res.status(500).json({ error: 'Error completing discharge' });
+  }
+});
+
+// ============================================================================
+// FLUID THERAPY - Calculadora de Terapia de Líquidos
+// ============================================================================
+
+// POST /:id/fluid-therapy - Calculate and save fluid therapy
+router.post('/:id/fluid-therapy', authenticate, async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+    const userId = (req as any).user?.id;
+
+    const hospitalization = await prisma.hospitalization.findUnique({
+      where: { id },
+      include: { pet: true },
+    });
+    if (!hospitalization) {
+      return res.status(404).json({ error: 'Hospitalización no encontrada' });
+    }
+
+    const schema = z.object({
+      pesoKg: z.number().positive(),
+      especie: z.enum(['PERRO', 'GATO']),
+      esCachorro: z.boolean().default(false),
+      porcentajeDeshidratacion: z.number().min(0).max(15).default(0),
+      vomitoPequeno: z.number().int().min(0).default(0),
+      vomitoAbundante: z.number().int().min(0).default(0),
+      diarreaLeve: z.number().int().min(0).default(0),
+      diarreaAbundante: z.number().int().min(0).default(0),
+      ajusteGeriatrico: z.boolean().default(false),
+      ajusteCardiaco: z.boolean().default(false),
+      ajusteRenal: z.boolean().default(false),
+      porcentajeReduccion: z.number().min(0).max(50).default(0),
+      tipoSolucion: z.string().optional(),
+      notas: z.string().optional(),
+    });
+
+    const data = schema.parse(req.body);
+
+    // 1. Mantenimiento diario
+    let factorMantenimiento: number;
+    if (data.esCachorro) {
+      factorMantenimiento = 80;
+    } else if (data.especie === 'GATO') {
+      factorMantenimiento = 50;
+    } else {
+      factorMantenimiento = 60;
+    }
+    const mlMantenimiento = data.pesoKg * factorMantenimiento;
+
+    // 2. Déficit por deshidratación
+    const mlDeficit = data.pesoKg * data.porcentajeDeshidratacion * 10;
+
+    // 3. Pérdidas por vómito/diarrea
+    const mlPerdidas =
+      (data.vomitoPequeno * 2 * data.pesoKg) +
+      (data.vomitoAbundante * 4 * data.pesoKg) +
+      (data.diarreaLeve * 3 * data.pesoKg) +
+      (data.diarreaAbundante * 5 * data.pesoKg);
+
+    // 4. Total 24h
+    const mlTotal24h = mlMantenimiento + mlDeficit + mlPerdidas;
+    const mlPorHora = mlTotal24h / 24;
+
+    // 5. Ajustes
+    const necesitaAjuste = data.ajusteGeriatrico || data.ajusteCardiaco || data.ajusteRenal;
+    const porcentajeReduccion = necesitaAjuste ? (data.porcentajeReduccion || 25) : 0;
+    const mlAjustado24h = necesitaAjuste ? mlTotal24h * (1 - porcentajeReduccion / 100) : null;
+    const mlAjustadoPorHora = mlAjustado24h ? mlAjustado24h / 24 : null;
+
+    // Deactivate previous fluid therapies
+    await prisma.fluidTherapy.updateMany({
+      where: { hospitalizationId: id, isActive: true },
+      data: { isActive: false },
+    });
+
+    const fluidTherapy = await prisma.fluidTherapy.create({
+      data: {
+        hospitalizationId: id,
+        prescribedById: userId,
+        pesoKg: data.pesoKg,
+        especie: data.especie,
+        esCachorro: data.esCachorro,
+        factorMantenimiento,
+        mlMantenimiento,
+        porcentajeDeshidratacion: data.porcentajeDeshidratacion,
+        mlDeficit,
+        vomitoPequeno: data.vomitoPequeno,
+        vomitoAbundante: data.vomitoAbundante,
+        diarreaLeve: data.diarreaLeve,
+        diarreaAbundante: data.diarreaAbundante,
+        mlPerdidas,
+        mlTotal24h,
+        mlPorHora: Math.round(mlPorHora * 100) / 100,
+        ajusteGeriatrico: data.ajusteGeriatrico,
+        ajusteCardiaco: data.ajusteCardiaco,
+        ajusteRenal: data.ajusteRenal,
+        porcentajeReduccion,
+        mlAjustado24h: mlAjustado24h ? Math.round(mlAjustado24h * 100) / 100 : null,
+        mlAjustadoPorHora: mlAjustadoPorHora ? Math.round(mlAjustadoPorHora * 100) / 100 : null,
+        tipoSolucion: data.tipoSolucion || null,
+        notas: data.notas || null,
+      },
+    });
+
+    res.json({
+      status: 'success',
+      data: { fluidTherapy },
+    });
+  } catch (error: any) {
+    if (error.name === 'ZodError') {
+      return res.status(400).json({ error: 'Datos inválidos', details: error.errors });
+    }
+    console.error('Error creating fluid therapy:', error);
+    res.status(500).json({ error: 'Error al calcular terapia de fluidos' });
+  }
+});
+
+// GET /:id/fluid-therapy - Get fluid therapy for a hospitalization
+router.get('/:id/fluid-therapy', authenticate, async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+
+    const therapies = await prisma.fluidTherapy.findMany({
+      where: { hospitalizationId: id },
+      include: {
+        prescribedBy: { select: { id: true, nombre: true } },
+      },
+      orderBy: { createdAt: 'desc' },
+    });
+
+    const active = therapies.find((t: any) => t.isActive);
+
+    res.json({
+      status: 'success',
+      data: { fluidTherapies: therapies, active },
+    });
+  } catch (error) {
+    console.error('Error getting fluid therapies:', error);
+    res.status(500).json({ error: 'Error al obtener terapias de fluidos' });
+  }
+});
+
+// DELETE /:id/fluid-therapy/:therapyId - Deactivate a fluid therapy
+router.delete('/:id/fluid-therapy/:therapyId', authenticate, async (req: Request, res: Response) => {
+  try {
+    const { therapyId } = req.params;
+
+    await prisma.fluidTherapy.update({
+      where: { id: therapyId },
+      data: { isActive: false },
+    });
+
+    res.json({ status: 'success', message: 'Terapia de fluidos desactivada' });
+  } catch (error) {
+    console.error('Error deactivating fluid therapy:', error);
+    res.status(500).json({ error: 'Error al desactivar terapia de fluidos' });
   }
 });
 

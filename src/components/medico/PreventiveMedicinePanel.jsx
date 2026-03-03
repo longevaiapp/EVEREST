@@ -225,9 +225,9 @@ function PreventiveMedicinePanel({
 
       <div className="panel-content">
         {/* Physical Exam Section */}
-        <section className="exam-section">
+        <section className="preventive-exam-section">
           <h3>📋 Examen Físico Rápido</h3>
-          <div className="exam-grid">
+          <div className="preventive-exam-grid">
             <div className="form-group">
               <label>🌡️ Temperatura (°C)</label>
               <input
