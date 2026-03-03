@@ -139,6 +139,7 @@
 /* ─── CENTER: Board takes full space ─── */
 .hd-center {
   flex: 1;
+  min-width: 0;          /* allow shrinking below content width */
   overflow: auto;
   padding: 16px;
 }
