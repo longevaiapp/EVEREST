@@ -128,6 +128,7 @@ function MedicoDashboard() {
     calculatedDoseMg: null,
     volumeMl: null,
     concentrationUsed: null,
+    _autoFilledDose: false,
   });
 
   // Prescription medication search states
@@ -644,8 +645,8 @@ function MedicoDashboard() {
       }
       // Auto-fill frequency from dosing reference
       if (!prev.frecuencia && calcResult.frequencyHours) {
-        const freqMap = { 6: 'Cada 6 horas', 8: 'Cada 8 horas', 12: 'Cada 12 horas', 24: 'Cada 24 horas' };
-        updates.frecuencia = freqMap[calcResult.frequencyHours] || `Cada ${calcResult.frequencyHours} horas`;
+        const freqMap = { 4: 'cada 4 horas', 6: 'cada 6 horas', 8: 'cada 8 horas', 12: 'cada 12 horas', 24: 'cada 24 horas' };
+        updates.frecuencia = freqMap[calcResult.frequencyHours] || `cada ${calcResult.frequencyHours} horas`;
       }
       // Auto-fill quantity
       if (calcResult.estimatedQty && prev.cantidad <= 1) {
@@ -656,7 +657,7 @@ function MedicoDashboard() {
   }, []);
 
   const handleAddMedication = useCallback(() => {
-    if (!currentMedication.nombre || !currentMedication.dosis || !currentMedication.frecuencia) return;
+    if (!currentMedication.nombre || !currentMedication.dosis) return;
     
     // Format dosis with unit
     const dosisCompleta = `${currentMedication.dosis} ${currentMedication.unidadDosis}`;
@@ -688,6 +689,7 @@ function MedicoDashboard() {
       calculatedDoseMg: null,
       volumeMl: null,
       concentrationUsed: null,
+      _autoFilledDose: false,
     });
   }, [currentMedication]);
 
@@ -2163,7 +2165,7 @@ function MedicoDashboard() {
                       className="form-control dose-amount" 
                       placeholder="500" 
                       value={currentMedication.dosis} 
-                      onChange={(e) => setCurrentMedication(prev => ({ ...prev, dosis: e.target.value }))} 
+                      onChange={(e) => setCurrentMedication(prev => ({ ...prev, dosis: e.target.value, _autoFilledDose: false }))} 
                       min="0"
                       step="0.01"
                     />
@@ -2179,7 +2181,7 @@ function MedicoDashboard() {
                   </div>
                 </div>
                 <div className="form-group">
-                  <label>{t('medico.frequency', 'Frequency')} *</label>
+                  <label>{t('medico.frequency', 'Frequency')}</label>
                   <select 
                     className="form-control" 
                     value={currentMedication.frecuencia} 
@@ -2263,10 +2265,13 @@ function MedicoDashboard() {
               <button 
                 className="btn-add-medication" 
                 onClick={handleAddMedication} 
-                disabled={!currentMedication.nombre || !currentMedication.dosis || !currentMedication.frecuencia}
+                disabled={!currentMedication.nombre || !currentMedication.dosis}
               >
                 + {t('medico.addMedication', 'Add Medication')}
               </button>
+              {currentMedication.nombre && !currentMedication.dosis && (
+                <span style={{color:'#f59e0b',fontSize:'0.8rem',marginTop:'4px',display:'block',textAlign:'center'}}>⚠️ Ingrese la dosis para agregar</span>
+              )}
             </div>
             
             {/* Medications List */}
