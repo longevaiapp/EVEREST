@@ -484,11 +484,9 @@ function HospitalizacionDashboard() {
           />
         </main>
 
-        {/* RIGHT DRAWER: Patient Detail (slides in) */}
+        {/* RIGHT PANEL: Patient Detail */}
         {drawerOpen && sel && (
-          <>
-            <div className="hd-drawer-backdrop" onClick={handleCloseDrawer} />
-            <aside className="hd-drawer">
+          <aside className="hd-drawer">
               {/* Drawer header */}
               <div className="hd-drawer-header">
                 <div className="hd-drawer-patient">
@@ -773,7 +771,6 @@ function HospitalizacionDashboard() {
                 )}
               </div>
             </aside>
-          </>
         )}
       </div>
 

@@ -144,37 +144,23 @@
 }
 
 /* ═══════════════════════════════════════════════════════════════
-   DRAWER (slides in from right on patient click)
+   DRAWER (flex panel on the right inside hd-body)
    ═══════════════════════════════════════════════════════════════ */
-.hd-drawer-backdrop {
-  position: fixed;
-  inset: 0;
-  background: rgba(0,0,0,0.35);
-  z-index: 50;
-  animation: fadeIn 0.2s ease;
-}
-@keyframes fadeIn {
-  from { opacity: 0; }
-  to { opacity: 1; }
-}
-
 .hd-drawer {
-  position: fixed;
-  top: 0;
-  right: 0;
   width: 480px;
-  max-width: 90vw;
-  height: 100vh;
+  max-width: 45vw;
+  flex-shrink: 0;
   background: #fff;
-  z-index: 51;
   display: flex;
   flex-direction: column;
-  box-shadow: -4px 0 24px rgba(0,0,0,0.2);
-  animation: slideIn 0.25s ease;
+  border-left: 1px solid #cbd5e0;
+  box-shadow: -2px 0 16px rgba(0,0,0,0.08);
+  overflow: hidden;
+  animation: drawerSlide 0.2s ease;
 }
-@keyframes slideIn {
-  from { transform: translateX(100%); }
-  to { transform: translateX(0); }
+@keyframes drawerSlide {
+  from { margin-right: -480px; opacity: 0; }
+  to { margin-right: 0; opacity: 1; }
 }
 
 /* Drawer Header */
@@ -1528,8 +1514,11 @@ fieldset legend {
     flex-wrap: wrap;
   }
   .hd-drawer {
-    width: 100vw;
-    max-width: 100vw;
+    width: 100%;
+    max-width: 100%;
+    position: absolute;
+    inset: 0;
+    z-index: 10;
   }
   .hd-grid-3,
   .hd-grid-4 {
