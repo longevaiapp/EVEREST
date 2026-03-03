@@ -1,4 +1,5 @@
 import { useState, useCallback, useEffect, useMemo, useRef } from 'react';
+import { createPortal } from 'react-dom';
 import { useTranslation } from 'react-i18next';
 import { useAuth } from '../../context/AuthContext';
 import useHospitalizacion from '../../hooks/useHospitalizacion';
@@ -484,9 +485,9 @@ function HospitalizacionDashboard() {
           />
         </main>
 
-        {/* RIGHT PANEL: Patient Detail (overlays board) */}
-        {drawerOpen && sel && (
-          <>
+        {/* RIGHT PANEL: Patient Detail — rendered via portal at body level */}
+        {drawerOpen && sel && createPortal(
+          <div className="hd-drawer-portal">
             <div className="hd-drawer-backdrop" onClick={handleCloseDrawer} />
             <aside className="hd-drawer">
               {/* Drawer header */}
@@ -773,7 +774,8 @@ function HospitalizacionDashboard() {
                 )}
               </div>
             </aside>
-          </>
+          </div>,
+          document.body
         )}
       </div>
 

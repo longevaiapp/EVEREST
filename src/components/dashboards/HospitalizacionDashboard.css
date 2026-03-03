@@ -145,13 +145,19 @@
 }
 
 /* ═══════════════════════════════════════════════════════════════
-   DRAWER (absolute overlay on top of the board inside hd-body)
+   DRAWER (rendered via React Portal at document.body level)
    ═══════════════════════════════════════════════════════════════ */
-.hd-drawer-backdrop {
-  position: absolute;
+.hd-drawer-portal {
+  position: fixed;
   inset: 0;
-  background: rgba(0,0,0,0.25);
-  z-index: 40;
+  z-index: 9999;
+}
+
+.hd-drawer-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.35);
+  z-index: 9999;
   animation: fadeIn 0.2s ease;
 }
 @keyframes fadeIn {
@@ -160,17 +166,17 @@
 }
 
 .hd-drawer {
-  position: absolute;
+  position: fixed;
   top: 0;
   right: 0;
   bottom: 0;
   width: 520px;
-  max-width: 85%;
+  max-width: 90vw;
   background: #fff;
-  z-index: 41;
+  z-index: 10000;
   display: flex;
   flex-direction: column;
-  box-shadow: -4px 0 24px rgba(0,0,0,0.18);
+  box-shadow: -6px 0 30px rgba(0,0,0,0.25);
   animation: slideIn 0.25s ease;
 }
 @keyframes slideIn {
