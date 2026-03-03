@@ -1,862 +1,1118 @@
-/* src/components/dashboards/HospitalizacionDashboard.css */
-/* Sigue el diseño de MedicoDashboard y RecepcionDashboard */
-
 /* ═══════════════════════════════════════════════════════════════ */
-/* LAYOUT PRINCIPAL */
+/* HospitalizacionDashboard - Unified 3-Panel Design             */
 /* ═══════════════════════════════════════════════════════════════ */
 
-.hospitalizacion-dashboard {
+/* ─── LAYOUT ─── */
+.hosp-dashboard {
   display: flex;
   flex-direction: column;
-  min-height: 100vh;
-  background: linear-gradient(135deg, #f0f7f4 0%, #e8f5e9 100%);
+  height: 100vh;
+  background: #f1f5f9;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  color: #1e293b;
 }
 
-.hospitalizacion-dashboard .dashboard-header {
-  background: linear-gradient(135deg, #1b4332 0%, #2d6a4f 100%);
-  padding: 1rem 2rem;
+/* ─── HEADER ─── */
+.hosp-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  box-shadow: 0 4px 15px rgba(27, 67, 50, 0.3);
+  padding: 0.75rem 1.5rem;
+  background: linear-gradient(135deg, #1b4332 0%, #2d6a4f 100%);
+  box-shadow: 0 2px 10px rgba(27, 67, 50, 0.3);
+  flex-shrink: 0;
 }
 
-.hospitalizacion-dashboard .dashboard-header h1 {
+.hosp-header h1 {
   color: white;
-  font-size: 1.5rem;
+  font-size: 1.35rem;
   font-weight: 600;
-  display: flex;
-  align-items: center;
-  gap: 0.75rem;
   margin: 0;
 }
 
-.hospitalizacion-dashboard .user-info {
+.hosp-header-right {
   display: flex;
   align-items: center;
   gap: 1rem;
-  color: white;
 }
 
-.hospitalizacion-dashboard .user-info span {
-  opacity: 0.9;
+.hosp-user-name {
+  color: rgba(255,255,255,0.85);
+  font-size: 0.9rem;
 }
 
-.hospitalizacion-dashboard .btn-logout {
-  padding: 0.5rem 1rem;
-  background: rgba(255,255,255,0.15);
-  border: 1px solid rgba(255,255,255,0.3);
+.hosp-btn-logout {
+  padding: 0.4rem 0.9rem;
+  background: rgba(255,255,255,0.12);
+  border: 1px solid rgba(255,255,255,0.25);
   color: white;
   border-radius: 6px;
   cursor: pointer;
-  transition: all 0.2s;
-}
-
-.hospitalizacion-dashboard .btn-logout:hover {
-  background: rgba(255,255,255,0.25);
-}
-
-/* ═══════════════════════════════════════════════════════════════ */
-/* STATS BAR */
-/* ═══════════════════════════════════════════════════════════════ */
-
-.hospitalizacion-dashboard .stats-bar {
-  display: flex;
-  gap: 1rem;
-  padding: 1rem 2rem;
-  background: white;
-  border-bottom: 1px solid #e0e0e0;
-  overflow-x: auto;
-}
-
-.hospitalizacion-dashboard .stat-card {
-  flex: 1;
-  min-width: 140px;
-  padding: 1rem 1.5rem;
-  background: linear-gradient(145deg, #f8fdf8 0%, #e8f5e9 100%);
-  border-radius: 12px;
-  text-align: center;
-  border: 1px solid rgba(45, 106, 79, 0.15);
-  box-shadow: 0 2px 8px rgba(45, 106, 79, 0.08);
-}
-
-.hospitalizacion-dashboard .stat-card.general {
-  border-left: 4px solid #4CAF50;
-}
-
-.hospitalizacion-dashboard .stat-card.uci {
-  border-left: 4px solid #f44336;
-}
-
-.hospitalizacion-dashboard .stat-card.neonatos {
-  border-left: 4px solid #ff9800;
-}
-
-.hospitalizacion-dashboard .stat-card.infecciosos {
-  border-left: 4px solid #9c27b0;
-}
-
-.hospitalizacion-dashboard .stat-number {
-  font-size: 2rem;
-  font-weight: bold;
-  color: #1b4332;
-}
-
-.hospitalizacion-dashboard .stat-label {
   font-size: 0.85rem;
-  color: #666;
-  margin-top: 0.25rem;
+  transition: background 0.2s;
 }
 
-/* ═══════════════════════════════════════════════════════════════ */
-/* MAIN CONTENT */
-/* ═══════════════════════════════════════════════════════════════ */
-
-.hospitalizacion-dashboard .dashboard-content {
-  display: flex;
-  flex: 1;
-  gap: 1.5rem;
-  padding: 1.5rem 2rem;
-  overflow: hidden;
+.hosp-btn-logout:hover {
+  background: rgba(255,255,255,0.22);
 }
 
-/* ═══════════════════════════════════════════════════════════════ */
-/* SIDEBAR - LISTA DE PACIENTES */
-/* ═══════════════════════════════════════════════════════════════ */
-
-.hospitalizacion-dashboard .patients-sidebar {
-  width: 380px;
+/* ─── TOOLBAR ─── */
+.hosp-toolbar {
   display: flex;
-  flex-direction: column;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.6rem 1.5rem;
+  background: white;
+  border-bottom: 1px solid #e2e8f0;
+  flex-shrink: 0;
   gap: 1rem;
-  overflow: hidden;
 }
 
-.hospitalizacion-dashboard .sidebar-header {
-  display: flex;
-  flex-direction: column;
-  gap: 0.75rem;
-}
-
-.hospitalizacion-dashboard .sidebar-title {
-  font-size: 1.1rem;
-  font-weight: 600;
-  color: #1b4332;
+.hosp-filters {
   display: flex;
   align-items: center;
-  gap: 0.5rem;
-}
-
-.hospitalizacion-dashboard .filter-row {
-  display: flex;
   gap: 0.75rem;
   flex-wrap: wrap;
 }
 
-.hospitalizacion-dashboard .filter-group {
-  flex: 1;
-  min-width: 100px;
-  display: flex;
-  flex-direction: column;
-  gap: 0.25rem;
-}
-
-.hospitalizacion-dashboard .filter-label {
-  font-size: 0.7rem;
-  font-weight: 600;
-  color: #1b4332;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-}
-
-.hospitalizacion-dashboard .filter-select,
-.hospitalizacion-dashboard .filter-row select {
-  width: 100%;
-  padding: 0.5rem;
-  border: 1px solid #ddd;
-  border-radius: 6px;
-  font-size: 0.85rem;
+.hosp-filter-select {
+  padding: 0.45rem 0.75rem;
+  border: 1px solid #cbd5e1;
+  border-radius: 8px;
+  font-size: 0.875rem;
+  color: #334155;
   background: white;
   cursor: pointer;
   transition: border-color 0.2s;
 }
 
-.hospitalizacion-dashboard .filter-select:focus,
-.hospitalizacion-dashboard .filter-row select:focus {
+.hosp-filter-select:focus {
   outline: none;
   border-color: #2d6a4f;
+  box-shadow: 0 0 0 2px rgba(45, 106, 79, 0.1);
 }
 
-.hospitalizacion-dashboard .patients-list {
-  flex: 1;
-  overflow-y: auto;
-  display: flex;
-  flex-direction: column;
-  gap: 0.75rem;
-}
-
-/* ═══════════════════════════════════════════════════════════════ */
-/* PATIENT CARD */
-/* ═══════════════════════════════════════════════════════════════ */
-
-.hospitalizacion-dashboard .patient-card {
-  padding: 1rem;
-  background: linear-gradient(145deg, #f8fdf8 0%, #e8f5e9 100%);
-  border-radius: 12px;
-  border: 2px solid transparent;
-  box-shadow: 0 2px 8px rgba(45, 106, 79, 0.08);
-  cursor: pointer;
-  transition: all 0.2s ease;
-}
-
-.hospitalizacion-dashboard .patient-card:hover {
-  transform: translateX(4px);
-  border-color: #2d6a4f;
-  box-shadow: 0 4px 15px rgba(45, 106, 79, 0.15);
-}
-
-.hospitalizacion-dashboard .patient-card.selected {
-  border-color: #2d6a4f;
-  background: linear-gradient(145deg, #e8f5e9 0%, #c8e6c9 100%);
-}
-
-.hospitalizacion-dashboard .patient-card.uci {
-  border-left: 4px solid #f44336;
-}
-
-.hospitalizacion-dashboard .patient-card.neonatos {
-  border-left: 4px solid #ff9800;
-}
-
-.hospitalizacion-dashboard .patient-card.infecciosos {
-  border-left: 4px solid #9c27b0;
-}
-
-.hospitalizacion-dashboard .patient-card-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: flex-start;
-  margin-bottom: 0.5rem;
-}
-
-.hospitalizacion-dashboard .patient-name {
-  font-weight: 600;
-  font-size: 1rem;
-  color: #1b4332;
-}
-
-.hospitalizacion-dashboard .patient-species {
+.hosp-patient-count {
   font-size: 0.85rem;
-  color: #666;
+  color: #64748b;
+  font-weight: 500;
+  white-space: nowrap;
 }
 
-.hospitalizacion-dashboard .type-badge {
-  padding: 0.25rem 0.75rem;
-  border-radius: 20px;
-  font-size: 0.7rem;
+.hosp-toolbar-actions {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.hosp-btn-ronda {
+  padding: 0.45rem 1rem;
+  background: linear-gradient(135deg, #0ea5e9, #0284c7);
+  color: white;
+  border: none;
+  border-radius: 8px;
   font-weight: 600;
-  text-transform: uppercase;
+  font-size: 0.85rem;
+  cursor: pointer;
+  transition: all 0.2s;
+  white-space: nowrap;
 }
 
-.hospitalizacion-dashboard .type-badge.general {
-  background: #e8f5e9;
-  color: #2e7d32;
+.hosp-btn-ronda:hover:not(:disabled) {
+  transform: translateY(-1px);
+  box-shadow: 0 3px 10px rgba(14, 165, 233, 0.3);
 }
 
-.hospitalizacion-dashboard .type-badge.uci {
-  background: #ffebee;
-  color: #c62828;
+.hosp-btn-ronda:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
 }
 
-.hospitalizacion-dashboard .type-badge.neonatos {
-  background: #fff3e0;
-  color: #e65100;
-}
-
-.hospitalizacion-dashboard .type-badge.infecciosos {
-  background: #f3e5f5;
-  color: #7b1fa2;
-}
-
-.hospitalizacion-dashboard .patient-owner {
-  font-size: 0.8rem;
-  color: #888;
-  margin-bottom: 0.5rem;
-}
-
-.hospitalizacion-dashboard .patient-meta {
-  display: flex;
-  gap: 1rem;
-  font-size: 0.8rem;
-  color: #666;
-}
-
-/* ═══════════════════════════════════════════════════════════════ */
-/* DETAIL PANEL */
-/* ═══════════════════════════════════════════════════════════════ */
-
-.hospitalizacion-dashboard .detail-panel {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
+.hosp-btn-board {
+  padding: 0.45rem 1rem;
   background: white;
-  border-radius: 16px;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+  color: #334155;
+  border: 1px solid #cbd5e1;
+  border-radius: 8px;
+  font-size: 0.85rem;
+  cursor: pointer;
+  transition: all 0.2s;
+  white-space: nowrap;
+}
+
+.hosp-btn-board:hover {
+  background: #f8fafc;
+  border-color: #94a3b8;
+}
+
+/* ─── ERROR ─── */
+.hosp-error {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.6rem 1.5rem;
+  background: #fef2f2;
+  border-bottom: 1px solid #fecaca;
+  color: #dc2626;
+  font-size: 0.9rem;
+}
+
+.hosp-error button {
+  background: none;
+  border: none;
+  color: #dc2626;
+  font-size: 1.2rem;
+  cursor: pointer;
+}
+
+/* ═══════════════════════════════════════════════════════════════ */
+/* MAIN 3-PANEL LAYOUT                                            */
+/* ═══════════════════════════════════════════════════════════════ */
+
+.hosp-main {
+  display: flex;
+  flex: 1;
   overflow: hidden;
 }
 
-.hospitalizacion-dashboard .detail-empty {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  color: #888;
-  gap: 1rem;
-}
-
-.hospitalizacion-dashboard .detail-empty .icon {
-  font-size: 4rem;
-  opacity: 0.5;
-}
-
-/* ═══════════════════════════════════════════════════════════════ */
-/* DETAIL HEADER */
-/* ═══════════════════════════════════════════════════════════════ */
-
-.hospitalizacion-dashboard .detail-header {
-  padding: 1.5rem;
-  background: linear-gradient(145deg, #f8fdf8 0%, #e8f5e9 100%);
-  border-bottom: 1px solid #e0e0e0;
-}
-
-.hospitalizacion-dashboard .detail-header-row {
-  display: flex;
-  justify-content: space-between;
-  align-items: flex-start;
-}
-
-.hospitalizacion-dashboard .detail-title {
-  display: flex;
-  align-items: center;
-  gap: 1rem;
-}
-
-.hospitalizacion-dashboard .detail-avatar {
-  width: 64px;
-  height: 64px;
-  border-radius: 50%;
-  background: linear-gradient(135deg, #a8e6cf, #88d4ab);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 2rem;
-  border: 3px solid #2d6a4f;
-}
-
-.hospitalizacion-dashboard .detail-info h2 {
-  margin: 0;
-  font-size: 1.5rem;
-  color: #1b4332;
-}
-
-.hospitalizacion-dashboard .detail-info p {
-  margin: 0.25rem 0 0 0;
-  color: #666;
-  font-size: 0.9rem;
-}
-
-.hospitalizacion-dashboard .detail-actions {
-  display: flex;
-  gap: 0.5rem;
-}
-
-.hospitalizacion-dashboard .btn-action {
-  padding: 0.75rem 1.25rem;
-  border-radius: 8px;
-  border: none;
-  font-weight: 500;
-  cursor: pointer;
-  transition: all 0.2s;
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-}
-
-.hospitalizacion-dashboard .btn-primary {
-  background: linear-gradient(135deg, #2d6a4f 0%, #1b4332 100%);
-  color: white;
-}
-
-.hospitalizacion-dashboard .btn-primary:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(45, 106, 79, 0.3);
-}
-
-.hospitalizacion-dashboard .btn-secondary {
+/* ─── SIDEBAR (Patient List) ─── */
+.hosp-sidebar {
+  width: 280px;
+  min-width: 280px;
   background: white;
-  border: 1px solid #2d6a4f;
-  color: #2d6a4f;
-}
-
-.hospitalizacion-dashboard .btn-secondary:hover {
-  background: #f0f7f4;
-}
-
-.hospitalizacion-dashboard .btn-danger {
-  background: linear-gradient(135deg, #f44336 0%, #d32f2f 100%);
-  color: white;
-}
-
-.hospitalizacion-dashboard .btn-danger:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(244, 67, 54, 0.3);
-}
-
-/* ═══════════════════════════════════════════════════════════════ */
-/* TABS */
-/* ═══════════════════════════════════════════════════════════════ */
-
-.hospitalizacion-dashboard .tabs {
-  display: flex;
-  background: #f5f5f5;
-  border-bottom: 1px solid #e0e0e0;
-}
-
-.hospitalizacion-dashboard .tab-btn {
-  padding: 1rem 1.5rem;
-  border: none;
-  background: none;
-  color: #666;
-  font-weight: 500;
-  cursor: pointer;
-  transition: all 0.2s;
-  border-bottom: 3px solid transparent;
-}
-
-.hospitalizacion-dashboard .tab-btn:hover {
-  color: #1b4332;
-  background: rgba(45, 106, 79, 0.05);
-}
-
-.hospitalizacion-dashboard .tab-btn.active {
-  color: #1b4332;
-  border-bottom-color: #2d6a4f;
-  background: white;
-}
-
-/* ═══════════════════════════════════════════════════════════════ */
-/* TAB CONTENT */
-/* ═══════════════════════════════════════════════════════════════ */
-
-.hospitalizacion-dashboard .tab-content {
-  flex: 1;
+  border-right: 1px solid #e2e8f0;
   overflow-y: auto;
-  padding: 1.5rem;
+  flex-shrink: 0;
 }
 
-/* ═══════════════════════════════════════════════════════════════ */
-/* SECTION CARD */
-/* ═══════════════════════════════════════════════════════════════ */
-
-.hospitalizacion-dashboard .section-card {
-  background: linear-gradient(145deg, #f8fdf8 0%, #e8f5e9 100%);
-  border-radius: 12px;
-  padding: 1.5rem;
-  margin-bottom: 1.5rem;
-  border: 1px solid rgba(45, 106, 79, 0.15);
-}
-
-.hospitalizacion-dashboard .section-title {
-  font-size: 1rem;
-  font-weight: 600;
-  color: #1b4332;
-  margin-bottom: 1rem;
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-}
-
-/* ═══════════════════════════════════════════════════════════════ */
-/* FORM GRID */
-/* ═══════════════════════════════════════════════════════════════ */
-
-.hospitalizacion-dashboard .form-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-  gap: 1rem;
-}
-
-.hospitalizacion-dashboard .form-group {
-  display: flex;
-  flex-direction: column;
-  gap: 0.25rem;
-}
-
-.hospitalizacion-dashboard .form-group label {
-  font-size: 0.85rem;
-  color: #555;
-  font-weight: 500;
-}
-
-.hospitalizacion-dashboard .form-group input,
-.hospitalizacion-dashboard .form-group select,
-.hospitalizacion-dashboard .form-group textarea {
-  padding: 0.75rem;
-  border: 1px solid #ddd;
-  border-radius: 8px;
-  font-size: 0.95rem;
-  transition: border-color 0.2s;
-}
-
-.hospitalizacion-dashboard .form-group input:focus,
-.hospitalizacion-dashboard .form-group select:focus,
-.hospitalizacion-dashboard .form-group textarea:focus {
-  outline: none;
-  border-color: #2d6a4f;
-}
-
-.hospitalizacion-dashboard .form-group.full-width {
-  grid-column: 1 / -1;
-}
-
-.hospitalizacion-dashboard .btn-submit {
-  margin-top: 1rem;
-  padding: 0.75rem 1.5rem;
-  background: linear-gradient(135deg, #2d6a4f 0%, #1b4332 100%);
-  color: white;
-  border: none;
-  border-radius: 8px;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.2s;
-}
-
-.hospitalizacion-dashboard .btn-submit:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(45, 106, 79, 0.3);
-}
-
-.hospitalizacion-dashboard .btn-submit:disabled {
-  opacity: 0.6;
-  cursor: not-allowed;
-  transform: none;
-}
-
-/* ═══════════════════════════════════════════════════════════════ */
-/* TABLE */
-/* ═══════════════════════════════════════════════════════════════ */
-
-.hospitalizacion-dashboard .data-table {
-  width: 100%;
-  border-collapse: collapse;
-  font-size: 0.9rem;
-}
-
-.hospitalizacion-dashboard .data-table th,
-.hospitalizacion-dashboard .data-table td {
-  padding: 0.75rem;
-  text-align: left;
-  border-bottom: 1px solid #e0e0e0;
-}
-
-.hospitalizacion-dashboard .data-table td {
-  color: #333;
-}
-
-.hospitalizacion-dashboard .data-table th {
-  background: rgba(45, 106, 79, 0.1);
-  color: #1b4332;
-  font-weight: 600;
-}
-
-.hospitalizacion-dashboard .data-table tr:hover {
-  background: rgba(45, 106, 79, 0.05);
-}
-
-/* ═══════════════════════════════════════════════════════════════ */
-/* MEDICATIONS LIST */
-/* ═══════════════════════════════════════════════════════════════ */
-
-.hospitalizacion-dashboard .medication-item {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 1rem;
-  background: white;
-  border-radius: 8px;
-  margin-bottom: 0.75rem;
-  border: 1px solid #e0e0e0;
-}
-
-.hospitalizacion-dashboard .medication-item.pending {
-  border-left: 4px solid #ff9800;
-}
-
-.hospitalizacion-dashboard .medication-item.administered {
-  border-left: 4px solid #4CAF50;
-  background: #f8fdf8;
-}
-
-.hospitalizacion-dashboard .medication-item.overdue {
-  border-left: 4px solid #f44336;
-  background: #fff8f8;
-}
-
-.hospitalizacion-dashboard .medication-info h4 {
-  margin: 0 0 0.25rem 0;
-  color: #333;
-  font-size: 1rem;
-}
-
-.hospitalizacion-dashboard .medication-details {
-  font-size: 0.85rem;
-  color: #666;
-}
-
-.hospitalizacion-dashboard .scheduled-time {
-  font-weight: 600;
-  color: #1b4332;
-  margin-top: 0.25rem;
-}
-
-.hospitalizacion-dashboard .btn-administer {
-  padding: 0.5rem 1rem;
-  background: #4CAF50;
-  color: white;
-  border: none;
-  border-radius: 6px;
-  cursor: pointer;
-  font-weight: 500;
-  transition: all 0.2s;
-}
-
-.hospitalizacion-dashboard .btn-administer:hover {
-  background: #388e3c;
-}
-
-/* ═══════════════════════════════════════════════════════════════ */
-/* COSTS */
-/* ═══════════════════════════════════════════════════════════════ */
-
-.hospitalizacion-dashboard .costs-total {
-  padding: 1.5rem;
-  background: linear-gradient(135deg, #1b4332 0%, #2d6a4f 100%);
-  color: white;
-  border-radius: 12px;
-  margin-bottom: 1rem;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-
-.hospitalizacion-dashboard .costs-total-label {
-  font-size: 1.1rem;
-}
-
-.hospitalizacion-dashboard .costs-total-amount {
-  font-size: 2rem;
-  font-weight: bold;
-}
-
-.hospitalizacion-dashboard .cost-item {
-  display: flex;
-  justify-content: space-between;
-  padding: 0.75rem 0;
-  border-bottom: 1px solid #e0e0e0;
-}
-
-.hospitalizacion-dashboard .cost-item:last-child {
-  border-bottom: none;
-}
-
-.hospitalizacion-dashboard .cost-item-label {
-  color: #555;
-}
-
-.hospitalizacion-dashboard .cost-item-amount {
-  font-weight: 600;
-  color: #1b4332;
-}
-
-.hospitalizacion-dashboard .cost-item-details {
-  font-size: 0.8rem;
-  color: #888;
-}
-
-.hospitalizacion-dashboard .cost-breakdown-detail {
-  background: #f5f5f5;
-  padding: 0.75rem 1rem;
-  margin: 0.5rem 0;
-  border-radius: 6px;
-  border-left: 3px solid #2196f3;
-}
-
-.hospitalizacion-dashboard .cost-breakdown-detail h4 {
-  margin: 0 0 0.5rem 0;
-  font-size: 0.85rem;
-  color: #555;
-}
-
-.hospitalizacion-dashboard .cost-breakdown-detail ul {
-  margin: 0;
-  padding-left: 1.25rem;
-  font-size: 0.8rem;
-  color: #666;
-}
-
-.hospitalizacion-dashboard .cost-breakdown-detail li {
-  margin: 0.25rem 0;
-}
-
-/* ═══════════════════════════════════════════════════════════════ */
-/* EMPTY STATE */
-/* ═══════════════════════════════════════════════════════════════ */
-
-.hospitalizacion-dashboard .empty-state {
-  text-align: center;
-  padding: 2rem;
-  color: #888;
-}
-
-.hospitalizacion-dashboard .empty-state .icon {
-  font-size: 3rem;
-  margin-bottom: 0.5rem;
-  opacity: 0.5;
-}
-
-/* ═══════════════════════════════════════════════════════════════ */
-/* ERROR MESSAGE */
-/* ═══════════════════════════════════════════════════════════════ */
-
-.hospitalizacion-dashboard .error-message {
-  background: #ffebee;
-  color: #c62828;
-  padding: 1rem;
-  border-radius: 8px;
-  margin: 1rem 2rem;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-
-.hospitalizacion-dashboard .error-close {
-  background: none;
-  border: none;
-  color: #c62828;
-  cursor: pointer;
-  font-size: 1.25rem;
-}
-
-/* ═══════════════════════════════════════════════════════════════ */
-/* LOADING */
-/* ═══════════════════════════════════════════════════════════════ */
-
-.hospitalizacion-dashboard .loading {
+.hosp-sidebar-empty {
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  padding: 3rem;
-  color: #666;
-  gap: 1rem;
+  padding: 3rem 1rem;
+  gap: 0.75rem;
+  color: #94a3b8;
 }
 
-.hospitalizacion-dashboard .spinner {
-  width: 40px;
-  height: 40px;
-  border: 4px solid #e0e0e0;
+.hosp-sidebar-empty .empty-icon {
+  font-size: 2.5rem;
+}
+
+.hosp-sidebar-empty .spinner {
+  width: 28px;
+  height: 28px;
+  border: 3px solid #e2e8f0;
   border-top-color: #2d6a4f;
   border-radius: 50%;
-  animation: spin 1s linear infinite;
+  animation: spin 0.8s linear infinite;
 }
 
 @keyframes spin {
   to { transform: rotate(360deg); }
 }
 
-/* ═══════════════════════════════════════════════════════════════ */
-/* NOTA IMPORTANTE */
-/* ═══════════════════════════════════════════════════════════════ */
+/* ─── Patient Card ─── */
+.hosp-card {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.6rem;
+  padding: 0.75rem 1rem;
+  border-bottom: 1px solid #f1f5f9;
+  cursor: pointer;
+  transition: background 0.15s;
+}
 
-.hospitalizacion-dashboard .important-note {
-  padding: 1rem 1.25rem;
-  background: #fff3e0;
-  border-radius: 8px;
-  border-left: 4px solid #ff9800;
-  margin-top: 1rem;
+.hosp-card:hover {
+  background: #f8fafc;
+}
+
+.hosp-card.selected {
+  background: #ecfdf5;
+  border-left: 3px solid #2d6a4f;
+}
+
+.hosp-card.urgency-urgent,
+.hosp-card.urgency-overdue {
+  background: #fff5f5;
+}
+
+.hosp-card.urgency-urgent.selected,
+.hosp-card.urgency-overdue.selected {
+  background: #fef2f2;
+  border-left-color: #ef4444;
+}
+
+/* Status dot */
+.hosp-card-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  margin-top: 5px;
+  flex-shrink: 0;
+}
+
+.hosp-card-dot.ok { background: #22c55e; }
+.hosp-card-dot.soon { background: #f59e0b; animation: pulse-dot 1.5s infinite; }
+.hosp-card-dot.overdue { background: #f97316; animation: pulse-dot 1s infinite; }
+.hosp-card-dot.urgent { background: #ef4444; animation: pulse-dot 0.7s infinite; }
+.hosp-card-dot.unknown { background: #94a3b8; }
+
+@keyframes pulse-dot {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.5; transform: scale(1.3); }
+}
+
+.hosp-card-body {
+  flex: 1;
+  min-width: 0;
+}
+
+.hosp-card-name {
+  font-weight: 600;
   font-size: 0.9rem;
-  color: #e65100;
+  color: #1e293b;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.hosp-card-meta {
+  font-size: 0.75rem;
+  color: #64748b;
+  margin-top: 2px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.hosp-card-bottom {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 4px;
+}
+
+.hosp-card-days {
+  font-size: 0.72rem;
+  color: #94a3b8;
+  font-weight: 500;
+}
+
+.hosp-card-alert {
+  font-size: 0.72rem;
+  font-weight: 500;
+}
+
+.hosp-card-alert.ok { color: #22c55e; }
+.hosp-card-alert.soon { color: #f59e0b; }
+.hosp-card-alert.overdue { color: #f97316; }
+.hosp-card-alert.urgent { color: #ef4444; font-weight: 700; }
+.hosp-card-alert.unknown { color: #94a3b8; }
+
+/* ═══════════════════════════════════════════════════════════════ */
+/* DETAIL PANEL (right side)                                      */
+/* ═══════════════════════════════════════════════════════════════ */
+
+.hosp-detail {
+  flex: 1;
+  overflow-y: auto;
+  background: #f8fafc;
+}
+
+.hosp-detail-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  gap: 1rem;
+  color: #94a3b8;
+}
+
+.hosp-detail-empty .empty-icon {
+  font-size: 3rem;
+}
+
+.hosp-detail-scroll {
+  padding: 1rem 1.5rem 2rem;
+}
+
+/* ─── Patient Header ─── */
+.hosp-patient-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 1rem;
+  margin-bottom: 1rem;
+  flex-wrap: wrap;
+}
+
+.hosp-patient-main {
+  display: flex;
+  gap: 0.75rem;
+  align-items: flex-start;
+  flex: 1;
+  min-width: 300px;
+}
+
+.hosp-patient-avatar {
+  font-size: 2.5rem;
+  line-height: 1;
+}
+
+.hosp-patient-info h2 {
+  margin: 0;
+  font-size: 1.4rem;
+  color: #1b4332;
+}
+
+.hosp-patient-species {
+  font-size: 0.85rem;
+  color: #64748b;
+  margin: 2px 0;
+}
+
+.hosp-patient-dx {
+  font-size: 0.85rem;
+  color: #475569;
+  margin: 4px 0;
+}
+
+.hosp-patient-care {
+  font-size: 0.85rem;
+  color: #dc2626;
+  background: #fef2f2;
+  padding: 0.3rem 0.6rem;
+  border-radius: 6px;
+  border-left: 3px solid #ef4444;
+  margin-top: 4px;
+}
+
+/* ─── Quick Actions ─── */
+.hosp-quick-actions {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.hosp-action-btn {
+  padding: 0.5rem 0.9rem;
+  border: none;
+  border-radius: 8px;
+  font-size: 0.82rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+  white-space: nowrap;
+}
+
+.hosp-action-btn.primary {
+  background: linear-gradient(135deg, #2d6a4f, #1b4332);
+  color: white;
+}
+
+.hosp-action-btn.primary:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 3px 10px rgba(45, 106, 79, 0.3);
+}
+
+.hosp-action-btn.secondary {
+  background: white;
+  color: #334155;
+  border: 1px solid #cbd5e1;
+}
+
+.hosp-action-btn.secondary:hover {
+  background: #f1f5f9;
+  border-color: #94a3b8;
+}
+
+.hosp-action-btn.danger {
+  background: #fef2f2;
+  color: #dc2626;
+  border: 1px solid #fecaca;
+}
+
+.hosp-action-btn.danger:hover {
+  background: #fee2e2;
+}
+
+/* ─── Meta Bar ─── */
+.hosp-meta-bar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem 1.5rem;
+  padding: 0.6rem 1rem;
+  background: white;
+  border-radius: 10px;
+  border: 1px solid #e2e8f0;
+  margin-bottom: 1rem;
+  font-size: 0.82rem;
+  color: #475569;
 }
 
 /* ═══════════════════════════════════════════════════════════════ */
-/* RESPONSIVE */
+/* COLLAPSIBLE SECTIONS                                           */
 /* ═══════════════════════════════════════════════════════════════ */
 
-@media (max-width: 1024px) {
-  .hospitalizacion-dashboard .dashboard-content {
-    flex-direction: column;
-    overflow-y: auto;
-  }
-  
-  .hospitalizacion-dashboard .patients-sidebar {
-    width: 100%;
-    max-height: 300px;
-  }
-  
-  .hospitalizacion-dashboard .patients-list {
-    flex-direction: row;
-    overflow-x: auto;
-    gap: 1rem;
-    padding-bottom: 0.5rem;
-  }
-  
-  .hospitalizacion-dashboard .patient-card {
-    min-width: 280px;
-  }
+.hosp-section {
+  background: white;
+  border-radius: 10px;
+  border: 1px solid #e2e8f0;
+  margin-bottom: 0.75rem;
+  overflow: hidden;
 }
 
-@media (max-width: 768px) {
-  .hospitalizacion-dashboard .dashboard-header {
-    padding: 1rem;
-  }
-  
-  .hospitalizacion-dashboard .stats-bar {
-    padding: 0.75rem 1rem;
-  }
-  
-  .hospitalizacion-dashboard .stat-card {
-    min-width: 100px;
-    padding: 0.75rem;
-  }
-  
-  .hospitalizacion-dashboard .stat-number {
-    font-size: 1.5rem;
-  }
-  
-  .hospitalizacion-dashboard .dashboard-content {
-    padding: 1rem;
-  }
-  
-  .hospitalizacion-dashboard .tabs {
-    overflow-x: auto;
-  }
-  
-  .hospitalizacion-dashboard .tab-btn {
-    padding: 0.75rem 1rem;
-    white-space: nowrap;
-  }
-  
-  .hospitalizacion-dashboard .form-grid {
-    grid-template-columns: 1fr 1fr;
-  }
+.hosp-section-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.75rem 1rem;
+  cursor: pointer;
+  transition: background 0.15s;
+  user-select: none;
+}
+
+.hosp-section-header:hover {
+  background: #f8fafc;
+}
+
+.hosp-section-header h3 {
+  margin: 0;
+  font-size: 0.95rem;
+  color: #1e293b;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.hosp-section-count {
+  font-size: 0.75rem;
+  color: white;
+  background: #64748b;
+  padding: 1px 7px;
+  border-radius: 10px;
+  font-weight: 600;
+}
+
+.hosp-section-value {
+  font-size: 0.85rem;
+  color: #2d6a4f;
+  font-weight: 700;
+  margin-left: 0.5rem;
+}
+
+.hosp-chevron {
+  font-size: 0.9rem;
+  color: #94a3b8;
+  transition: transform 0.2s;
+}
+
+.hosp-chevron.open {
+  transform: rotate(0deg);
+}
+
+.hosp-chevron:not(.open) {
+  transform: rotate(-90deg);
+}
+
+.hosp-empty-section {
+  padding: 1.5rem;
+  text-align: center;
+  color: #94a3b8;
+  font-size: 0.9rem;
 }
 
 /* ═══════════════════════════════════════════════════════════════ */
-/* MODALS */
+/* UPCOMING ACTIONS                                               */
 /* ═══════════════════════════════════════════════════════════════ */
 
-.hospitalizacion-dashboard .modal-overlay {
+.hosp-upcoming-list {
+  padding: 0 1rem 0.75rem;
+}
+
+.hosp-upcoming-item {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0.5rem 0.6rem;
+  border-radius: 8px;
+  margin-bottom: 4px;
+  transition: background 0.15s;
+}
+
+.hosp-upcoming-item:hover {
+  background: #f1f5f9;
+}
+
+.hosp-upcoming-item.overdue {
+  background: #fef2f2;
+  border-left: 3px solid #ef4444;
+}
+
+.upcoming-time {
+  font-size: 0.78rem;
+  color: #64748b;
+  font-weight: 600;
+  min-width: 45px;
+  text-align: center;
+}
+
+.upcoming-icon {
+  font-size: 1rem;
+}
+
+.upcoming-name {
+  flex: 1;
+  font-size: 0.85rem;
+  color: #334155;
+}
+
+.upcoming-action-btn {
+  padding: 0.3rem 0.6rem;
+  background: #ecfdf5;
+  color: #059669;
+  border: 1px solid #a7f3d0;
+  border-radius: 6px;
+  font-size: 0.78rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.upcoming-action-btn:hover {
+  background: #d1fae5;
+}
+
+.hosp-generate-btn {
+  display: block;
+  width: 100%;
+  padding: 0.6rem;
+  margin-top: 0.5rem;
+  background: #f0f9ff;
+  color: #0369a1;
+  border: 1px dashed #7dd3fc;
+  border-radius: 8px;
+  font-size: 0.85rem;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.hosp-generate-btn:hover {
+  background: #e0f2fe;
+}
+
+/* ═══════════════════════════════════════════════════════════════ */
+/* TIMELINE                                                       */
+/* ═══════════════════════════════════════════════════════════════ */
+
+.hosp-timeline {
+  padding: 0 1rem 0.75rem;
+}
+
+.hosp-add-note {
+  display: flex;
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+  align-items: flex-start;
+}
+
+.hosp-add-note textarea {
+  flex: 1;
+  padding: 0.5rem 0.75rem;
+  border: 1px solid #cbd5e1;
+  border-radius: 8px;
+  font-size: 0.85rem;
+  resize: none;
+  font-family: inherit;
+}
+
+.hosp-add-note textarea:focus {
+  outline: none;
+  border-color: #2d6a4f;
+}
+
+.hosp-add-note button {
+  padding: 0.5rem 0.9rem;
+  background: #2d6a4f;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-size: 0.82rem;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+  align-self: stretch;
+}
+
+.hosp-add-note button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.hosp-timeline-entries {
+  display: flex;
+  flex-direction: column;
+}
+
+.hosp-timeline-entry {
+  display: flex;
+  gap: 0.75rem;
+  padding: 0.5rem 0;
+}
+
+.timeline-time {
+  font-size: 0.75rem;
+  color: #64748b;
+  font-weight: 600;
+  min-width: 45px;
+  text-align: right;
+  padding-top: 2px;
+}
+
+.timeline-dot-line {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 16px;
+  flex-shrink: 0;
+}
+
+.timeline-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.timeline-dot.vitals { background: #ef4444; }
+.timeline-dot.medication_done { background: #8b5cf6; }
+
+.timeline-line {
+  width: 2px;
+  flex: 1;
+  background: #e2e8f0;
+  margin-top: 4px;
+}
+
+.timeline-content {
+  flex: 1;
+  min-width: 0;
+  padding-bottom: 0.5rem;
+}
+
+.timeline-label {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: #334155;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.timeline-date {
+  font-size: 0.72rem;
+  color: #94a3b8;
+  font-weight: 400;
+}
+
+.timeline-vitals-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-top: 4px;
+}
+
+.timeline-vitals-grid span {
+  font-size: 0.78rem;
+  color: #475569;
+  background: #f1f5f9;
+  padding: 2px 6px;
+  border-radius: 4px;
+}
+
+.timeline-note {
+  font-size: 0.82rem;
+  color: #64748b;
+  margin-top: 4px;
+  font-style: italic;
+}
+
+.timeline-med-info {
+  font-size: 0.82rem;
+  color: #8b5cf6;
+  margin-top: 2px;
+}
+
+/* ═══════════════════════════════════════════════════════════════ */
+/* THERAPY PLAN                                                   */
+/* ═══════════════════════════════════════════════════════════════ */
+
+.hosp-therapy-content {
+  padding: 0 1rem 0.75rem;
+}
+
+.hosp-therapy-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.hosp-therapy-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.6rem 0.75rem;
+  border-radius: 8px;
+  border: 1px solid #e2e8f0;
+  gap: 0.75rem;
+}
+
+.hosp-therapy-item.active {
+  background: #f0fdf4;
+  border-color: #bbf7d0;
+}
+
+.hosp-therapy-item.inactive {
+  background: #f8fafc;
+  opacity: 0.7;
+}
+
+.therapy-item-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  flex: 1;
+  min-width: 0;
+}
+
+.therapy-item-info strong {
+  font-size: 0.9rem;
+  color: #1e293b;
+}
+
+.therapy-item-info span {
+  font-size: 0.78rem;
+  color: #64748b;
+}
+
+.therapy-notes {
+  font-style: italic;
+  color: #94a3b8 !important;
+}
+
+.therapy-item-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-shrink: 0;
+}
+
+.therapy-status {
+  font-size: 0.75rem;
+  font-weight: 600;
+  padding: 2px 6px;
+  border-radius: 4px;
+}
+
+.therapy-status.active {
+  color: #059669;
+  background: #d1fae5;
+}
+
+.therapy-status.inactive {
+  color: #94a3b8;
+  background: #f1f5f9;
+}
+
+.hosp-btn-sm {
+  padding: 0.3rem 0.6rem;
+  border: 1px solid #cbd5e1;
+  border-radius: 6px;
+  font-size: 0.75rem;
+  cursor: pointer;
+  transition: all 0.15s;
+  background: white;
+}
+
+.hosp-btn-sm.primary {
+  color: #059669;
+  border-color: #a7f3d0;
+}
+
+.hosp-btn-sm.primary:hover {
+  background: #ecfdf5;
+}
+
+.hosp-btn-sm.danger {
+  color: #dc2626;
+  border-color: #fecaca;
+}
+
+.hosp-btn-sm.danger:hover {
+  background: #fef2f2;
+}
+
+.hosp-btn-sm.secondary {
+  color: #0369a1;
+  border-color: #bae6fd;
+}
+
+.hosp-btn-sm.secondary:hover {
+  background: #f0f9ff;
+}
+
+.hosp-add-btn {
+  display: block;
+  width: 100%;
+  padding: 0.6rem;
+  margin-top: 0.5rem;
+  background: #f8fafc;
+  color: #475569;
+  border: 1px dashed #cbd5e1;
+  border-radius: 8px;
+  font-size: 0.85rem;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.hosp-add-btn:hover {
+  background: #f1f5f9;
+  border-color: #94a3b8;
+}
+
+/* ═══════════════════════════════════════════════════════════════ */
+/* NEONATES                                                       */
+/* ═══════════════════════════════════════════════════════════════ */
+
+.hosp-neonates-content {
+  padding: 0 1rem 0.75rem;
+}
+
+.hosp-neonates-meta {
+  display: flex;
+  gap: 1.5rem;
+  padding: 0.5rem 0.75rem;
+  background: #fff7ed;
+  border-radius: 8px;
+  border-left: 3px solid #f59e0b;
+  margin-bottom: 0.75rem;
+  font-size: 0.82rem;
+  color: #92400e;
+}
+
+.hosp-neonates-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.hosp-neo-card {
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  padding: 0.75rem;
+}
+
+.neo-card-header {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin-bottom: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.neo-card-header strong {
+  font-size: 0.9rem;
+  color: #1e293b;
+}
+
+.neo-sex {
+  font-size: 1rem;
+}
+
+.neo-sex.macho { color: #3b82f6; }
+.neo-sex.hembra { color: #ec4899; }
+
+.neo-id {
+  font-size: 0.78rem;
+  color: #64748b;
+  background: #f1f5f9;
+  padding: 2px 6px;
+  border-radius: 4px;
+}
+
+.neo-records-table {
+  width: 100%;
+  font-size: 0.78rem;
+  border-collapse: collapse;
+}
+
+.neo-records-table th {
+  text-align: left;
+  padding: 0.3rem 0.4rem;
+  border-bottom: 1px solid #e2e8f0;
+  color: #64748b;
+  font-weight: 600;
+}
+
+.neo-records-table td {
+  padding: 0.3rem 0.4rem;
+  border-bottom: 1px solid #f1f5f9;
+  color: #334155;
+}
+
+/* ═══════════════════════════════════════════════════════════════ */
+/* COSTS                                                          */
+/* ═══════════════════════════════════════════════════════════════ */
+
+.hosp-costs-content {
+  padding: 0 1rem 0.75rem;
+}
+
+.hosp-cost-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.5rem 0;
+  border-bottom: 1px solid #f1f5f9;
+  font-size: 0.85rem;
+}
+
+.hosp-cost-row span {
+  color: #64748b;
+}
+
+.hosp-cost-row strong {
+  color: #1e293b;
+}
+
+.hosp-cost-total {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.75rem 0 0.5rem;
+  font-size: 1.05rem;
+  border-top: 2px solid #2d6a4f;
+  margin-top: 0.5rem;
+}
+
+.hosp-cost-total span {
+  font-weight: 700;
+  color: #1b4332;
+}
+
+.hosp-cost-total strong {
+  font-weight: 700;
+  color: #1b4332;
+  font-size: 1.15rem;
+}
+
+.hosp-cost-note {
+  margin-top: 0.5rem;
+  padding: 0.5rem 0.75rem;
+  background: #fffbeb;
+  border-radius: 6px;
+  color: #92400e;
+  font-size: 0.78rem;
+  border-left: 3px solid #fbbf24;
+}
+
+/* ═══════════════════════════════════════════════════════════════ */
+/* CONSULTATION (DOCTOR NOTES)                                    */
+/* ═══════════════════════════════════════════════════════════════ */
+
+.hosp-consultation-content {
+  padding: 0 1rem 0.75rem;
+}
+
+.consult-row {
+  margin-bottom: 0.75rem;
+}
+
+.consult-row label {
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: #64748b;
+}
+
+.consult-row p,
+.consult-row ul {
+  margin: 0.25rem 0 0;
+  font-size: 0.9rem;
+  color: #334155;
+}
+
+.consult-row ul {
+  padding-left: 1.5rem;
+}
+
+.hosp-soap {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 0.5rem;
+  margin-bottom: 0.75rem;
+}
+
+.soap-item {
+  padding: 0.5rem 0.75rem;
+  background: #f8fafc;
+  border-radius: 6px;
+  font-size: 0.85rem;
+  color: #334155;
+  border-left: 3px solid #2d6a4f;
+}
+
+.soap-item strong {
+  color: #1b4332;
+}
+
+.consult-vitals {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  align-items: center;
+  margin-top: 0.5rem;
+}
+
+.consult-vitals label {
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: #64748b;
+}
+
+.consult-vitals span {
+  font-size: 0.82rem;
+  background: #f1f5f9;
+  padding: 2px 8px;
+  border-radius: 4px;
+  color: #475569;
+}
+
+/* ═══════════════════════════════════════════════════════════════ */
+/* STUDIES                                                        */
+/* ═══════════════════════════════════════════════════════════════ */
+
+.hosp-studies-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  padding: 0 1rem 0.75rem;
+}
+
+.study-badge {
+  padding: 0.35rem 0.75rem;
+  background: #ede9fe;
+  color: #7c3aed;
+  border-radius: 6px;
+  font-size: 0.82rem;
+  font-weight: 600;
+}
+
+/* ═══════════════════════════════════════════════════════════════ */
+/* MODALS (shared)                                                */
+/* ═══════════════════════════════════════════════════════════════ */
+
+.modal-overlay {
   position: fixed;
   top: 0;
   left: 0;
@@ -867,12 +1123,16 @@
   align-items: center;
   justify-content: center;
   z-index: 1000;
-  backdrop-filter: blur(4px);
+  backdrop-filter: blur(3px);
 }
 
-.hospitalizacion-dashboard .modal-content {
+.modal-overlay.fullscreen {
+  padding: 1rem;
+}
+
+.modal-content {
   background: white;
-  border-radius: 16px;
+  border-radius: 14px;
   width: 90%;
   max-width: 600px;
   max-height: 90vh;
@@ -880,27 +1140,45 @@
   box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
 }
 
-.hospitalizacion-dashboard .modal-header {
+.modal-content.large {
+  max-width: 650px;
+}
+
+.modal-content.modal-lg {
+  max-width: 800px !important;
+  width: 95% !important;
+}
+
+.modal-content.modal-fullscreen {
+  max-width: 96%;
+  width: 96%;
+  max-height: 95vh;
+  height: 95vh;
+  display: flex;
+  flex-direction: column;
+}
+
+.modal-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 1.5rem;
-  border-bottom: 1px solid #e0e0e0;
-  background: linear-gradient(145deg, #f8fdf8 0%, #e8f5e9 100%);
-  border-radius: 16px 16px 0 0;
+  padding: 1.25rem 1.5rem;
+  border-bottom: 1px solid #e2e8f0;
+  background: linear-gradient(145deg, #f8fdf8, #ecfdf5);
+  border-radius: 14px 14px 0 0;
 }
 
-.hospitalizacion-dashboard .modal-header h2 {
+.modal-header h2 {
   margin: 0;
-  font-size: 1.25rem;
+  font-size: 1.15rem;
   color: #1b4332;
 }
 
-.hospitalizacion-dashboard .modal-close {
+.modal-close {
   background: none;
   border: none;
   font-size: 1.5rem;
-  color: #666;
+  color: #64748b;
   cursor: pointer;
   width: 36px;
   height: 36px;
@@ -911,608 +1189,323 @@
   transition: all 0.2s;
 }
 
-.hospitalizacion-dashboard .modal-close:hover {
-  background: rgba(0, 0, 0, 0.1);
-  color: #333;
+.modal-close:hover {
+  background: rgba(0, 0, 0, 0.08);
+  color: #1e293b;
 }
 
-.hospitalizacion-dashboard .modal-content form {
+.modal-content form {
   padding: 1.5rem;
 }
 
-.hospitalizacion-dashboard .modal-content .important-note {
-  margin: 1rem 0;
-}
-
-.hospitalizacion-dashboard .medications-list {
-  display: flex;
-  flex-direction: column;
-  gap: 0.75rem;
-}
-/* ═══════════════════════════════════════════════════════════════ */
-/* INFO TAB - Consultation Data */
-/* ═══════════════════════════════════════════════════════════════ */
-
-.hospitalizacion-dashboard .info-tab {
-  display: flex;
-  flex-direction: column;
-  gap: 1rem;
-}
-
-.hospitalizacion-dashboard .info-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-  gap: 1rem;
-  padding: 0.5rem 0;
-}
-
-.hospitalizacion-dashboard .info-item {
-  display: flex;
-  flex-direction: column;
-  gap: 0.25rem;
-}
-
-.hospitalizacion-dashboard .info-item label {
-  font-size: 0.85rem;
-  color: #666;
-  font-weight: 500;
-}
-
-.hospitalizacion-dashboard .info-item span {
-  font-size: 1rem;
-  color: #333;
-}
-
-.hospitalizacion-dashboard .info-notes {
-  margin-top: 1rem;
-  padding-top: 1rem;
-  border-top: 1px solid #eee;
-}
-
-.hospitalizacion-dashboard .info-notes label {
-  font-size: 0.85rem;
-  color: #666;
-  font-weight: 600;
-  display: block;
-  margin-bottom: 0.5rem;
-}
-
-.hospitalizacion-dashboard .info-notes p {
-  margin: 0;
-  color: #333;
-  background: #f8f9fa;
-  padding: 0.75rem;
-  border-radius: 6px;
-  white-space: pre-wrap;
-  line-height: 1.5;
-}
-
-.hospitalizacion-dashboard .soap-notes {
-  display: flex;
-  flex-direction: column;
-  gap: 0.75rem;
-  margin-top: 0.5rem;
-}
-
-.hospitalizacion-dashboard .soap-section {
-  background: #f8f9fa;
-  padding: 0.75rem;
-  border-radius: 6px;
-  border-left: 3px solid #2d6a4f;
-}
-
-.hospitalizacion-dashboard .soap-section strong {
-  color: #1b4332;
-  font-size: 0.9rem;
-}
-
-.hospitalizacion-dashboard .soap-section p {
-  margin: 0.25rem 0 0 0;
-  color: #333;
-  white-space: pre-wrap;
-  line-height: 1.4;
-}
-
-.hospitalizacion-dashboard .diagnoses-list {
-  list-style: none;
-  padding: 0;
-  margin: 0;
-  display: flex;
-  flex-direction: column;
-  gap: 0.5rem;
-}
-
-.hospitalizacion-dashboard .diagnoses-list li {
-  background: #fff3e0;
-  padding: 0.5rem 0.75rem;
-  border-radius: 6px;
-  border-left: 3px solid #ff9800;
-}
-
-.hospitalizacion-dashboard .diagnoses-list li strong {
-  color: #e65100;
-}
-
-.hospitalizacion-dashboard .vitals-summary {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 1rem;
-  background: #e8f5e9;
-  padding: 0.75rem;
-  border-radius: 6px;
-}
-
-.hospitalizacion-dashboard .vitals-summary span {
-  font-weight: 500;
-  color: #2d6a4f;
-}
-
-.hospitalizacion-dashboard .studies-grid {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.5rem;
-}
-
-.hospitalizacion-dashboard .study-badge {
-  background: linear-gradient(145deg, #2196F3, #1976D2);
-  color: white;
-  padding: 0.35rem 0.75rem;
-  border-radius: 20px;
-  font-size: 0.85rem;
-  font-weight: 500;
-}
-
-/* ═══════════════════════════════════════════════════════════════ */
-/* VITALS MODAL - IMPROVED STYLING */
-/* ═══════════════════════════════════════════════════════════════ */
-
-.hospitalizacion-dashboard .vitals-modal {
-  max-width: 720px;
-  width: 95%;
-}
-
-.hospitalizacion-dashboard .vitals-form {
-  padding: 0;
-}
-
-.hospitalizacion-dashboard .vitals-section {
-  padding: 1rem 1.5rem;
-  border-bottom: 1px solid #eee;
-}
-
-.hospitalizacion-dashboard .vitals-section:last-of-type {
-  border-bottom: none;
-}
-
-.hospitalizacion-dashboard .section-title {
-  font-size: 0.95rem;
-  font-weight: 600;
-  color: #1b4332;
-  margin: 0 0 1rem 0;
-  padding-bottom: 0.5rem;
-  border-bottom: 2px solid #e8f5e9;
-}
-
-.hospitalizacion-dashboard .vitals-grid {
-  display: grid;
-  gap: 1rem;
-}
-
-.hospitalizacion-dashboard .vitals-grid.four-cols {
-  grid-template-columns: repeat(4, 1fr);
-}
-
-.hospitalizacion-dashboard .vitals-grid.three-cols {
-  grid-template-columns: repeat(3, 1fr);
-}
-
-.hospitalizacion-dashboard .vitals-grid.two-cols {
-  grid-template-columns: repeat(2, 1fr);
-}
-
-@media (max-width: 640px) {
-  .hospitalizacion-dashboard .vitals-grid.four-cols,
-  .hospitalizacion-dashboard .vitals-grid.three-cols {
-    grid-template-columns: repeat(2, 1fr);
-  }
-  
-  .hospitalizacion-dashboard .vitals-grid.two-cols {
-    grid-template-columns: 1fr;
-  }
-}
-
-.hospitalizacion-dashboard .vitals-input-group {
-  display: flex;
-  flex-direction: column;
-  gap: 0.25rem;
-}
-
-.hospitalizacion-dashboard .vitals-input-group label {
-  font-size: 0.85rem;
-  font-weight: 600;
-  color: #333;
-}
-
-.hospitalizacion-dashboard .vitals-input,
-.hospitalizacion-dashboard .vitals-select {
-  padding: 0.6rem 0.75rem;
-  border: 2px solid #e0e0e0;
-  border-radius: 8px;
-  font-size: 1rem;
-  transition: all 0.2s;
-  background: #fafafa;
-}
-
-.hospitalizacion-dashboard .vitals-input:focus,
-.hospitalizacion-dashboard .vitals-select:focus {
-  outline: none;
-  border-color: #2d6a4f;
-  background: white;
-  box-shadow: 0 0 0 3px rgba(45, 106, 79, 0.1);
-}
-
-.hospitalizacion-dashboard .vitals-input::placeholder {
-  color: #aaa;
-  font-size: 0.9rem;
-}
-
-.hospitalizacion-dashboard .input-hint {
-  font-size: 0.75rem;
-  color: #888;
-  margin-top: 0.15rem;
-}
-
-.hospitalizacion-dashboard .vitals-textarea {
-  width: 100%;
-  padding: 0.75rem;
-  border: 2px solid #e0e0e0;
-  border-radius: 8px;
-  font-size: 0.95rem;
-  resize: vertical;
-  min-height: 80px;
-  transition: all 0.2s;
-  font-family: inherit;
-}
-
-.hospitalizacion-dashboard .vitals-textarea:focus {
-  outline: none;
-  border-color: #2d6a4f;
-  box-shadow: 0 0 0 3px rgba(45, 106, 79, 0.1);
-}
-
-/* Pain Slider */
-.hospitalizacion-dashboard .pain-group label {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-}
-
-.hospitalizacion-dashboard .pain-group label strong {
-  color: #c62828;
-  font-size: 1.1rem;
-}
-
-.hospitalizacion-dashboard .pain-slider-container {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  margin-top: 0.5rem;
-}
-
-.hospitalizacion-dashboard .pain-label {
-  font-size: 1.5rem;
-}
-
-.hospitalizacion-dashboard .pain-slider {
-  flex: 1;
-  -webkit-appearance: none;
-  appearance: none;
-  height: 8px;
-  border-radius: 4px;
-  background: linear-gradient(to right, #4caf50 0%, #ffeb3b 50%, #f44336 100%);
-  outline: none;
-}
-
-.hospitalizacion-dashboard .pain-slider::-webkit-slider-thumb {
-  -webkit-appearance: none;
-  appearance: none;
-  width: 22px;
-  height: 22px;
-  border-radius: 50%;
-  background: white;
-  border: 3px solid #1b4332;
-  cursor: pointer;
-  box-shadow: 0 2px 6px rgba(0,0,0,0.2);
-}
-
-.hospitalizacion-dashboard .pain-slider::-moz-range-thumb {
-  width: 22px;
-  height: 22px;
-  border-radius: 50%;
-  background: white;
-  border: 3px solid #1b4332;
-  cursor: pointer;
-  box-shadow: 0 2px 6px rgba(0,0,0,0.2);
-}
-
-.hospitalizacion-dashboard .pain-scale {
-  display: flex;
-  justify-content: space-between;
-  margin-top: 0.5rem;
-  padding: 0 0.25rem;
-}
-
-.hospitalizacion-dashboard .pain-scale span {
-  font-size: 0.7rem;
-  color: #999;
-  width: 18px;
-  text-align: center;
-}
-
-.hospitalizacion-dashboard .pain-scale span.active {
-  color: #c62828;
-  font-weight: 600;
-}
-
-/* Modal Actions */
-.hospitalizacion-dashboard .vitals-actions {
+.modal-actions {
   display: flex;
   justify-content: flex-end;
   gap: 0.75rem;
   padding: 1rem 1.5rem;
-  background: #f8f9fa;
-  border-top: 1px solid #eee;
-  border-radius: 0 0 16px 16px;
+  background: #f8fafc;
+  border-top: 1px solid #e2e8f0;
+  border-radius: 0 0 14px 14px;
 }
 
-.hospitalizacion-dashboard .btn-cancel {
-  padding: 0.75rem 1.5rem;
+/* Board modal header */
+.board-modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1rem 1.5rem;
+  border-bottom: 1px solid #e2e8f0;
+  flex-shrink: 0;
+}
+
+.board-modal-header h2 {
+  margin: 0;
+  font-size: 1.15rem;
+  color: #1b4332;
+}
+
+/* ─── Form Elements ─── */
+.form-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 1rem;
+}
+
+.form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+}
+
+.form-group label {
+  font-size: 0.82rem;
+  color: #475569;
+  font-weight: 500;
+}
+
+.form-group input,
+.form-group select,
+.form-group textarea {
+  padding: 0.65rem 0.75rem;
+  border: 1px solid #cbd5e1;
+  border-radius: 8px;
+  font-size: 0.9rem;
+  transition: border-color 0.2s;
+  font-family: inherit;
+}
+
+.form-group input:focus,
+.form-group select:focus,
+.form-group textarea:focus {
+  outline: none;
+  border-color: #2d6a4f;
+  box-shadow: 0 0 0 2px rgba(45, 106, 79, 0.08);
+}
+
+.form-group.full-width {
+  grid-column: 1 / -1;
+}
+
+.form-control {
+  padding: 0.65rem 0.75rem;
+  border: 1px solid #cbd5e1;
+  border-radius: 8px;
+  font-size: 0.9rem;
+}
+
+.btn-submit {
+  padding: 0.7rem 1.25rem;
+  background: linear-gradient(135deg, #2d6a4f, #1b4332);
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+  font-size: 0.9rem;
+}
+
+.btn-submit:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 3px 10px rgba(45, 106, 79, 0.3);
+}
+
+.btn-submit:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.btn-submit.btn-danger {
+  background: linear-gradient(135deg, #dc2626, #b91c1c);
+}
+
+.btn-cancel {
+  padding: 0.7rem 1.25rem;
   background: white;
-  color: #666;
-  border: 1px solid #ddd;
+  color: #64748b;
+  border: 1px solid #cbd5e1;
   border-radius: 8px;
   font-weight: 500;
   cursor: pointer;
   transition: all 0.2s;
-}
-
-.hospitalizacion-dashboard .btn-cancel:hover {
-  background: #f5f5f5;
-  border-color: #ccc;
-}
-
-/* ═══════════════════════════════════════════════════════════════ */
-/* MONITORING ALERTS SYSTEM */
-/* ═══════════════════════════════════════════════════════════════ */
-
-/* Urgent Alerts Banner */
-.hospitalizacion-dashboard .urgent-alerts-banner {
-  display: flex;
-  align-items: center;
-  gap: 1rem;
-  padding: 1rem 2rem;
-  background: linear-gradient(135deg, #ff5252 0%, #d32f2f 100%);
-  color: white;
-  animation: pulse-urgent 2s ease-in-out infinite;
-}
-
-@keyframes pulse-urgent {
-  0%, 100% { opacity: 1; }
-  50% { opacity: 0.85; }
-}
-
-.hospitalizacion-dashboard .urgent-banner-icon {
-  font-size: 2rem;
-  animation: shake 0.5s ease-in-out infinite;
-}
-
-@keyframes shake {
-  0%, 100% { transform: translateX(0); }
-  25% { transform: translateX(-3px); }
-  75% { transform: translateX(3px); }
-}
-
-.hospitalizacion-dashboard .urgent-banner-content {
-  flex: 1;
-}
-
-.hospitalizacion-dashboard .urgent-banner-content strong {
-  display: block;
-  font-size: 1rem;
-  margin-bottom: 0.5rem;
-}
-
-.hospitalizacion-dashboard .urgent-list {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.5rem;
-  align-items: center;
-}
-
-.hospitalizacion-dashboard .urgent-patient-btn {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  padding: 0.35rem 0.75rem;
-  background: rgba(255, 255, 255, 0.2);
-  border: 1px solid rgba(255, 255, 255, 0.4);
-  border-radius: 20px;
-  color: white;
-  font-size: 0.85rem;
-  cursor: pointer;
-  transition: all 0.2s;
-}
-
-.hospitalizacion-dashboard .urgent-patient-btn:hover {
-  background: rgba(255, 255, 255, 0.35);
-  transform: scale(1.02);
-}
-
-.hospitalizacion-dashboard .urgent-pet-name {
-  font-weight: 600;
-}
-
-.hospitalizacion-dashboard .urgent-status {
-  font-size: 0.75rem;
-  opacity: 0.9;
-}
-
-.hospitalizacion-dashboard .urgent-more {
-  font-size: 0.85rem;
-  opacity: 0.8;
-  padding-left: 0.5rem;
-}
-
-/* Soon Alerts Banner (Less prominent) */
-.hospitalizacion-dashboard .soon-alerts-banner {
-  display: flex;
-  align-items: center;
-  gap: 1rem;
-  padding: 0.75rem 2rem;
-  background: linear-gradient(135deg, #fff3e0 0%, #ffe0b2 100%);
-  color: #e65100;
-  border-bottom: 1px solid #ffcc80;
-}
-
-.hospitalizacion-dashboard .soon-banner-icon {
-  font-size: 1.5rem;
-}
-
-.hospitalizacion-dashboard .soon-banner-content {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.5rem;
-  align-items: center;
   font-size: 0.9rem;
 }
 
-.hospitalizacion-dashboard .soon-patient {
-  background: rgba(230, 81, 0, 0.1);
-  padding: 0.2rem 0.5rem;
-  border-radius: 4px;
+.btn-cancel:hover {
+  background: #f8fafc;
+  border-color: #94a3b8;
+}
+
+.pharmacy-note {
+  margin-top: 0.75rem;
+  padding: 0.6rem 0.75rem;
+  background: #fff7ed;
+  border-radius: 6px;
+  color: #c2410c;
+  font-size: 0.82rem;
+  border-left: 3px solid #f59e0b;
+}
+
+/* ═══════════════════════════════════════════════════════════════ */
+/* VITALS MODAL                                                   */
+/* ═══════════════════════════════════════════════════════════════ */
+
+.vitals-modal {
+  max-width: 700px;
+}
+
+.vitals-form {
+  padding: 1.25rem !important;
+}
+
+.vitals-section {
+  margin-bottom: 1.25rem;
+}
+
+.vitals-section .section-title {
+  font-size: 0.9rem;
+  color: #1b4332;
+  margin: 0 0 0.6rem;
+  padding-bottom: 0.4rem;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.vitals-grid {
+  display: grid;
+  gap: 0.75rem;
+}
+
+.vitals-grid.four-cols { grid-template-columns: repeat(4, 1fr); }
+.vitals-grid.three-cols { grid-template-columns: repeat(3, 1fr); }
+.vitals-grid.two-cols { grid-template-columns: repeat(2, 1fr); }
+
+.vitals-input-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.vitals-input-group label {
+  font-size: 0.78rem;
+  color: #475569;
   font-weight: 500;
 }
 
-/* Patient Card Monitoring Alert */
-.hospitalizacion-dashboard .patient-card.needs-monitoring {
-  border-left: 4px solid #ff5252;
-  animation: pulse-card 1.5s ease-in-out infinite;
+.vitals-input {
+  padding: 0.55rem 0.65rem;
+  border: 1px solid #cbd5e1;
+  border-radius: 8px;
+  font-size: 0.9rem;
+  transition: border-color 0.2s;
 }
 
-@keyframes pulse-card {
-  0%, 100% { box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
-  50% { box-shadow: 0 2px 15px rgba(255, 82, 82, 0.4); }
+.vitals-input:focus {
+  outline: none;
+  border-color: #2d6a4f;
 }
 
-.hospitalizacion-dashboard .monitoring-alert {
+.vitals-select {
+  padding: 0.55rem 0.65rem;
+  border: 1px solid #cbd5e1;
+  border-radius: 8px;
+  font-size: 0.9rem;
+}
+
+.vitals-select:focus {
+  outline: none;
+  border-color: #2d6a4f;
+}
+
+.vitals-textarea {
+  padding: 0.65rem 0.75rem;
+  border: 1px solid #cbd5e1;
+  border-radius: 8px;
+  font-size: 0.9rem;
+  resize: vertical;
+  font-family: inherit;
+}
+
+.vitals-textarea:focus {
+  outline: none;
+  border-color: #2d6a4f;
+}
+
+.vitals-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.75rem;
+  padding-top: 1rem;
+  border-top: 1px solid #e2e8f0;
+}
+
+/* Pain slider */
+.pain-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.pain-slider-container {
   display: flex;
   align-items: center;
   gap: 0.5rem;
-  padding: 0.35rem 0.75rem;
-  border-radius: 4px 4px 0 0;
-  font-size: 0.8rem;
-  font-weight: 500;
-  margin: -0.75rem -0.75rem 0.5rem -0.75rem;
 }
 
-.hospitalizacion-dashboard .monitoring-alert.urgent {
-  background: linear-gradient(135deg, #ff5252, #d32f2f);
-  color: white;
-  animation: blink-alert 1s ease-in-out infinite;
-}
-
-@keyframes blink-alert {
-  0%, 100% { opacity: 1; }
-  50% { opacity: 0.7; }
-}
-
-.hospitalizacion-dashboard .monitoring-alert.overdue {
-  background: linear-gradient(135deg, #ff7043, #f4511e);
-  color: white;
-}
-
-.hospitalizacion-dashboard .monitoring-alert.soon {
-  background: linear-gradient(135deg, #ffb74d, #ffa726);
-  color: #5d4037;
-}
-
-.hospitalizacion-dashboard .alert-icon {
-  font-size: 1rem;
-}
-
-.hospitalizacion-dashboard .alert-text {
+.pain-slider {
   flex: 1;
+  accent-color: #2d6a4f;
+  height: 6px;
 }
 
-.hospitalizacion-dashboard .patient-frequency {
-  margin-top: 0.5rem;
-  padding-top: 0.5rem;
-  border-top: 1px dashed #ddd;
-  font-size: 0.8rem;
-  color: #666;
+.pain-label {
+  font-size: 1.1rem;
 }
 
-/* ==================== MEDICATION SEARCH ==================== */
+/* ═══════════════════════════════════════════════════════════════ */
+/* MEDICATION SEARCH                                              */
+/* ═══════════════════════════════════════════════════════════════ */
 
-.hospitalizacion-dashboard .medication-search-section {
-  margin-bottom: 1.5rem;
+.medication-search-section {
+  margin-bottom: 1.25rem;
 }
 
-.hospitalizacion-dashboard .medication-search-section > label {
+.medication-search-section > label {
   display: block;
   font-weight: 600;
   color: #1b4332;
   margin-bottom: 0.5rem;
+  font-size: 0.85rem;
 }
 
-.hospitalizacion-dashboard .medication-search-container {
+.medication-search-container {
   position: relative;
 }
 
-.hospitalizacion-dashboard .search-input-wrapper {
+.search-input-wrapper {
   position: relative;
   display: flex;
   align-items: center;
 }
 
-.hospitalizacion-dashboard .search-medication-input {
+.search-medication-input {
   width: 100%;
-  padding: 0.75rem 1rem;
-  border: 2px solid #ddd;
+  padding: 0.65rem 0.75rem;
+  border: 2px solid #cbd5e1;
   border-radius: 8px;
-  font-size: 1rem;
+  font-size: 0.9rem;
   transition: border-color 0.2s;
 }
 
-.hospitalizacion-dashboard .search-medication-input:focus {
+.search-medication-input:focus {
   border-color: #2d6a4f;
   outline: none;
-  box-shadow: 0 0 0 3px rgba(45, 106, 79, 0.1);
+  box-shadow: 0 0 0 2px rgba(45, 106, 79, 0.08);
 }
 
-.hospitalizacion-dashboard .search-spinner {
+.search-spinner {
   position: absolute;
   right: 40px;
-  font-size: 1.2rem;
+  font-size: 1.1rem;
 }
 
-.hospitalizacion-dashboard .clear-selection-btn {
+.clear-selection-btn {
   position: absolute;
   right: 10px;
-  background: #f44336;
+  background: #ef4444;
   color: white;
   border: none;
-  width: 24px;
-  height: 24px;
+  width: 22px;
+  height: 22px;
   border-radius: 50%;
   cursor: pointer;
-  font-size: 14px;
+  font-size: 13px;
   display: flex;
   align-items: center;
   justify-content: center;
 }
 
-.hospitalizacion-dashboard .medication-search-dropdown {
+.medication-search-dropdown {
   position: absolute;
   top: 100%;
   left: 0;
@@ -1521,681 +1514,347 @@
   border: 2px solid #2d6a4f;
   border-top: none;
   border-radius: 0 0 8px 8px;
-  max-height: 250px;
+  max-height: 240px;
   overflow-y: auto;
-  z-index: 1000;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  z-index: 1001;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
 }
 
-.hospitalizacion-dashboard .medication-search-item {
+.medication-search-item {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 0.75rem 1rem;
+  padding: 0.6rem 0.75rem;
   cursor: pointer;
-  border-bottom: 1px solid #eee;
-  transition: background 0.2s;
+  border-bottom: 1px solid #f1f5f9;
+  transition: background 0.15s;
 }
 
-.hospitalizacion-dashboard .medication-search-item:hover {
-  background: #e8f5e9;
+.medication-search-item:hover {
+  background: #ecfdf5;
 }
 
-.hospitalizacion-dashboard .medication-search-item.out-of-stock {
+.medication-search-item.out-of-stock {
   opacity: 0.5;
   cursor: not-allowed;
 }
 
-.hospitalizacion-dashboard .medication-search-item.out-of-stock:hover {
-  background: #ffebee;
+.medication-search-item.out-of-stock:hover {
+  background: #fef2f2;
 }
 
-.hospitalizacion-dashboard .med-search-info {
+.med-search-info {
   display: flex;
   flex-direction: column;
-  gap: 0.25rem;
+  gap: 2px;
 }
 
-.hospitalizacion-dashboard .med-search-info strong {
+.med-search-info strong {
   color: #1b4332;
+  font-size: 0.9rem;
 }
 
-.hospitalizacion-dashboard .med-details {
-  font-size: 0.85rem;
-  color: #666;
+.med-details {
+  font-size: 0.78rem;
+  color: #64748b;
 }
 
-.hospitalizacion-dashboard .med-stock-badge .stock-indicator {
-  padding: 0.25rem 0.5rem;
+.stock-indicator {
+  padding: 0.2rem 0.5rem;
   border-radius: 4px;
-  font-size: 0.8rem;
+  font-size: 0.75rem;
   font-weight: 500;
 }
 
-.hospitalizacion-dashboard .stock-indicator.high {
-  background: #c8e6c9;
-  color: #2e7d32;
-}
+.stock-indicator.high { background: #d1fae5; color: #059669; }
+.stock-indicator.low { background: #fef3c7; color: #d97706; }
+.stock-indicator.empty { background: #fef2f2; color: #dc2626; }
 
-.hospitalizacion-dashboard .stock-indicator.low {
-  background: #fff3e0;
-  color: #e65100;
-}
-
-.hospitalizacion-dashboard .stock-indicator.empty {
-  background: #ffebee;
-  color: #c62828;
-}
-
-.hospitalizacion-dashboard .no-results {
+.no-results {
   padding: 1rem;
   text-align: center;
-  color: #666;
+  color: #94a3b8;
+  font-size: 0.9rem;
 }
 
-.hospitalizacion-dashboard .selected-medication-info {
-  margin-top: 0.75rem;
-  padding: 0.75rem;
-  background: linear-gradient(135deg, #e8f5e9, #c8e6c9);
+.selected-medication-info {
+  margin-top: 0.5rem;
+  padding: 0.6rem 0.75rem;
+  background: linear-gradient(135deg, #ecfdf5, #d1fae5);
   border-radius: 8px;
-  border: 1px solid #a5d6a7;
-}
-
-.hospitalizacion-dashboard .med-selected-badge {
-  font-weight: 600;
-  color: #2e7d32;
+  border: 1px solid #a7f3d0;
   font-size: 0.85rem;
-  margin-bottom: 0.25rem;
-}
-
-.hospitalizacion-dashboard .med-selected-details {
   color: #1b5e20;
-  font-size: 0.95rem;
 }
 
-.hospitalizacion-dashboard .med-selected-details .stock-available {
-  color: #388e3c;
-  font-weight: 500;
-}
-
-.hospitalizacion-dashboard .pharmacy-note {
-  margin-top: 1rem;
-  padding: 0.75rem;
-  background: #fff3e0;
-  border-radius: 6px;
-  color: #e65100;
-  font-size: 0.85rem;
-  border-left: 3px solid #ff9800;
-}
-
-.hospitalizacion-dashboard .modal-content.large {
-  max-width: 600px;
+.med-selected-badge {
+  font-weight: 600;
+  color: #059669;
+  font-size: 0.78rem;
+  margin-right: 0.5rem;
 }
 
 /* ═══════════════════════════════════════════════════════════════ */
-/* NEONATOS - Formularios y Tarjetas */
+/* RONDA RAPIDA                                                   */
 /* ═══════════════════════════════════════════════════════════════ */
 
-/* Datos generales de la camada */
-.hospitalizacion-dashboard .neonate-general-data {
-  background: linear-gradient(135deg, #fff3e0 0%, #ffe0b2 100%);
-  border-left: 4px solid #ff9800;
-  margin-bottom: 1rem;
+.ronda-modal {
+  background: white;
+  border-radius: 14px;
+  width: 95%;
+  max-width: 700px;
+  max-height: 95vh;
+  overflow-y: auto;
+  box-shadow: 0 10px 50px rgba(0, 0, 0, 0.25);
 }
 
-.hospitalizacion-dashboard .neonate-info-grid {
-  display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: 1rem;
-  padding: 1rem 0;
-}
-
-.hospitalizacion-dashboard .neonate-info-item {
-  display: flex;
-  flex-direction: column;
-  gap: 0.25rem;
-}
-
-.hospitalizacion-dashboard .neonate-info-item strong {
-  color: #e65100;
-  font-size: 0.85rem;
-}
-
-.hospitalizacion-dashboard .neonate-info-item span {
-  font-size: 1rem;
-  color: #333;
-}
-
-/* Lista de neonatos */
-.hospitalizacion-dashboard .neonates-list {
-  display: flex;
-  flex-direction: column;
-  gap: 1rem;
-}
-
-/* Card de cada neonato */
-.hospitalizacion-dashboard .neonate-card {
-  background: #fff;
-  border: 1px solid #e0e0e0;
-  border-radius: 8px;
-  padding: 1rem;
-  transition: box-shadow 0.2s;
-}
-
-.hospitalizacion-dashboard .neonate-card:hover {
-  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-}
-
-.hospitalizacion-dashboard .neonate-header {
+.ronda-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 0.75rem;
-  padding-bottom: 0.5rem;
-  border-bottom: 1px solid #f0f0f0;
+  padding: 1rem 1.5rem;
+  border-bottom: 1px solid #e2e8f0;
+  background: linear-gradient(145deg, #f0f9ff, #e0f2fe);
+  border-radius: 14px 14px 0 0;
 }
 
-.hospitalizacion-dashboard .neonate-number {
+.ronda-title h2 {
+  margin: 0;
+  font-size: 1.15rem;
+  color: #0c4a6e;
+}
+
+.ronda-counter {
+  font-size: 0.82rem;
+  color: #0369a1;
+  font-weight: 500;
+}
+
+.ronda-progress-bar {
+  height: 4px;
+  background: #e2e8f0;
+}
+
+.ronda-progress-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #0ea5e9, #06b6d4);
+  transition: width 0.3s ease;
+}
+
+.ronda-patient-info {
   display: flex;
   align-items: center;
   gap: 0.75rem;
+  padding: 0.75rem 1.5rem;
+  background: #f8fafc;
+  border-bottom: 1px solid #e2e8f0;
 }
 
-.hospitalizacion-dashboard .neonate-number strong {
+.ronda-patient-avatar {
+  font-size: 2rem;
+  line-height: 1;
+}
+
+.ronda-patient-details h3 {
+  margin: 0;
   font-size: 1.1rem;
-  color: #333;
+  color: #1e293b;
 }
 
-.hospitalizacion-dashboard .sex-badge {
-  padding: 0.15rem 0.5rem;
-  border-radius: 4px;
-  font-size: 0.8rem;
-  font-weight: 500;
+.ronda-patient-details span {
+  display: block;
+  font-size: 0.78rem;
+  color: #64748b;
 }
 
-.hospitalizacion-dashboard .sex-badge.macho {
-  background: #e3f2fd;
-  color: #1565c0;
+.ronda-freq-badge {
+  margin-left: auto;
+  padding: 0.3rem 0.6rem;
+  background: #dbeafe;
+  color: #1d4ed8;
+  border-radius: 8px;
+  font-size: 0.78rem;
+  font-weight: 600;
 }
 
-.hospitalizacion-dashboard .sex-badge.hembra {
-  background: #fce4ec;
-  color: #c2185b;
+.ronda-form {
+  padding: 1rem 1.5rem;
 }
 
-.hospitalizacion-dashboard .neonate-identification {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
+.ronda-vitals-row {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 0.75rem;
   margin-bottom: 0.75rem;
+}
+
+.ronda-field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.ronda-field label {
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: #475569;
+}
+
+.field-unit {
+  font-weight: 400;
+  color: #94a3b8;
+}
+
+.ronda-field input,
+.ronda-field select {
+  padding: 0.5rem 0.65rem;
+  border: 1px solid #cbd5e1;
+  border-radius: 8px;
   font-size: 0.9rem;
 }
 
-.hospitalizacion-dashboard .id-label {
-  color: #666;
+.ronda-field input:focus,
+.ronda-field select:focus {
+  outline: none;
+  border-color: #0ea5e9;
 }
 
-.hospitalizacion-dashboard .id-type {
-  background: #f5f5f5;
-  padding: 0.15rem 0.5rem;
-  border-radius: 4px;
-  font-weight: 500;
+.ronda-pain-slider {
+  accent-color: #0ea5e9;
 }
 
-.hospitalizacion-dashboard .id-value {
-  color: #333;
-}
-
-.hospitalizacion-dashboard .id-none {
-  color: #999;
-  font-style: italic;
-}
-
-/* Tabla de monitoreo de neonatos */
-.hospitalizacion-dashboard .neonate-records {
+.ronda-notes-row {
   margin-top: 0.5rem;
 }
 
-.hospitalizacion-dashboard .neonate-monitoring-table {
-  font-size: 0.85rem;
-}
-
-.hospitalizacion-dashboard .neonate-monitoring-table th {
-  background: #fff3e0;
-  padding: 0.5rem;
-  font-weight: 500;
-  text-align: center;
-}
-
-.hospitalizacion-dashboard .neonate-monitoring-table td {
-  text-align: center;
-  padding: 0.4rem;
-}
-
-.hospitalizacion-dashboard .suction-badge,
-.hospitalizacion-dashboard .activity-badge {
-  padding: 0.15rem 0.4rem;
-  border-radius: 4px;
-  font-size: 0.75rem;
-  white-space: nowrap;
-}
-
-.hospitalizacion-dashboard .suction-badge.adecuada,
-.hospitalizacion-dashboard .activity-badge.activo {
-  background: #e8f5e9;
-  color: #2e7d32;
-}
-
-.hospitalizacion-dashboard .suction-badge.debil,
-.hospitalizacion-dashboard .activity-badge.letargico {
-  background: #ffebee;
-  color: #c62828;
-}
-
-.hospitalizacion-dashboard .records-overflow {
-  text-align: center;
-  color: #666;
-  font-size: 0.8rem;
-  padding: 0.5rem;
-  background: #f5f5f5;
-  border-radius: 0 0 4px 4px;
-}
-
-.hospitalizacion-dashboard .no-records {
-  color: #999;
-  font-style: italic;
-  font-size: 0.85rem;
-  padding: 0.5rem;
-  background: #fafafa;
-  border-radius: 4px;
-  text-align: center;
-}
-
-/* Modal de neonato - Rediseño */
-.hospitalizacion-dashboard .modal-neonate {
-  max-width: 500px;
-  width: 95%;
-}
-
-.hospitalizacion-dashboard .modal-neonate-record {
-  max-width: 600px;
-  width: 95%;
-}
-
-.hospitalizacion-dashboard .neonate-form-grid {
-  padding: 0.5rem 0;
-}
-
-.hospitalizacion-dashboard .neonate-row-top {
-  display: flex;
-  gap: 2rem;
-  align-items: flex-start;
-  margin-bottom: 1.5rem;
-}
-
-.hospitalizacion-dashboard .neonate-field {
-  display: flex;
-  flex-direction: column;
-  gap: 0.5rem;
-}
-
-.hospitalizacion-dashboard .neonate-field > label {
-  font-weight: 600;
-  font-size: 0.9rem;
-  color: #374151;
-}
-
-.hospitalizacion-dashboard .neonate-number-field input {
-  width: 70px;
-  text-align: center;
-  font-size: 1.1rem;
-  font-weight: 600;
-  padding: 0.5rem;
-  border: 2px solid #d1d5db;
-  border-radius: 6px;
-}
-
-.hospitalizacion-dashboard .neonate-number-field input:focus {
-  border-color: #065f46;
-  outline: none;
-}
-
-.hospitalizacion-dashboard .radio-inline-group {
-  display: flex;
-  gap: 0.75rem;
-}
-
-.hospitalizacion-dashboard .radio-box {
-  display: flex;
-  align-items: center;
-  gap: 0.4rem;
-  padding: 0.5rem 1rem;
-  border: 2px solid #d1d5db;
-  border-radius: 6px;
-  cursor: pointer;
-  transition: all 0.15s ease;
-  background: white;
-}
-
-.hospitalizacion-dashboard .radio-box input {
-  display: none;
-}
-
-.hospitalizacion-dashboard .radio-box span {
-  font-size: 0.9rem;
-  color: #4b5563;
-}
-
-.hospitalizacion-dashboard .radio-box:hover {
-  border-color: #065f46;
-  background: #f0fdf4;
-}
-
-.hospitalizacion-dashboard .radio-box.selected {
-  border-color: #065f46;
-  background: #065f46;
-}
-
-.hospitalizacion-dashboard .radio-box.selected span {
-  color: white;
-  font-weight: 500;
-}
-
-/* Sección de Identificación */
-.hospitalizacion-dashboard .neonate-identification-section {
-  margin-bottom: 1rem;
-}
-
-.hospitalizacion-dashboard .neonate-identification-section > label {
+.ronda-notes-row label {
   display: block;
+  font-size: 0.78rem;
   font-weight: 600;
-  font-size: 0.9rem;
-  color: #374151;
-  margin-bottom: 0.5rem;
+  color: #475569;
+  margin-bottom: 0.25rem;
 }
 
-.hospitalizacion-dashboard .id-type-row {
-  display: flex;
-  gap: 0.5rem;
-  margin-bottom: 0.75rem;
-  flex-wrap: wrap;
-}
-
-.hospitalizacion-dashboard .id-type-box {
-  display: flex;
-  align-items: center;
-  padding: 0.4rem 0.8rem;
-  border: 2px solid #e5e7eb;
-  border-radius: 20px;
-  cursor: pointer;
-  transition: all 0.15s ease;
-  background: white;
-}
-
-.hospitalizacion-dashboard .id-type-box input {
-  display: none;
-}
-
-.hospitalizacion-dashboard .id-type-box span {
-  font-size: 0.85rem;
-  color: #6b7280;
-}
-
-.hospitalizacion-dashboard .id-type-box:hover {
-  border-color: #065f46;
-  background: #f0fdf4;
-}
-
-.hospitalizacion-dashboard .id-type-box.selected {
-  border-color: #065f46;
-  background: #dcfce7;
-}
-
-.hospitalizacion-dashboard .id-type-box.selected span {
-  color: #065f46;
-  font-weight: 500;
-}
-
-.hospitalizacion-dashboard .id-description-input {
+.ronda-notes-row textarea {
   width: 100%;
-  padding: 0.6rem 0.8rem;
-  border: 2px solid #d1d5db;
-  border-radius: 6px;
-  font-size: 0.9rem;
-}
-
-.hospitalizacion-dashboard .id-description-input:focus {
-  border-color: #065f46;
-  outline: none;
-}
-
-.hospitalizacion-dashboard .id-description-input::placeholder {
-  color: #9ca3af;
-}
-
-.hospitalizacion-dashboard .btn-small {
-  font-size: 0.8rem;
-  padding: 0.35rem 0.75rem;
-}
-
-/* ===============================================
-   Modal de Monitoreo de Neonato - Rediseño
-   =============================================== */
-
-.hospitalizacion-dashboard .sex-indicator {
-  margin-left: 0.5rem;
-  font-size: 1.1rem;
-}
-
-.hospitalizacion-dashboard .monitoring-grid {
-  display: flex;
-  flex-direction: column;
-  gap: 1.25rem;
-  padding: 0.5rem 0;
-}
-
-.hospitalizacion-dashboard .monitoring-vitals-row {
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 1rem;
-}
-
-.hospitalizacion-dashboard .monitoring-field {
-  display: flex;
-  flex-direction: column;
-  gap: 0.4rem;
-}
-
-.hospitalizacion-dashboard .monitoring-field label {
-  font-size: 0.8rem;
-  font-weight: 600;
-  color: #4b5563;
-}
-
-.hospitalizacion-dashboard .monitoring-field input {
-  padding: 0.6rem 0.5rem;
-  border: 2px solid #d1d5db;
-  border-radius: 6px;
-  font-size: 1rem;
-  text-align: center;
-  font-weight: 500;
-}
-
-.hospitalizacion-dashboard .monitoring-field input:focus {
-  border-color: #065f46;
-  outline: none;
-}
-
-.hospitalizacion-dashboard .monitoring-field input::placeholder {
-  font-weight: normal;
-  color: #9ca3af;
-}
-
-.hospitalizacion-dashboard .monitoring-status-row {
-  display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: 1.5rem;
-}
-
-.hospitalizacion-dashboard .monitoring-status-field {
-  display: flex;
-  flex-direction: column;
-  gap: 0.5rem;
-}
-
-.hospitalizacion-dashboard .monitoring-status-field label {
-  font-size: 0.85rem;
-  font-weight: 600;
-  color: #374151;
-}
-
-.hospitalizacion-dashboard .status-toggle-group {
-  display: flex;
-  gap: 0.5rem;
-}
-
-.hospitalizacion-dashboard .status-toggle {
-  flex: 1;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 0.6rem 0.75rem;
-  border: 2px solid #e5e7eb;
+  padding: 0.5rem 0.65rem;
+  border: 1px solid #cbd5e1;
   border-radius: 8px;
-  cursor: pointer;
-  transition: all 0.15s ease;
-  background: white;
-}
-
-.hospitalizacion-dashboard .status-toggle input {
-  display: none;
-}
-
-.hospitalizacion-dashboard .status-toggle span {
-  font-size: 0.9rem;
-  color: #6b7280;
-}
-
-.hospitalizacion-dashboard .status-toggle:hover {
-  border-color: #9ca3af;
-  background: #f9fafb;
-}
-
-.hospitalizacion-dashboard .status-toggle.selected.good {
-  border-color: #059669;
-  background: #d1fae5;
-}
-
-.hospitalizacion-dashboard .status-toggle.selected.good span {
-  color: #047857;
-  font-weight: 600;
-}
-
-.hospitalizacion-dashboard .status-toggle.selected.warning {
-  border-color: #d97706;
-  background: #fef3c7;
-}
-
-.hospitalizacion-dashboard .status-toggle.selected.warning span {
-  color: #b45309;
-  font-weight: 600;
-}
-
-.hospitalizacion-dashboard .monitoring-notes-field {
-  display: flex;
-  flex-direction: column;
-  gap: 0.4rem;
-}
-
-.hospitalizacion-dashboard .monitoring-notes-field label {
   font-size: 0.85rem;
-  font-weight: 600;
-  color: #374151;
+  resize: none;
+  font-family: inherit;
+  box-sizing: border-box;
 }
 
-.hospitalizacion-dashboard .monitoring-notes-field textarea {
-  padding: 0.5rem 0.75rem;
-  border: 2px solid #d1d5db;
-  border-radius: 6px;
-  font-size: 0.9rem;
-  resize: vertical;
-}
-
-.hospitalizacion-dashboard .monitoring-notes-field textarea:focus {
-  border-color: #065f46;
+.ronda-notes-row textarea:focus {
   outline: none;
+  border-color: #0ea5e9;
 }
 
-@media (max-width: 600px) {
-  .hospitalizacion-dashboard .monitoring-vitals-row {
-    grid-template-columns: repeat(2, 1fr);
-  }
-  
-  .hospitalizacion-dashboard .monitoring-status-row {
-    grid-template-columns: 1fr;
-  }
-}
-
-/* ============================================================================
-   VIEW TOGGLE
-   ============================================================================ */
-.view-toggle {
+.ronda-actions {
   display: flex;
-  gap: 4px;
-  background: rgba(255,255,255,0.15);
-  border-radius: 8px;
-  padding: 3px;
-  margin-right: 12px;
-}
-
-.view-toggle-btn {
-  padding: 6px 14px;
-  border: none;
-  border-radius: 6px;
-  background: transparent;
-  color: white;
-  cursor: pointer;
-  font-size: 0.85rem;
-  transition: all 0.2s;
-}
-
-.view-toggle-btn.active {
-  background: rgba(255,255,255,0.25);
-  font-weight: 600;
-}
-
-.view-toggle-btn:hover:not(.active) {
-  background: rgba(255,255,255,0.1);
-}
-
-/* Stats bar with custom colors */
-.hospitalizacion-dashboard .stat-card {
-  border-top: 3px solid var(--stat-color, #64748b);
-}
-
-.hospitalizacion-dashboard .stat-card.total {
-  border-top-color: #1e293b;
+  justify-content: space-between;
+  padding: 0.75rem 1.5rem;
+  border-top: 1px solid #e2e8f0;
   background: #f8fafc;
 }
 
-/* ============================================================================
-   BOARD VIEW CONTAINER
-   ============================================================================ */
-.board-view-container {
-  padding: 0 1rem 1rem;
+.btn-ronda-skip {
+  padding: 0.6rem 1.25rem;
+  background: white;
+  color: #64748b;
+  border: 1px solid #cbd5e1;
+  border-radius: 8px;
+  font-size: 0.85rem;
+  cursor: pointer;
+  transition: all 0.15s;
 }
 
-/* ============================================================================
-   HOSPITAL BOARD
-   ============================================================================ */
+.btn-ronda-skip:hover {
+  background: #f1f5f9;
+}
+
+.btn-ronda-save {
+  padding: 0.6rem 1.5rem;
+  background: linear-gradient(135deg, #0ea5e9, #0284c7);
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.btn-ronda-save:hover:not(:disabled) {
+  transform: translateY(-1px);
+  box-shadow: 0 3px 10px rgba(14, 165, 233, 0.3);
+}
+
+.btn-ronda-save:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.ronda-dots {
+  display: flex;
+  justify-content: center;
+  gap: 5px;
+  padding: 0.6rem 1.5rem 1rem;
+  flex-wrap: wrap;
+}
+
+.ronda-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #e2e8f0;
+  transition: all 0.2s;
+}
+
+.ronda-dot.current {
+  background: #0ea5e9;
+  transform: scale(1.3);
+}
+
+.ronda-dot.done {
+  background: #22c55e;
+}
+
+.ronda-done {
+  padding: 3rem;
+  text-align: center;
+}
+
+.ronda-done-icon {
+  font-size: 3rem;
+  margin-bottom: 1rem;
+}
+
+.ronda-done h2 {
+  margin: 0 0 0.5rem;
+  color: #1e293b;
+}
+
+.ronda-done p {
+  color: #64748b;
+  margin-bottom: 1.5rem;
+}
+
+/* ═══════════════════════════════════════════════════════════════ */
+/* BOARD VIEW (HospitalBoard component)                           */
+/* ═══════════════════════════════════════════════════════════════ */
+
 .hospital-board {
-  width: 100%;
+  flex: 1;
+  overflow-y: auto;
+  padding: 0 1rem 1rem;
 }
 
 .board-area-tabs {
   display: flex;
   gap: 6px;
-  padding: 0 0 12px;
+  padding: 0.75rem 0;
   overflow-x: auto;
   scrollbar-width: thin;
 }
@@ -2211,7 +1870,7 @@
   cursor: pointer;
   transition: all 0.2s;
   white-space: nowrap;
-  font-size: 0.9rem;
+  font-size: 0.85rem;
 }
 
 .board-area-tab:hover {
@@ -2226,15 +1885,15 @@
 }
 
 .area-icon { font-size: 1.2rem; }
-.area-label { font-size: 0.85rem; }
+.area-label { font-size: 0.82rem; }
 .area-count {
   background: var(--area-color, #3b82f6);
   color: white;
   padding: 2px 8px;
   border-radius: 12px;
-  font-size: 0.75rem;
+  font-size: 0.72rem;
   font-weight: 700;
-  min-width: 24px;
+  min-width: 22px;
   text-align: center;
 }
 
@@ -2242,15 +1901,15 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 8px 0;
-  gap: 12px;
+  padding: 6px 0;
+  gap: 10px;
 }
 
 .board-time-range {
   display: flex;
   align-items: center;
   gap: 8px;
-  font-size: 0.85rem;
+  font-size: 0.82rem;
   color: #475569;
 }
 
@@ -2258,16 +1917,16 @@
   padding: 4px 8px;
   border: 1px solid #cbd5e1;
   border-radius: 6px;
-  font-size: 0.85rem;
+  font-size: 0.82rem;
 }
 
 .btn-refresh {
-  padding: 6px 16px;
+  padding: 6px 14px;
   border: 1px solid #cbd5e1;
   border-radius: 6px;
   background: white;
   cursor: pointer;
-  font-size: 0.85rem;
+  font-size: 0.82rem;
   transition: all 0.2s;
 }
 
@@ -2291,7 +1950,6 @@
 
 .board-empty-icon { font-size: 3rem; margin-bottom: 12px; }
 
-/* Grid */
 .board-grid-wrapper {
   overflow-x: auto;
   border: 1px solid #e2e8f0;
@@ -2304,410 +1962,228 @@
   min-width: max-content;
 }
 
-.board-cell {
-  padding: 6px 8px;
-  border-right: 1px solid #f1f5f9;
-  border-bottom: 1px solid #e2e8f0;
-  font-size: 0.78rem;
-  min-height: 50px;
-  display: flex;
-  align-items: center;
+.board-header {
+  display: contents;
 }
 
-.board-header {
-  background: #f8fafc;
-  font-weight: 600;
-  color: #475569;
-  font-size: 0.75rem;
+.board-time-header {
+  padding: 8px 6px;
   text-align: center;
-  justify-content: center;
-  min-height: 36px;
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: #64748b;
+  border-bottom: 2px solid #e2e8f0;
+  border-right: 1px solid #f1f5f9;
+  background: #f8fafc;
   position: sticky;
   top: 0;
   z-index: 2;
 }
 
-.board-header.board-patient-col {
+.board-time-header.current {
+  background: #dbeafe;
+  color: #1d4ed8;
+}
+
+.board-pet-col {
+  padding: 8px;
+  border-bottom: 2px solid #e2e8f0;
+  font-weight: 600;
+  font-size: 0.78rem;
+  color: #1e293b;
+  background: #f8fafc;
   position: sticky;
   left: 0;
+  top: 0;
   z-index: 3;
-  background: #f1f5f9;
+  min-width: 140px;
 }
 
-.board-patient-cell {
+.board-row {
+  display: contents;
+}
+
+.board-pet-cell {
+  padding: 8px;
+  border-bottom: 1px solid #f1f5f9;
+  border-right: 1px solid #f8fafc;
   position: sticky;
   left: 0;
-  z-index: 1;
   background: white;
-  flex-direction: column;
-  align-items: flex-start;
-  gap: 2px;
-  padding: 8px 10px;
+  z-index: 1;
+  min-width: 140px;
   cursor: pointer;
-  transition: background 0.15s;
-  min-width: 200px;
 }
 
-.board-patient-cell:hover { background: #f8fafc; }
+.board-pet-cell:hover {
+  background: #f0fdf4;
+}
 
 .board-pet-name {
   font-weight: 600;
-  font-size: 0.85rem;
+  font-size: 0.82rem;
   color: #1e293b;
 }
 
 .board-pet-info {
-  font-size: 0.72rem;
+  font-size: 0.68rem;
   color: #64748b;
 }
 
-.board-pet-meta {
-  font-size: 0.72rem;
-  color: #94a3b8;
-  display: flex;
-  align-items: center;
-  gap: 4px;
+.board-cell {
+  padding: 4px;
+  border-bottom: 1px solid #f1f5f9;
+  border-right: 1px solid #f8fafc;
+  min-width: 68px;
+  position: relative;
 }
 
-.board-fluid-badge {
-  background: #dbeafe;
-  padding: 1px 5px;
-  border-radius: 4px;
-  font-size: 0.7rem;
-}
-
-.board-fluid-btn {
-  margin-top: 4px;
-  padding: 2px 8px;
-  font-size: 0.7rem;
-  border: 1px solid #93c5fd;
-  border-radius: 4px;
+.board-cell.current-hour {
   background: #eff6ff;
-  color: #2563eb;
+}
+
+.board-med-chip {
+  display: block;
+  padding: 2px 5px;
+  border-radius: 4px;
+  font-size: 0.64rem;
+  margin-bottom: 2px;
+  cursor: pointer;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 100%;
+}
+
+.board-med-chip.pending {
+  background: #fef3c7;
+  color: #92400e;
+  border: 1px solid #fde68a;
+}
+
+.board-med-chip.administered {
+  background: #d1fae5;
+  color: #065f46;
+  border: 1px solid #a7f3d0;
+}
+
+.board-monitoring-chip {
+  display: block;
+  padding: 2px 5px;
+  border-radius: 4px;
+  font-size: 0.64rem;
+  background: #dbeafe;
+  color: #1e40af;
+  margin-bottom: 2px;
+}
+
+.board-pet-actions {
+  display: flex;
+  gap: 3px;
+  margin-top: 4px;
+}
+
+.board-action-btn {
+  padding: 2px 6px;
+  border-radius: 4px;
+  border: 1px solid #cbd5e1;
+  background: white;
+  font-size: 0.68rem;
   cursor: pointer;
   transition: all 0.15s;
 }
 
-.board-fluid-btn:hover {
-  background: #dbeafe;
+.board-action-btn:hover {
+  background: #f1f5f9;
 }
 
-.board-slot {
-  justify-content: center;
+/* ═══════════════════════════════════════════════════════════════ */
+/* FLUID THERAPY CALCULATOR (from old CSS)                        */
+/* ═══════════════════════════════════════════════════════════════ */
+
+.fluid-therapy-calc {
+  padding: 1.25rem;
 }
 
-.board-slot.now-col {
-  background: #fffbeb !important;
-  border-left: 2px solid #f59e0b;
-}
+.ftc-header { margin-bottom: 1rem; }
+.ftc-header h3 { margin: 0; font-size: 1.1rem; color: #0c4a6e; }
+.ftc-close-btn { float: right; background: none; border: none; font-size: 1.3rem; cursor: pointer; color: #64748b; }
+.ftc-close-btn:hover { color: #1e293b; }
 
-.board-header.now {
-  background: #fef3c7 !important;
-  color: #92400e;
-  font-weight: 700;
-}
-
-.board-slot.has-activity {
-  background: #fafafa;
-}
-
-.board-activities {
+.ftc-patient-info {
   display: flex;
-  flex-direction: column;
-  gap: 2px;
-  width: 100%;
-}
-
-.board-activity {
-  display: flex;
-  align-items: center;
-  gap: 3px;
-  padding: 2px 4px;
-  border-radius: 4px;
-  background: color-mix(in srgb, var(--act-color, #94a3b8) 12%, white);
-  border-left: 3px solid var(--act-color, #94a3b8);
-  font-size: 0.68rem;
-  overflow: hidden;
-  white-space: nowrap;
-}
-
-.act-icon { font-size: 0.7rem; }
-.act-name { overflow: hidden; text-overflow: ellipsis; }
-
-.board-legend {
-  display: flex;
-  align-items: center;
-  gap: 14px;
-  padding: 10px 4px;
-  font-size: 0.78rem;
-  color: #64748b;
-}
-
-.legend-title { font-weight: 600; }
-
-.legend-item {
-  display: flex;
-  align-items: center;
-  gap: 5px;
-}
-
-.legend-dot {
-  width: 10px;
-  height: 10px;
-  border-radius: 50%;
-  display: inline-block;
-}
-
-/* ============================================================================
-   FLUID THERAPY CALCULATOR
-   ============================================================================ */
-.fluid-therapy-calculator {
-  background: white;
-  border-radius: 12px;
-  overflow: hidden;
-}
-
-.ftc-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 14px 18px;
-  background: linear-gradient(135deg, #0ea5e9, #0284c7);
-  color: white;
-}
-
-.ftc-header h3 {
-  margin: 0;
-  font-size: 1.1rem;
-}
-
-.ftc-header-actions {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
-.ftc-header .btn-close {
-  background: rgba(255,255,255,0.2);
-  border: none;
-  color: white;
-  width: 28px;
-  height: 28px;
-  border-radius: 50%;
-  font-size: 1.2rem;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.ftc-header .btn-secondary {
-  padding: 4px 12px;
-  border: 1px solid rgba(255,255,255,0.4);
-  background: rgba(255,255,255,0.15);
-  color: white;
-  border-radius: 6px;
-  font-size: 0.78rem;
-  cursor: pointer;
-}
-
-/* Active Banner */
-.ftc-active-banner {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 10px 18px;
-  background: #ecfdf5;
-  border-bottom: 1px solid #a7f3d0;
-  font-size: 0.85rem;
-  color: #065f46;
-}
-
-.pulse-dot {
-  width: 8px;
-  height: 8px;
-  background: #10b981;
-  border-radius: 50%;
-  animation: pulse 2s infinite;
-}
-
-@keyframes pulse {
-  0%, 100% { opacity: 1; transform: scale(1); }
-  50% { opacity: 0.5; transform: scale(1.3); }
-}
-
-.active-since {
-  font-size: 0.75rem;
-  color: #047857;
-  margin-left: auto;
-}
-
-/* History */
-.ftc-history {
-  padding: 12px 18px;
-  background: #f8fafc;
-  border-bottom: 1px solid #e2e8f0;
-  max-height: 200px;
-  overflow-y: auto;
-}
-
-.ftc-history h4 { margin: 0 0 8px; font-size: 0.9rem; }
-
-.ftc-history-list { display: flex; flex-direction: column; gap: 6px; }
-
-.ftc-history-item {
-  padding: 8px 12px;
-  background: white;
-  border-radius: 8px;
-  border: 1px solid #e2e8f0;
-}
-
-.ftc-history-item.active { border-color: #10b981; background: #f0fdf4; }
-
-.ftc-hist-row { display: flex; justify-content: space-between; align-items: center; }
-.ftc-hist-date { font-size: 0.78rem; color: #64748b; }
-.badge-active {
-  background: #10b981;
-  color: white;
-  padding: 1px 8px;
+  gap: 0.75rem;
+  padding: 0.75rem;
+  background: #f0f9ff;
   border-radius: 10px;
-  font-size: 0.68rem;
-  font-weight: 600;
+  margin-bottom: 1rem;
+  align-items: center;
 }
 
-.ftc-hist-details {
-  display: flex;
-  gap: 12px;
-  font-size: 0.78rem;
-  color: #475569;
-  margin-top: 4px;
-}
-
-.ftc-hist-by { font-size: 0.72rem; color: #94a3b8; margin-top: 2px; }
-
-/* Body */
-.ftc-body {
-  padding: 14px 18px;
-  display: flex;
-  flex-direction: column;
-  gap: 14px;
-}
+.ftc-pet-icon { font-size: 1.5rem; }
+.ftc-pet-name { font-weight: 600; }
+.ftc-pet-details { font-size: 0.82rem; color: #64748b; }
 
 .ftc-section {
-  border: 1px solid #e2e8f0;
-  border-radius: 10px;
-  padding: 14px;
-  background: #fafbfc;
+  margin-bottom: 1rem;
 }
 
-.ftc-section-header {
+.ftc-section h4 {
+  margin: 0 0 0.5rem;
+  font-size: 0.9rem;
+  color: #0c4a6e;
+}
+
+.ftc-grid-3 {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 0.75rem;
+}
+
+.ftc-field {
   display: flex;
-  align-items: center;
-  gap: 10px;
-  margin-bottom: 12px;
+  flex-direction: column;
+  gap: 0.2rem;
 }
-
-.ftc-step {
-  width: 26px;
-  height: 26px;
-  border-radius: 50%;
-  background: #0ea5e9;
-  color: white;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-weight: 700;
-  font-size: 0.85rem;
-}
-
-.ftc-section-header h4 {
-  margin: 0;
-  font-size: 0.95rem;
-  color: #1e293b;
-}
-
-.ftc-grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
-.ftc-grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; }
 
 .ftc-field label {
-  display: block;
-  font-size: 0.78rem;
+  font-size: 0.75rem;
   color: #475569;
-  margin-bottom: 4px;
   font-weight: 500;
 }
 
-.ftc-input {
-  width: 100%;
-  padding: 8px 12px;
+.ftc-field input,
+.ftc-field select {
+  padding: 0.5rem 0.65rem;
   border: 1px solid #cbd5e1;
   border-radius: 8px;
   font-size: 0.9rem;
-  transition: border-color 0.15s;
-  box-sizing: border-box;
 }
 
-.ftc-input:focus { border-color: #0ea5e9; outline: none; }
-
-.ftc-toggle-group {
-  display: flex;
-  gap: 6px;
-}
-
-.ftc-toggle {
-  flex: 1;
-  padding: 8px;
-  border: 2px solid #e2e8f0;
-  border-radius: 8px;
-  background: white;
-  cursor: pointer;
-  font-size: 0.85rem;
-  transition: all 0.15s;
-  text-align: center;
-}
-
-.ftc-toggle.active {
+.ftc-field input:focus,
+.ftc-field select:focus {
+  outline: none;
   border-color: #0ea5e9;
-  background: #e0f2fe;
-  font-weight: 600;
 }
 
-.ftc-checkbox {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  cursor: pointer;
-  font-size: 0.9rem;
-  padding: 6px 0;
+.ftc-alert {
+  padding: 0.5rem 0.75rem;
+  border-radius: 6px;
+  font-size: 0.82rem;
+  margin-bottom: 0.75rem;
 }
 
-.ftc-checkbox input[type="checkbox"] {
-  width: 18px;
-  height: 18px;
-  accent-color: #0ea5e9;
-}
-
-.ftc-result-inline {
-  margin-top: 10px;
-  padding: 8px 14px;
-  background: #eff6ff;
-  border-radius: 8px;
-  font-size: 0.85rem;
-  color: #1e40af;
-}
-
-.ftc-result-inline.warning {
+.ftc-alert-warning {
   background: #fff7ed;
   color: #c2410c;
 }
 
 .ftc-formula {
-  font-size: 0.75rem;
+  font-size: 0.72rem;
   color: #64748b;
   margin-left: 8px;
 }
 
-/* Dehydration Grid */
 .ftc-dehydration-grid {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
@@ -2733,17 +2209,10 @@
 .ftc-dehyd-btn.critical { border-color: #ef4444; }
 .ftc-dehyd-btn.critical.active { background: #fef2f2; border-color: #dc2626; }
 
-.dehyd-pct {
-  display: block;
-  font-size: 1.2rem;
-  font-weight: 700;
-  color: #1e293b;
-}
+.dehyd-pct { display: block; font-size: 1.2rem; font-weight: 700; color: #1e293b; }
+.dehyd-label { display: block; font-size: 0.75rem; font-weight: 500; color: #475569; }
+.dehyd-desc { display: block; font-size: 0.65rem; color: #94a3b8; margin-top: 2px; }
 
-.dehyd-label { display: block; font-size: 0.78rem; font-weight: 500; color: #475569; }
-.dehyd-desc { display: block; font-size: 0.68rem; color: #94a3b8; margin-top: 2px; }
-
-/* Losses Grid */
 .ftc-losses-grid {
   display: grid;
   grid-template-columns: repeat(2, 1fr);
@@ -2758,8 +2227,8 @@
   text-align: center;
 }
 
-.ftc-loss-header { font-weight: 600; font-size: 0.85rem; margin-bottom: 2px; }
-.ftc-loss-detail { font-size: 0.72rem; color: #64748b; margin-bottom: 6px; }
+.ftc-loss-header { font-weight: 600; font-size: 0.82rem; margin-bottom: 2px; }
+.ftc-loss-detail { font-size: 0.68rem; color: #64748b; margin-bottom: 6px; }
 
 .ftc-counter {
   display: flex;
@@ -2769,12 +2238,12 @@
 }
 
 .ftc-counter button {
-  width: 32px;
-  height: 32px;
+  width: 30px;
+  height: 30px;
   border: 1px solid #cbd5e1;
   border-radius: 50%;
   background: white;
-  font-size: 1.2rem;
+  font-size: 1.1rem;
   cursor: pointer;
   display: flex;
   align-items: center;
@@ -2783,15 +2252,8 @@
 }
 
 .ftc-counter button:hover { background: #f1f5f9; }
+.ftc-counter span { font-size: 1.1rem; font-weight: 700; min-width: 22px; text-align: center; }
 
-.ftc-counter span {
-  font-size: 1.2rem;
-  font-weight: 700;
-  min-width: 24px;
-  text-align: center;
-}
-
-/* Adjustments */
 .ftc-adjustments {
   display: flex;
   flex-direction: column;
@@ -2817,29 +2279,28 @@
   min-width: 40px;
 }
 
-/* Results */
 .ftc-results {
   border: 2px solid #0ea5e9;
   border-radius: 12px;
-  padding: 16px;
+  padding: 14px;
   background: linear-gradient(135deg, #f0f9ff, #e0f2fe);
 }
 
 .ftc-results h4 {
-  margin: 0 0 12px;
-  font-size: 1rem;
+  margin: 0 0 10px;
+  font-size: 0.95rem;
   color: #0c4a6e;
 }
 
 .ftc-results-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
-  gap: 10px;
-  margin-bottom: 14px;
+  grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+  gap: 8px;
+  margin-bottom: 12px;
 }
 
 .ftc-result-card {
-  padding: 12px;
+  padding: 10px;
   border-radius: 10px;
   text-align: center;
 }
@@ -2849,47 +2310,46 @@
 .ftc-result-card.yellow { background: #fef3c7; }
 .ftc-result-card.green { background: #d1fae5; }
 .ftc-result-card.purple { background: #ede9fe; }
-
 .ftc-result-card.total { border: 2px solid #10b981; }
 .ftc-result-card.adjusted { border: 2px solid #8b5cf6; }
 
-.ftc-result-label { font-size: 0.72rem; color: #475569; font-weight: 500; }
-.ftc-result-value { font-size: 1.4rem; font-weight: 800; color: #1e293b; margin: 4px 0; }
-.ftc-result-sub { font-size: 0.7rem; color: #64748b; }
+.ftc-result-label { font-size: 0.68rem; color: #475569; font-weight: 500; }
+.ftc-result-value { font-size: 1.3rem; font-weight: 800; color: #1e293b; margin: 3px 0; }
+.ftc-result-sub { font-size: 0.65rem; color: #64748b; }
 
-/* Drip Rate Summary */
 .ftc-drip-summary {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
-  gap: 10px;
-  margin-bottom: 14px;
+  gap: 8px;
+  margin-bottom: 12px;
 }
 
 .ftc-drip-card {
   display: flex;
   align-items: center;
-  gap: 10px;
-  padding: 12px;
+  gap: 8px;
+  padding: 10px;
   background: white;
   border-radius: 10px;
   border: 1px solid #e2e8f0;
 }
 
-.ftc-drip-icon { font-size: 1.5rem; }
-.ftc-drip-label { font-size: 0.72rem; color: #64748b; }
-.ftc-drip-value { font-size: 1.1rem; font-weight: 700; color: #0c4a6e; }
+.ftc-drip-icon { font-size: 1.3rem; }
+.ftc-drip-label { font-size: 0.68rem; color: #64748b; }
+.ftc-drip-value { font-size: 1rem; font-weight: 700; color: #0c4a6e; }
 
 .ftc-actions {
   text-align: center;
+  margin-top: 0.75rem;
 }
 
 .ftc-actions .btn-submit {
-  padding: 10px 32px;
+  padding: 10px 28px;
   background: #0ea5e9;
   color: white;
   border: none;
   border-radius: 10px;
-  font-size: 1rem;
+  font-size: 0.95rem;
   font-weight: 600;
   cursor: pointer;
   transition: all 0.2s;
@@ -2899,19 +2359,94 @@
 .ftc-actions .btn-submit:disabled { opacity: 0.6; cursor: not-allowed; transform: none; }
 .ftc-actions .btn-submit.btn-saved { background: #10b981; }
 
-/* Modal lg */
-.modal-lg {
-  max-width: 800px !important;
-  width: 95% !important;
+.fluids-tab { padding: 0; }
+
+/* ═══════════════════════════════════════════════════════════════ */
+/* RESPONSIVE                                                     */
+/* ═══════════════════════════════════════════════════════════════ */
+
+@media (max-width: 992px) {
+  .hosp-main {
+    flex-direction: column;
+  }
+
+  .hosp-sidebar {
+    width: 100%;
+    min-width: unset;
+    max-height: 200px;
+    border-right: none;
+    border-bottom: 1px solid #e2e8f0;
+    display: flex;
+    overflow-x: auto;
+    overflow-y: hidden;
+  }
+
+  .hosp-card {
+    min-width: 200px;
+    border-bottom: none;
+    border-right: 1px solid #f1f5f9;
+  }
+
+  .hosp-detail-scroll {
+    padding: 1rem;
+  }
+
+  .hosp-patient-header {
+    flex-direction: column;
+  }
+
+  .hosp-quick-actions {
+    width: 100%;
+  }
+
+  .vitals-grid.four-cols { grid-template-columns: repeat(2, 1fr); }
+  .vitals-grid.three-cols { grid-template-columns: repeat(2, 1fr); }
+
+  .ronda-vitals-row { grid-template-columns: repeat(2, 1fr); }
 }
 
-/* Fluids tab */
-.fluids-tab {
-  padding: 0;
-}
+@media (max-width: 640px) {
+  .hosp-header {
+    padding: 0.5rem 1rem;
+  }
 
-@media (max-width: 768px) {
-  .ftc-grid-3, .ftc-dehydration-grid { grid-template-columns: 1fr 1fr; }
+  .hosp-header h1 {
+    font-size: 1.1rem;
+  }
+
+  .hosp-toolbar {
+    flex-direction: column;
+    align-items: stretch;
+    padding: 0.5rem 1rem;
+  }
+
+  .hosp-toolbar-actions {
+    justify-content: stretch;
+  }
+
+  .hosp-toolbar-actions button {
+    flex: 1;
+  }
+
+  .hosp-meta-bar {
+    flex-direction: column;
+    gap: 0.4rem;
+  }
+
+  .vitals-grid.four-cols,
+  .vitals-grid.three-cols,
+  .vitals-grid.two-cols {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .ronda-vitals-row { grid-template-columns: 1fr 1fr; }
+
+  .form-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .ftc-grid-3,
+  .ftc-dehydration-grid { grid-template-columns: 1fr 1fr; }
   .ftc-losses-grid { grid-template-columns: 1fr; }
   .ftc-drip-summary { grid-template-columns: 1fr; }
   .board-area-tabs { flex-wrap: wrap; }
