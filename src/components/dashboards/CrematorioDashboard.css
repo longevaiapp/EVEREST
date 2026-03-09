@@ -1107,3 +1107,293 @@
 .packaging-table-wrapper {
   overflow-x: auto;
 }
+
+/* ==================== PHOTOS ==================== */
+.crematorio-dashboard .photos-section {
+  margin-top: 8px;
+}
+
+.crematorio-dashboard .photos-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+  margin-top: 8px;
+}
+
+.crematorio-dashboard .photo-slot {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+}
+
+.crematorio-dashboard .photo-label {
+  font-size: 0.8rem;
+  color: #64748b;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.crematorio-dashboard .photo-preview {
+  width: 100%;
+  max-height: 200px;
+  object-fit: cover;
+  border-radius: 8px;
+  border: 2px solid #e2e8f0;
+}
+
+.crematorio-dashboard .photo-placeholder {
+  width: 100%;
+  height: 120px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #f1f5f9;
+  border: 2px dashed #cbd5e1;
+  border-radius: 8px;
+  color: #94a3b8;
+  font-size: 0.85rem;
+}
+
+.crematorio-dashboard .btn-upload {
+  cursor: pointer;
+  background: rgba(8, 145, 178, 0.08);
+  border: 1px solid rgba(8, 145, 178, 0.3);
+  color: #0891b2;
+  padding: 4px 12px;
+  border-radius: 6px;
+  font-size: 0.8rem;
+  transition: all 0.2s;
+}
+
+.crematorio-dashboard .btn-upload:hover {
+  background: rgba(8, 145, 178, 0.15);
+}
+
+/* ==================== SIGNATURE ==================== */
+.crematorio-dashboard .signature-pad-container {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  align-items: flex-start;
+}
+
+.crematorio-dashboard .signature-canvas {
+  border: 2px solid #cbd5e1;
+  border-radius: 8px;
+  background: #ffffff;
+  cursor: crosshair;
+  touch-action: none;
+  max-width: 100%;
+}
+
+.crematorio-dashboard .signature-preview {
+  max-width: 300px;
+  max-height: 100px;
+  border: 1px solid #e2e8f0;
+  border-radius: 6px;
+  background: #fff;
+}
+
+/* ==================== CERTIFICATE ==================== */
+.certificate-body {
+  padding: 40px;
+  background: #fff;
+}
+
+.certificate-header {
+  text-align: center;
+  margin-bottom: 32px;
+  padding-bottom: 20px;
+  border-bottom: 3px double #c2410c;
+}
+
+.certificate-header h1 {
+  margin: 0 0 4px;
+  font-size: 1.6rem;
+  color: #c2410c;
+  font-weight: 700;
+}
+
+.certificate-header h2 {
+  margin: 0 0 4px;
+  font-size: 1.2rem;
+  color: #1e293b;
+}
+
+.certificate-subtitle {
+  margin: 0;
+  color: #64748b;
+  font-size: 0.9rem;
+}
+
+.certificate-content h3 {
+  margin: 16px 0 8px;
+  font-size: 1rem;
+  color: #c2410c;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.certificate-row {
+  display: flex;
+  gap: 12px;
+  padding: 6px 0;
+  border-bottom: 1px dotted #e2e8f0;
+}
+
+.certificate-label {
+  font-weight: 600;
+  color: #334155;
+  min-width: 160px;
+}
+
+.certificate-value {
+  color: #475569;
+}
+
+.certificate-divider {
+  border: none;
+  border-top: 1px solid #e2e8f0;
+  margin: 16px 0;
+}
+
+.certificate-footer {
+  margin-top: 40px;
+  padding-top: 20px;
+  border-top: 1px solid #e2e8f0;
+  text-align: center;
+}
+
+.certificate-footer p {
+  font-size: 0.85rem;
+  color: #64748b;
+  font-style: italic;
+  margin-bottom: 40px;
+}
+
+.certificate-signatures {
+  display: flex;
+  justify-content: space-around;
+  margin-top: 48px;
+}
+
+.cert-sig-block {
+  text-align: center;
+}
+
+.cert-sig-line {
+  width: 200px;
+  border-bottom: 1px solid #334155;
+  margin-bottom: 8px;
+}
+
+.cert-sig-block span {
+  font-size: 0.8rem;
+  color: #64748b;
+}
+
+/* ==================== SUPPLY INVENTORY ==================== */
+.crematorio-dashboard .low-stock-row {
+  background: rgba(239, 68, 68, 0.05);
+}
+
+.crematorio-dashboard .stock-alert {
+  color: #dc2626;
+  font-weight: 600;
+  font-size: 0.85rem;
+}
+
+.crematorio-dashboard .stock-ok {
+  color: #16a34a;
+  font-size: 0.85rem;
+}
+
+.crematorio-dashboard .supply-category {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 4px;
+  background: #f1f5f9;
+  color: #475569;
+  font-size: 0.78rem;
+  font-weight: 600;
+  text-transform: uppercase;
+}
+
+.crematorio-dashboard .stock-adjust-inline {
+  display: flex;
+  gap: 4px;
+  align-items: center;
+}
+
+.crematorio-dashboard .stock-input {
+  width: 60px !important;
+  padding: 4px 6px !important;
+  font-size: 0.8rem !important;
+  min-height: auto !important;
+}
+
+/* ==================== WHATSAPP BUTTON ==================== */
+.crematorio-dashboard .btn-whatsapp {
+  background: rgba(37, 211, 102, 0.1);
+  border-color: rgba(37, 211, 102, 0.4);
+  color: #128c7e;
+}
+
+.crematorio-dashboard .btn-whatsapp:hover {
+  background: rgba(37, 211, 102, 0.2);
+}
+
+/* ==================== MODAL HEADER ACTIONS ==================== */
+.crematorio-dashboard .modal-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+/* ==================== PRINT STYLES ==================== */
+@media print {
+  body * {
+    visibility: hidden !important;
+  }
+
+  .printable-area,
+  .printable-area * {
+    visibility: visible !important;
+  }
+
+  .printable-area {
+    position: fixed !important;
+    top: 0;
+    left: 0;
+    width: 100vw !important;
+    max-width: 100vw !important;
+    height: auto;
+    background: white !important;
+    box-shadow: none !important;
+    border-radius: 0 !important;
+    margin: 0 !important;
+    padding: 20px !important;
+    overflow: visible !important;
+  }
+
+  .modal-overlay {
+    position: fixed !important;
+    background: white !important;
+  }
+
+  .no-print,
+  .no-print * {
+    display: none !important;
+    visibility: hidden !important;
+  }
+
+  .modal-footer {
+    display: none !important;
+  }
+
+  .certificate-body {
+    padding: 30px 40px;
+  }
+}

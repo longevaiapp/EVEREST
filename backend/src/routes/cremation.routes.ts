@@ -342,6 +342,7 @@ router.patch('/orders/:id/status', authenticate, async (req: Request, res: Respo
     deliveryDate: z.string().optional(),
     deliveryEvidence: z.string().optional(),
     deliveryNotes: z.string().optional(),
+    signatureData: z.string().optional(),
   });
 
   const data = schema.parse(req.body);
@@ -386,6 +387,7 @@ router.patch('/orders/:id/status', authenticate, async (req: Request, res: Respo
       if (data.receiverPhone) updateData.receiverPhone = data.receiverPhone;
       if (data.deliveryEvidence) updateData.deliveryEvidence = data.deliveryEvidence;
       if (data.deliveryNotes) updateData.deliveryNotes = data.deliveryNotes;
+      if (data.signatureData) updateData.signatureData = data.signatureData;
       break;
   }
 
@@ -405,6 +407,32 @@ router.patch('/orders/:id/status', authenticate, async (req: Request, res: Respo
       },
     }),
   ]);
+
+  // Create notification for relevant users
+  try {
+    const statusLabel: Record<string, string> = {
+      SOLICITADA: 'Solicitada', RECOLECCION_PROGRAMADA: 'Recolección Programada',
+      RECOLECCION_REALIZADA: 'Recolección Realizada', EN_CREMATORIO: 'En Crematorio',
+      EN_PROCESO: 'En Proceso', LISTA_PARA_ENTREGA: 'Lista para Entrega',
+      ENTREGADA: 'Entregada', CANCELADA: 'Cancelada',
+    };
+    const admins = await prisma.user.findMany({
+      where: { rol: 'ADMIN', activo: true },
+      select: { id: true },
+    });
+    const notifData = admins.map(admin => ({
+      userId: admin.id,
+      tipo: 'CREMACION_STATUS' as any,
+      titulo: `Cremación ${updated.folio}: ${statusLabel[data.status] || data.status}`,
+      mensaje: `La orden ${updated.folio} (${updated.petName}) cambió a ${statusLabel[data.status] || data.status}`,
+      data: { orderId: updated.id, folio: updated.folio, status: data.status },
+    }));
+    if (notifData.length > 0) {
+      await prisma.notification.createMany({ data: notifData });
+    }
+  } catch (notifErr) {
+    console.error('[cremation] notification error:', notifErr);
+  }
 
   res.json({ status: 'success', data: { order: updated } });
 });
@@ -432,6 +460,8 @@ router.patch('/orders/:id', authenticate, async (req: Request, res: Response) =>
     notes: z.string().optional(),
     assignedToId: z.string().optional(),
     deliveryDate: z.string().optional(),
+    petPhotoUrl: z.string().optional(),
+    afterPhotoUrl: z.string().optional(),
   });
 
   const data = schema.parse(req.body);
@@ -574,6 +604,74 @@ router.get('/export', authenticate, async (req: Request, res: Response) => {
   });
 
   res.json({ status: 'success', data: { orders } });
+});
+
+// ============================================================================
+// SUPPLIES / INVENTORY
+// ============================================================================
+
+// GET /cremation/supplies
+router.get('/supplies', authenticate, async (_req: Request, res: Response) => {
+  const supplies = await prisma.cremationSupply.findMany({
+    orderBy: [{ category: 'asc' }, { name: 'asc' }],
+  });
+  res.json({ status: 'success', data: { supplies } });
+});
+
+// POST /cremation/supplies (admin only)
+router.post('/supplies', authenticate, authorize('ADMIN'), async (req: Request, res: Response) => {
+  const schema = z.object({
+    name: z.string().min(1),
+    category: z.string().min(1),
+    stock: z.number().int().min(0).default(0),
+    minStock: z.number().int().min(0).default(5),
+    unit: z.string().default('pzas'),
+    notes: z.string().optional(),
+  });
+  const data = schema.parse(req.body);
+  const supply = await prisma.cremationSupply.create({ data: data as any });
+  res.status(201).json({ status: 'success', data: { supply } });
+});
+
+// PUT /cremation/supplies/:id (admin only)
+router.put('/supplies/:id', authenticate, authorize('ADMIN'), async (req: Request, res: Response) => {
+  const id = req.params.id as string;
+  const schema = z.object({
+    name: z.string().min(1).optional(),
+    category: z.string().optional(),
+    stock: z.number().int().min(0).optional(),
+    minStock: z.number().int().min(0).optional(),
+    unit: z.string().optional(),
+    notes: z.string().optional(),
+    active: z.boolean().optional(),
+  });
+  const data = schema.parse(req.body);
+  const supply = await prisma.cremationSupply.update({
+    where: { id },
+    data: data as any,
+  });
+  res.json({ status: 'success', data: { supply } });
+});
+
+// DELETE /cremation/supplies/:id (admin only)
+router.delete('/supplies/:id', authenticate, authorize('ADMIN'), async (req: Request, res: Response) => {
+  const id = req.params.id as string;
+  await prisma.cremationSupply.delete({ where: { id } });
+  res.json({ status: 'success', message: 'Supply deleted' });
+});
+
+// POST /cremation/supplies/:id/adjust - Adjust stock
+router.post('/supplies/:id/adjust', authenticate, authorize('ADMIN'), async (req: Request, res: Response) => {
+  const id = req.params.id as string;
+  const schema = z.object({
+    quantity: z.number().int(), // positive = add, negative = subtract
+  });
+  const { quantity } = schema.parse(req.body);
+  const supply = await prisma.cremationSupply.update({
+    where: { id },
+    data: { stock: { increment: quantity } },
+  });
+  res.json({ status: 'success', data: { supply } });
 });
 
 export default router;

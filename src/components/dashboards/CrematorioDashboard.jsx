@@ -27,7 +27,7 @@ const PAYMENT_STATUS = {
 
 // Role-based section visibility
 const ROLE_SECTIONS = {
-  ADMIN: ['general', 'ordenes', 'recoleccion', 'cremacion', 'entregas', 'catalogo', 'configuracion'],
+  ADMIN: ['general', 'ordenes', 'recoleccion', 'cremacion', 'entregas', 'catalogo', 'inventario', 'configuracion'],
   RECOLECTOR: ['recoleccion', 'ordenes'],
   OPERADOR_CREMATORIO: ['cremacion', 'ordenes'],
   ENTREGA: ['entregas', 'ordenes'],
@@ -56,11 +56,12 @@ export default function CrematorioDashboard() {
   const allowedSections = ROLE_SECTIONS[rol] || ROLE_SECTIONS.ADMIN;
 
   const {
-    orders, selectedOrder, urns, stats, loading,
+    orders, selectedOrder, urns, stats, loading, supplies,
     fetchOrders, fetchOrder, createOrder, updateOrder, updateOrderStatus,
     setSelectedOrder, createPayment, fetchUrns, fetchAllUrns, fetchStats,
     createUrn, updateUrn, fetchPackagingRanges, packagingRanges,
     createPackagingRange, updatePackagingRange, deletePackagingRange,
+    fetchSupplies, createSupply, updateSupply, deleteSupply, adjustSupplyStock,
   } = useCrematorio();
 
   const [activeSection, setActiveSection] = useState(ROLE_DEFAULT_SECTION[rol] || 'general');
@@ -75,8 +76,11 @@ export default function CrematorioDashboard() {
   const [showStatusModal, setShowStatusModal] = useState(false);
   const [showUrnModal, setShowUrnModal] = useState(false);
   const [showPackagingModal, setShowPackagingModal] = useState(false);
+  const [showCertificateModal, setShowCertificateModal] = useState(false);
+  const [showSupplyModal, setShowSupplyModal] = useState(false);
   const [editingUrn, setEditingUrn] = useState(null);
   const [editingPackaging, setEditingPackaging] = useState(null);
+  const [editingSupply, setEditingSupply] = useState(null);
 
   // Forms
   const [orderForm, setOrderForm] = useState({
@@ -94,6 +98,8 @@ export default function CrematorioDashboard() {
   });
   const [urnForm, setUrnForm] = useState({ name: '', description: '', price: '', size: 'MEDIANA', imageUrl: '', active: true });
   const [packagingForm, setPackagingForm] = useState({ minKg: '', maxKg: '', label: '', requiresTwoOperators: false, sortOrder: '' });
+  const [supplyForm, setSupplyForm] = useState({ name: '', category: 'BOLSA', stock: 0, minStock: 5, unit: 'pzas', notes: '' });
+  const [supplyAdjust, setSupplyAdjust] = useState({ id: '', quantity: '' });
 
   // Pet search state
   const [petSearchTerm, setPetSearchTerm] = useState('');
@@ -101,6 +107,8 @@ export default function CrematorioDashboard() {
   const [petSearching, setPetSearching] = useState(false);
   const [showPetResults, setShowPetResults] = useState(false);
   const petSearchTimeout = useRef(null);
+  const signatureCanvasRef = useRef(null);
+  const signatureDrawing = useRef(false);
 
   // URL params: pre-fill from hospitalization
   const [searchParams, setSearchParams] = useSearchParams();
@@ -180,7 +188,8 @@ export default function CrematorioDashboard() {
     if (isAdmin) fetchAllUrns(); else fetchUrns();
     fetchStats();
     fetchPackagingRanges();
-  }, [fetchOrders, fetchUrns, fetchAllUrns, fetchStats, fetchPackagingRanges, isAdmin]);
+    if (isAdmin) fetchSupplies();
+  }, [fetchOrders, fetchUrns, fetchAllUrns, fetchStats, fetchPackagingRanges, fetchSupplies, isAdmin]);
 
   // Filtered orders
   const filteredOrders = orders.filter(o => {
@@ -251,7 +260,13 @@ export default function CrematorioDashboard() {
     if (!selectedOrder) return;
     setSubmitting(true);
     try {
-      await updateOrderStatus(selectedOrder.id, { ...statusForm });
+      const payload = { ...statusForm };
+      // Include signature data if delivering
+      if (statusForm.status === 'ENTREGADA') {
+        const sig = getSignatureData();
+        if (sig) payload.signatureData = sig;
+      }
+      await updateOrderStatus(selectedOrder.id, payload);
       setShowStatusModal(false);
       setStatusForm({ status: '', notes: '', assignedToId: '', pickupDate: '', pickupTimeSlot: '', receiverName: '', receiverPhone: '', deliveryNotes: '', deliveryDate: '' });
       // Refresh order detail if detail modal was open
@@ -374,6 +389,122 @@ export default function CrematorioDashboard() {
     URL.revokeObjectURL(url);
   };
 
+  // Photo upload handler
+  const handlePhotoUpload = async (field, file) => {
+    if (!selectedOrder || !file) return;
+    const reader = new FileReader();
+    reader.onload = async (e) => {
+      try {
+        await updateOrder(selectedOrder.id, { [field]: e.target.result });
+        await fetchOrder(selectedOrder.id);
+      } catch (err) {
+        alert('Error al subir foto: ' + (err.message || err));
+      }
+    };
+    reader.readAsDataURL(file);
+  };
+
+  // Print order receipt
+  const handlePrintOrder = () => {
+    window.print();
+  };
+
+  // WhatsApp message
+  const handleWhatsApp = (order) => {
+    const o = order || selectedOrder;
+    if (!o?.clientPhone) return;
+    const phone = o.clientPhone.replace(/[^0-9]/g, '');
+    const statusLabel = STATUS_CONFIG[o.status]?.label || o.status;
+    const msg = `Hola ${o.clientName}, le informamos sobre su orden de cremación ${o.folio}. Estado actual: ${statusLabel}. Mascota: ${o.petName}. Quedamos a sus órdenes. - Everest Veterinaria`;
+    window.open(`https://wa.me/${phone.length === 10 ? '52' + phone : phone}?text=${encodeURIComponent(msg)}`, '_blank');
+  };
+
+  // Email
+  const handleEmail = (order) => {
+    const o = order || selectedOrder;
+    if (!o?.clientEmail) return;
+    const statusLabel = STATUS_CONFIG[o.status]?.label || o.status;
+    const subject = `Orden de Cremación ${o.folio} - ${statusLabel}`;
+    const body = `Estimado/a ${o.clientName},\n\nLe informamos que su orden de cremación ${o.folio} para ${o.petName} se encuentra en estado: ${statusLabel}.\n\nQuedamos a sus órdenes.\n\nEverest Veterinaria`;
+    window.open(`mailto:${o.clientEmail}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`);
+  };
+
+  // Supply handlers
+  const handleSaveSupply = async () => {
+    setSubmitting(true);
+    try {
+      const data = { ...supplyForm, stock: parseInt(supplyForm.stock) || 0, minStock: parseInt(supplyForm.minStock) || 5 };
+      if (editingSupply) {
+        await updateSupply(editingSupply.id, data);
+      } else {
+        await createSupply(data);
+      }
+      setShowSupplyModal(false);
+      setEditingSupply(null);
+      setSupplyForm({ name: '', category: 'BOLSA', stock: 0, minStock: 5, unit: 'pzas', notes: '' });
+    } catch (err) {
+      alert('Error: ' + (err.message || err));
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  const handleDeleteSupply = async (id) => {
+    if (!confirm('¿Eliminar este insumo?')) return;
+    try { await deleteSupply(id); } catch (err) { alert('Error: ' + (err.message || err)); }
+  };
+
+  const handleAdjustStock = async (id) => {
+    const qty = parseInt(supplyAdjust.quantity);
+    if (!qty) return;
+    try {
+      await adjustSupplyStock(id, qty);
+      setSupplyAdjust({ id: '', quantity: '' });
+    } catch (err) { alert('Error: ' + (err.message || err)); }
+  };
+
+  // Signature canvas handlers
+  const initSignatureCanvas = (canvas) => {
+    if (!canvas) return;
+    signatureCanvasRef.current = canvas;
+    const ctx = canvas.getContext('2d');
+    ctx.strokeStyle = '#1e293b';
+    ctx.lineWidth = 2;
+    ctx.lineCap = 'round';
+
+    const getPos = (e) => {
+      const rect = canvas.getBoundingClientRect();
+      const touch = e.touches ? e.touches[0] : e;
+      return { x: touch.clientX - rect.left, y: touch.clientY - rect.top };
+    };
+
+    const start = (e) => { e.preventDefault(); signatureDrawing.current = true; ctx.beginPath(); const p = getPos(e); ctx.moveTo(p.x, p.y); };
+    const move = (e) => { if (!signatureDrawing.current) return; e.preventDefault(); const p = getPos(e); ctx.lineTo(p.x, p.y); ctx.stroke(); };
+    const end = () => { signatureDrawing.current = false; };
+
+    canvas.addEventListener('mousedown', start);
+    canvas.addEventListener('mousemove', move);
+    canvas.addEventListener('mouseup', end);
+    canvas.addEventListener('mouseleave', end);
+    canvas.addEventListener('touchstart', start, { passive: false });
+    canvas.addEventListener('touchmove', move, { passive: false });
+    canvas.addEventListener('touchend', end);
+  };
+
+  const clearSignature = () => {
+    const canvas = signatureCanvasRef.current;
+    if (canvas) canvas.getContext('2d').clearRect(0, 0, canvas.width, canvas.height);
+  };
+
+  const getSignatureData = () => {
+    const canvas = signatureCanvasRef.current;
+    if (!canvas) return null;
+    const ctx = canvas.getContext('2d');
+    const data = ctx.getImageData(0, 0, canvas.width, canvas.height).data;
+    const isEmpty = !data.some((v, i) => i % 4 === 3 && v > 0);
+    return isEmpty ? null : canvas.toDataURL('image/png');
+  };
+
   const formatDate = (d) => d ? new Date(d).toLocaleDateString('es-MX', { day: '2-digit', month: 'short', year: 'numeric' }) : '-';
   const formatDateTime = (d) => d ? new Date(d).toLocaleString('es-MX', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' }) : '-';
   const canSee = (section) => allowedSections.includes(section);
@@ -430,6 +561,13 @@ export default function CrematorioDashboard() {
             <button className={`nav-item ${activeSection === 'configuracion' ? 'active' : ''}`} onClick={() => setActiveSection('configuracion')}>
               <span className="nav-icon">⚙️</span>
               <span>Configuración</span>
+            </button>
+          )}
+          {canSee('inventario') && (
+            <button className={`nav-item ${activeSection === 'inventario' ? 'active' : ''}`} onClick={() => setActiveSection('inventario')}>
+              <span className="nav-icon">📦</span>
+              <span>Inventario</span>
+              {supplies.filter(s => s.stock <= s.minStock && s.active).length > 0 && <span className="nav-badge" style={{background:'#ef4444'}}>{supplies.filter(s => s.stock <= s.minStock && s.active).length}</span>}
             </button>
           )}
         </nav>
@@ -911,6 +1049,66 @@ export default function CrematorioDashboard() {
             </div>
           </div>
         )}
+
+        {/* ==================== INVENTARIO INSUMOS ==================== */}
+        {activeSection === 'inventario' && isAdmin && (
+          <div className="section-content">
+            <div className="section-header">
+              <h2>📦 Inventario de Insumos</h2>
+              <button className="btn-primary" onClick={() => {
+                setEditingSupply(null);
+                setSupplyForm({ name: '', category: 'BOLSA', stock: 0, minStock: 5, unit: 'pzas', notes: '' });
+                setShowSupplyModal(true);
+              }}>+ Nuevo Insumo</button>
+            </div>
+
+            <div className="packaging-table-wrapper">
+              <table className="orders-table">
+                <thead>
+                  <tr>
+                    <th>Insumo</th>
+                    <th>Categoría</th>
+                    <th>Stock</th>
+                    <th>Mínimo</th>
+                    <th>Unidad</th>
+                    <th>Estado</th>
+                    <th>Ajustar</th>
+                    <th>Acciones</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {supplies.map(s => (
+                    <tr key={s.id} className={s.stock <= s.minStock ? 'low-stock-row' : ''}>
+                      <td><strong>{s.name}</strong></td>
+                      <td><span className="supply-category">{s.category}</span></td>
+                      <td><strong>{s.stock}</strong> {s.unit}</td>
+                      <td>{s.minStock}</td>
+                      <td>{s.unit}</td>
+                      <td>{s.stock <= s.minStock ? <span className="stock-alert">⚠️ Bajo</span> : <span className="stock-ok">✅ OK</span>}</td>
+                      <td>
+                        <div className="stock-adjust-inline">
+                          <input type="number" className="form-control stock-input" placeholder="±" value={supplyAdjust.id === s.id ? supplyAdjust.quantity : ''} onChange={e => setSupplyAdjust({ id: s.id, quantity: e.target.value })} />
+                          <button className="btn-sm" disabled={supplyAdjust.id !== s.id || !supplyAdjust.quantity} onClick={() => handleAdjustStock(s.id)}>✓</button>
+                        </div>
+                      </td>
+                      <td>
+                        <button className="btn-sm" onClick={() => {
+                          setEditingSupply(s);
+                          setSupplyForm({ name: s.name, category: s.category, stock: s.stock, minStock: s.minStock, unit: s.unit, notes: s.notes || '' });
+                          setShowSupplyModal(true);
+                        }}>✏️</button>
+                        <button className="btn-sm btn-danger-sm" onClick={() => handleDeleteSupply(s.id)}>🗑️</button>
+                      </td>
+                    </tr>
+                  ))}
+                  {supplies.length === 0 && (
+                    <tr><td colSpan="8" style={{ textAlign: 'center', padding: '2rem', color: '#94a3b8' }}>No hay insumos registrados</td></tr>
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        )}
       </main>
 
       {/* ==================== MODALS ==================== */}
@@ -1091,10 +1289,16 @@ export default function CrematorioDashboard() {
       {/* Order Detail Modal */}
       {showDetailModal && selectedOrder && (
         <div className="modal-overlay" onClick={() => setShowDetailModal(false)}>
-          <div className="modal-content modal-lg" onClick={e => e.stopPropagation()}>
+          <div className="modal-content modal-lg printable-area" onClick={e => e.stopPropagation()}>
             <div className="modal-header">
               <h3>📋 Orden {selectedOrder.folio}</h3>
-              <button className="modal-close" onClick={() => setShowDetailModal(false)}>✕</button>
+              <div className="modal-header-actions no-print">
+                <button className="btn-sm" title="Imprimir" onClick={handlePrintOrder}>🖨️</button>
+                <button className="btn-sm" title="Certificado" onClick={() => { setShowDetailModal(false); setShowCertificateModal(true); }}>📜</button>
+                {selectedOrder.clientPhone && <button className="btn-sm btn-whatsapp" title="WhatsApp" onClick={() => handleWhatsApp()}>💬</button>}
+                {selectedOrder.clientEmail && <button className="btn-sm" title="Email" onClick={() => handleEmail()}>📧</button>}
+                <button className="modal-close" onClick={() => setShowDetailModal(false)}>✕</button>
+              </div>
             </div>
             <div className="modal-body">
               <div className="detail-status">
@@ -1141,6 +1345,45 @@ export default function CrematorioDashboard() {
                   {selectedOrder.receiverName && <p>Recibió: {selectedOrder.receiverName} {selectedOrder.receiverPhone ? `• 📞 ${selectedOrder.receiverPhone}` : ''}</p>}
                 </div>
               </div>
+
+              {/* Photos */}
+              <div className="detail-section photos-section no-print">
+                <h4>📷 Fotos</h4>
+                <div className="photos-grid">
+                  <div className="photo-slot">
+                    <span className="photo-label">Foto de la mascota</span>
+                    {selectedOrder.petPhotoUrl ? (
+                      <img src={selectedOrder.petPhotoUrl} alt="Mascota" className="photo-preview" />
+                    ) : (
+                      <div className="photo-placeholder">Sin foto</div>
+                    )}
+                    <label className="btn-sm btn-upload">
+                      📤 {selectedOrder.petPhotoUrl ? 'Cambiar' : 'Subir'}
+                      <input type="file" accept="image/*" hidden onChange={e => handlePhotoUpload('petPhotoUrl', e.target.files[0])} />
+                    </label>
+                  </div>
+                  <div className="photo-slot">
+                    <span className="photo-label">Foto cenizas/urna</span>
+                    {selectedOrder.afterPhotoUrl ? (
+                      <img src={selectedOrder.afterPhotoUrl} alt="Cenizas" className="photo-preview" />
+                    ) : (
+                      <div className="photo-placeholder">Sin foto</div>
+                    )}
+                    <label className="btn-sm btn-upload">
+                      📤 {selectedOrder.afterPhotoUrl ? 'Cambiar' : 'Subir'}
+                      <input type="file" accept="image/*" hidden onChange={e => handlePhotoUpload('afterPhotoUrl', e.target.files[0])} />
+                    </label>
+                  </div>
+                </div>
+              </div>
+
+              {/* Delivery Signature */}
+              {selectedOrder.signatureData && (
+                <div className="detail-section">
+                  <h4>✍️ Firma de Recepción</h4>
+                  <img src={selectedOrder.signatureData} alt="Firma" className="signature-preview" />
+                </div>
+              )}
 
               {/* Payments */}
               {selectedOrder.payments?.length > 0 && (
@@ -1253,6 +1496,13 @@ export default function CrematorioDashboard() {
                   <div className="form-group full-width">
                     <label>Notas de entrega</label>
                     <textarea className="form-control" value={statusForm.deliveryNotes} onChange={e => setStatusForm(p => ({ ...p, deliveryNotes: e.target.value }))} rows="2" />
+                  </div>
+                  <div className="form-group full-width">
+                    <label>✍️ Firma de quien recibe</label>
+                    <div className="signature-pad-container">
+                      <canvas ref={initSignatureCanvas} width={400} height={150} className="signature-canvas" />
+                      <button type="button" className="btn-sm" onClick={clearSignature}>🗑️ Limpiar firma</button>
+                    </div>
                   </div>
                 </div>
               )}
@@ -1414,6 +1664,160 @@ export default function CrematorioDashboard() {
               <button className="btn-secondary" onClick={() => setShowPackagingModal(false)}>Cancelar</button>
               <button className="btn-primary" onClick={handleSavePackaging} disabled={!packagingForm.label || !packagingForm.maxKg || submitting}>
                 {submitting ? '⏳ ...' : editingPackaging ? '✏️ Guardar' : '📦 Crear Rango'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Certificate Modal */}
+      {showCertificateModal && selectedOrder && (
+        <div className="modal-overlay" onClick={() => setShowCertificateModal(false)}>
+          <div className="modal-content modal-lg printable-area" onClick={e => e.stopPropagation()}>
+            <div className="modal-header no-print">
+              <h3>📜 Certificado de Cremación</h3>
+              <div className="modal-header-actions">
+                <button className="btn-primary" onClick={() => window.print()}>🖨️ Imprimir</button>
+                <button className="modal-close" onClick={() => setShowCertificateModal(false)}>✕</button>
+              </div>
+            </div>
+            <div className="certificate-body">
+              <div className="certificate-header">
+                <h1>🔥 Certificado de Cremación</h1>
+                <h2>Everest Veterinaria</h2>
+                <p className="certificate-subtitle">Servicio de cremación individual para mascotas</p>
+              </div>
+              <div className="certificate-content">
+                <div className="certificate-row">
+                  <span className="certificate-label">Folio:</span>
+                  <span className="certificate-value">{selectedOrder.folio}</span>
+                </div>
+                <div className="certificate-row">
+                  <span className="certificate-label">Fecha de Emisión:</span>
+                  <span className="certificate-value">{new Date().toLocaleDateString('es-MX', { day: '2-digit', month: 'long', year: 'numeric' })}</span>
+                </div>
+                <hr className="certificate-divider" />
+                <h3>Datos de la Mascota</h3>
+                <div className="certificate-row">
+                  <span className="certificate-label">Nombre:</span>
+                  <span className="certificate-value">{selectedOrder.petName}</span>
+                </div>
+                <div className="certificate-row">
+                  <span className="certificate-label">Especie:</span>
+                  <span className="certificate-value">{selectedOrder.species} {selectedOrder.breed ? `- ${selectedOrder.breed}` : ''}</span>
+                </div>
+                <div className="certificate-row">
+                  <span className="certificate-label">Sexo / Edad:</span>
+                  <span className="certificate-value">{selectedOrder.sex || '-'} / {selectedOrder.age || '-'}</span>
+                </div>
+                <div className="certificate-row">
+                  <span className="certificate-label">Color:</span>
+                  <span className="certificate-value">{selectedOrder.color || '-'}</span>
+                </div>
+                <div className="certificate-row">
+                  <span className="certificate-label">Peso:</span>
+                  <span className="certificate-value">{selectedOrder.weightKg} kg</span>
+                </div>
+                <hr className="certificate-divider" />
+                <h3>Datos del Propietario</h3>
+                <div className="certificate-row">
+                  <span className="certificate-label">Nombre:</span>
+                  <span className="certificate-value">{selectedOrder.clientName}</span>
+                </div>
+                <div className="certificate-row">
+                  <span className="certificate-label">Teléfono:</span>
+                  <span className="certificate-value">{selectedOrder.clientPhone}</span>
+                </div>
+                <hr className="certificate-divider" />
+                <h3>Proceso de Cremación</h3>
+                {selectedOrder.cremationStartAt && (
+                  <div className="certificate-row">
+                    <span className="certificate-label">Inicio:</span>
+                    <span className="certificate-value">{formatDateTime(selectedOrder.cremationStartAt)}</span>
+                  </div>
+                )}
+                {selectedOrder.cremationEndAt && (
+                  <div className="certificate-row">
+                    <span className="certificate-label">Finalización:</span>
+                    <span className="certificate-value">{formatDateTime(selectedOrder.cremationEndAt)}</span>
+                  </div>
+                )}
+                <div className="certificate-row">
+                  <span className="certificate-label">Urna:</span>
+                  <span className="certificate-value">{selectedOrder.urn?.name || 'Sin urna seleccionada'}</span>
+                </div>
+                {selectedOrder.deliveredAt && (
+                  <div className="certificate-row">
+                    <span className="certificate-label">Entregada:</span>
+                    <span className="certificate-value">{formatDateTime(selectedOrder.deliveredAt)}</span>
+                  </div>
+                )}
+              </div>
+              <div className="certificate-footer">
+                <p>Se certifica que la cremación fue realizada de forma individual y con los más altos estándares de respeto y dignidad.</p>
+                <div className="certificate-signatures">
+                  <div className="cert-sig-block">
+                    <div className="cert-sig-line"></div>
+                    <span>Operador de Crematorio</span>
+                  </div>
+                  <div className="cert-sig-block">
+                    <div className="cert-sig-line"></div>
+                    <span>Director Veterinario</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Supply Modal */}
+      {showSupplyModal && (
+        <div className="modal-overlay" onClick={() => setShowSupplyModal(false)}>
+          <div className="modal-content" onClick={e => e.stopPropagation()}>
+            <div className="modal-header">
+              <h3>{editingSupply ? '✏️ Editar Insumo' : '📦 Nuevo Insumo'}</h3>
+              <button className="modal-close" onClick={() => setShowSupplyModal(false)}>✕</button>
+            </div>
+            <div className="modal-body">
+              <div className="form-grid">
+                <div className="form-group">
+                  <label>Nombre *</label>
+                  <input className="form-control" value={supplyForm.name} onChange={e => setSupplyForm(p => ({ ...p, name: e.target.value }))} />
+                </div>
+                <div className="form-group">
+                  <label>Categoría</label>
+                  <select className="form-control" value={supplyForm.category} onChange={e => setSupplyForm(p => ({ ...p, category: e.target.value }))}>
+                    <option value="BOLSA">Bolsa</option>
+                    <option value="CAJA">Caja</option>
+                    <option value="ETIQUETA">Etiqueta</option>
+                    <option value="QUIMICO">Químico</option>
+                    <option value="COMBUSTIBLE">Combustible</option>
+                    <option value="OTRO">Otro</option>
+                  </select>
+                </div>
+                <div className="form-group">
+                  <label>Stock Inicial</label>
+                  <input className="form-control" type="number" value={supplyForm.stock} onChange={e => setSupplyForm(p => ({ ...p, stock: e.target.value }))} />
+                </div>
+                <div className="form-group">
+                  <label>Stock Mínimo</label>
+                  <input className="form-control" type="number" value={supplyForm.minStock} onChange={e => setSupplyForm(p => ({ ...p, minStock: e.target.value }))} />
+                </div>
+                <div className="form-group">
+                  <label>Unidad</label>
+                  <input className="form-control" value={supplyForm.unit} onChange={e => setSupplyForm(p => ({ ...p, unit: e.target.value }))} placeholder="pzas, litros, kg..." />
+                </div>
+                <div className="form-group full-width">
+                  <label>Notas</label>
+                  <textarea className="form-control" value={supplyForm.notes} onChange={e => setSupplyForm(p => ({ ...p, notes: e.target.value }))} rows="2" />
+                </div>
+              </div>
+            </div>
+            <div className="modal-footer">
+              <button className="btn-secondary" onClick={() => setShowSupplyModal(false)}>Cancelar</button>
+              <button className="btn-primary" onClick={handleSaveSupply} disabled={!supplyForm.name || submitting}>
+                {submitting ? '⏳ ...' : editingSupply ? '✏️ Guardar' : '📦 Crear Insumo'}
               </button>
             </div>
           </div>

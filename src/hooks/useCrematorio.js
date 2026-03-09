@@ -10,6 +10,7 @@ export default function useCrematorio() {
   const [urns, setUrns] = useState([]);
   const [packagingRanges, setPackagingRanges] = useState([]);
   const [stats, setStats] = useState(null);
+  const [supplies, setSupplies] = useState([]);
   const [loading, setLoading] = useState({
     orders: false,
     urns: false,
@@ -158,12 +159,48 @@ export default function useCrematorio() {
     }
   }, []);
 
+  // ==================== SUPPLIES ====================
+  const fetchSupplies = useCallback(async () => {
+    try {
+      const data = await crematorioService.getSupplies();
+      setSupplies(data);
+      return data;
+    } catch (err) {
+      console.error('[useCrematorio] fetchSupplies error:', err);
+      return [];
+    }
+  }, []);
+
+  const createSupply = useCallback(async (data) => {
+    const supply = await crematorioService.createSupply(data);
+    setSupplies(prev => [...prev, supply]);
+    return supply;
+  }, []);
+
+  const updateSupply = useCallback(async (id, data) => {
+    const updated = await crematorioService.updateSupply(id, data);
+    setSupplies(prev => prev.map(s => s.id === id ? updated : s));
+    return updated;
+  }, []);
+
+  const deleteSupply = useCallback(async (id) => {
+    await crematorioService.deleteSupply(id);
+    setSupplies(prev => prev.filter(s => s.id !== id));
+  }, []);
+
+  const adjustSupplyStock = useCallback(async (id, quantity) => {
+    const updated = await crematorioService.adjustSupplyStock(id, quantity);
+    setSupplies(prev => prev.map(s => s.id === id ? updated : s));
+    return updated;
+  }, []);
+
   return {
     // State
     orders,
     selectedOrder,
     urns,
     packagingRanges,
+    supplies,
     stats,
     loading,
     // Order operations
@@ -185,6 +222,12 @@ export default function useCrematorio() {
     createPackagingRange,
     updatePackagingRange,
     deletePackagingRange,
+    // Supplies
+    fetchSupplies,
+    createSupply,
+    updateSupply,
+    deleteSupply,
+    adjustSupplyStock,
     // Stats
     fetchStats,
   };

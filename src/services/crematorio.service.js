@@ -101,6 +101,31 @@ const crematorioService = {
     const response = await api.get(`/cremation/export?${params.toString()}`);
     return response.data.orders;
   },
+
+  // ==================== SUPPLIES ====================
+  getSupplies: async () => {
+    const response = await api.get('/cremation/supplies');
+    return response.data.supplies;
+  },
+
+  createSupply: async (data) => {
+    const response = await api.post('/cremation/supplies', data);
+    return response.data.supply;
+  },
+
+  updateSupply: async (id, data) => {
+    const response = await api.put(`/cremation/supplies/${id}`, data);
+    return response.data.supply;
+  },
+
+  deleteSupply: async (id) => {
+    await api.delete(`/cremation/supplies/${id}`);
+  },
+
+  adjustSupplyStock: async (id, quantity) => {
+    const response = await api.post(`/cremation/supplies/${id}/adjust`, { quantity });
+    return response.data.supply;
+  },
 };
 
 export default crematorioService;

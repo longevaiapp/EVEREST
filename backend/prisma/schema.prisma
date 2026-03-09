@@ -162,6 +162,7 @@ enum NotificationType {
   ALTA_PENDIENTE
   STOCK_BAJO
   CITA_AGENDADA_MEDICO
+  CREMACION_STATUS
   GENERAL
 }
 
@@ -1867,6 +1868,10 @@ model CremationOrder {
   operatorId        String?
   operator          User?                @relation("CremationOperator", fields: [operatorId], references: [id])
   
+  // === FOTOS ===
+  petPhotoUrl       String?              @db.LongText  // Foto de la mascota (base64)
+  afterPhotoUrl     String?              @db.LongText  // Foto de cenizas/urna (base64)
+  
   // === ENTREGA ===
   deliveryDate      DateTime?
   deliveredAt       DateTime?
@@ -1876,6 +1881,7 @@ model CremationOrder {
   receiverPhone     String?
   deliveryNotes     String?              @db.Text
   deliveryEvidence  String?              // URL foto evidencia
+  signatureData     String?              @db.LongText  // Firma digital de recepción (base64)
   
   // === URNA ===
   urnId             String?
@@ -1959,4 +1965,19 @@ model CremationStatusLog {
   
   @@index([orderId])
   @@index([createdAt])
+}
+
+model CremationSupply {
+  id          String   @id @default(cuid())
+  name        String
+  category    String   // BOLSA, CAJA, ETIQUETA, QUIMICO, OTRO
+  stock       Int      @default(0)
+  minStock    Int      @default(5)
+  unit        String   @default("pzas")
+  notes       String?  @db.Text
+  active      Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([category])
 }
