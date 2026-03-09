@@ -641,7 +641,15 @@
   max-height: 90vh;
   overflow-y: auto;
   border: 1px solid #e2e8f0;
-  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.15);
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.18);
+}
+
+.modal-body .form-grid + h4 {
+  margin-top: 24px;
+}
+
+.modal-body > .form-group {
+  margin-top: 16px;
 }
 
 .modal-lg {
@@ -702,13 +710,13 @@
 .form-grid {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 12px;
+  gap: 16px;
 }
 
 .form-group {
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: 6px;
 }
 
 .form-group.full-width {
@@ -717,33 +725,42 @@
 
 .form-group label {
   font-size: 0.8rem;
-  color: #64748b;
+  color: #475569;
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.03em;
 }
 
 .form-control {
-  padding: 8px 12px;
-  background: #f8fafc;
-  border: 1px solid #e2e8f0;
-  border-radius: 6px;
+  padding: 10px 14px;
+  background: #ffffff;
+  border: 1.5px solid #cbd5e1;
+  border-radius: 8px;
   color: #1e293b;
   font-size: 0.9rem;
+  min-height: 42px;
+  transition: border-color 0.2s, box-shadow 0.2s;
 }
 
 .form-control:focus {
   outline: none;
   border-color: #0891b2;
-  box-shadow: 0 0 0 3px rgba(8, 145, 178, 0.1);
+  box-shadow: 0 0 0 3px rgba(8, 145, 178, 0.12);
+  background: #ffffff;
+}
+
+.form-control::placeholder {
+  color: #94a3b8;
 }
 
 textarea.form-control {
   resize: vertical;
+  min-height: 64px;
 }
 
 select.form-control {
   appearance: auto;
+  cursor: pointer;
 }
 
 /* Status change modal */

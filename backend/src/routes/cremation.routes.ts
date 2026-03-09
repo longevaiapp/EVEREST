@@ -335,6 +335,7 @@ router.patch('/orders/:id/status', authenticate, async (req: Request, res: Respo
     pickupTimeSlot: z.string().optional(),
     receiverName: z.string().optional(),
     receiverPhone: z.string().optional(),
+    deliveryDate: z.string().optional(),
     deliveryEvidence: z.string().optional(),
     deliveryNotes: z.string().optional(),
   });
@@ -372,6 +373,7 @@ router.patch('/orders/:id/status', authenticate, async (req: Request, res: Respo
       break;
     case 'LISTA_PARA_ENTREGA':
       updateData.cremationEndAt = now;
+      if (data.deliveryDate) updateData.deliveryDate = new Date(data.deliveryDate);
       break;
     case 'ENTREGADA':
       updateData.deliveredAt = now;

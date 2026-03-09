@@ -403,9 +403,11 @@
 }
 
 .aliado-form h3 {
-  margin: 24px 0 14px;
+  margin: 28px 0 16px;
   font-size: 1.1rem;
   color: #c2410c;
+  padding-bottom: 8px;
+  border-bottom: 1px solid #f1f5f9;
 }
 
 .aliado-form h3:first-child {
@@ -415,13 +417,13 @@
 .aliado-form-grid {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 14px;
+  gap: 18px;
 }
 
 .aliado-field {
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: 6px;
 }
 
 .aliado-field.full {
@@ -430,7 +432,7 @@
 
 .aliado-field label {
   font-size: 0.8rem;
-  color: #64748b;
+  color: #475569;
   text-transform: uppercase;
   font-weight: 600;
   letter-spacing: 0.03em;
@@ -440,11 +442,18 @@
 .aliado-field select,
 .aliado-field textarea {
   padding: 10px 14px;
-  background: #f8fafc;
-  border: 1px solid #e2e8f0;
+  background: #ffffff;
+  border: 1.5px solid #cbd5e1;
   border-radius: 8px;
   color: #1e293b;
   font-size: 0.95rem;
+  min-height: 44px;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.aliado-field input::placeholder,
+.aliado-field textarea::placeholder {
+  color: #94a3b8;
 }
 
 .aliado-field input:focus,
@@ -452,16 +461,18 @@
 .aliado-field textarea:focus {
   outline: none;
   border-color: #0891b2;
-  box-shadow: 0 0 0 3px rgba(8, 145, 178, 0.1);
+  box-shadow: 0 0 0 3px rgba(8, 145, 178, 0.12);
+  background: #ffffff;
 }
 
 .aliado-field textarea {
   resize: vertical;
-  min-height: 60px;
+  min-height: 72px;
 }
 
 .aliado-field select {
   appearance: auto;
+  cursor: pointer;
 }
 
 .aliado-submit-row {

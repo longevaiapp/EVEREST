@@ -88,7 +88,7 @@ export default function CrematorioDashboard() {
   const [paymentForm, setPaymentForm] = useState({ amount: '', method: 'EFECTIVO', reference: '', notes: '' });
   const [statusForm, setStatusForm] = useState({
     status: '', notes: '', assignedToId: '', pickupDate: '', pickupTimeSlot: '',
-    receiverName: '', receiverPhone: '', deliveryNotes: '',
+    receiverName: '', receiverPhone: '', deliveryNotes: '', deliveryDate: '',
   });
   const [urnForm, setUrnForm] = useState({ name: '', description: '', price: '', size: 'MEDIANA', imageUrl: '', active: true });
   const [packagingForm, setPackagingForm] = useState({ minKg: '', maxKg: '', label: '', requiresTwoOperators: false, sortOrder: '' });
@@ -160,7 +160,7 @@ export default function CrematorioDashboard() {
     try {
       await updateOrderStatus(selectedOrder.id, { ...statusForm });
       setShowStatusModal(false);
-      setStatusForm({ status: '', notes: '', assignedToId: '', pickupDate: '', pickupTimeSlot: '', receiverName: '', receiverPhone: '', deliveryNotes: '' });
+      setStatusForm({ status: '', notes: '', assignedToId: '', pickupDate: '', pickupTimeSlot: '', receiverName: '', receiverPhone: '', deliveryNotes: '', deliveryDate: '' });
       // Refresh order detail if detail modal was open
       await fetchOrder(selectedOrder.id);
       await Promise.all([fetchStats(), fetchOrders()]);
@@ -253,7 +253,7 @@ export default function CrematorioDashboard() {
 
   const openStatusModal = (order, nextStatus) => {
     setSelectedOrder(order);
-    setStatusForm(prev => ({ ...prev, status: nextStatus }));
+    setStatusForm(prev => ({ ...prev, status: nextStatus, deliveryDate: '' }));
     setShowStatusModal(true);
   };
 
@@ -687,10 +687,19 @@ export default function CrematorioDashboard() {
                     <div className="order-card-body">
                       <div>🐾 {order.petName} • ⚱️ {order.urn?.name || 'Sin urna'}</div>
                       <div>👤 {order.clientName} • 📞 {order.clientPhone}</div>
-                      {order.deliveryDate && <div>📅 Entrega programada: {formatDate(order.deliveryDate)}</div>}
+                      <div>📍 {order.pickupAddress}</div>
+                      {order.deliveryDate && <div>📅 Entrega programada: <strong>{formatDate(order.deliveryDate)}</strong></div>}
+                      {!order.deliveryDate && <div style={{ color: '#d97706', fontSize: '0.85rem' }}>⚠️ Sin fecha de entrega programada</div>}
                     </div>
                     <div className="order-card-actions">
+                      <button className="btn-sm btn-status" onClick={() => {
+                        const date = prompt('Fecha de entrega (YYYY-MM-DD):', new Date().toISOString().slice(0, 10));
+                        if (date) {
+                          updateOrder(order.id, { deliveryDate: date }).then(() => fetchOrders());
+                        }
+                      }}>📅 Programar</button>
                       <button className="btn-sm btn-status btn-deliver" onClick={() => openStatusModal(order, 'ENTREGADA')}>🕊️ Entregar</button>
+                      <button className="btn-sm" onClick={() => handleViewDetail(order)}>Ver</button>
                     </div>
                   </div>
                 ))}
@@ -996,6 +1005,9 @@ export default function CrematorioDashboard() {
                   {selectedOrder.receivedAt && <p>Recibido: {formatDateTime(selectedOrder.receivedAt)}</p>}
                   {selectedOrder.cremationStartAt && <p>Inicio: {formatDateTime(selectedOrder.cremationStartAt)}</p>}
                   {selectedOrder.cremationEndAt && <p>Fin: {formatDateTime(selectedOrder.cremationEndAt)}</p>}
+                  {selectedOrder.deliveryDate && <p>📅 Entrega: {formatDate(selectedOrder.deliveryDate)}</p>}
+                  {selectedOrder.deliveredAt && <p>🕊️ Entregada: {formatDateTime(selectedOrder.deliveredAt)}</p>}
+                  {selectedOrder.receiverName && <p>Recibió: {selectedOrder.receiverName} {selectedOrder.receiverPhone ? `• 📞 ${selectedOrder.receiverPhone}` : ''}</p>}
                 </div>
               </div>
 
@@ -1086,6 +1098,16 @@ export default function CrematorioDashboard() {
                 </div>
               )}
 
+              {/* Extra fields for LISTA_PARA_ENTREGA */}
+              {statusForm.status === 'LISTA_PARA_ENTREGA' && (
+                <div className="form-grid">
+                  <div className="form-group">
+                    <label>Fecha Programada de Entrega</label>
+                    <input className="form-control" type="date" value={statusForm.deliveryDate} onChange={e => setStatusForm(p => ({ ...p, deliveryDate: e.target.value }))} />
+                  </div>
+                </div>
+              )}
+
               {/* Extra fields for ENTREGADA */}
               {statusForm.status === 'ENTREGADA' && (
                 <div className="form-grid">
@@ -1094,13 +1116,22 @@ export default function CrematorioDashboard() {
                     <input className="form-control" value={statusForm.receiverName} onChange={e => setStatusForm(p => ({ ...p, receiverName: e.target.value }))} />
                   </div>
                   <div className="form-group">
-                    <label>Teléfono</label>
+                    <label>Teléfono de quien recibe</label>
                     <input className="form-control" value={statusForm.receiverPhone} onChange={e => setStatusForm(p => ({ ...p, receiverPhone: e.target.value }))} />
                   </div>
                   <div className="form-group full-width">
                     <label>Notas de entrega</label>
                     <textarea className="form-control" value={statusForm.deliveryNotes} onChange={e => setStatusForm(p => ({ ...p, deliveryNotes: e.target.value }))} rows="2" />
                   </div>
+                </div>
+              )}
+
+              {/* Cancel option */}
+              {statusForm.status !== 'CANCELADA' && selectedOrder.status !== 'ENTREGADA' && selectedOrder.status !== 'CANCELADA' && (
+                <div style={{ marginTop: 16, paddingTop: 16, borderTop: '1px solid #e2e8f0' }}>
+                  <button className="btn-sm btn-danger-sm" style={{ width: '100%' }} onClick={() => setStatusForm(p => ({ ...p, status: 'CANCELADA' }))}>
+                    ❌ Cancelar Orden
+                  </button>
                 </div>
               )}
 
