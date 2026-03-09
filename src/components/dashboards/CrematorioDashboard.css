@@ -707,23 +707,23 @@
 }
 
 /* Forms */
-.form-grid {
+.crematorio-dashboard .form-grid {
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 16px;
 }
 
-.form-group {
+.crematorio-dashboard .form-group {
   display: flex;
   flex-direction: column;
   gap: 6px;
 }
 
-.form-group.full-width {
+.crematorio-dashboard .form-group.full-width {
   grid-column: 1 / -1;
 }
 
-.form-group label {
+.crematorio-dashboard .form-group label {
   font-size: 0.8rem;
   color: #475569;
   font-weight: 600;
@@ -731,7 +731,11 @@
   letter-spacing: 0.03em;
 }
 
-.form-control {
+.crematorio-dashboard .form-control,
+.crematorio-dashboard input.form-control,
+.crematorio-dashboard select.form-control,
+.crematorio-dashboard textarea.form-control {
+  width: 100%;
   padding: 10px 14px;
   background: #ffffff !important;
   border: 2px solid #94a3b8 !important;
@@ -740,25 +744,29 @@
   font-size: 0.9rem;
   min-height: 42px;
   transition: border-color 0.2s, box-shadow 0.2s;
+  box-sizing: border-box;
 }
 
-.form-control:focus {
+.crematorio-dashboard .form-control:focus,
+.crematorio-dashboard input.form-control:focus,
+.crematorio-dashboard select.form-control:focus,
+.crematorio-dashboard textarea.form-control:focus {
   outline: none;
   border-color: #0891b2 !important;
   box-shadow: 0 0 0 3px rgba(8, 145, 178, 0.15);
   background: #ffffff !important;
 }
 
-.form-control::placeholder {
+.crematorio-dashboard .form-control::placeholder {
   color: #94a3b8;
 }
 
-textarea.form-control {
+.crematorio-dashboard textarea.form-control {
   resize: vertical;
   min-height: 64px;
 }
 
-select.form-control {
+.crematorio-dashboard select.form-control {
   appearance: auto;
   cursor: pointer;
 }
