@@ -175,26 +175,30 @@ async function getPackaging(weightKg: number) {
 
 // POST /cremation/orders - Create order (public endpoint for aliados)
 router.post('/orders', async (req: Request, res: Response) => {
+  // Helper: treat empty strings as undefined for optional fields
+  const emptyToUndefined = z.string().transform(v => v === '' ? undefined : v);
+  const optionalString = z.union([z.string().min(1), z.literal('')]).optional().transform(v => v === '' ? undefined : v);
+
   const schema = z.object({
     petName: z.string().min(1),
     species: z.string().min(1),
-    breed: z.string().optional(),
-    sex: z.string().optional(),
-    age: z.string().optional(),
-    color: z.string().optional(),
-    characteristics: z.string().optional(),
+    breed: optionalString,
+    sex: optionalString,
+    age: optionalString,
+    color: optionalString,
+    characteristics: optionalString,
     weightKg: z.number().positive(),
     clientName: z.string().min(1),
     clientPhone: z.string().min(1),
-    clientEmail: z.string().email().optional(),
+    clientEmail: z.union([z.string().email(), z.literal('')]).optional().transform(v => v === '' ? undefined : v),
     originType: z.enum(['CLINICA', 'ALIADO', 'DIRECTO']).default('DIRECTO'),
-    originName: z.string().optional(),
-    pickupAddress: z.string().min(1),
-    pickupDate: z.string().optional(), // ISO date
-    pickupTimeSlot: z.string().optional(),
-    pickupNotes: z.string().optional(),
-    urnId: z.string().optional(),
-    notes: z.string().optional(),
+    originName: optionalString,
+    pickupAddress: optionalString,
+    pickupDate: optionalString,
+    pickupTimeSlot: optionalString,
+    pickupNotes: optionalString,
+    urnId: optionalString,
+    notes: optionalString,
   });
 
   const data = schema.parse(req.body);
@@ -219,7 +223,7 @@ router.post('/orders', async (req: Request, res: Response) => {
       clientEmail: data.clientEmail,
       originType: data.originType as any,
       originName: data.originName,
-      pickupAddress: data.pickupAddress,
+      pickupAddress: data.pickupAddress || '',
       pickupDate: data.pickupDate ? new Date(data.pickupDate) : null,
       pickupTimeSlot: data.pickupTimeSlot,
       pickupNotes: data.pickupNotes,

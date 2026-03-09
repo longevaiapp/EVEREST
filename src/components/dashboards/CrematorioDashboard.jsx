@@ -129,9 +129,22 @@ export default function CrematorioDashboard() {
 
   // ==================== HANDLERS ====================
   const handleCreateOrder = async () => {
+    if (!orderForm.petName || !orderForm.species || !orderForm.clientName || !orderForm.clientPhone) {
+      alert('Por favor completa los campos obligatorios: Nombre mascota, Especie, Nombre cliente, Teléfono');
+      return;
+    }
+    const weight = parseFloat(orderForm.weightKg);
+    if (!weight || weight <= 0) {
+      alert('El peso debe ser mayor a 0');
+      return;
+    }
     setSubmitting(true);
     try {
-      await createOrder({ ...orderForm, weightKg: parseFloat(orderForm.weightKg) || 0 });
+      // Clean empty strings to avoid validation errors
+      const cleanData = Object.fromEntries(
+        Object.entries({ ...orderForm, weightKg: weight }).map(([k, v]) => [k, v === '' ? undefined : v])
+      );
+      await createOrder(cleanData);
       setShowOrderModal(false);
       setOrderForm({
         petName: '', species: 'Canino', breed: '', sex: '', age: '',
