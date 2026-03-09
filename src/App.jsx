@@ -13,6 +13,8 @@ import EstilistaDashboard from './components/dashboards/EstilistaDashboard';
 import AdminDashboard from './components/dashboards/AdminDashboard';
 import HospitalizacionDashboard from './components/dashboards/HospitalizacionDashboard';
 import CrematorioDashboard from './components/dashboards/CrematorioDashboard';
+import CatalogoUrnas from './components/CatalogoUrnas';
+import CatalogoAliado from './components/CatalogoAliado';
 import RegistroCliente from './components/RegistroCliente';
 import './App.css';
 
@@ -59,6 +61,10 @@ function App() {
             <Routes>
               {/* Ruta pública - Login */}
               <Route path="/login" element={<Login />} />
+
+              {/* Rutas públicas - Crematorio */}
+              <Route path="/crematorio/catalogo" element={<CatalogoUrnas />} />
+              <Route path="/crematorio/aliado" element={<CatalogoAliado />} />
 
               {/* Rutas protegidas */}
               <Route path="/recepcion" element={

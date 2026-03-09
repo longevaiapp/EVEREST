@@ -60,7 +60,12 @@
     "RECEPCION": "Recepción",
     "MEDICO": "Médico",
     "LABORATORIO": "Laboratorio",
-    "FARMACIA": "Farmacia"
+    "FARMACIA": "Farmacia",
+    "HOSPITALIZACION": "Hospitalización",
+    "ESTILISTA": "Estilista",
+    "RECOLECTOR": "Recolector",
+    "OPERADOR_CREMATORIO": "Crematorio",
+    "ENTREGA": "Entregas"
   },
   "notifications": {
     "NUEVA_TAREA": "Nueva Tarea",

@@ -15,6 +15,9 @@ const demoUsers = [
   { email: 'estilista@vetos.com', nombre: 'Stylist', rol: 'ESTILISTA', avatar: '✂️' },
   { email: 'laboratorio@vetos.com', nombre: 'Lab', rol: 'LABORATORIO', avatar: '🔬' },
   { email: 'farmacia@vetos.com', nombre: 'Pharmacy', rol: 'FARMACIA', avatar: '💊' },
+  { email: 'recolector@vetos.com', nombre: 'Recolector', rol: 'RECOLECTOR', avatar: '🚗' },
+  { email: 'crematorio@vetos.com', nombre: 'Crematorio', rol: 'OPERADOR_CREMATORIO', avatar: '🔥' },
+  { email: 'entregas@vetos.com', nombre: 'Entregas', rol: 'ENTREGA', avatar: '📦' },
 ];
 
 function Login() {
@@ -64,6 +67,9 @@ function Login() {
       ESTILISTA: '/estilista',
       LABORATORIO: '/laboratorio',
       FARMACIA: '/farmacia',
+      RECOLECTOR: '/crematorio',
+      OPERADOR_CREMATORIO: '/crematorio',
+      ENTREGA: '/crematorio',
     };
     navigate(routes[rol] || '/');
   };
