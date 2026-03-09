@@ -310,9 +310,12 @@ router.get('/', authenticate, async (req: Request, res: Response) => {
         edad: h.pet.fechaNacimiento ? calcularEdad(h.pet.fechaNacimiento) : null,
         genero: h.pet.sexo,
         peso: h.pet.peso,
+        color: h.pet.color,
         owner: h.pet.owner ? {
           id: h.pet.owner.id,
           nombre: h.pet.owner.nombre || h.pet.owner.name,
+          telefono: h.pet.owner.telefono,
+          email: h.pet.owner.email,
         } : null
       } : null,
       attendingVet: h.admittedBy ? {
@@ -714,10 +717,12 @@ router.get('/:id', authenticate, async (req: Request, res: Response) => {
         edad: h.pet.fechaNacimiento ? calcularEdad(h.pet.fechaNacimiento) : null,
         genero: h.pet.sexo,
         peso: h.pet.peso,
+        color: h.pet.color,
         owner: h.pet.owner ? {
           id: h.pet.owner.id,
           nombre: h.pet.owner.nombre || h.pet.owner.name,
           telefono: h.pet.owner.telefono,
+          email: h.pet.owner.email,
         } : null
       } : null,
       attendingVet: h.admittedBy ? {

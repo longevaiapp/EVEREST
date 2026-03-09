@@ -1,5 +1,6 @@
 import { useState, useCallback, useEffect, useMemo, useRef } from 'react';
 import { createPortal } from 'react-dom';
+import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { useAuth } from '../../context/AuthContext';
 import useHospitalizacion from '../../hooks/useHospitalizacion';
@@ -52,6 +53,7 @@ function getMonitoringStatus(hospitalization) {
 function HospitalizacionDashboard() {
   const { t } = useTranslation();
   const { user, logout } = useAuth();
+  const navigate = useNavigate();
 
   const {
     loading, error, hospitalizaciones, stats,
@@ -413,10 +415,34 @@ function HospitalizacionDashboard() {
     if (!selectedHospitalization) return;
     const ok = await dischargePatient(selectedHospitalization.id, dischargeForm.type, dischargeForm.notes);
     if (ok) {
+      const wasFallecido = dischargeForm.type === 'FALLECIDO';
       setShowDischargeModal(false);
       setDischargeForm({ type: 'ALTA_MEDICA', notes: '' });
       setDrawerOpen(false);
       fetchHospitalizaciones(filterType || null, filterStatus || null);
+      if (wasFallecido && patient?.nombre) {
+        const speciesMap = { PERRO: 'Canino', GATO: 'Felino', AVE: 'Ave', REPTIL: 'Reptil', ROEDOR: 'Roedor' };
+        const sexMap = { MACHO: 'Macho', HEMBRA: 'Hembra' };
+        const goToCremation = window.confirm(
+          `\u00bf${patient.nombre} ha fallecido. \u00bfDeseas crear una orden de cremaci\u00f3n?`
+        );
+        if (goToCremation) {
+          const params = new URLSearchParams({
+            from: 'hospitalizacion',
+            petName: patient.nombre || '',
+            species: speciesMap[patient.especie] || patient.especie || '',
+            breed: patient.raza || '',
+            sex: sexMap[patient.genero] || patient.genero || '',
+            age: patient.edad || '',
+            weightKg: patient.peso ? String(patient.peso) : '',
+            color: patient.color || '',
+            clientName: patient.owner?.nombre || '',
+            clientPhone: patient.owner?.telefono || '',
+            notes: `Fallecido en hospitalizaci\u00f3n`,
+          });
+          navigate(`/crematorio?${params.toString()}`);
+        }
+      }
     }
   };
 

@@ -105,7 +105,7 @@ router.get('/', authenticate, async (req, res) => {
       where,
       include: {
         owner: {
-          select: { id: true, nombre: true, telefono: true },
+          select: { id: true, nombre: true, telefono: true, email: true },
         },
       },
       orderBy: { createdAt: 'desc' },

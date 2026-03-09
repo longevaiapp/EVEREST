@@ -1,9 +1,11 @@
 // src/components/dashboards/CrematorioDashboard.jsx
 // Main cremation dashboard with role-based sections
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import useCrematorio from '../../hooks/useCrematorio';
 import { useAuth } from '../../context/AuthContext';
+import api from '../../services/api';
 import './CrematorioDashboard.css';
 
 const STATUS_CONFIG = {
@@ -92,6 +94,84 @@ export default function CrematorioDashboard() {
   });
   const [urnForm, setUrnForm] = useState({ name: '', description: '', price: '', size: 'MEDIANA', imageUrl: '', active: true });
   const [packagingForm, setPackagingForm] = useState({ minKg: '', maxKg: '', label: '', requiresTwoOperators: false, sortOrder: '' });
+
+  // Pet search state
+  const [petSearchTerm, setPetSearchTerm] = useState('');
+  const [petSearchResults, setPetSearchResults] = useState([]);
+  const [petSearching, setPetSearching] = useState(false);
+  const [showPetResults, setShowPetResults] = useState(false);
+  const petSearchTimeout = useRef(null);
+
+  // URL params: pre-fill from hospitalization
+  const [searchParams, setSearchParams] = useSearchParams();
+  useEffect(() => {
+    const fromModule = searchParams.get('from');
+    if (fromModule === 'hospitalizacion' || fromModule === 'medico') {
+      const prefill = {
+        petName: searchParams.get('petName') || '',
+        species: searchParams.get('species') || 'Canino',
+        breed: searchParams.get('breed') || '',
+        sex: searchParams.get('sex') || '',
+        age: searchParams.get('age') || '',
+        color: searchParams.get('color') || '',
+        characteristics: '',
+        weightKg: searchParams.get('weightKg') || '',
+        clientName: searchParams.get('clientName') || '',
+        clientPhone: searchParams.get('clientPhone') || '',
+        clientEmail: searchParams.get('clientEmail') || '',
+        originType: 'CLINICA',
+        originName: searchParams.get('originName') || 'Everest Veterinaria',
+        pickupAddress: '', pickupDate: '', pickupTimeSlot: '', pickupNotes: '',
+        urnId: '', notes: searchParams.get('notes') || '',
+      };
+      setOrderForm(prefill);
+      setShowOrderModal(true);
+      // Clear params so refresh doesn't re-open
+      setSearchParams({}, { replace: true });
+    }
+  }, []);
+
+  // Pet search handler
+  const handlePetSearch = useCallback((value) => {
+    setPetSearchTerm(value);
+    if (petSearchTimeout.current) clearTimeout(petSearchTimeout.current);
+    if (!value || value.length < 2) {
+      setPetSearchResults([]);
+      setShowPetResults(false);
+      return;
+    }
+    setPetSearching(true);
+    petSearchTimeout.current = setTimeout(async () => {
+      try {
+        const res = await api.get('/pets', { params: { search: value, limit: 8 } });
+        setPetSearchResults(res.data?.pets || []);
+        setShowPetResults(true);
+      } catch { setPetSearchResults([]); }
+      finally { setPetSearching(false); }
+    }, 350);
+  }, []);
+
+  const handleSelectPet = (pet) => {
+    const speciesMap = { PERRO: 'Canino', GATO: 'Felino', AVE: 'Ave', REPTIL: 'Reptil', ROEDOR: 'Roedor' };
+    const sexMap = { MACHO: 'Macho', HEMBRA: 'Hembra' };
+    setOrderForm(prev => ({
+      ...prev,
+      petName: pet.nombre || '',
+      species: speciesMap[pet.especie] || pet.especie || 'Canino',
+      breed: pet.raza || '',
+      sex: sexMap[pet.sexo] || pet.sexo || '',
+      weightKg: pet.peso ? String(pet.peso) : '',
+      color: pet.color || '',
+      clientName: pet.owner?.nombre || '',
+      clientPhone: pet.owner?.telefono || '',
+      clientEmail: pet.owner?.email || '',
+      originType: 'CLINICA',
+      originName: 'Everest Veterinaria',
+    }));
+    setPetSearchTerm('');
+    setPetSearchResults([]);
+    setShowPetResults(false);
+  };
 
   // Initial data load
   useEffect(() => {
@@ -844,6 +924,44 @@ export default function CrematorioDashboard() {
               <button className="modal-close" onClick={() => setShowOrderModal(false)}>✕</button>
             </div>
             <div className="modal-body">
+              {/* Pet search */}
+              <div className="pet-search-section">
+                <h4>🔍 Buscar Paciente Registrado</h4>
+                <div className="pet-search-container">
+                  <input
+                    className="form-control"
+                    placeholder="Buscar por nombre de mascota, ficha, dueño o teléfono..."
+                    value={petSearchTerm}
+                    onChange={e => handlePetSearch(e.target.value)}
+                    onBlur={() => setTimeout(() => setShowPetResults(false), 200)}
+                    onFocus={() => petSearchResults.length > 0 && setShowPetResults(true)}
+                  />
+                  {petSearching && <span className="pet-search-loading">Buscando...</span>}
+                  {showPetResults && petSearchResults.length > 0 && (
+                    <div className="pet-search-results">
+                      {petSearchResults.map(pet => (
+                        <div key={pet.id} className="pet-search-item" onMouseDown={() => handleSelectPet(pet)}>
+                          <span className="pet-search-icon">{pet.especie === 'GATO' ? '🐈' : '🐕'}</span>
+                          <div className="pet-search-info">
+                            <strong>{pet.nombre}</strong> <small>({pet.numeroFicha})</small>
+                            <div className="pet-search-detail">
+                              {pet.especie} • {pet.raza || '-'} {pet.peso ? `• ${pet.peso}kg` : ''}
+                              {pet.owner && <> — 👤 {pet.owner.nombre} ({pet.owner.telefono})</>}
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                  {showPetResults && petSearchResults.length === 0 && petSearchTerm.length >= 2 && !petSearching && (
+                    <div className="pet-search-results">
+                      <div className="pet-search-empty">No se encontraron pacientes</div>
+                    </div>
+                  )}
+                </div>
+                <p className="pet-search-hint">Selecciona un paciente para llenar automáticamente, o llena manualmente abajo.</p>
+              </div>
+
               <h4>🐾 Datos de la Mascota</h4>
               <div className="form-grid">
                 <div className="form-group">
@@ -962,7 +1080,7 @@ export default function CrematorioDashboard() {
             <div className="modal-footer">
               <button className="btn-secondary" onClick={() => setShowOrderModal(false)}>Cancelar</button>
               <button className="btn-primary" onClick={handleCreateOrder}
-                disabled={!orderForm.petName || !orderForm.clientName || !orderForm.clientPhone || !orderForm.weightKg || !orderForm.pickupAddress || submitting}>
+                disabled={!orderForm.petName || !orderForm.clientName || !orderForm.clientPhone || !orderForm.weightKg || submitting}>
                 {submitting ? '⏳ Creando...' : '📋 Crear Orden'}
               </button>
             </div>
