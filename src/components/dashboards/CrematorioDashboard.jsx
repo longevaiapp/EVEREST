@@ -1,12 +1,11 @@
 // src/components/dashboards/CrematorioDashboard.jsx
-// Main cremation dashboard with internal sections for all workflows
+// Main cremation dashboard with role-based sections
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect } from 'react';
 import useCrematorio from '../../hooks/useCrematorio';
 import { useAuth } from '../../context/AuthContext';
 import './CrematorioDashboard.css';
 
-// Status labels and colors
 const STATUS_CONFIG = {
   SOLICITADA: { label: 'Solicitada', emoji: '📋', color: '#6366f1' },
   RECOLECCION_PROGRAMADA: { label: 'Recolección Programada', emoji: '📅', color: '#f59e0b' },
@@ -24,26 +23,60 @@ const PAYMENT_STATUS = {
   FALLIDO: { label: 'Fallido', color: '#ef4444' },
 };
 
+// Role-based section visibility
+const ROLE_SECTIONS = {
+  ADMIN: ['general', 'ordenes', 'recoleccion', 'cremacion', 'entregas', 'catalogo', 'configuracion'],
+  RECOLECTOR: ['recoleccion', 'ordenes'],
+  OPERADOR_CREMATORIO: ['cremacion', 'ordenes'],
+  ENTREGA: ['entregas', 'ordenes'],
+};
+
+const ROLE_DEFAULT_SECTION = {
+  ADMIN: 'general',
+  RECOLECTOR: 'recoleccion',
+  OPERADOR_CREMATORIO: 'cremacion',
+  ENTREGA: 'entregas',
+};
+
+const NEXT_STATUS_MAP = {
+  SOLICITADA: 'RECOLECCION_PROGRAMADA',
+  RECOLECCION_PROGRAMADA: 'RECOLECCION_REALIZADA',
+  RECOLECCION_REALIZADA: 'EN_CREMATORIO',
+  EN_CREMATORIO: 'EN_PROCESO',
+  EN_PROCESO: 'LISTA_PARA_ENTREGA',
+  LISTA_PARA_ENTREGA: 'ENTREGADA',
+};
+
 export default function CrematorioDashboard() {
   const { user } = useAuth();
+  const rol = user?.rol || 'ADMIN';
+  const isAdmin = rol === 'ADMIN';
+  const allowedSections = ROLE_SECTIONS[rol] || ROLE_SECTIONS.ADMIN;
+
   const {
     orders, selectedOrder, urns, stats, loading,
     fetchOrders, fetchOrder, createOrder, updateOrder, updateOrderStatus,
-    setSelectedOrder, createPayment, fetchUrns, fetchStats,
+    setSelectedOrder, createPayment, fetchUrns, fetchAllUrns, fetchStats,
     createUrn, updateUrn, fetchPackagingRanges, packagingRanges,
+    createPackagingRange, updatePackagingRange, deletePackagingRange,
   } = useCrematorio();
 
-  const [activeSection, setActiveSection] = useState('general');
+  const [activeSection, setActiveSection] = useState(ROLE_DEFAULT_SECTION[rol] || 'general');
   const [statusFilter, setStatusFilter] = useState('all');
   const [searchTerm, setSearchTerm] = useState('');
+  const [submitting, setSubmitting] = useState(false);
+
+  // Modal visibility
   const [showOrderModal, setShowOrderModal] = useState(false);
   const [showDetailModal, setShowDetailModal] = useState(false);
   const [showPaymentModal, setShowPaymentModal] = useState(false);
   const [showStatusModal, setShowStatusModal] = useState(false);
   const [showUrnModal, setShowUrnModal] = useState(false);
+  const [showPackagingModal, setShowPackagingModal] = useState(false);
   const [editingUrn, setEditingUrn] = useState(null);
+  const [editingPackaging, setEditingPackaging] = useState(null);
 
-  // Order form
+  // Forms
   const [orderForm, setOrderForm] = useState({
     petName: '', species: 'Canino', breed: '', sex: '', age: '',
     color: '', characteristics: '', weightKg: '',
@@ -52,30 +85,22 @@ export default function CrematorioDashboard() {
     pickupAddress: '', pickupDate: '', pickupTimeSlot: '', pickupNotes: '',
     urnId: '', notes: '',
   });
-
-  // Payment form
-  const [paymentForm, setPaymentForm] = useState({
-    amount: '', method: 'EFECTIVO', reference: '', notes: '',
-  });
-
-  // Status change form
+  const [paymentForm, setPaymentForm] = useState({ amount: '', method: 'EFECTIVO', reference: '', notes: '' });
   const [statusForm, setStatusForm] = useState({
     status: '', notes: '', assignedToId: '', pickupDate: '', pickupTimeSlot: '',
     receiverName: '', receiverPhone: '', deliveryNotes: '',
   });
-
-  // Urn form
-  const [urnForm, setUrnForm] = useState({
-    name: '', description: '', price: '', size: 'MEDIANA', imageUrl: '',
-  });
+  const [urnForm, setUrnForm] = useState({ name: '', description: '', price: '', size: 'MEDIANA', imageUrl: '', active: true });
+  const [packagingForm, setPackagingForm] = useState({ minKg: '', maxKg: '', label: '', requiresTwoOperators: false, sortOrder: '' });
 
   // Initial data load
   useEffect(() => {
     fetchOrders();
-    fetchUrns();
+    // Admin sees all urns (including inactive); others see only active
+    if (isAdmin) fetchAllUrns(); else fetchUrns();
     fetchStats();
     fetchPackagingRanges();
-  }, [fetchOrders, fetchUrns, fetchStats, fetchPackagingRanges]);
+  }, [fetchOrders, fetchUrns, fetchAllUrns, fetchStats, fetchPackagingRanges, isAdmin]);
 
   // Filtered orders
   const filteredOrders = orders.filter(o => {
@@ -92,7 +117,6 @@ export default function CrematorioDashboard() {
     return true;
   });
 
-  // Section-specific filtered orders
   const recoleccionOrders = orders.filter(o =>
     ['SOLICITADA', 'RECOLECCION_PROGRAMADA', 'RECOLECCION_REALIZADA'].includes(o.status)
   );
@@ -103,13 +127,11 @@ export default function CrematorioDashboard() {
     ['LISTA_PARA_ENTREGA', 'ENTREGADA'].includes(o.status)
   );
 
-  // Handlers
+  // ==================== HANDLERS ====================
   const handleCreateOrder = async () => {
+    setSubmitting(true);
     try {
-      await createOrder({
-        ...orderForm,
-        weightKg: parseFloat(orderForm.weightKg) || 0,
-      });
+      await createOrder({ ...orderForm, weightKg: parseFloat(orderForm.weightKg) || 0 });
       setShowOrderModal(false);
       setOrderForm({
         petName: '', species: 'Canino', breed: '', sex: '', age: '',
@@ -119,9 +141,11 @@ export default function CrematorioDashboard() {
         pickupAddress: '', pickupDate: '', pickupTimeSlot: '', pickupNotes: '',
         urnId: '', notes: '',
       });
-      fetchStats();
+      await Promise.all([fetchStats(), fetchOrders()]);
     } catch (err) {
       alert('Error al crear orden: ' + (err.response?.data?.message || err.message));
+    } finally {
+      setSubmitting(false);
     }
   };
 
@@ -132,35 +156,38 @@ export default function CrematorioDashboard() {
 
   const handleStatusChange = async () => {
     if (!selectedOrder) return;
+    setSubmitting(true);
     try {
-      await updateOrderStatus(selectedOrder.id, {
-        ...statusForm,
-        status: statusForm.status,
-      });
+      await updateOrderStatus(selectedOrder.id, { ...statusForm });
       setShowStatusModal(false);
       setStatusForm({ status: '', notes: '', assignedToId: '', pickupDate: '', pickupTimeSlot: '', receiverName: '', receiverPhone: '', deliveryNotes: '' });
-      fetchStats();
-      fetchOrders();
+      // Refresh order detail if detail modal was open
+      await fetchOrder(selectedOrder.id);
+      await Promise.all([fetchStats(), fetchOrders()]);
     } catch (err) {
       alert('Error: ' + (err.response?.data?.message || err.message));
+    } finally {
+      setSubmitting(false);
     }
   };
 
   const handleCreatePayment = async () => {
     if (!selectedOrder) return;
+    setSubmitting(true);
     try {
-      await createPayment(selectedOrder.id, {
-        ...paymentForm,
-        amount: parseFloat(paymentForm.amount) || 0,
-      });
+      await createPayment(selectedOrder.id, { ...paymentForm, amount: parseFloat(paymentForm.amount) || 0 });
       setShowPaymentModal(false);
       setPaymentForm({ amount: '', method: 'EFECTIVO', reference: '', notes: '' });
+      // createPayment in hook already calls fetchOrder to refresh selectedOrder
     } catch (err) {
       alert('Error: ' + (err.response?.data?.message || err.message));
+    } finally {
+      setSubmitting(false);
     }
   };
 
   const handleSaveUrn = async () => {
+    setSubmitting(true);
     try {
       const data = { ...urnForm, price: parseFloat(urnForm.price) || 0 };
       if (editingUrn) {
@@ -170,8 +197,55 @@ export default function CrematorioDashboard() {
       }
       setShowUrnModal(false);
       setEditingUrn(null);
-      setUrnForm({ name: '', description: '', price: '', size: 'MEDIANA', imageUrl: '' });
-      fetchUrns();
+      setUrnForm({ name: '', description: '', price: '', size: 'MEDIANA', imageUrl: '', active: true });
+      if (isAdmin) await fetchAllUrns(); else await fetchUrns();
+    } catch (err) {
+      alert('Error: ' + (err.response?.data?.message || err.message));
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  const handleToggleUrnActive = async (urn) => {
+    try {
+      await updateUrn(urn.id, { active: !urn.active });
+      if (isAdmin) await fetchAllUrns(); else await fetchUrns();
+    } catch (err) {
+      alert('Error: ' + (err.response?.data?.message || err.message));
+    }
+  };
+
+  const handleSavePackaging = async () => {
+    setSubmitting(true);
+    try {
+      const data = {
+        minKg: parseFloat(packagingForm.minKg) || 0,
+        maxKg: parseFloat(packagingForm.maxKg) || 0,
+        label: packagingForm.label,
+        requiresTwoOperators: packagingForm.requiresTwoOperators,
+        sortOrder: parseInt(packagingForm.sortOrder) || 0,
+      };
+      if (editingPackaging) {
+        await updatePackagingRange(editingPackaging.id, data);
+      } else {
+        await createPackagingRange(data);
+      }
+      setShowPackagingModal(false);
+      setEditingPackaging(null);
+      setPackagingForm({ minKg: '', maxKg: '', label: '', requiresTwoOperators: false, sortOrder: '' });
+      await fetchPackagingRanges();
+    } catch (err) {
+      alert('Error: ' + (err.response?.data?.message || err.message));
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  const handleDeletePackaging = async (id) => {
+    if (!confirm('¿Eliminar este rango de empaque?')) return;
+    try {
+      await deletePackagingRange(id);
+      await fetchPackagingRanges();
     } catch (err) {
       alert('Error: ' + (err.response?.data?.message || err.message));
     }
@@ -185,13 +259,10 @@ export default function CrematorioDashboard() {
 
   const openPaymentModal = (order) => {
     setSelectedOrder(order);
-    // Pre-fill with urn price if available
-    const urnPrice = order.urn?.price || '';
-    setPaymentForm(prev => ({ ...prev, amount: urnPrice }));
+    setPaymentForm(prev => ({ ...prev, amount: order.urn?.price || '' }));
     setShowPaymentModal(true);
   };
 
-  // Export CSV
   const handleExport = () => {
     const headers = ['Folio', 'Estado', 'Mascota', 'Especie', 'Peso (kg)', 'Empaque', 'Cliente', 'Teléfono', 'Origen', 'Urna', 'Fecha'];
     const rows = filteredOrders.map(o => [
@@ -200,7 +271,7 @@ export default function CrematorioDashboard() {
       o.originName || o.originType, o.urn?.name || '-',
       new Date(o.createdAt).toLocaleDateString(),
     ]);
-    const csv = [headers, ...rows].map(r => r.join(',')).join('\n');
+    const csv = [headers, ...rows].map(r => r.map(c => `"${c}"`).join(',')).join('\n');
     const blob = new Blob([csv], { type: 'text/csv' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
@@ -212,42 +283,62 @@ export default function CrematorioDashboard() {
 
   const formatDate = (d) => d ? new Date(d).toLocaleDateString('es-MX', { day: '2-digit', month: 'short', year: 'numeric' }) : '-';
   const formatDateTime = (d) => d ? new Date(d).toLocaleString('es-MX', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' }) : '-';
+  const canSee = (section) => allowedSections.includes(section);
 
   return (
     <div className="dashboard crematorio-dashboard">
       <aside className="sidebar">
         <div className="sidebar-header">
           <h2>🔥 Crematorio</h2>
+          <span className="sidebar-role">{rol.replace(/_/g, ' ')}</span>
         </div>
         <nav className="sidebar-nav">
-          <button className={`nav-item ${activeSection === 'general' ? 'active' : ''}`} onClick={() => setActiveSection('general')}>
-            <span className="nav-icon">📊</span>
-            <span>Dashboard</span>
-          </button>
-          <button className={`nav-item ${activeSection === 'ordenes' ? 'active' : ''}`} onClick={() => setActiveSection('ordenes')}>
-            <span className="nav-icon">📋</span>
-            <span>Todas las Órdenes</span>
-            {orders.length > 0 && <span className="nav-badge">{orders.length}</span>}
-          </button>
-          <button className={`nav-item ${activeSection === 'recoleccion' ? 'active' : ''}`} onClick={() => setActiveSection('recoleccion')}>
-            <span className="nav-icon">🚗</span>
-            <span>Recolección</span>
-            {recoleccionOrders.length > 0 && <span className="nav-badge">{recoleccionOrders.length}</span>}
-          </button>
-          <button className={`nav-item ${activeSection === 'cremacion' ? 'active' : ''}`} onClick={() => setActiveSection('cremacion')}>
-            <span className="nav-icon">🔥</span>
-            <span>Cremación</span>
-            {cremacionOrders.length > 0 && <span className="nav-badge">{cremacionOrders.length}</span>}
-          </button>
-          <button className={`nav-item ${activeSection === 'entregas' ? 'active' : ''}`} onClick={() => setActiveSection('entregas')}>
-            <span className="nav-icon">📦</span>
-            <span>Entregas</span>
-            {entregaOrders.length > 0 && <span className="nav-badge">{entregaOrders.length}</span>}
-          </button>
-          <button className={`nav-item ${activeSection === 'catalogo' ? 'active' : ''}`} onClick={() => setActiveSection('catalogo')}>
-            <span className="nav-icon">⚱️</span>
-            <span>Catálogo Urnas</span>
-          </button>
+          {canSee('general') && (
+            <button className={`nav-item ${activeSection === 'general' ? 'active' : ''}`} onClick={() => setActiveSection('general')}>
+              <span className="nav-icon">📊</span>
+              <span>Dashboard</span>
+            </button>
+          )}
+          {canSee('ordenes') && (
+            <button className={`nav-item ${activeSection === 'ordenes' ? 'active' : ''}`} onClick={() => setActiveSection('ordenes')}>
+              <span className="nav-icon">📋</span>
+              <span>Órdenes</span>
+              {orders.length > 0 && <span className="nav-badge">{orders.length}</span>}
+            </button>
+          )}
+          {canSee('recoleccion') && (
+            <button className={`nav-item ${activeSection === 'recoleccion' ? 'active' : ''}`} onClick={() => setActiveSection('recoleccion')}>
+              <span className="nav-icon">🚗</span>
+              <span>Recolección</span>
+              {recoleccionOrders.length > 0 && <span className="nav-badge">{recoleccionOrders.length}</span>}
+            </button>
+          )}
+          {canSee('cremacion') && (
+            <button className={`nav-item ${activeSection === 'cremacion' ? 'active' : ''}`} onClick={() => setActiveSection('cremacion')}>
+              <span className="nav-icon">🔥</span>
+              <span>Cremación</span>
+              {cremacionOrders.length > 0 && <span className="nav-badge">{cremacionOrders.length}</span>}
+            </button>
+          )}
+          {canSee('entregas') && (
+            <button className={`nav-item ${activeSection === 'entregas' ? 'active' : ''}`} onClick={() => setActiveSection('entregas')}>
+              <span className="nav-icon">📦</span>
+              <span>Entregas</span>
+              {entregaOrders.length > 0 && <span className="nav-badge">{entregaOrders.length}</span>}
+            </button>
+          )}
+          {canSee('catalogo') && (
+            <button className={`nav-item ${activeSection === 'catalogo' ? 'active' : ''}`} onClick={() => setActiveSection('catalogo')}>
+              <span className="nav-icon">⚱️</span>
+              <span>Catálogo Urnas</span>
+            </button>
+          )}
+          {canSee('configuracion') && (
+            <button className={`nav-item ${activeSection === 'configuracion' ? 'active' : ''}`} onClick={() => setActiveSection('configuracion')}>
+              <span className="nav-icon">⚙️</span>
+              <span>Configuración</span>
+            </button>
+          )}
         </nav>
       </aside>
 
@@ -411,15 +502,7 @@ export default function CrematorioDashboard() {
                       <button className="btn-sm" onClick={() => handleViewDetail(order)}>👁️ Ver detalle</button>
                       {order.status !== 'ENTREGADA' && order.status !== 'CANCELADA' && (
                         <button className="btn-sm btn-status" onClick={() => {
-                          const nextMap = {
-                            SOLICITADA: 'RECOLECCION_PROGRAMADA',
-                            RECOLECCION_PROGRAMADA: 'RECOLECCION_REALIZADA',
-                            RECOLECCION_REALIZADA: 'EN_CREMATORIO',
-                            EN_CREMATORIO: 'EN_PROCESO',
-                            EN_PROCESO: 'LISTA_PARA_ENTREGA',
-                            LISTA_PARA_ENTREGA: 'ENTREGADA',
-                          };
-                          openStatusModal(order, nextMap[order.status] || '');
+                          openStatusModal(order, NEXT_STATUS_MAP[order.status] || '');
                         }}>
                           ➡️ Avanzar
                         </button>
@@ -642,8 +725,8 @@ export default function CrematorioDashboard() {
           <div className="section-content">
             <div className="section-header">
               <h2>⚱️ Catálogo de Urnas</h2>
-              {user?.rol === 'ADMIN' && (
-                <button className="btn-primary" onClick={() => { setEditingUrn(null); setUrnForm({ name: '', description: '', price: '', size: 'MEDIANA', imageUrl: '' }); setShowUrnModal(true); }}>
+              {isAdmin && (
+                <button className="btn-primary" onClick={() => { setEditingUrn(null); setUrnForm({ name: '', description: '', price: '', size: 'MEDIANA', imageUrl: '', active: true }); setShowUrnModal(true); }}>
                   + Nueva Urna
                 </button>
               )}
@@ -651,25 +734,78 @@ export default function CrematorioDashboard() {
 
             <div className="urns-grid">
               {urns.map(urn => (
-                <div key={urn.id} className="urn-card">
+                <div key={urn.id} className={`urn-card ${urn.active === false ? 'urn-inactive' : ''}`}>
                   {urn.imageUrl && <img src={urn.imageUrl} alt={urn.name} className="urn-image" />}
                   <div className="urn-info">
-                    <h4>{urn.name}</h4>
+                    <h4>{urn.name} {urn.active === false && <span className="urn-inactive-badge">Inactiva</span>}</h4>
                     <p>{urn.description}</p>
                     <div className="urn-meta">
                       <span className="urn-size">{urn.size}</span>
                       <span className="urn-price">${parseFloat(urn.price).toLocaleString()}</span>
                     </div>
                   </div>
-                  {user?.rol === 'ADMIN' && (
-                    <button className="btn-sm" onClick={() => {
-                      setEditingUrn(urn);
-                      setUrnForm({ name: urn.name, description: urn.description || '', price: urn.price, size: urn.size, imageUrl: urn.imageUrl || '' });
-                      setShowUrnModal(true);
-                    }}>✏️ Editar</button>
+                  {isAdmin && (
+                    <div className="urn-actions">
+                      <button className="btn-sm" onClick={() => {
+                        setEditingUrn(urn);
+                        setUrnForm({ name: urn.name, description: urn.description || '', price: urn.price, size: urn.size, imageUrl: urn.imageUrl || '', active: urn.active !== false });
+                        setShowUrnModal(true);
+                      }}>✏️ Editar</button>
+                      <button className={`btn-sm ${urn.active === false ? 'btn-success' : 'btn-warning'}`} onClick={() => handleToggleUrnActive(urn)}>
+                        {urn.active === false ? '✅ Activar' : '🚫 Desactivar'}
+                      </button>
+                    </div>
                   )}
                 </div>
               ))}
+            </div>
+          </div>
+        )}
+
+        {/* ==================== CONFIGURACIÓN (ADMIN ONLY) ==================== */}
+        {activeSection === 'configuracion' && isAdmin && (
+          <div className="section-content">
+            <div className="section-header">
+              <h2>⚙️ Configuración de Empaque</h2>
+              <button className="btn-primary" onClick={() => {
+                setEditingPackaging(null);
+                setPackagingForm({ minKg: '', maxKg: '', label: '', requiresTwoOperators: false, sortOrder: '' });
+                setShowPackagingModal(true);
+              }}>+ Nuevo Rango</button>
+            </div>
+
+            <div className="packaging-table-wrapper">
+              <table className="orders-table">
+                <thead>
+                  <tr>
+                    <th>Orden</th>
+                    <th>Min (kg)</th>
+                    <th>Max (kg)</th>
+                    <th>Etiqueta</th>
+                    <th>2 Operadores</th>
+                    <th>Acciones</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {packagingRanges.map(r => (
+                    <tr key={r.id}>
+                      <td>{r.sortOrder}</td>
+                      <td>{r.minKg}</td>
+                      <td>{r.maxKg}</td>
+                      <td>{r.label}</td>
+                      <td>{r.requiresTwoOperators ? '⚠️ Sí' : 'No'}</td>
+                      <td>
+                        <button className="btn-sm" onClick={() => {
+                          setEditingPackaging(r);
+                          setPackagingForm({ minKg: r.minKg, maxKg: r.maxKg, label: r.label, requiresTwoOperators: r.requiresTwoOperators, sortOrder: r.sortOrder });
+                          setShowPackagingModal(true);
+                        }}>✏️</button>
+                        <button className="btn-sm btn-danger-sm" onClick={() => handleDeletePackaging(r.id)}>🗑️</button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
             </div>
           </div>
         )}
@@ -804,8 +940,8 @@ export default function CrematorioDashboard() {
             <div className="modal-footer">
               <button className="btn-secondary" onClick={() => setShowOrderModal(false)}>Cancelar</button>
               <button className="btn-primary" onClick={handleCreateOrder}
-                disabled={!orderForm.petName || !orderForm.clientName || !orderForm.clientPhone || !orderForm.weightKg || !orderForm.pickupAddress}>
-                📋 Crear Orden
+                disabled={!orderForm.petName || !orderForm.clientName || !orderForm.clientPhone || !orderForm.weightKg || !orderForm.pickupAddress || submitting}>
+                {submitting ? '⏳ Creando...' : '📋 Crear Orden'}
               </button>
             </div>
           </div>
@@ -907,13 +1043,8 @@ export default function CrematorioDashboard() {
                 <>
                   <button className="btn-sm btn-pay" onClick={() => { setShowDetailModal(false); openPaymentModal(selectedOrder); }}>💰 Pago</button>
                   <button className="btn-primary" onClick={() => {
-                    const nextMap = {
-                      SOLICITADA: 'RECOLECCION_PROGRAMADA', RECOLECCION_PROGRAMADA: 'RECOLECCION_REALIZADA',
-                      RECOLECCION_REALIZADA: 'EN_CREMATORIO', EN_CREMATORIO: 'EN_PROCESO',
-                      EN_PROCESO: 'LISTA_PARA_ENTREGA', LISTA_PARA_ENTREGA: 'ENTREGADA',
-                    };
                     setShowDetailModal(false);
-                    openStatusModal(selectedOrder, nextMap[selectedOrder.status] || '');
+                    openStatusModal(selectedOrder, NEXT_STATUS_MAP[selectedOrder.status] || '');
                   }}>➡️ Avanzar Estado</button>
                 </>
               )}
@@ -980,8 +1111,8 @@ export default function CrematorioDashboard() {
             </div>
             <div className="modal-footer">
               <button className="btn-secondary" onClick={() => setShowStatusModal(false)}>Cancelar</button>
-              <button className="btn-primary" onClick={handleStatusChange}>
-                {STATUS_CONFIG[statusForm.status]?.emoji} Confirmar
+              <button className="btn-primary" onClick={handleStatusChange} disabled={submitting}>
+                {submitting ? '⏳ ...' : `${STATUS_CONFIG[statusForm.status]?.emoji} Confirmar`}
               </button>
             </div>
           </div>
@@ -1022,7 +1153,9 @@ export default function CrematorioDashboard() {
             </div>
             <div className="modal-footer">
               <button className="btn-secondary" onClick={() => setShowPaymentModal(false)}>Cancelar</button>
-              <button className="btn-primary" onClick={handleCreatePayment} disabled={!paymentForm.amount}>💰 Registrar Pago</button>
+              <button className="btn-primary" onClick={handleCreatePayment} disabled={!paymentForm.amount || submitting}>
+                {submitting ? '⏳ ...' : '💰 Registrar Pago'}
+              </button>
             </div>
           </div>
         </div>
@@ -1055,6 +1188,12 @@ export default function CrematorioDashboard() {
                     <option value="EXTRA_GRANDE">Extra Grande</option>
                   </select>
                 </div>
+                <div className="form-group">
+                  <label className="checkbox-label">
+                    <input type="checkbox" checked={urnForm.active} onChange={e => setUrnForm(p => ({ ...p, active: e.target.checked }))} />
+                    Activa (visible en catálogo)
+                  </label>
+                </div>
                 <div className="form-group full-width">
                   <label>Descripción</label>
                   <textarea className="form-control" value={urnForm.description} onChange={e => setUrnForm(p => ({ ...p, description: e.target.value }))} rows="2" />
@@ -1067,8 +1206,52 @@ export default function CrematorioDashboard() {
             </div>
             <div className="modal-footer">
               <button className="btn-secondary" onClick={() => setShowUrnModal(false)}>Cancelar</button>
-              <button className="btn-primary" onClick={handleSaveUrn} disabled={!urnForm.name || !urnForm.price}>
-                {editingUrn ? '✏️ Guardar' : '⚱️ Crear Urna'}
+              <button className="btn-primary" onClick={handleSaveUrn} disabled={!urnForm.name || !urnForm.price || submitting}>
+                {submitting ? '⏳ ...' : editingUrn ? '✏️ Guardar' : '⚱️ Crear Urna'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Packaging Range Modal */}
+      {showPackagingModal && (
+        <div className="modal-overlay" onClick={() => setShowPackagingModal(false)}>
+          <div className="modal-content" onClick={e => e.stopPropagation()}>
+            <div className="modal-header">
+              <h3>{editingPackaging ? '✏️ Editar Rango' : '📦 Nuevo Rango de Empaque'}</h3>
+              <button className="modal-close" onClick={() => setShowPackagingModal(false)}>✕</button>
+            </div>
+            <div className="modal-body">
+              <div className="form-grid">
+                <div className="form-group">
+                  <label>Peso Mínimo (kg) *</label>
+                  <input className="form-control" type="number" step="0.1" value={packagingForm.minKg} onChange={e => setPackagingForm(p => ({ ...p, minKg: e.target.value }))} />
+                </div>
+                <div className="form-group">
+                  <label>Peso Máximo (kg) *</label>
+                  <input className="form-control" type="number" step="0.1" value={packagingForm.maxKg} onChange={e => setPackagingForm(p => ({ ...p, maxKg: e.target.value }))} />
+                </div>
+                <div className="form-group">
+                  <label>Etiqueta *</label>
+                  <input className="form-control" value={packagingForm.label} onChange={e => setPackagingForm(p => ({ ...p, label: e.target.value }))} placeholder="Ej: Bolsa chica" />
+                </div>
+                <div className="form-group">
+                  <label>Orden de Sorteo</label>
+                  <input className="form-control" type="number" value={packagingForm.sortOrder} onChange={e => setPackagingForm(p => ({ ...p, sortOrder: e.target.value }))} />
+                </div>
+                <div className="form-group">
+                  <label className="checkbox-label">
+                    <input type="checkbox" checked={packagingForm.requiresTwoOperators} onChange={e => setPackagingForm(p => ({ ...p, requiresTwoOperators: e.target.checked }))} />
+                    Requiere 2 operadores
+                  </label>
+                </div>
+              </div>
+            </div>
+            <div className="modal-footer">
+              <button className="btn-secondary" onClick={() => setShowPackagingModal(false)}>Cancelar</button>
+              <button className="btn-primary" onClick={handleSavePackaging} disabled={!packagingForm.label || !packagingForm.maxKg || submitting}>
+                {submitting ? '⏳ ...' : editingPackaging ? '✏️ Guardar' : '📦 Crear Rango'}
               </button>
             </div>
           </div>

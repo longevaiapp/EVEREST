@@ -99,6 +99,21 @@ export default function useCrematorio() {
     return updated;
   }, []);
 
+  // Fetch all urns (including inactive) - admin only
+  const fetchAllUrns = useCallback(async () => {
+    setLoading(prev => ({ ...prev, urns: true }));
+    try {
+      const data = await crematorioService.getAllUrns();
+      setUrns(data);
+      return data;
+    } catch (err) {
+      console.error('[useCrematorio] fetchAllUrns error:', err);
+      return [];
+    } finally {
+      setLoading(prev => ({ ...prev, urns: false }));
+    }
+  }, []);
+
   // ==================== PACKAGING ====================
   const fetchPackagingRanges = useCallback(async () => {
     try {
@@ -109,6 +124,23 @@ export default function useCrematorio() {
       console.error('[useCrematorio] fetchPackagingRanges error:', err);
       return [];
     }
+  }, []);
+
+  const createPackagingRange = useCallback(async (data) => {
+    const range = await crematorioService.createPackagingRange(data);
+    setPackagingRanges(prev => [...prev, range]);
+    return range;
+  }, []);
+
+  const updatePackagingRange = useCallback(async (id, data) => {
+    const updated = await crematorioService.updatePackagingRange(id, data);
+    setPackagingRanges(prev => prev.map(r => r.id === id ? updated : r));
+    return updated;
+  }, []);
+
+  const deletePackagingRange = useCallback(async (id) => {
+    await crematorioService.deletePackagingRange(id);
+    setPackagingRanges(prev => prev.filter(r => r.id !== id));
   }, []);
 
   // ==================== STATS ====================
@@ -145,10 +177,14 @@ export default function useCrematorio() {
     createPayment,
     // Urns
     fetchUrns,
+    fetchAllUrns,
     createUrn,
     updateUrn,
     // Packaging
     fetchPackagingRanges,
+    createPackagingRange,
+    updatePackagingRange,
+    deletePackagingRange,
     // Stats
     fetchStats,
   };

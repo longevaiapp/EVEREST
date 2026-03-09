@@ -66,7 +66,7 @@ export default function CatalogoAliado() {
     }
   };
 
-  const isValid = form.petName && form.clientName && form.clientPhone && form.weightKg && form.pickupAddress && form.originName;
+  const isValid = form.petName && form.species && form.clientName && form.clientPhone && form.weightKg && form.pickupAddress && form.originName;
 
   if (submitted) {
     return (
@@ -163,7 +163,6 @@ export default function CatalogoAliado() {
               <select value={form.originType} onChange={e => updateField('originType', e.target.value)}>
                 <option value="ALIADO">Aliado Comercial</option>
                 <option value="CLINICA">Clínica Veterinaria</option>
-                <option value="DIRECTO">Cliente Directo</option>
               </select>
             </div>
             <div className="aliado-field">

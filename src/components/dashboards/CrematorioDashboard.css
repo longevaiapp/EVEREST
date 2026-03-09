@@ -871,3 +871,85 @@ select.form-control {
     flex-direction: column;
   }
 }
+
+/* Sidebar role indicator */
+.sidebar-role {
+  display: block;
+  font-size: 0.75rem;
+  color: #8888aa;
+  margin-top: 4px;
+  text-transform: capitalize;
+}
+
+/* Urn inactive state */
+.urn-card.urn-inactive {
+  opacity: 0.55;
+  border-style: dashed;
+}
+
+.urn-inactive-badge {
+  background: #ef444430;
+  color: #ef4444;
+  font-size: 0.7rem;
+  padding: 2px 6px;
+  border-radius: 4px;
+  margin-left: 6px;
+  font-weight: 600;
+}
+
+.urn-actions {
+  display: flex;
+  gap: 6px;
+  padding: 0 16px 16px;
+}
+
+/* Button variants */
+.btn-success {
+  border-color: #22c55e50;
+  color: #22c55e;
+}
+
+.btn-success:hover {
+  background: rgba(34, 197, 94, 0.15);
+}
+
+.btn-warning {
+  border-color: #f59e0b50;
+  color: #f59e0b;
+}
+
+.btn-warning:hover {
+  background: rgba(245, 158, 11, 0.15);
+}
+
+.btn-danger-sm {
+  border-color: #ef444450;
+  color: #ef4444;
+}
+
+.btn-danger-sm:hover {
+  background: rgba(239, 68, 68, 0.15);
+}
+
+/* Checkbox label */
+.checkbox-label {
+  display: flex !important;
+  flex-direction: row !important;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  text-transform: none !important;
+  font-size: 0.9rem !important;
+  color: #ccc !important;
+}
+
+.checkbox-label input[type="checkbox"] {
+  width: 18px;
+  height: 18px;
+  accent-color: #ff6b35;
+}
+
+/* Packaging table */
+.packaging-table-wrapper {
+  overflow-x: auto;
+}
