@@ -1796,7 +1796,7 @@ model Urn {
   id              String    @id @default(cuid())
   name            String
   description     String?   @db.Text
-  imageUrl        String?
+  imageUrl        String?   @db.LongText  // Base64 image
   price           Decimal   @db.Decimal(10, 2)  // Precio con costo (aliados)
   size            UrnSize
   active          Boolean   @default(true)

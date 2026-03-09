@@ -1611,8 +1611,21 @@ export default function CrematorioDashboard() {
                   <textarea className="form-control" value={urnForm.description} onChange={e => setUrnForm(p => ({ ...p, description: e.target.value }))} rows="2" />
                 </div>
                 <div className="form-group full-width">
-                  <label>URL de Imagen</label>
-                  <input className="form-control" value={urnForm.imageUrl} onChange={e => setUrnForm(p => ({ ...p, imageUrl: e.target.value }))} placeholder="https://..." />
+                  <label>Imagen de la Urna</label>
+                  {urnForm.imageUrl && (
+                    <img src={urnForm.imageUrl} alt="Preview" style={{ maxWidth: '100%', maxHeight: 150, borderRadius: 8, marginBottom: 8, objectFit: 'cover' }} />
+                  )}
+                  <label className="btn-sm btn-upload" style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+                    📤 {urnForm.imageUrl ? 'Cambiar imagen' : 'Subir imagen'}
+                    <input type="file" accept="image/*" hidden onChange={e => {
+                      const file = e.target.files[0];
+                      if (!file) return;
+                      const reader = new FileReader();
+                      reader.onload = (ev) => setUrnForm(p => ({ ...p, imageUrl: ev.target.result }));
+                      reader.readAsDataURL(file);
+                    }} />
+                  </label>
+                  {urnForm.imageUrl && <button type="button" className="btn-sm btn-danger-sm" style={{ marginLeft: 8 }} onClick={() => setUrnForm(p => ({ ...p, imageUrl: '' }))}>🗑️ Quitar</button>}
                 </div>
               </div>
             </div>
