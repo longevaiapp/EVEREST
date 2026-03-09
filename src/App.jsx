@@ -12,6 +12,7 @@ import LaboratorioDashboard from './components/dashboards/LaboratorioDashboard';
 import EstilistaDashboard from './components/dashboards/EstilistaDashboard';
 import AdminDashboard from './components/dashboards/AdminDashboard';
 import HospitalizacionDashboard from './components/dashboards/HospitalizacionDashboard';
+import CrematorioDashboard from './components/dashboards/CrematorioDashboard';
 import RegistroCliente from './components/RegistroCliente';
 import './App.css';
 
@@ -41,6 +42,9 @@ function RoleBasedRedirect() {
     LABORATORIO: '/laboratorio',
     FARMACIA: '/farmacia',
     ESTILISTA: '/estilista',
+    RECOLECTOR: '/crematorio',
+    OPERADOR_CREMATORIO: '/crematorio',
+    ENTREGA: '/crematorio',
   };
 
   return <Navigate to={routes[user.rol] || '/login'} replace />;
@@ -109,6 +113,14 @@ function App() {
                 <ProtectedRoute roles={['HOSPITALIZACION', 'MEDICO', 'ADMIN']}>
                   <AuthenticatedLayout>
                     <HospitalizacionDashboard />
+                  </AuthenticatedLayout>
+                </ProtectedRoute>
+              } />
+
+              <Route path="/crematorio" element={
+                <ProtectedRoute roles={['ADMIN', 'RECOLECTOR', 'OPERADOR_CREMATORIO', 'ENTREGA']}>
+                  <AuthenticatedLayout>
+                    <CrematorioDashboard />
                   </AuthenticatedLayout>
                 </ProtectedRoute>
               } />

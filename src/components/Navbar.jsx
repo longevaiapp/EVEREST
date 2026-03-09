@@ -12,6 +12,9 @@ const roleAvatars = {
   MEDICO: '👨‍⚕️',
   LABORATORIO: '🔬',
   FARMACIA: '💊',
+  RECOLECTOR: '🚗',
+  OPERADOR_CREMATORIO: '🔥',
+  ENTREGA: '📦',
 };
 
 function Navbar({ onLogout }) {

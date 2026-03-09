@@ -53,6 +53,13 @@ model User {
   dewormingsApplied      DewormingRecord[] @relation("DewormingAppliedBy")
   fluidTherapies         FluidTherapy[]
 
+  // Crematorio
+  cremationCollections   CremationOrder[]  @relation("CremationCollector")
+  cremationOperations    CremationOrder[]  @relation("CremationOperator")
+  cremationDeliveries    CremationOrder[]  @relation("CremationDelivery")
+  cremationPayments      CremationPayment[] @relation("CremationPaymentRegistered")
+  cremationStatusChanges CremationStatusLog[] @relation("CremationStatusChanger")
+
   @@index([email])
   @@index([rol])
 }
@@ -65,6 +72,9 @@ enum UserRole {
   FARMACIA
   ESTILISTA
   HOSPITALIZACION
+  RECOLECTOR
+  OPERADOR_CREMATORIO
+  ENTREGA
 }
 
 // ============================================================================
@@ -1775,4 +1785,178 @@ enum NeonateSuction {
 enum NeonateActivity {
   ACTIVO
   LETARGICO
+}
+
+// ============================================================================
+// CREMATORIO - Sistema de cremación de mascotas
+// ============================================================================
+
+model Urn {
+  id              String    @id @default(cuid())
+  name            String
+  description     String?   @db.Text
+  imageUrl        String?
+  price           Decimal   @db.Decimal(10, 2)  // Precio con costo (aliados)
+  size            UrnSize
+  active          Boolean   @default(true)
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  orders          CremationOrder[]
+}
+
+enum UrnSize {
+  CHICA
+  MEDIANA
+  GRANDE
+  EXTRA_GRANDE
+}
+
+model PackagingRange {
+  id                    String   @id @default(cuid())
+  minKg                 Decimal  @db.Decimal(6, 2)
+  maxKg                 Decimal  @db.Decimal(6, 2)
+  label                 String   // "Empaque chico", "Empaque mediano", etc.
+  requiresTwoOperators  Boolean  @default(false)
+  sortOrder             Int      @default(0)
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
+}
+
+model CremationOrder {
+  id                String               @id @default(cuid())
+  folio             String               @unique
+  status            CremationOrderStatus  @default(SOLICITADA)
+  
+  // === DATOS DE MASCOTA ===
+  petName           String
+  species           String
+  breed             String?
+  sex               String?
+  age               String?
+  color             String?
+  characteristics   String?              @db.Text
+  weightKg          Decimal              @db.Decimal(6, 2)
+  
+  // === EMPAQUE (auto-asignado por peso) ===
+  packagingLabel    String               // e.g. "Empaque mediano"
+  requiresTwoOps    Boolean              @default(false)
+  
+  // === SOLICITANTE ===
+  clientName        String
+  clientPhone       String
+  clientEmail       String?
+  
+  // === ORIGEN ===
+  originType        CremationOriginType  @default(DIRECTO)
+  originName        String?              // Nombre de clínica/aliado
+  
+  // === RECOLECCIÓN ===
+  pickupAddress     String               @db.Text
+  pickupDate        DateTime?
+  pickupTimeSlot    String?              // e.g. "10:00–12:00"
+  pickupNotes       String?              @db.Text
+  assignedToId      String?
+  assignedTo        User?                @relation("CremationCollector", fields: [assignedToId], references: [id])
+  pickedUpAt        DateTime?
+  
+  // === CREMACIÓN ===
+  receivedAt        DateTime?            // Llegada a crematorio
+  cremationStartAt  DateTime?
+  cremationEndAt    DateTime?
+  operatorId        String?
+  operator          User?                @relation("CremationOperator", fields: [operatorId], references: [id])
+  
+  // === ENTREGA ===
+  deliveryDate      DateTime?
+  deliveredAt       DateTime?
+  deliveredById     String?
+  deliveredBy       User?                @relation("CremationDelivery", fields: [deliveredById], references: [id])
+  receiverName      String?
+  receiverPhone     String?
+  deliveryNotes     String?              @db.Text
+  deliveryEvidence  String?              // URL foto evidencia
+  
+  // === URNA ===
+  urnId             String?
+  urn               Urn?                 @relation(fields: [urnId], references: [id])
+  
+  // === GENERAL ===
+  notes             String?              @db.Text
+  createdAt         DateTime             @default(now())
+  updatedAt         DateTime             @updatedAt
+  
+  // Relaciones
+  payments          CremationPayment[]
+  statusLogs        CremationStatusLog[]
+  
+  @@index([folio])
+  @@index([status])
+  @@index([assignedToId])
+  @@index([operatorId])
+  @@index([deliveredById])
+  @@index([pickupDate])
+  @@index([createdAt])
+}
+
+enum CremationOrderStatus {
+  SOLICITADA
+  RECOLECCION_PROGRAMADA
+  RECOLECCION_REALIZADA
+  EN_CREMATORIO
+  EN_PROCESO
+  LISTA_PARA_ENTREGA
+  ENTREGADA
+  CANCELADA
+}
+
+enum CremationOriginType {
+  CLINICA
+  ALIADO
+  DIRECTO
+}
+
+model CremationPayment {
+  id              String                  @id @default(cuid())
+  orderId         String
+  order           CremationOrder          @relation(fields: [orderId], references: [id])
+  amount          Decimal                 @db.Decimal(10, 2)
+  method          CremationPaymentMethod
+  status          CremationPaymentStatus  @default(PENDIENTE)
+  reference       String?                 // Referencia de pago
+  registeredById  String?
+  registeredBy    User?                   @relation("CremationPaymentRegistered", fields: [registeredById], references: [id])
+  notes           String?                 @db.Text
+  paidAt          DateTime?
+  createdAt       DateTime                @default(now())
+  
+  @@index([orderId])
+  @@index([status])
+}
+
+enum CremationPaymentMethod {
+  EFECTIVO
+  TARJETA
+  TRANSFERENCIA
+}
+
+enum CremationPaymentStatus {
+  PENDIENTE
+  PAGADO
+  FALLIDO
+}
+
+model CremationStatusLog {
+  id              String               @id @default(cuid())
+  orderId         String
+  order           CremationOrder       @relation(fields: [orderId], references: [id])
+  previousStatus  CremationOrderStatus?
+  newStatus       CremationOrderStatus
+  changedById     String?
+  changedBy       User?                @relation("CremationStatusChanger", fields: [changedById], references: [id])
+  notes           String?              @db.Text
+  createdAt       DateTime             @default(now())
+  
+  @@index([orderId])
+  @@index([createdAt])
 }
