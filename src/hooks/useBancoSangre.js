@@ -21,7 +21,7 @@ export default function useBancoSangre() {
     try {
       setLoadingKey('dashboard', true);
       const res = await bancoSangreService.getDashboard();
-      setStats(res.data);
+      setStats(res);
     } catch (e) {
       console.error('Error fetching dashboard:', e);
     } finally {
@@ -34,7 +34,7 @@ export default function useBancoSangre() {
     try {
       setLoadingKey('donors', true);
       const res = await bancoSangreService.getDonors(params);
-      setDonors(res.data);
+      setDonors(res || []);
     } catch (e) {
       console.error('Error fetching donors:', e);
     } finally {
@@ -46,8 +46,8 @@ export default function useBancoSangre() {
     try {
       setLoadingKey('donor', true);
       const res = await bancoSangreService.getDonor(id);
-      setSelectedDonor(res.data);
-      return res.data;
+      setSelectedDonor(res);
+      return res;
     } catch (e) {
       console.error('Error fetching donor:', e);
     } finally {
@@ -58,28 +58,28 @@ export default function useBancoSangre() {
   const createDonor = useCallback(async (data) => {
     const res = await bancoSangreService.createDonor({ ...data, registeredById: user?.id });
     await fetchDonors();
-    return res.data;
+    return res;
   }, [user, fetchDonors]);
 
   const updateDonor = useCallback(async (id, data) => {
     const res = await bancoSangreService.updateDonor(id, data);
     await fetchDonors();
-    if (selectedDonor?.id === id) setSelectedDonor(res.data);
-    return res.data;
+    if (selectedDonor?.id === id) setSelectedDonor(res);
+    return res;
   }, [fetchDonors, selectedDonor]);
 
   // Evaluations
   const createEvaluation = useCallback(async (donorId, data) => {
     const res = await bancoSangreService.createEvaluation(donorId, { ...data, evaluatorId: user?.id });
     if (selectedDonor?.id === donorId) await fetchDonor(donorId);
-    return res.data;
+    return res;
   }, [user, selectedDonor, fetchDonor]);
 
   // Tests
   const createTest = useCallback(async (donorId, data) => {
     const res = await bancoSangreService.createTest(donorId, { ...data, registeredById: user?.id });
     if (selectedDonor?.id === donorId) await fetchDonor(donorId);
-    return res.data;
+    return res;
   }, [user, selectedDonor, fetchDonor]);
 
   // Donations
@@ -88,7 +88,7 @@ export default function useBancoSangre() {
     await fetchDonors();
     await fetchUnits();
     await fetchDashboard();
-    return res.data;
+    return res;
   }, [user, fetchDonors, fetchDashboard]);
 
   // Units
@@ -96,7 +96,7 @@ export default function useBancoSangre() {
     try {
       setLoadingKey('units', true);
       const res = await bancoSangreService.getUnits(params);
-      setUnits(res.data);
+      setUnits(res || []);
     } catch (e) {
       console.error('Error fetching units:', e);
     } finally {
@@ -107,7 +107,7 @@ export default function useBancoSangre() {
   const updateUnitStatus = useCallback(async (id, status, notas) => {
     const res = await bancoSangreService.updateUnitStatus(id, { status, notas });
     await fetchUnits();
-    return res.data;
+    return res;
   }, [fetchUnits]);
 
   const checkExpiry = useCallback(async () => {
@@ -115,7 +115,7 @@ export default function useBancoSangre() {
     await fetchUnits();
     await fetchAlerts();
     await fetchDashboard();
-    return res.data;
+    return res;
   }, [fetchDashboard]);
 
   // Transfusions
@@ -123,7 +123,7 @@ export default function useBancoSangre() {
     try {
       setLoadingKey('transfusions', true);
       const res = await bancoSangreService.getTransfusions();
-      setTransfusions(res.data);
+      setTransfusions(res || []);
     } catch (e) {
       console.error('Error fetching transfusions:', e);
     } finally {
@@ -136,7 +136,7 @@ export default function useBancoSangre() {
     await fetchUnits();
     await fetchTransfusions();
     await fetchDashboard();
-    return res.data;
+    return res;
   }, [user, fetchUnits, fetchTransfusions, fetchDashboard]);
 
   // Alerts
@@ -144,7 +144,7 @@ export default function useBancoSangre() {
     try {
       setLoadingKey('alerts', true);
       const res = await bancoSangreService.getAlerts(params);
-      setAlerts(res.data);
+      setAlerts(res || []);
     } catch (e) {
       console.error('Error fetching alerts:', e);
     } finally {
@@ -155,14 +155,14 @@ export default function useBancoSangre() {
   const resolveAlert = useCallback(async (id) => {
     const res = await bancoSangreService.resolveAlert(id, user?.id);
     await fetchAlerts();
-    return res.data;
+    return res;
   }, [user, fetchAlerts]);
 
   // Config
   const fetchConfig = useCallback(async () => {
     try {
       const res = await bancoSangreService.getConfig();
-      setConfig(res.data);
+      setConfig(res);
     } catch (e) {
       console.error('Error fetching config:', e);
     }
@@ -170,16 +170,57 @@ export default function useBancoSangre() {
 
   const updateConfig = useCallback(async (data) => {
     const res = await bancoSangreService.updateConfig(data);
-    setConfig(res.data);
-    return res.data;
+    setConfig(res);
+    return res;
   }, []);
 
   // Search pet
   const searchPet = useCallback(async (q) => {
     if (!q || q.length < 2) return [];
     const res = await bancoSangreService.searchPet(q);
-    return res.data;
+    return res;
   }, []);
+
+  // Transfusion Requests
+  const [requests, setRequests] = useState([]);
+
+  const fetchRequests = useCallback(async (params = {}) => {
+    try {
+      setLoadingKey('requests', true);
+      const res = await bancoSangreService.getRequests(params);
+      setRequests(res || []);
+    } catch (e) {
+      console.error('Error fetching requests:', e);
+    } finally {
+      setLoadingKey('requests', false);
+    }
+  }, []);
+
+  const createRequest = useCallback(async (data) => {
+    const res = await bancoSangreService.createRequest({ ...data, solicitadoPorId: user?.id });
+    await fetchRequests();
+    await fetchAlerts({ resuelta: false });
+    await fetchDashboard();
+    return res;
+  }, [user, fetchRequests, fetchAlerts, fetchDashboard]);
+
+  const approveRequest = useCallback(async (id) => {
+    const res = await bancoSangreService.approveRequest(id, user?.id);
+    await fetchRequests();
+    return res;
+  }, [user, fetchRequests]);
+
+  const rejectRequest = useCallback(async (id, motivoRechazo) => {
+    const res = await bancoSangreService.rejectRequest(id, user?.id, motivoRechazo);
+    await fetchRequests();
+    return res;
+  }, [user, fetchRequests]);
+
+  const cancelRequest = useCallback(async (id) => {
+    const res = await bancoSangreService.cancelRequest(id);
+    await fetchRequests();
+    return res;
+  }, [fetchRequests]);
 
   // Initial load
   useEffect(() => {
@@ -187,11 +228,12 @@ export default function useBancoSangre() {
     fetchDonors();
     fetchUnits();
     fetchAlerts({ resuelta: false });
+    fetchRequests();
     fetchConfig();
   }, []);
 
   return {
-    stats, donors, selectedDonor, units, transfusions, alerts, config,
+    stats, donors, selectedDonor, units, transfusions, alerts, config, requests,
     loading, error,
     setSelectedDonor,
     fetchDashboard, fetchDonors, fetchDonor, createDonor, updateDonor,
@@ -200,6 +242,7 @@ export default function useBancoSangre() {
     fetchUnits, updateUnitStatus, checkExpiry,
     fetchTransfusions, createTransfusion,
     fetchAlerts, resolveAlert,
+    fetchRequests, createRequest, approveRequest, rejectRequest, cancelRequest,
     fetchConfig, updateConfig,
     searchPet,
   };

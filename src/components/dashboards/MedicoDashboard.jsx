@@ -5,6 +5,7 @@ import useMedico from '../../hooks/useMedico';
 import farmaciaService from '../../services/farmacia.service';
 import recepcionService from '../../services/recepcion.service';
 import { laboratorioService, citaSeguimientoService } from '../../services/medico.service';
+import bancoSangreService from '../../services/bancoSangre.service';
 import ExamenFisico from '../medico/ExamenFisico';
 import PreventiveMedicinePanel from '../medico/PreventiveMedicinePanel';
 import DoseCalculator from '../DoseCalculator';
@@ -52,6 +53,11 @@ function MedicoDashboard() {
   const [showHistoryModal, setShowHistoryModal] = useState(false);
   const [showFollowUpModal, setShowFollowUpModal] = useState(false);
   const [showPreventiveMedicine, setShowPreventiveMedicine] = useState(false); // Medicina Preventiva
+  const [showTransfusionRequestModal, setShowTransfusionRequestModal] = useState(false);
+  const [transfusionRequestForm, setTransfusionRequestForm] = useState({
+    tipoProducto: 'SANGRE_TOTAL', urgencia: 'NORMAL', motivo: '', notas: '', volumenEstimadoMl: ''
+  });
+  const [savingTransfusionRequest, setSavingTransfusionRequest] = useState(false);
   
   // Estado para formulario de cita de seguimiento
   const [followUpForm, setFollowUpForm] = useState({
@@ -834,6 +840,45 @@ function MedicoDashboard() {
       setLocalLoading(false);
     }
   }, [activeConsultation, selectedPatient, hospitalizationForm, hospitalizarPaciente, t]);
+
+  // Solicitar Transfusión
+  const handleRequestTransfusion = useCallback(async () => {
+    if (!transfusionRequestForm.motivo) return;
+    setSavingTransfusionRequest(true);
+    try {
+      await bancoSangreService.createRequest({
+        petId: selectedPatient?.id || null,
+        consultationId: activeConsultation?.id || null,
+        solicitadoPorId: user?.id,
+        tipoProducto: transfusionRequestForm.tipoProducto,
+        urgencia: transfusionRequestForm.urgencia,
+        volumenEstimadoMl: transfusionRequestForm.volumenEstimadoMl ? parseFloat(transfusionRequestForm.volumenEstimadoMl) : null,
+        motivo: transfusionRequestForm.motivo,
+        notas: transfusionRequestForm.notas || null,
+      });
+      setShowTransfusionRequestModal(false);
+      setTransfusionRequestForm({ tipoProducto: 'SANGRE_TOTAL', urgencia: 'NORMAL', motivo: '', notas: '', volumenEstimadoMl: '' });
+      alert('✅ Solicitud de transfusión enviada al Banco de Sangre');
+    } catch (err) {
+      alert('Error al enviar solicitud: ' + (err.message || 'Error desconocido'));
+    } finally {
+      setSavingTransfusionRequest(false);
+    }
+  }, [transfusionRequestForm, selectedPatient, activeConsultation, user]);
+
+  // Registrar como donador
+  const handleRegisterDonor = useCallback(async () => {
+    if (!selectedPatient?.id) return;
+    try {
+      await bancoSangreService.createDonor({
+        petId: selectedPatient.id,
+        registeredById: user?.id,
+      });
+      alert('✅ Paciente registrado como donador potencial en Banco de Sangre');
+    } catch (err) {
+      alert('Error: ' + (err.message || 'No se pudo registrar como donador'));
+    }
+  }, [selectedPatient, user]);
 
   // Función para abrir el modal de historial y cargar datos desde la API
   const handleOpenHistory = useCallback(async () => {
@@ -1787,6 +1832,12 @@ function MedicoDashboard() {
               </button>
               <button className="action-btn hospital" onClick={() => setShowHospitalizationModal(true)}>
                 🏥 {t('medico.hospitalize', 'Hospitalizar')}
+              </button>
+              <button className="action-btn" style={{ background: '#dc3545', color: 'white' }} onClick={() => setShowTransfusionRequestModal(true)}>
+                🩸 Solicitar Transfusión
+              </button>
+              <button className="action-btn" style={{ background: '#6f42c1', color: 'white' }} onClick={handleRegisterDonor} title="Registrar a este paciente como donador potencial de sangre">
+                🐾 Registrar Donador
               </button>
               <button className="action-btn followup" onClick={() => {
                 // Pre-llenar el motivo con info del diagnóstico si existe
@@ -3318,6 +3369,53 @@ function MedicoDashboard() {
                 onClick={() => downloadFile(viewerImage.src, viewerImage.name)}
               >
                 📥 Descargar Imagen
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* MODAL: Solicitar Transfusión */}
+      {showTransfusionRequestModal && (
+        <div className="modal-overlay" onClick={() => setShowTransfusionRequestModal(false)}>
+          <div className="modal-content" onClick={e => e.stopPropagation()} style={{ maxWidth: '500px' }}>
+            <h2>🩸 Solicitar Transfusión</h2>
+            <p style={{ color: '#666', marginBottom: '16px' }}>
+              Paciente: <strong>{selectedPatient?.nombre || '—'}</strong>
+              {selectedPatient?.especie ? ` (${selectedPatient.especie})` : ''}
+            </p>
+            <div className="form-group">
+              <label>Tipo de Producto *</label>
+              <select value={transfusionRequestForm.tipoProducto} onChange={e => setTransfusionRequestForm(p => ({ ...p, tipoProducto: e.target.value }))}>
+                <option value="SANGRE_TOTAL">Sangre Total</option>
+                <option value="CONCENTRADO_ERITROCITARIO">Concentrado Eritrocitario</option>
+                <option value="PLASMA">Plasma</option>
+              </select>
+            </div>
+            <div className="form-group">
+              <label>Urgencia *</label>
+              <select value={transfusionRequestForm.urgencia} onChange={e => setTransfusionRequestForm(p => ({ ...p, urgencia: e.target.value }))}>
+                <option value="NORMAL">Normal</option>
+                <option value="URGENTE">Urgente</option>
+                <option value="EMERGENCIA">🚨 Emergencia</option>
+              </select>
+            </div>
+            <div className="form-group">
+              <label>Volumen Estimado (mL)</label>
+              <input type="number" value={transfusionRequestForm.volumenEstimadoMl} onChange={e => setTransfusionRequestForm(p => ({ ...p, volumenEstimadoMl: e.target.value }))} placeholder="ej: 250" />
+            </div>
+            <div className="form-group">
+              <label>Motivo / Indicación Clínica *</label>
+              <textarea rows={3} value={transfusionRequestForm.motivo} onChange={e => setTransfusionRequestForm(p => ({ ...p, motivo: e.target.value }))} placeholder="Anemia severa, hemorragia, etc." />
+            </div>
+            <div className="form-group">
+              <label>Notas adicionales</label>
+              <textarea rows={2} value={transfusionRequestForm.notas} onChange={e => setTransfusionRequestForm(p => ({ ...p, notas: e.target.value }))} placeholder="Tipo sanguíneo conocido, observaciones..." />
+            </div>
+            <div className="modal-actions">
+              <button className="btn-secondary" onClick={() => setShowTransfusionRequestModal(false)}>Cancelar</button>
+              <button className="btn-primary" onClick={handleRequestTransfusion} disabled={savingTransfusionRequest || !transfusionRequestForm.motivo}>
+                {savingTransfusionRequest ? 'Enviando...' : '📩 Enviar Solicitud'}
               </button>
             </div>
           </div>

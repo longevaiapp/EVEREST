@@ -45,4 +45,12 @@ export default {
   // Alerts
   getAlerts: (params) => api.get(`${BASE}/alerts`, { params }),
   resolveAlert: (id, userId) => api.put(`${BASE}/alerts/${id}/resolve`, { userId }),
+
+  // Transfusion Requests
+  getRequests: (params) => api.get(`${BASE}/requests`, { params }),
+  createRequest: (data) => api.post(`${BASE}/requests`, data),
+  getRequest: (id) => api.get(`${BASE}/requests/${id}`),
+  approveRequest: (id, procesadoPorId) => api.put(`${BASE}/requests/${id}/approve`, { procesadoPorId }),
+  rejectRequest: (id, procesadoPorId, motivoRechazo) => api.put(`${BASE}/requests/${id}/reject`, { procesadoPorId, motivoRechazo }),
+  cancelRequest: (id) => api.put(`${BASE}/requests/${id}/cancel`),
 };

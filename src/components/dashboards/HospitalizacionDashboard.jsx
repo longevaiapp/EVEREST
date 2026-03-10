@@ -5,6 +5,7 @@ import { useTranslation } from 'react-i18next';
 import { useAuth } from '../../context/AuthContext';
 import useHospitalizacion from '../../hooks/useHospitalizacion';
 import farmaciaService from '../../services/farmacia.service';
+import bancoSangreService from '../../services/bancoSangre.service';
 import FluidTherapyCalculator from './FluidTherapyCalculator';
 import HospitalBoard from './HospitalBoard';
 import RondaRapida from './RondaRapida';
@@ -87,6 +88,11 @@ function HospitalizacionDashboard() {
   const [showNeonateRecordModal, setShowNeonateRecordModal] = useState(false);
   const [showDischargeModal, setShowDischargeModal] = useState(false);
   const [showRondaRapida, setShowRondaRapida] = useState(false);
+  const [showTransfusionRequestModal, setShowTransfusionRequestModal] = useState(false);
+  const [transfusionRequestForm, setTransfusionRequestForm] = useState({
+    tipoProducto: 'SANGRE_TOTAL', urgencia: 'NORMAL', motivo: '', notas: '', volumenEstimadoMl: ''
+  });
+  const [savingTransfusionRequest, setSavingTransfusionRequest] = useState(false);
   const [fluidCalcTarget, setFluidCalcTarget] = useState(null);
 
   // ═══════ DRAWER STATE ═══════
@@ -468,6 +474,32 @@ function HospitalizacionDashboard() {
     });
   };
 
+  // ═══════ TRANSFUSION REQUEST ═══════
+  const handleRequestTransfusion = async (e) => {
+    e.preventDefault();
+    if (!selectedHospitalization) return;
+    setSavingTransfusionRequest(true);
+    try {
+      await bancoSangreService.createRequest({
+        petId: selectedHospitalization.petId || selectedHospitalization.patient?.id,
+        hospitalizationId: selectedHospitalization.id,
+        solicitadoPorId: user?.id,
+        tipoProducto: transfusionRequestForm.tipoProducto,
+        urgencia: transfusionRequestForm.urgencia,
+        motivo: transfusionRequestForm.motivo,
+        notas: transfusionRequestForm.notas || undefined,
+        volumenEstimadoMl: transfusionRequestForm.volumenEstimadoMl ? Number(transfusionRequestForm.volumenEstimadoMl) : undefined,
+      });
+      setShowTransfusionRequestModal(false);
+      setTransfusionRequestForm({ tipoProducto: 'SANGRE_TOTAL', urgencia: 'NORMAL', motivo: '', notas: '', volumenEstimadoMl: '' });
+      alert('Solicitud de transfusión enviada al Banco de Sangre');
+    } catch (err) {
+      alert('Error al enviar solicitud: ' + (err.response?.data?.error || err.message));
+    } finally {
+      setSavingTransfusionRequest(false);
+    }
+  };
+
   // ═══════ FORMATTERS ═══════
   const formatDate = (d) => {
     if (!d) return '-';
@@ -588,6 +620,7 @@ function HospitalizacionDashboard() {
                 <button className="hd-act primary" onClick={() => setShowVitalsModal(true)}>❤️ Signos</button>
                 <button className="hd-act" onClick={() => setShowTherapyModal(true)}>💊 Medicamento</button>
                 <button className="hd-act" onClick={handleOpenFluids}>💧 Fluidos</button>
+                <button className="hd-act" style={{background:'#dc2626',color:'#fff'}} onClick={() => setShowTransfusionRequestModal(true)}>🩸 Transfusión</button>
                 {sel.status === 'ACTIVO' && (
                   <button className="hd-act danger" onClick={() => setShowDischargeModal(true)}>🏠 Alta</button>
                 )}
@@ -1140,6 +1173,58 @@ function HospitalizacionDashboard() {
             fetchHospitalizaciones(filterType || null, filterStatus || null);
           }}
         />
+      )}
+
+      {showTransfusionRequestModal && createPortal(
+        <div className="hd-overlay" onClick={() => setShowTransfusionRequestModal(false)}>
+          <div className="hd-modal" onClick={e => e.stopPropagation()} style={{maxWidth:500}}>
+            <div className="hd-modal-header">
+              <h2>🩸 Solicitar Transfusión</h2>
+              <button className="hd-modal-close" onClick={() => setShowTransfusionRequestModal(false)}>✕</button>
+            </div>
+            <form onSubmit={handleRequestTransfusion}>
+              <div className="hd-form-group">
+                <label>Paciente</label>
+                <input type="text" disabled value={selectedHospitalization?.patient?.name || 'Sin seleccionar'} />
+              </div>
+              <div className="hd-form-group">
+                <label>Tipo de Producto *</label>
+                <select value={transfusionRequestForm.tipoProducto} onChange={e => setTransfusionRequestForm(f => ({...f, tipoProducto: e.target.value}))}>
+                  <option value="SANGRE_TOTAL">Sangre Total</option>
+                  <option value="PLASMA">Plasma</option>
+                  <option value="CONCENTRADO_ERITROCITARIO">Concentrado Eritrocitario</option>
+                  <option value="PLAQUETAS">Plaquetas</option>
+                  <option value="CRIOPRECIPITADO">Crioprecipitado</option>
+                </select>
+              </div>
+              <div className="hd-form-group">
+                <label>Urgencia *</label>
+                <select value={transfusionRequestForm.urgencia} onChange={e => setTransfusionRequestForm(f => ({...f, urgencia: e.target.value}))}>
+                  <option value="NORMAL">Normal</option>
+                  <option value="URGENTE">Urgente</option>
+                  <option value="EMERGENCIA">Emergencia</option>
+                </select>
+              </div>
+              <div className="hd-form-group">
+                <label>Volumen Estimado (mL)</label>
+                <input type="number" value={transfusionRequestForm.volumenEstimadoMl} onChange={e => setTransfusionRequestForm(f => ({...f, volumenEstimadoMl: e.target.value}))} placeholder="Ej: 50" />
+              </div>
+              <div className="hd-form-group">
+                <label>Motivo / Indicación *</label>
+                <textarea value={transfusionRequestForm.motivo} onChange={e => setTransfusionRequestForm(f => ({...f, motivo: e.target.value}))} rows={3} placeholder="Anemia severa, hemorragia, etc." required />
+              </div>
+              <div className="hd-form-group">
+                <label>Notas Adicionales</label>
+                <textarea value={transfusionRequestForm.notas} onChange={e => setTransfusionRequestForm(f => ({...f, notas: e.target.value}))} rows={2} placeholder="Información adicional..." />
+              </div>
+              <div className="hd-modal-footer">
+                <button type="button" className="hd-btn-cancel" onClick={() => setShowTransfusionRequestModal(false)}>Cancelar</button>
+                <button type="submit" className="hd-btn-save" disabled={savingTransfusionRequest || !transfusionRequestForm.motivo}>{savingTransfusionRequest ? 'Enviando...' : 'Enviar Solicitud'}</button>
+              </div>
+            </form>
+          </div>
+        </div>,
+        document.body
       )}
     </div>
   );

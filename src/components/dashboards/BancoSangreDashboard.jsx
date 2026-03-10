@@ -5,6 +5,7 @@ import './BancoSangreDashboard.css';
 
 const SECTIONS = [
   { id: 'dashboard', label: 'Dashboard', icon: '📊' },
+  { id: 'solicitudes', label: 'Solicitudes', icon: '📩' },
   { id: 'donadores', label: 'Donadores', icon: '🐾' },
   { id: 'inventario', label: 'Inventario', icon: '🩸' },
   { id: 'transfusiones', label: 'Transfusiones', icon: '💉' },
@@ -40,10 +41,18 @@ const DONOR_STATUS_LABELS = {
   RETIRADO: 'Retirado',
 };
 
+const REQUEST_STATUS_LABELS = {
+  PENDIENTE: 'Pendiente',
+  APROBADA: 'Aprobada',
+  RECHAZADA: 'Rechazada',
+  COMPLETADA: 'Completada',
+  CANCELADA: 'Cancelada',
+};
+
 export default function BancoSangreDashboard() {
   const { user } = useAuth();
   const {
-    stats, donors, selectedDonor, units, transfusions, alerts, config,
+    stats, donors, selectedDonor, units, transfusions, alerts, config, requests,
     loading,
     setSelectedDonor,
     fetchDashboard, fetchDonors, fetchDonor, createDonor, updateDonor,
@@ -52,6 +61,7 @@ export default function BancoSangreDashboard() {
     fetchUnits, updateUnitStatus, checkExpiry,
     fetchTransfusions, createTransfusion,
     fetchAlerts, resolveAlert,
+    fetchRequests, createRequest, approveRequest, rejectRequest, cancelRequest,
     fetchConfig, updateConfig,
     searchPet,
   } = useBancoSangre();
@@ -83,6 +93,7 @@ export default function BancoSangreDashboard() {
   // Filters
   const [donorFilter, setDonorFilter] = useState('');
   const [unitFilter, setUnitFilter] = useState('');
+  const [requestFilter, setRequestFilter] = useState('');
 
   const showToast = (message, type = 'success') => {
     setToast({ message, type });
@@ -171,12 +182,15 @@ export default function BancoSangreDashboard() {
 
   const handleCreateTransfusion = async () => {
     try {
-      await createTransfusion(transfusionForm);
+      const { isExternalRecipient, ...formData } = transfusionForm;
+      await createTransfusion(formData);
       setShowTransfusionModal(false);
       setTransfusionForm({ isExternalRecipient: false });
       showToast('Transfusión registrada exitosamente');
+      // Refresh requests if it came from a request
+      if (formData.requestId) await fetchRequests();
     } catch (e) {
-      showToast(e.response?.data?.error || 'Error al registrar transfusión', 'error');
+      showToast(e.response?.data?.error || e.message || 'Error al registrar transfusión', 'error');
     }
   };
 
@@ -199,7 +213,7 @@ export default function BancoSangreDashboard() {
   };
 
   // Filter donors
-  const filteredDonors = donors.filter(d => {
+  const filteredDonors = (donors || []).filter(d => {
     if (donorFilter && d.estado !== donorFilter) return false;
     if (search) {
       const s = search.toLowerCase();
@@ -210,7 +224,7 @@ export default function BancoSangreDashboard() {
     return true;
   });
 
-  const filteredUnits = units.filter(u => {
+  const filteredUnits = (units || []).filter(u => {
     if (unitFilter && u.status !== unitFilter) return false;
     return true;
   });
@@ -245,12 +259,16 @@ export default function BancoSangreDashboard() {
                 setSelectedDonor(null);
                 if (s.id === 'transfusiones') fetchTransfusions();
                 if (s.id === 'alertas') fetchAlerts({ resuelta: false });
+                if (s.id === 'solicitudes') fetchRequests();
                 if (s.id === 'config') fetchConfig();
               }}
             >
               <span>{s.icon}</span> {s.label}
-              {s.id === 'alertas' && alerts.filter(a => !a.resuelta).length > 0 && (
-                <span className="bb-badge-alert">{alerts.filter(a => !a.resuelta).length}</span>
+              {s.id === 'alertas' && (alerts || []).filter(a => !a.resuelta).length > 0 && (
+                <span className="bb-badge-alert">{(alerts || []).filter(a => !a.resuelta).length}</span>
+              )}
+              {s.id === 'solicitudes' && (requests || []).filter(r => r.status === 'PENDIENTE').length > 0 && (
+                <span className="bb-badge-alert">{(requests || []).filter(r => r.status === 'PENDIENTE').length}</span>
               )}
             </button>
           ))}
@@ -296,6 +314,12 @@ export default function BancoSangreDashboard() {
                     <div className="bb-stat-value">{stats.unresolvedAlerts}</div>
                     <div className="bb-stat-label">Alertas Activas</div>
                   </div>
+                  {stats.pendingRequests > 0 && (
+                    <div className="bb-stat-card bb-stat-warning" style={{ cursor: 'pointer' }} onClick={() => { setActiveSection('solicitudes'); fetchRequests(); }}>
+                      <div className="bb-stat-value">{stats.pendingRequests}</div>
+                      <div className="bb-stat-label">📩 Solicitudes Pendientes</div>
+                    </div>
+                  )}
                 </div>
 
                 <div className="bb-dashboard-grid">
@@ -336,6 +360,91 @@ export default function BancoSangreDashboard() {
             ) : (
               <div className="bb-loading">Cargando...</div>
             )}
+          </div>
+        )}
+
+        {/* SOLICITUDES DE TRANSFUSIÓN */}
+        {activeSection === 'solicitudes' && (
+          <div className="bb-section">
+            <div className="bb-section-header">
+              <h2>📩 Solicitudes de Transfusión</h2>
+            </div>
+            <div className="bb-filter-bar">
+              <select value={requestFilter || ''} onChange={e => { setRequestFilter(e.target.value); fetchRequests(e.target.value ? { status: e.target.value } : {}); }}>
+                <option value="">Todas</option>
+                <option value="PENDIENTE">Pendientes</option>
+                <option value="APROBADA">Aprobadas</option>
+                <option value="COMPLETADA">Completadas</option>
+                <option value="RECHAZADA">Rechazadas</option>
+                <option value="CANCELADA">Canceladas</option>
+              </select>
+            </div>
+            <div className="bb-table-container">
+              <table className="bb-table">
+                <thead>
+                  <tr>
+                    <th>Urgencia</th>
+                    <th>Paciente</th>
+                    <th>Producto</th>
+                    <th>Motivo</th>
+                    <th>Solicitado por</th>
+                    <th>Fecha</th>
+                    <th>Estado</th>
+                    <th>Acciones</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {(requests || []).map(r => (
+                    <tr key={r.id} className={r.urgencia === 'EMERGENCIA' ? 'bb-row-emergency' : r.urgencia === 'URGENTE' ? 'bb-row-urgent' : ''}>
+                      <td>
+                        <span className={`bb-urgency-badge bb-urgency-${r.urgencia?.toLowerCase()}`}>
+                          {r.urgencia === 'EMERGENCIA' ? '🚨' : r.urgencia === 'URGENTE' ? '⚠️' : '📋'} {r.urgencia}
+                        </span>
+                      </td>
+                      <td>{r.pet?.nombre || r.recipientName || '—'} {r.pet?.especie ? `(${r.pet.especie})` : ''}</td>
+                      <td>{PRODUCT_LABELS[r.tipoProducto] || r.tipoProducto}</td>
+                      <td style={{ maxWidth: '200px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{r.motivo}</td>
+                      <td>{r.solicitadoPor?.nombre || '—'}</td>
+                      <td>{formatDate(r.createdAt)}</td>
+                      <td>
+                        <span className={`bb-request-status bb-req-${r.status?.toLowerCase()}`}>{REQUEST_STATUS_LABELS[r.status] || r.status}</span>
+                      </td>
+                      <td>
+                        {r.status === 'PENDIENTE' && (
+                          <div className="bb-action-buttons">
+                            <button className="bb-btn bb-btn-sm bb-btn-success" onClick={async () => { await approveRequest(r.id); showToast('Solicitud aprobada'); }}>✅ Aprobar</button>
+                            <button className="bb-btn bb-btn-sm bb-btn-danger" onClick={async () => {
+                              const motivo = prompt('Motivo del rechazo:');
+                              if (motivo) { await rejectRequest(r.id, motivo); showToast('Solicitud rechazada'); }
+                            }}>❌ Rechazar</button>
+                          </div>
+                        )}
+                        {r.status === 'APROBADA' && (
+                          <button className="bb-btn bb-btn-sm bb-btn-primary" onClick={() => {
+                            setTransfusionForm({
+                              recipientPetId: r.petId || null,
+                              recipientName: r.recipientName || '',
+                              recipientSpecies: r.recipientSpecies || '',
+                              isExternalRecipient: !r.petId,
+                              requestId: r.id,
+                              consultationId: r.consultationId || null,
+                              hospitalizationId: r.hospitalizationId || null,
+                            });
+                            setShowTransfusionModal(true);
+                          }}>💉 Crear Transfusión</button>
+                        )}
+                        {r.status === 'COMPLETADA' && r.transfusion && (
+                          <span style={{ color: '#28a745' }}>✅ Completada</span>
+                        )}
+                      </td>
+                    </tr>
+                  ))}
+                  {(requests || []).length === 0 && (
+                    <tr><td colSpan="8" style={{ textAlign: 'center', padding: '2rem', color: '#888' }}>No hay solicitudes</td></tr>
+                  )}
+                </tbody>
+              </table>
+            </div>
           </div>
         )}
 

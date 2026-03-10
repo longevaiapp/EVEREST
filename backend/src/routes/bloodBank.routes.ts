@@ -687,6 +687,9 @@ router.post("/transfusions", async (req: Request, res: Response): Promise<any> =
     recipientBreed: z.string().optional().nullable(),
     recipientOwnerName: z.string().optional().nullable(),
     recipientOwnerPhone: z.string().optional().nullable(),
+    consultationId: z.string().optional().nullable(),
+    hospitalizationId: z.string().optional().nullable(),
+    requestId: z.string().optional().nullable(),
     medicoId: z.string(),
     volumenTransfundidoMl: z.number().positive(),
     reacciones: z.string().optional().nullable(),
@@ -713,8 +716,9 @@ router.post("/transfusions", async (req: Request, res: Response): Promise<any> =
   }
 
   const result = await prisma.$transaction(async (tx) => {
+    const { requestId, ...transfusionData } = data;
     const transfusion = await tx.bloodTransfusion.create({
-      data,
+      data: transfusionData,
       include: {
         unit: true,
         recipientPet: { select: { nombre: true } },
@@ -726,6 +730,18 @@ router.post("/transfusions", async (req: Request, res: Response): Promise<any> =
       where: { id: data.unitId },
       data: { status: "UTILIZADA" },
     });
+
+    // If this transfusion was originated from a request, link and complete it
+    if (requestId) {
+      await tx.bloodTransfusionRequest.update({
+        where: { id: requestId },
+        data: {
+          status: "COMPLETADA",
+          transfusionId: transfusion.id,
+          procesadoAt: new Date(),
+        },
+      });
+    }
 
     return transfusion;
   });
@@ -835,6 +851,10 @@ router.get("/dashboard", async (_req: Request, res: Response) => {
     prisma.bloodBankAlert.count({ where: { resuelta: false } }),
   ]);
 
+  const pendingRequests = await prisma.bloodTransfusionRequest.count({
+    where: { status: "PENDIENTE" },
+  });
+
   // Eligible donors count
   const activeWithDonation = await prisma.bloodDonor.findMany({
     where: { estado: "ACTIVO" },
@@ -868,6 +888,7 @@ router.get("/dashboard", async (_req: Request, res: Response) => {
     eligibleDonors: eligibleCount,
     recentTransfusions,
     unresolvedAlerts,
+    pendingRequests,
   });
 });
 
@@ -915,6 +936,146 @@ router.get("/donors/:id/history", async (req: Request, res: Response): Promise<a
   const volumenTotal = (donorAny.donations || []).reduce((sum: number, d: any) => sum + d.volumenMl, 0);
 
   res.json({ ...donor, volumenTotal });
+});
+
+// ============================================================================
+// TRANSFUSION REQUESTS
+// ============================================================================
+
+router.get("/requests", async (req: Request, res: Response): Promise<any> => {
+  const status = qs(req.query.status);
+  const urgencia = qs(req.query.urgencia);
+  const where: any = {};
+  if (status) where.status = status;
+  if (urgencia) where.urgencia = urgencia;
+
+  const requests = await prisma.bloodTransfusionRequest.findMany({
+    where,
+    include: {
+      pet: { select: { id: true, nombre: true, especie: true, raza: true, owner: { select: { nombre: true, telefono: true } } } },
+      consultation: { select: { id: true, visitId: true, status: true } },
+      hospitalization: { select: { id: true, type: true, status: true } },
+      solicitadoPor: { select: { id: true, nombre: true } },
+      procesadoPor: { select: { id: true, nombre: true } },
+      transfusion: { select: { id: true, unitId: true, volumenTransfundidoMl: true, fechaTransfusion: true } },
+    },
+    orderBy: [{ urgencia: "asc" }, { createdAt: "desc" }],
+  });
+  res.json(requests);
+});
+
+router.post("/requests", async (req: Request, res: Response): Promise<any> => {
+  const schema = z.object({
+    petId: z.string().optional().nullable(),
+    consultationId: z.string().optional().nullable(),
+    hospitalizationId: z.string().optional().nullable(),
+    recipientName: z.string().optional().nullable(),
+    recipientSpecies: z.string().optional().nullable(),
+    solicitadoPorId: z.string(),
+    tipoProducto: z.enum(["SANGRE_TOTAL", "CONCENTRADO_ERITROCITARIO", "PLASMA"]),
+    tipoSanguineo: z.string().optional().nullable(),
+    urgencia: z.enum(["NORMAL", "URGENTE", "EMERGENCIA"]).optional(),
+    volumenEstimadoMl: z.number().positive().optional().nullable(),
+    motivo: z.string(),
+    notas: z.string().optional().nullable(),
+  });
+  const data = schema.parse(req.body);
+
+  const request = await prisma.bloodTransfusionRequest.create({
+    data: data as any,
+    include: {
+      pet: { select: { id: true, nombre: true, especie: true } },
+      solicitadoPor: { select: { id: true, nombre: true } },
+    },
+  });
+
+  // Create alert for blood bank
+  const petName = request.pet?.nombre || data.recipientName || "Paciente";
+  const urgLabel = data.urgencia === "EMERGENCIA" ? "🚨 EMERGENCIA" : data.urgencia === "URGENTE" ? "⚠️ URGENTE" : "";
+  await prisma.bloodBankAlert.create({
+    data: {
+      tipo: "SOLICITUD_TRANSFUSION",
+      mensaje: `${urgLabel} Solicitud de transfusión para ${petName} - ${data.tipoProducto} - Solicitado por: ${request.solicitadoPor?.nombre}`.trim(),
+      prioridad: data.urgencia === "EMERGENCIA" ? "ALTA" : data.urgencia === "URGENTE" ? "ALTA" : "MEDIA",
+    },
+  });
+
+  res.status(201).json(request);
+});
+
+router.get("/requests/:id", async (req: Request, res: Response): Promise<any> => {
+  const request = await prisma.bloodTransfusionRequest.findUnique({
+    where: { id: (req.params.id as string) },
+    include: {
+      pet: { select: { id: true, nombre: true, especie: true, raza: true, peso: true, owner: { select: { nombre: true, telefono: true } } } },
+      consultation: { select: { id: true, visitId: true, soapAssessment: true } },
+      hospitalization: { select: { id: true, type: true, presumptiveDiagnosis: true } },
+      solicitadoPor: { select: { id: true, nombre: true } },
+      procesadoPor: { select: { id: true, nombre: true } },
+      transfusion: true,
+    },
+  });
+  if (!request) return res.status(404).json({ error: "Solicitud no encontrada" });
+  res.json(request);
+});
+
+router.put("/requests/:id/approve", async (req: Request, res: Response): Promise<any> => {
+  const { procesadoPorId } = req.body;
+  const request = await prisma.bloodTransfusionRequest.findUnique({ where: { id: (req.params.id as string) } });
+  if (!request) return res.status(404).json({ error: "Solicitud no encontrada" });
+  if (request.status !== "PENDIENTE") return res.status(400).json({ error: "Solo se pueden aprobar solicitudes pendientes" });
+
+  const updated = await prisma.bloodTransfusionRequest.update({
+    where: { id: (req.params.id as string) },
+    data: {
+      status: "APROBADA",
+      procesadoPorId,
+      procesadoAt: new Date(),
+    },
+    include: {
+      pet: { select: { nombre: true } },
+      solicitadoPor: { select: { nombre: true } },
+    },
+  });
+  res.json(updated);
+});
+
+router.put("/requests/:id/reject", async (req: Request, res: Response): Promise<any> => {
+  const { procesadoPorId, motivoRechazo } = req.body;
+  const request = await prisma.bloodTransfusionRequest.findUnique({ where: { id: (req.params.id as string) } });
+  if (!request) return res.status(404).json({ error: "Solicitud no encontrada" });
+  if (request.status !== "PENDIENTE") return res.status(400).json({ error: "Solo se pueden rechazar solicitudes pendientes" });
+
+  const updated = await prisma.bloodTransfusionRequest.update({
+    where: { id: (req.params.id as string) },
+    data: {
+      status: "RECHAZADA",
+      procesadoPorId,
+      procesadoAt: new Date(),
+      motivoRechazo,
+    },
+  });
+  res.json(updated);
+});
+
+router.put("/requests/:id/cancel", async (req: Request, res: Response): Promise<any> => {
+  const request = await prisma.bloodTransfusionRequest.findUnique({ where: { id: (req.params.id as string) } });
+  if (!request) return res.status(404).json({ error: "Solicitud no encontrada" });
+  if (request.status !== "PENDIENTE") return res.status(400).json({ error: "Solo se pueden cancelar solicitudes pendientes" });
+
+  const updated = await prisma.bloodTransfusionRequest.update({
+    where: { id: (req.params.id as string) },
+    data: { status: "CANCELADA" },
+  });
+  res.json(updated);
+});
+
+// Count pending requests (for dashboard badge)
+router.get("/requests/count/pending", async (_req: Request, res: Response) => {
+  const count = await prisma.bloodTransfusionRequest.count({
+    where: { status: "PENDIENTE" },
+  });
+  res.json({ count });
 });
 
 export default router;
