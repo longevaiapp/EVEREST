@@ -78,7 +78,13 @@ async function main() {
     create: { email: 'entregas@vetos.com', password: passwordHash, nombre: 'Sandra Flores', rol: 'ENTREGA', activo: true }
   });
 
-  console.log('✅ 11 Users created');
+  await prisma.user.upsert({
+    where: { email: 'bancosangre@vetos.com' },
+    update: {},
+    create: { email: 'bancosangre@vetos.com', password: passwordHash, nombre: 'Patricia Ríos', rol: 'BANCO_SANGRE', activo: true }
+  });
+
+  console.log('✅ 12 Users created');
 
   // Owners and Pets
   console.log('🐾 Creating owners and pets...');
