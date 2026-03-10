@@ -157,9 +157,23 @@ router.put('/:id/complete', authenticate, isMedico, async (req, res) => {
 
   // Update pet status based on hospitalization
   const newStatus = data.hospitalizationRequired ? 'HOSPITALIZADO' : 'LISTO_PARA_ALTA';
+  const petUpdate: any = { estado: newStatus };
+
+  // Auto-sync esterilizado if surgery is sterilization/castration
+  const surgeryFull = await prisma.surgery.findUnique({ where: { id } });
+  const tipo = (surgeryFull?.type || '').toLowerCase();
+  if (
+    tipo.includes('esteriliz') ||
+    tipo.includes('castrac') ||
+    tipo.includes('ovariohisterect') ||
+    tipo.includes('orquiect')
+  ) {
+    petUpdate.esterilizado = true;
+  }
+
   await prisma.pet.update({
     where: { id: surgery.petId },
-    data: { estado: newStatus },
+    data: petUpdate,
   });
 
   res.json({ status: 'success', data: { surgery } });

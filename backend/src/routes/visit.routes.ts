@@ -13,11 +13,21 @@ const router = Router();
 router.post('/', authenticate, isRecepcion, async (req, res) => {
   const schema = z.object({
     petId: z.string().or(z.number()).transform(val => String(val)),
-    appointmentId: z.string().cuid().optional(), // Link to scheduled appointment
-    serviceType: z.enum(['MEDICO', 'ESTETICA', 'MEDICINA_PREVENTIVA']).optional().default('MEDICO'), // Medical, Grooming, or Preventive
+    appointmentId: z.string().cuid().optional(),
+    serviceType: z.enum(['MEDICO', 'ESTETICA', 'MEDICINA_PREVENTIVA']).optional().default('MEDICO'),
+    // Síntomas capturados en el registro
+    motivoConsulta: z.string().optional(),
+    sintomas: z.array(z.string()).optional(),
+    duracionSintomas: z.string().optional(),
+    comportamiento: z.string().optional(),
+    apetito: z.string().optional(),
+    agua: z.string().optional(),
+    orina: z.string().optional(),
+    heces: z.string().optional(),
+    otrosDetallesSintomas: z.string().optional(),
   });
 
-  const { petId, appointmentId, serviceType } = schema.parse(req.body);
+  const { petId, appointmentId, serviceType, sintomas, ...symptomData } = schema.parse(req.body);
 
   // Verify pet exists
   const pet = await prisma.pet.findUnique({ where: { id: petId } });
@@ -29,6 +39,15 @@ router.post('/', authenticate, isRecepcion, async (req, res) => {
       petId,
       status: 'RECIEN_LLEGADO',
       serviceType,
+      motivo: symptomData.motivoConsulta || undefined,
+      sintomas: sintomas?.length ? JSON.stringify(sintomas) : undefined,
+      duracionSintomas: symptomData.duracionSintomas || undefined,
+      comportamiento: symptomData.comportamiento || undefined,
+      apetito: symptomData.apetito || undefined,
+      agua: symptomData.agua || undefined,
+      orina: symptomData.orina || undefined,
+      heces: symptomData.heces || undefined,
+      otrosDetallesSintomas: symptomData.otrosDetallesSintomas || undefined,
     },
     include: {
       pet: { include: { owner: true } },
@@ -65,14 +84,26 @@ router.put('/:id/triage', authenticate, isRecepcion, async (req, res) => {
     temperatura: z.number().optional(),
     antecedentes: z.string().optional(),
     primeraVisita: z.boolean().optional(),
+    // Síntomas adicionales del triage
+    sintomas: z.array(z.string()).optional(),
+    duracionSintomas: z.string().optional(),
+    comportamiento: z.string().optional(),
+    apetito: z.string().optional(),
+    agua: z.string().optional(),
+    orina: z.string().optional(),
+    heces: z.string().optional(),
+    otrosDetallesSintomas: z.string().optional(),
   });
 
   const data = schema.parse(req.body);
 
+  const { sintomas: sintomasArr, ...restData } = data;
+
   const visit = await prisma.visit.update({
     where: { id },
     data: {
-      ...data,
+      ...restData,
+      sintomas: sintomasArr?.length ? JSON.stringify(sintomasArr) : undefined,
       status: 'EN_ESPERA',
     },
     include: { pet: true },

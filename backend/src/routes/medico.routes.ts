@@ -263,6 +263,17 @@ router.put('/consulta/:id', authenticate, isMedico, async (req: Request, res: Re
     },
   });
 
+  // ═══════ SYNC consultation data → Pet profile ═══════
+  const petUpdateData: any = {};
+  if (data.vitalWeight) petUpdateData.peso = data.vitalWeight;
+
+  if (Object.keys(petUpdateData).length > 0) {
+    await prisma.pet.update({
+      where: { id: existingConsultation.petId },
+      data: petUpdateData,
+    });
+  }
+
   // If completing, update visit and pet status
   if (data.status === 'COMPLETADA') {
     // Check if there are pending lab requests or prescriptions

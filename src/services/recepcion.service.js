@@ -241,12 +241,14 @@ export const visitService = {
    * Crear nueva visita (check-in)
    * @param {string|number} petId
    * @param {string} serviceType - 'MEDICO', 'ESTETICA', or 'MEDICINA_PREVENTIVA'
+   * @param {Object} [symptomData] - Datos de síntomas del registro
    */
-  async create(petId, serviceType = 'MEDICO') {
+  async create(petId, serviceType = 'MEDICO', symptomData = {}) {
     console.log('[visitService] create - petId:', petId, 'serviceType:', serviceType);
     const response = await api.post('/visits', { 
       petId: String(petId),
-      serviceType: serviceType
+      serviceType: serviceType,
+      ...symptomData,
     });
     console.log('[visitService] create - Respuesta completa:', response);
     console.log('[visitService] create - response.data:', response.data);

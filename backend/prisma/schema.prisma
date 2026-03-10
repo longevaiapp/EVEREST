@@ -516,6 +516,16 @@ model Visit {
   primeraVisita Boolean    @default(false)
   antecedentes  String?    @db.Text
 
+  // === SÍNTOMAS (capturados en registro/triage) ===
+  sintomas              String? @db.Text // JSON array de síntomas seleccionados
+  duracionSintomas      String?
+  comportamiento        String?
+  apetito               String?
+  agua                  String?
+  orina                 String?
+  heces                 String?
+  otrosDetallesSintomas String? @db.Text
+
   // === ASIGNACIÓN ===
   assignedDoctorId  String?
   assignedStylistId String?

@@ -243,9 +243,19 @@ const RegistroCliente = () => {
         });
       }
 
-      // 3. Crear visita/check-in
+      // 3. Crear visita/check-in con síntomas
       if (pet?.id) {
-        await visitService.create(pet.id);
+        await visitService.create(pet.id, 'MEDICO', {
+          motivoConsulta: formData.consulta.motivoConsulta || undefined,
+          sintomas: formData.consulta.sintomas?.length ? formData.consulta.sintomas : undefined,
+          duracionSintomas: formData.consulta.duracionSintomas || undefined,
+          comportamiento: formData.consulta.comportamiento || undefined,
+          apetito: formData.consulta.apetito || undefined,
+          agua: formData.consulta.agua || undefined,
+          orina: formData.consulta.orina || undefined,
+          heces: formData.consulta.heces || undefined,
+          otrosDetallesSintomas: formData.consulta.otrosDetalles || undefined,
+        });
       }
 
       // Fallback: agregar a la cola local también
