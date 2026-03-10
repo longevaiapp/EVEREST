@@ -60,6 +60,14 @@ model User {
   cremationPayments      CremationPayment[] @relation("CremationPaymentRegistered")
   cremationStatusChanges CremationStatusLog[] @relation("CremationStatusChanger")
 
+  // Banco de Sangre
+  bloodDonorsRegistered      BloodDonor[]              @relation("BloodDonorRegisteredBy")
+  donorEvaluations           DonorEvaluation[]         @relation("DonorEvaluations")
+  donorDiagnosticTests       DonorDiagnosticTest[]     @relation("DonorDiagnosticTests")
+  bloodDonationsMedico       BloodDonation[]           @relation("BloodDonationMedico")
+  bloodTransfusionsMedico    BloodTransfusion[]        @relation("BloodTransfusionMedico")
+  bloodAlertsResolved        BloodBankAlert[]          @relation("BloodAlertResolver")
+
   @@index([email])
   @@index([rol])
 }
@@ -75,6 +83,7 @@ enum UserRole {
   RECOLECTOR
   OPERADOR_CREMATORIO
   ENTREGA
+  BANCO_SANGRE
 }
 
 // ============================================================================
@@ -163,6 +172,7 @@ enum NotificationType {
   STOCK_BAJO
   CITA_AGENDADA_MEDICO
   CREMACION_STATUS
+  BANCO_SANGRE
   GENERAL
 }
 
@@ -318,6 +328,10 @@ model Pet {
   dewormingRecords DewormingRecord[]
   preventiveMedicineRecords PreventiveMedicineRecord[]
   tasks           Task[]
+
+  // Banco de Sangre
+  bloodDonorProfiles  BloodDonor[]
+  bloodTransfusions   BloodTransfusion[]
 
   @@index([ownerId])
   @@index([numeroFicha])
@@ -1980,4 +1994,267 @@ model CremationSupply {
   updatedAt   DateTime @updatedAt
 
   @@index([category])
+}
+
+// ============================================================================
+// BANCO DE SANGRE
+// ============================================================================
+
+enum DonorStatus {
+  ACTIVO
+  TEMPORALMENTE_NO_APTO
+  RETIRADO
+}
+
+enum EvaluationResult {
+  APTO
+  NO_APTO
+}
+
+enum RestraintMethod {
+  FISICA
+  SEDACION
+}
+
+enum BloodProductType {
+  SANGRE_TOTAL
+  CONCENTRADO_ERITROCITARIO
+  PLASMA
+}
+
+enum BloodUnitStatus {
+  DISPONIBLE
+  RESERVADA
+  UTILIZADA
+  CADUCADA
+  DESCARTADA
+}
+
+enum BloodAlertType {
+  PROXIMA_CADUCIDAD
+  CADUCADA
+  DONADOR_ELEGIBLE
+  UNIDAD_ANTIGUA
+}
+
+model BloodDonor {
+  id              String      @id @default(cuid())
+  petId           String?
+  pet             Pet?        @relation(fields: [petId], references: [id])
+
+  // Datos standalone (usados si petId es null)
+  nombre          String?
+  especie         String?
+  raza            String?
+  edad            String?
+  sexo            String?
+  peso            Float?
+  color           String?
+  ownerName       String?
+  ownerPhone      String?
+  ownerEmail      String?
+
+  estado          DonorStatus @default(ACTIVO)
+  tipoSanguineo   String?
+  fechaUltimaDonacion DateTime?
+  totalDonaciones Int         @default(0)
+  notas           String?     @db.Text
+
+  registeredById  String
+  registeredBy    User        @relation("BloodDonorRegisteredBy", fields: [registeredById], references: [id])
+
+  evaluations     DonorEvaluation[]
+  diagnosticTests DonorDiagnosticTest[]
+  donations       BloodDonation[]
+  alerts          BloodBankAlert[]
+
+  createdAt       DateTime    @default(now())
+  updatedAt       DateTime    @updatedAt
+
+  @@index([petId])
+  @@index([estado])
+  @@index([tipoSanguineo])
+}
+
+model DonorEvaluation {
+  id                    String           @id @default(cuid())
+  donorId               String
+  donor                 BloodDonor       @relation(fields: [donorId], references: [id], onDelete: Cascade)
+  fecha                 DateTime         @default(now())
+  evaluatorId           String
+  evaluator             User             @relation("DonorEvaluations", fields: [evaluatorId], references: [id])
+
+  temperatura           Float?
+  frecuenciaCardiaca    Int?
+  frecuenciaRespiratoria Int?
+  mucosas               String?
+  tiempoLlenadoCapilar  String?
+  condicionCorporal     String?
+  observaciones         String?          @db.Text
+  resultado             EvaluationResult
+
+  createdAt             DateTime         @default(now())
+
+  @@index([donorId])
+}
+
+model DonorDiagnosticTest {
+  id              String      @id @default(cuid())
+  donorId         String
+  donor           BloodDonor  @relation(fields: [donorId], references: [id], onDelete: Cascade)
+  fecha           DateTime    @default(now())
+  metodo          String?
+
+  // Hematología
+  hematocrito     Float?
+  hemoglobina     Float?
+  eritrocitos     Float?
+  leucocitos      Float?
+  plaquetas       Float?
+
+  // Pruebas infecciosas - Perros
+  ehrlichia       String?
+  anaplasma       String?
+  babesia         String?
+  dirofilaria     String?
+  brucella        String?
+
+  // Pruebas infecciosas - Gatos
+  felv            String?
+  fiv             String?
+  hemoplasmas     String?
+
+  // Tipificación
+  tipificacionSanguinea String?
+
+  registeredById  String
+  registeredBy    User        @relation("DonorDiagnosticTests", fields: [registeredById], references: [id])
+  observaciones   String?     @db.Text
+
+  createdAt       DateTime    @default(now())
+
+  @@index([donorId])
+}
+
+model BloodDonation {
+  id                    String          @id @default(cuid())
+  donorId               String
+  donor                 BloodDonor      @relation(fields: [donorId], references: [id], onDelete: Cascade)
+  fecha                 DateTime        @default(now())
+  medicoId              String
+  medico                User            @relation("BloodDonationMedico", fields: [medicoId], references: [id])
+
+  volumenMl             Float
+  pesoDonadorKg         Float
+  tipoBolsa             String?
+
+  metodoContencion      RestraintMethod
+  // Sedación (si aplica)
+  farmacoUtilizado      String?
+  dosisMgKg             Float?
+  dosisTotal            Float?
+  horaAdministracion    DateTime?
+  reversionAplicada     Boolean?
+  descripcionProtocolo  String?         @db.Text
+
+  observaciones         String?         @db.Text
+
+  unit                  BloodUnit?
+
+  createdAt             DateTime        @default(now())
+
+  @@index([donorId])
+  @@index([fecha])
+}
+
+model BloodUnit {
+  id                String          @id @default(cuid())
+  codigoUnidad      String          @unique
+  donationId        String          @unique
+  donation          BloodDonation   @relation(fields: [donationId], references: [id], onDelete: Cascade)
+
+  tipoProducto      BloodProductType
+  volumenMl         Float
+  tipoSanguineo     String?
+  fechaRecoleccion  DateTime
+  fechaCaducidad    DateTime
+  status            BloodUnitStatus @default(DISPONIBLE)
+
+  temperaturaAlmacenamiento Float?
+  ubicacion         String?
+  notas             String?         @db.Text
+
+  transfusions      BloodTransfusion[]
+  alerts            BloodBankAlert[]  @relation("BloodUnitAlerts")
+
+  createdAt         DateTime        @default(now())
+  updatedAt         DateTime        @updatedAt
+
+  @@index([status])
+  @@index([tipoSanguineo])
+  @@index([fechaCaducidad])
+}
+
+model BloodTransfusion {
+  id                  String    @id @default(cuid())
+  unitId              String
+  unit                BloodUnit @relation(fields: [unitId], references: [id])
+
+  // Receptor registrado
+  recipientPetId      String?
+  recipientPet        Pet?      @relation(fields: [recipientPetId], references: [id])
+
+  // Receptor externo (no registrado)
+  recipientName       String?
+  recipientSpecies    String?
+  recipientBreed      String?
+  recipientOwnerName  String?
+  recipientOwnerPhone String?
+
+  medicoId            String
+  medico              User      @relation("BloodTransfusionMedico", fields: [medicoId], references: [id])
+  fechaTransfusion    DateTime  @default(now())
+  volumenTransfundidoMl Float
+
+  reacciones          String?   @db.Text
+  observaciones       String?   @db.Text
+
+  createdAt           DateTime  @default(now())
+
+  @@index([unitId])
+  @@index([recipientPetId])
+}
+
+model BloodBankAlert {
+  id            String         @id @default(cuid())
+  tipo          BloodAlertType
+  unitId        String?
+  unit          BloodUnit?     @relation("BloodUnitAlerts", fields: [unitId], references: [id], onDelete: Cascade)
+  donorId       String?
+  donor         BloodDonor?    @relation(fields: [donorId], references: [id], onDelete: Cascade)
+
+  mensaje       String
+  prioridad     Priority       @default(MEDIA)
+  resuelta      Boolean        @default(false)
+  resueltaAt    DateTime?
+  resueltaPorId String?
+  resueltaPor   User?          @relation("BloodAlertResolver", fields: [resueltaPorId], references: [id])
+
+  createdAt     DateTime       @default(now())
+
+  @@index([tipo])
+  @@index([resuelta])
+}
+
+model BloodBankConfig {
+  id                        String   @id @default(cuid())
+  diasCaducidadSangreTotal  Int      @default(35)
+  diasCaducidadConcentrado  Int      @default(42)
+  diasCaducidadPlasma       Int      @default(365)
+  diasAlertaCaducidad       Int      @default(7)
+  intervaloMinPerros        Int      @default(56)   // 8 semanas
+  intervaloMinGatos         Int      @default(84)   // 12 semanas
+  hematocritoMinPerros      Float    @default(40)
+  hematocritoMinGatos       Float    @default(30)
+  updatedAt                 DateTime @updatedAt
 }

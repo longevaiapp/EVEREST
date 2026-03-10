@@ -15,6 +15,7 @@ const roleAvatars = {
   RECOLECTOR: '🚗',
   OPERADOR_CREMATORIO: '🔥',
   ENTREGA: '📦',
+  BANCO_SANGRE: '🩸',
 };
 
 function Navbar({ onLogout }) {
