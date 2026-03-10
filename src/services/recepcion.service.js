@@ -276,6 +276,14 @@ export const visitService = {
       temperatura: data.temperatura ? parseFloat(data.temperatura) : undefined,
       antecedentes: data.antecedentes || undefined,
       primeraVisita: data.primeraVisita || false,
+      sintomas: data.sintomas?.length ? data.sintomas : undefined,
+      duracionSintomas: data.duracionSintomas || undefined,
+      comportamiento: data.comportamiento || undefined,
+      apetito: data.apetito || undefined,
+      agua: data.agua || undefined,
+      orina: data.orina || undefined,
+      heces: data.heces || undefined,
+      otrosDetallesSintomas: data.otrosDetallesSintomas || undefined,
     };
     
     const response = await api.put(`/visits/${visitId}/triage`, mappedData);

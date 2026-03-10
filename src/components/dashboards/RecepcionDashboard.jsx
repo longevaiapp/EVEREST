@@ -86,8 +86,24 @@ function RecepcionDashboard() {
     prioridad: 'MEDIA',
     peso: '',
     antecedentes: '',
-    primeraVisita: false
+    primeraVisita: false,
+    sintomas: [],
+    duracionSintomas: '',
+    comportamiento: '',
+    apetito: '',
+    agua: '',
+    orina: '',
+    heces: '',
+    otrosDetallesSintomas: ''
   });
+
+  const sintomasOpciones = [
+    'Vomiting', 'Diarrhea', 'Loss of appetite', 'Lethargy',
+    'Cough', 'Sneezing', 'Nasal discharge', 'Eye discharge',
+    'Limping', 'Excessive scratching', 'Hair loss', 'Lumps/masses',
+    'Difficulty breathing', 'Difficulty urinating', 'Bleeding',
+    'Seizures', 'Fever', 'Other'
+  ];
 
   const [newPatientData, setNewPatientData] = useState({
     // Datos del Propietario
@@ -269,7 +285,15 @@ function RecepcionDashboard() {
       prioridad: 'MEDIA',
       peso: patient.peso || '',
       antecedentes: patient.antecedentes || '',
-      primeraVisita: patient.primeraVisita !== false // Si no está definido, asumir que es primera visita
+      primeraVisita: patient.primeraVisita !== false,
+      sintomas: [],
+      duracionSintomas: '',
+      comportamiento: '',
+      apetito: '',
+      agua: '',
+      orina: '',
+      heces: '',
+      otrosDetallesSintomas: ''
     });
   };
 
@@ -288,7 +312,15 @@ function RecepcionDashboard() {
         prioridad: triageData.prioridad,
         peso: triageData.peso,
         antecedentes: triageData.antecedentes,
-        primeraVisita: triageData.primeraVisita
+        primeraVisita: triageData.primeraVisita,
+        sintomas: triageData.sintomas,
+        duracionSintomas: triageData.duracionSintomas,
+        comportamiento: triageData.comportamiento,
+        apetito: triageData.apetito,
+        agua: triageData.agua,
+        orina: triageData.orina,
+        heces: triageData.heces,
+        otrosDetallesSintomas: triageData.otrosDetallesSintomas
       });
       await refreshData();
       
@@ -2663,6 +2695,101 @@ function RecepcionDashboard() {
                   onChange={(e) => setTriageData({...triageData, antecedentes: e.target.value})}
                   placeholder={t('recepcion.triage.background')}
                   rows="4"
+                />
+              </div>
+
+              <div className="form-section">
+                <h3>5. Síntomas</h3>
+                <div className="symptoms-grid" style={{display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '6px', marginBottom: '12px'}}>
+                  {sintomasOpciones.map(sintoma => (
+                    <label key={sintoma} style={{display: 'flex', alignItems: 'center', gap: '4px', fontSize: '13px', cursor: 'pointer'}}>
+                      <input
+                        type="checkbox"
+                        checked={triageData.sintomas.includes(sintoma)}
+                        onChange={() => {
+                          const updated = triageData.sintomas.includes(sintoma)
+                            ? triageData.sintomas.filter(s => s !== sintoma)
+                            : [...triageData.sintomas, sintoma];
+                          setTriageData({...triageData, sintomas: updated});
+                        }}
+                      />
+                      {sintoma}
+                    </label>
+                  ))}
+                </div>
+                <input
+                  type="text"
+                  value={triageData.duracionSintomas}
+                  onChange={(e) => setTriageData({...triageData, duracionSintomas: e.target.value})}
+                  placeholder="Duración de los síntomas (ej: 2 días)"
+                  style={{width: '100%', marginBottom: '8px'}}
+                />
+              </div>
+
+              <div className="form-section">
+                <h3>6. Estado General</h3>
+                <div className="form-row" style={{display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px'}}>
+                  <div className="form-group">
+                    <label>Comportamiento</label>
+                    <select value={triageData.comportamiento} onChange={(e) => setTriageData({...triageData, comportamiento: e.target.value})}>
+                      <option value="">-- Seleccionar --</option>
+                      <option value="Normal">Normal</option>
+                      <option value="Anxious">Ansioso</option>
+                      <option value="Aggressive">Agresivo</option>
+                      <option value="Depressed">Decaído</option>
+                      <option value="Hyperactive">Hiperactivo</option>
+                    </select>
+                  </div>
+                  <div className="form-group">
+                    <label>Apetito</label>
+                    <select value={triageData.apetito} onChange={(e) => setTriageData({...triageData, apetito: e.target.value})}>
+                      <option value="">-- Seleccionar --</option>
+                      <option value="Normal">Normal</option>
+                      <option value="Increased">Aumentado</option>
+                      <option value="Decreased">Disminuido</option>
+                      <option value="None">Sin apetito</option>
+                    </select>
+                  </div>
+                  <div className="form-group">
+                    <label>Consumo de Agua</label>
+                    <select value={triageData.agua} onChange={(e) => setTriageData({...triageData, agua: e.target.value})}>
+                      <option value="">-- Seleccionar --</option>
+                      <option value="Normal">Normal</option>
+                      <option value="Increased">Aumentado</option>
+                      <option value="Decreased">Disminuido</option>
+                      <option value="None">No bebe</option>
+                    </select>
+                  </div>
+                  <div className="form-group">
+                    <label>Orina</label>
+                    <select value={triageData.orina} onChange={(e) => setTriageData({...triageData, orina: e.target.value})}>
+                      <option value="">-- Seleccionar --</option>
+                      <option value="Normal">Normal</option>
+                      <option value="Increased">Frecuente</option>
+                      <option value="Decreased">Poco</option>
+                      <option value="Blood">Con sangre</option>
+                      <option value="Difficulty">Dificultad</option>
+                    </select>
+                  </div>
+                  <div className="form-group">
+                    <label>Heces</label>
+                    <select value={triageData.heces} onChange={(e) => setTriageData({...triageData, heces: e.target.value})}>
+                      <option value="">-- Seleccionar --</option>
+                      <option value="Normal">Normal</option>
+                      <option value="Soft">Blandas</option>
+                      <option value="Liquid">Líquidas</option>
+                      <option value="Hard">Duras</option>
+                      <option value="Blood">Con sangre</option>
+                      <option value="Mucus">Con moco</option>
+                    </select>
+                  </div>
+                </div>
+                <textarea
+                  value={triageData.otrosDetallesSintomas}
+                  onChange={(e) => setTriageData({...triageData, otrosDetallesSintomas: e.target.value})}
+                  placeholder="Otros detalles o comentarios del triage..."
+                  rows="2"
+                  style={{marginTop: '8px'}}
                 />
               </div>
 

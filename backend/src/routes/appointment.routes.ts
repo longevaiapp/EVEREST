@@ -166,6 +166,7 @@ router.put('/:id/checkin', authenticate, isRecepcion, async (req, res) => {
       status: 'RECIEN_LLEGADO',
       tipoVisita: appointment.tipo as any,
       motivo: appointment.motivo,
+      antecedentes: appointment.notas || undefined,
     },
     include: {
       pet: { include: { owner: true } },
