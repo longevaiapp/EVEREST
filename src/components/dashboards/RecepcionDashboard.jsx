@@ -127,7 +127,9 @@ function RecepcionDashboard() {
     analisisClinicos: '',
     // Desparasitaciones y Vacunas
     desparasitacionExterna: false,
-    ultimaDesparasitacion: '',
+    ultimaDesparasitacionExterna: '',
+    desparasitacionInterna: false,
+    ultimaDesparasitacionInterna: '',
     vacunas: '',
     vacunasActualizadas: false,
     ultimaVacuna: '',
@@ -861,7 +863,9 @@ function RecepcionDashboard() {
         antecedentes: newPatientData.antecedentes || null,
         // Vacunas
         desparasitacionExterna: toBoolean(newPatientData.desparasitacionExterna),
-        ultimaDesparasitacion: toDatetimeOrNull(newPatientData.ultimaDesparasitacion),
+        ultimaDesparasitacionExterna: toDatetimeOrNull(newPatientData.ultimaDesparasitacionExterna),
+        desparasitacionInterna: toBoolean(newPatientData.desparasitacionInterna),
+        ultimaDesparasitacionInterna: toDatetimeOrNull(newPatientData.ultimaDesparasitacionInterna),
         vacunasTexto: newPatientData.vacunas || null,
         vacunasActualizadas: toBoolean(newPatientData.vacunasActualizadas),
         ultimaVacuna: toDatetimeOrNull(newPatientData.ultimaVacuna),
@@ -937,7 +941,9 @@ function RecepcionDashboard() {
         snapTest: '',
         analisisClinicos: '',
         desparasitacionExterna: false,
-        ultimaDesparasitacion: '',
+        ultimaDesparasitacionExterna: '',
+        desparasitacionInterna: false,
+        ultimaDesparasitacionInterna: '',
         vacunas: '',
         vacunasActualizadas: false,
         ultimaVacuna: '',
@@ -1636,11 +1642,29 @@ function RecepcionDashboard() {
                       </label>
                     </div>
                     <div className="form-group">
-                      <label>{t('recepcion.medicalHistory.lastDeworming')}:</label>
+                      <label>{t('recepcion.medicalHistory.lastDeworming')} (externa):</label>
                       <input
                         type="date"
-                        value={newPatientData.ultimaDesparasitacion}
-                        onChange={(e) => setNewPatientData({...newPatientData, ultimaDesparasitacion: e.target.value})}
+                        value={newPatientData.ultimaDesparasitacionExterna}
+                        onChange={(e) => setNewPatientData({...newPatientData, ultimaDesparasitacionExterna: e.target.value})}
+                      />
+                    </div>
+                    <div className="form-group checkbox-group">
+                      <label className="checkbox-inline">
+                        <input
+                          type="checkbox"
+                          checked={newPatientData.desparasitacionInterna}
+                          onChange={(e) => setNewPatientData({...newPatientData, desparasitacionInterna: e.target.checked})}
+                        />
+                        Desparasitación interna
+                      </label>
+                    </div>
+                    <div className="form-group">
+                      <label>{t('recepcion.medicalHistory.lastDeworming')} (interna):</label>
+                      <input
+                        type="date"
+                        value={newPatientData.ultimaDesparasitacionInterna}
+                        onChange={(e) => setNewPatientData({...newPatientData, ultimaDesparasitacionInterna: e.target.value})}
                       />
                     </div>
                     <div className="form-group full-width">
@@ -2287,6 +2311,7 @@ function RecepcionDashboard() {
                               {need.type === 'VACUNA' && '💉'}
                               {need.type === 'VACUNA_PROGRAMADA' && '📅'}
                               {need.type === 'DESPARASITACION' && '💊'}
+                              {need.type === 'DESPARASITACION_INTERNA' && '💊'}
                             </span>
                             <strong>{need.reason}</strong>
                             {need.lastDate && (

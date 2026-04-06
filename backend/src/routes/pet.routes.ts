@@ -27,7 +27,9 @@ const createPetSchema = z.object({
   antecedentes: z.string().optional().nullable(),
   // Vaccines
   desparasitacionExterna: z.boolean().optional().nullable(),
-  ultimaDesparasitacion: z.string().datetime().optional().nullable(),
+  ultimaDesparasitacionExterna: z.string().datetime().optional().nullable(),
+  desparasitacionInterna: z.boolean().optional().nullable(),
+  ultimaDesparasitacionInterna: z.string().datetime().optional().nullable(),
   vacunasTexto: z.string().optional().nullable(),
   vacunasActualizadas: z.boolean().optional().nullable(),
   ultimaVacuna: z.string().datetime().optional().nullable(),
@@ -244,6 +246,12 @@ router.get('/historial/:id', authenticate, async (req, res) => {
     orderBy: { createdAt: 'desc' },
   });
 
+  // Get all deworming records
+  const desparasitaciones = await prisma.dewormingRecord.findMany({
+    where: { petId },
+    orderBy: { fecha: 'desc' },
+  });
+
   res.json({
     status: 'success',
     data: {
@@ -253,6 +261,7 @@ router.get('/historial/:id', authenticate, async (req, res) => {
         cirugias,
         hospitalizaciones,
         vacunas,
+        desparasitaciones,
         notas,
       },
       resumen: {
@@ -289,11 +298,18 @@ router.get('/preventive-calendar', authenticate, async (req, res) => {
         { vacunasActualizadas: false },
         { ultimaVacuna: null },
         { ultimaVacuna: { lt: oneYearAgo } },
-        { ultimaDesparasitacion: { lt: sixMonthsAgo } },
+        { ultimaDesparasitacionExterna: { lt: sixMonthsAgo } },
+        { ultimaDesparasitacionInterna: { lt: threeMonthsAgo } },
         { 
           AND: [
             { desparasitacionExterna: true },
-            { ultimaDesparasitacion: null }
+            { ultimaDesparasitacionExterna: null }
+          ]
+        },
+        { 
+          AND: [
+            { desparasitacionInterna: true },
+            { ultimaDesparasitacionInterna: null }
           ]
         },
       ],
@@ -315,7 +331,7 @@ router.get('/preventive-calendar', authenticate, async (req, res) => {
     },
     orderBy: [
       { ultimaVacuna: 'asc' },
-      { ultimaDesparasitacion: 'asc' },
+      { ultimaDesparasitacionExterna: 'asc' },
     ],
     take: 50,
   });
@@ -333,12 +349,21 @@ router.get('/preventive-calendar', authenticate, async (req, res) => {
       });
     }
 
-    if (!pet.ultimaDesparasitacion || pet.ultimaDesparasitacion < sixMonthsAgo) {
+    if (!pet.ultimaDesparasitacionExterna || pet.ultimaDesparasitacionExterna < sixMonthsAgo) {
       needs.push({
         type: 'DESPARASITACION',
-        reason: !pet.ultimaDesparasitacion ? 'Sin registro de desparasitación' : 'Desparasitación vencida',
-        lastDate: pet.ultimaDesparasitacion,
-        priority: !pet.ultimaDesparasitacion ? 'alta' : 'media',
+        reason: !pet.ultimaDesparasitacionExterna ? 'Sin registro de desparasitación externa' : 'Desparasitación externa vencida',
+        lastDate: pet.ultimaDesparasitacionExterna,
+        priority: !pet.ultimaDesparasitacionExterna ? 'alta' : 'media',
+      });
+    }
+
+    if (!pet.ultimaDesparasitacionInterna || pet.ultimaDesparasitacionInterna < threeMonthsAgo) {
+      needs.push({
+        type: 'DESPARASITACION_INTERNA',
+        reason: !pet.ultimaDesparasitacionInterna ? 'Sin registro de desparasitación interna' : 'Desparasitación interna vencida',
+        lastDate: pet.ultimaDesparasitacionInterna,
+        priority: !pet.ultimaDesparasitacionInterna ? 'alta' : 'media',
       });
     }
 
@@ -364,7 +389,8 @@ router.get('/preventive-calendar', authenticate, async (req, res) => {
       email: pet.owner.email,
       needs,
       ultimaVacuna: pet.ultimaVacuna,
-      ultimaDesparasitacion: pet.ultimaDesparasitacion,
+      ultimaDesparasitacionExterna: pet.ultimaDesparasitacionExterna,
+      ultimaDesparasitacionInterna: pet.ultimaDesparasitacionInterna,
     };
   }).filter(pet => pet.needs.length > 0);
 
@@ -450,7 +476,8 @@ router.post('/', authenticate, isRecepcion, async (req, res) => {
       ...data,
       numeroFicha,
       fechaNacimiento: data.fechaNacimiento ? new Date(data.fechaNacimiento) : null,
-      ultimaDesparasitacion: data.ultimaDesparasitacion ? new Date(data.ultimaDesparasitacion) : null,
+      ultimaDesparasitacionExterna: data.ultimaDesparasitacionExterna ? new Date(data.ultimaDesparasitacionExterna) : null,
+      ultimaDesparasitacionInterna: data.ultimaDesparasitacionInterna ? new Date(data.ultimaDesparasitacionInterna) : null,
       ultimaVacuna: data.ultimaVacuna ? new Date(data.ultimaVacuna) : null,
       ultimoCelo: data.ultimoCelo ? new Date(data.ultimoCelo) : null,
       ultimoParto: data.ultimoParto ? new Date(data.ultimoParto) : null,
@@ -476,7 +503,8 @@ router.put('/:id', authenticate, async (req, res) => {
     data: {
       ...data,
       fechaNacimiento: data.fechaNacimiento ? new Date(data.fechaNacimiento) : undefined,
-      ultimaDesparasitacion: data.ultimaDesparasitacion ? new Date(data.ultimaDesparasitacion) : undefined,
+      ultimaDesparasitacionExterna: data.ultimaDesparasitacionExterna ? new Date(data.ultimaDesparasitacionExterna) : undefined,
+      ultimaDesparasitacionInterna: data.ultimaDesparasitacionInterna ? new Date(data.ultimaDesparasitacionInterna) : undefined,
       ultimaVacuna: data.ultimaVacuna ? new Date(data.ultimaVacuna) : undefined,
       ultimoCelo: data.ultimoCelo ? new Date(data.ultimoCelo) : undefined,
       ultimoParto: data.ultimoParto ? new Date(data.ultimoParto) : undefined,

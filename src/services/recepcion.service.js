@@ -122,7 +122,9 @@ export const petService = {
       antecedentes: data.antecedentes || null,
       // Vaccines
       desparasitacionExterna: data.desparasitacionExterna || false,
-      ultimaDesparasitacion: data.ultimaDesparasitacion ? new Date(data.ultimaDesparasitacion).toISOString() : null,
+      ultimaDesparasitacionExterna: data.ultimaDesparasitacionExterna ? new Date(data.ultimaDesparasitacionExterna).toISOString() : null,
+      desparasitacionInterna: data.desparasitacionInterna || false,
+      ultimaDesparasitacionInterna: data.ultimaDesparasitacionInterna ? new Date(data.ultimaDesparasitacionInterna).toISOString() : null,
       vacunasTexto: data.vacunas || null,
       vacunasActualizadas: data.vacunasActualizadas || false,
       ultimaVacuna: data.ultimaVacuna ? new Date(data.ultimaVacuna).toISOString() : null,

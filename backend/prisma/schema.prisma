@@ -273,11 +273,13 @@ model Pet {
   antecedentes     String? @db.Text
 
   // === VACUNAS Y DESPARASITACIÓN ===
-  desparasitacionExterna Boolean?
-  ultimaDesparasitacion  DateTime?
-  vacunasTexto           String?   @db.Text
-  vacunasActualizadas    Boolean?
-  ultimaVacuna           DateTime?
+  desparasitacionExterna        Boolean?
+  ultimaDesparasitacionExterna  DateTime?
+  desparasitacionInterna        Boolean?
+  ultimaDesparasitacionInterna  DateTime?
+  vacunasTexto                  String?   @db.Text
+  vacunasActualizadas           Boolean?
+  ultimaVacuna                  DateTime?
 
   // === CIRUGÍAS ===
   esterilizado    Boolean?

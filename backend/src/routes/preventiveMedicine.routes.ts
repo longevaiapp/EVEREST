@@ -264,7 +264,8 @@ router.get('/pet/:petId/history', authenticate, async (req, res) => {
         raza: true,
         fechaNacimiento: true,
         ultimaVacuna: true,
-        ultimaDesparasitacion: true,
+        ultimaDesparasitacionExterna: true,
+        ultimaDesparasitacionInterna: true,
       },
     }),
   ]);
@@ -464,7 +465,16 @@ router.post('/attend', authenticate, isMedico, async (req, res) => {
       updateData.vacunasActualizadas = true;
     }
     if (data.dewormings.length > 0) {
-      updateData.ultimaDesparasitacion = new Date();
+      const hasInterna = data.dewormings.some((d: any) => d.tipo === 'Interna' || d.tipo === 'Ambas');
+      const hasExterna = data.dewormings.some((d: any) => d.tipo === 'Externa' || d.tipo === 'Ambas');
+      if (hasExterna) {
+        updateData.ultimaDesparasitacionExterna = new Date();
+        updateData.desparasitacionExterna = true;
+      }
+      if (hasInterna) {
+        updateData.ultimaDesparasitacionInterna = new Date();
+        updateData.desparasitacionInterna = true;
+      }
     }
 
     if (Object.keys(updateData).length > 0) {
@@ -652,10 +662,19 @@ router.post('/deworming', authenticate, isMedico, async (req, res) => {
       });
     }
 
-    // Update pet
+    // Update pet deworming dates based on tipo
+    const petUpdateData: any = {};
+    if (data.tipo === 'Externa' || data.tipo === 'Ambas') {
+      petUpdateData.ultimaDesparasitacionExterna = new Date();
+      petUpdateData.desparasitacionExterna = true;
+    }
+    if (data.tipo === 'Interna' || data.tipo === 'Ambas') {
+      petUpdateData.ultimaDesparasitacionInterna = new Date();
+      petUpdateData.desparasitacionInterna = true;
+    }
     await tx.pet.update({
       where: { id: data.petId },
-      data: { ultimaDesparasitacion: new Date() },
+      data: petUpdateData,
     });
 
     return dewormingRecord;

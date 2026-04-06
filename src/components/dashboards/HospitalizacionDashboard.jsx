@@ -111,7 +111,7 @@ function HospitalizacionDashboard() {
   const [therapyForm, setTherapyForm] = useState({
     medicationId: '', medicationName: '', presentacion: '', concentracion: '',
     stockDisponible: 0, dosis: '', unidadDosis: 'mg', frecuenciaHoras: 8,
-  via: 'IV', notas: '',
+  via: 'IV', notas: '', horaInicio: '',
   // Dose calculation traceability
   patientWeightKg: null, dosePerKg: null, calculatedDoseMg: null,
   volumeMl: null, concentrationUsed: null, _autoFilledDose: false,
@@ -329,6 +329,18 @@ function HospitalizacionDashboard() {
   const handleTherapySubmit = async (e) => {
     if (e) e.preventDefault();
     if (!selectedHospitalization) return;
+    // Calculate scheduledTimes from horaInicio + frecuenciaHoras
+    let scheduledTimes = undefined;
+    if (therapyForm.horaInicio) {
+      scheduledTimes = [];
+      const [h, m] = therapyForm.horaInicio.split(':').map(Number);
+      const freq = parseInt(therapyForm.frecuenciaHoras);
+      const totalSlots = Math.floor(24 / freq);
+      for (let i = 0; i < totalSlots; i++) {
+        const hour = (h + freq * i) % 24;
+        scheduledTimes.push(`${String(hour).padStart(2, '0')}:${String(m).padStart(2, '0')}`);
+      }
+    }
     const data = {
       medicationId: therapyForm.medicationId || undefined,
       medicationName: therapyForm.medicationName,
@@ -336,6 +348,7 @@ function HospitalizacionDashboard() {
       frequency: `cada ${therapyForm.frecuenciaHoras} horas`,
       route: therapyForm.via,
       notes: therapyForm.notas,
+      scheduledTimes,
       // Dose calculation traceability
       patientWeightKg: therapyForm.patientWeightKg || undefined,
       dosePerKg: therapyForm.dosePerKg || undefined,
@@ -349,7 +362,7 @@ function HospitalizacionDashboard() {
       setTherapyForm({
         medicationId: '', medicationName: '', presentacion: '', concentracion: '',
         stockDisponible: 0, dosis: '', unidadDosis: 'mg', frecuenciaHoras: 8,
-        via: 'IV', notas: '',
+        via: 'IV', notas: '', horaInicio: '',
         patientWeightKg: null, dosePerKg: null, calculatedDoseMg: null,
         volumeMl: null, concentrationUsed: null, _autoFilledDose: false,
       });
@@ -734,6 +747,7 @@ function HospitalizacionDashboard() {
                           <div className="hd-therapy-info">
                             <strong>{item.medication?.nombre || item.medicationName || '-'}</strong>
                             <span>{item.dosis} • {item.via} • {item.frecuenciaHoras}</span>
+                            {item.scheduledTimes?.length > 0 && <span className="hd-therapy-schedule">🕐 {(Array.isArray(item.scheduledTimes) ? item.scheduledTimes : []).join(' → ')}</span>}
                             {item.notas && <span className="hd-therapy-notes">{item.notas}</span>}
                           </div>
                           <div className="hd-therapy-btns">
@@ -1026,6 +1040,24 @@ function HospitalizacionDashboard() {
                     <option value={4}>c/4h</option><option value={6}>c/6h</option><option value={8}>c/8h</option><option value={12}>c/12h</option><option value={24}>c/24h</option>
                   </select>
                 </div>
+                <div className="hd-field"><label>Hora Inicio</label>
+                  <input type="time" name="horaInicio" value={therapyForm.horaInicio} onChange={handleTherapyChange} />
+                </div>
+              </div>
+              {therapyForm.horaInicio && (
+                <div className="hd-note-box" style={{marginTop: '4px', fontSize: '12px'}}>
+                  🕐 Horarios: {(() => {
+                    const [h, m] = therapyForm.horaInicio.split(':').map(Number);
+                    const freq = parseInt(therapyForm.frecuenciaHoras);
+                    const slots = Math.floor(24 / freq);
+                    return Array.from({length: slots}, (_, i) => {
+                      const hour = (h + freq * i) % 24;
+                      return `${String(hour).padStart(2, '0')}:${String(m).padStart(2, '0')}`;
+                    }).join(' → ');
+                  })()}
+                </div>
+              )}
+              <div className="hd-grid-4">
                 <div className="hd-field"><label>Vía</label>
                   <select name="via" value={therapyForm.via} onChange={handleTherapyChange}>
                     <option value="IV">IV</option><option value="IM">IM</option><option value="SC">SC</option><option value="PO">Oral</option><option value="TOPICA">Tópica</option>

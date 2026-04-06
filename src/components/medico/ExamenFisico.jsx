@@ -19,9 +19,13 @@ const initialGeneralExam = {
   frecuenciaCardiacaEstado: '', // Normal, Taquicardia, Bradicardia
   frecuenciaRespiratoria: '',
   frecuenciaRespiratoriaEstado: '', // Normal, Taquipnea, Bradipnea
-  pulso: '', // Normal, Débil, Fuerte, Irregular
+  pulso: [], // Multi-select: Fuerte, Débil, Lleno, Insuficiente, Correspondiente, No correspondiente, Ausente
   
-  // 4. Hidratación
+  // 4. Tiempo de Llenado Capilar y Mucosas
+  tiempoLlenadoCapilar: '', // <2s, 2-3s, >3s
+  mucosas: [], // Normales, Hiperémicas, Ictéricas, Pálidas, Cianóticas
+  
+  // 5. Hidratación
   hidratacion: '', // Normohidratado, Leve 5%, Moderada 6-8%, Severa >8%, Edema
   
   // 5. Cabeza y Cuello
@@ -173,7 +177,9 @@ const OPTIONS = {
   temperaturaEstado: ['Normal', 'Hipotermia', 'Hipertermia'],
   fcEstado: ['Normal', 'Taquicardia', 'Bradicardia'],
   frEstado: ['Normal', 'Taquipnea', 'Bradipnea'],
-  pulso: ['Normal', 'Débil', 'Fuerte', 'Irregular'],
+  pulso: ['Fuerte', 'Débil', 'Lleno', 'Insuficiente', 'Correspondiente', 'No correspondiente', 'Ausente'],
+  tiempoLlenadoCapilar: ['< 2 segundos', '2-3 segundos', '> 3 segundos'],
+  mucosas: ['Normales', 'Hiperémicas', 'Ictéricas', 'Pálidas', 'Cianóticas'],
   hidratacion: ['Normohidratado', 'Deshidratación leve (5%)', 'Deshidratación moderada (6-8%)', 'Deshidratación severa (>8%)', 'Edema'],
   ojos: ['Normales', 'Secreción', 'Hiperemia', 'Opacidad', 'Anisocoria'],
   oidos: ['Normales', 'Secreción', 'Eritema', 'Mal olor', 'Dolor'],
@@ -541,14 +547,37 @@ function ExamenFisico({ onSave, initialData, consultationId, loading, triageData
                 </div>
                 <div className="vital-item">
                   <label>💗 Pulso</label>
-                  <RadioGroup
+                  <CheckboxGroup
                     options={OPTIONS.pulso}
-                    value={generalExam.pulso}
+                    values={generalExam.pulso}
                     onChange={(v) => setValue(setGeneralExam, 'pulso', v)}
                     name="pulso"
                     columns={4}
                   />
                 </div>
+              </div>
+            </Section>
+
+            <Section title="Llenado Capilar y Mucosas" icon="🩸" name="tlcMucosas">
+              <div className="vital-item">
+                <label>⏱️ Tiempo de Llenado Capilar (TLC)</label>
+                <RadioGroup
+                  options={OPTIONS.tiempoLlenadoCapilar}
+                  value={generalExam.tiempoLlenadoCapilar}
+                  onChange={(v) => setValue(setGeneralExam, 'tiempoLlenadoCapilar', v)}
+                  name="tiempoLlenadoCapilar"
+                  columns={3}
+                />
+              </div>
+              <div className="vital-item" style={{marginTop: '12px'}}>
+                <label>👄 Valoración de Mucosas</label>
+                <CheckboxGroup
+                  options={OPTIONS.mucosas}
+                  values={generalExam.mucosas}
+                  onChange={(v) => setValue(setGeneralExam, 'mucosas', v)}
+                  name="mucosas"
+                  columns={3}
+                />
               </div>
             </Section>
 
@@ -1681,7 +1710,7 @@ function ExamenFisico({ onSave, initialData, consultationId, loading, triageData
           )}
 
           {/* Constantes Fisiológicas */}
-          {(generalExam.temperatura || generalExam.frecuenciaCardiaca || generalExam.frecuenciaRespiratoria || generalExam.pulso) && (
+          {(generalExam.temperatura || generalExam.frecuenciaCardiaca || generalExam.frecuenciaRespiratoria || generalExam.pulso?.length > 0) && (
             <div className="summary-section">
               <h4>💓 Constantes Fisiológicas</h4>
               <div className="summary-vitals">
@@ -1700,7 +1729,26 @@ function ExamenFisico({ onSave, initialData, consultationId, loading, triageData
                     🫁 FR: {generalExam.frecuenciaRespiratoria} rpm {generalExam.frecuenciaRespiratoriaEstado && `(${generalExam.frecuenciaRespiratoriaEstado})`}
                   </span>
                 )}
-                {generalExam.pulso && <span className="summary-vital">💗 Pulso: {generalExam.pulso}</span>}
+                {generalExam.pulso?.length > 0 && <span className="summary-vital">💗 Pulso: {generalExam.pulso.join(', ')}</span>}
+              </div>
+            </div>
+          )}
+
+          {/* TLC y Mucosas */}
+          {(generalExam.tiempoLlenadoCapilar || generalExam.mucosas?.length > 0) && (
+            <div className="summary-section">
+              <h4>🩸 Llenado Capilar y Mucosas</h4>
+              <div className="summary-vitals">
+                {generalExam.tiempoLlenadoCapilar && (
+                  <span className={`summary-vital ${generalExam.tiempoLlenadoCapilar.includes('> 3') ? 'alert' : generalExam.tiempoLlenadoCapilar.includes('2-3') ? 'warning' : ''}`}>
+                    ⏱️ TLC: {generalExam.tiempoLlenadoCapilar}
+                  </span>
+                )}
+                {generalExam.mucosas?.length > 0 && (
+                  <span className={`summary-vital ${generalExam.mucosas.some(m => m === 'Cianóticas' || m === 'Pálidas') ? 'alert' : generalExam.mucosas.some(m => m === 'Ictéricas' || m === 'Hiperémicas') ? 'warning' : ''}`}>
+                    👄 Mucosas: {generalExam.mucosas.join(', ')}
+                  </span>
+                )}
               </div>
             </div>
           )}
