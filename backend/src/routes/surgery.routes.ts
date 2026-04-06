@@ -1,5 +1,5 @@
 // src/routes/surgery.routes.ts
-// Surgery routes - MEDICO module
+// Surgery / Quirófano routes
 
 import { Router } from 'express';
 import { z } from 'zod';
@@ -8,6 +8,14 @@ import { AppError } from '../middleware/errorHandler';
 import { authenticate, isMedico } from '../middleware/auth';
 
 const router = Router();
+
+const surgeriesInclude = {
+  pet: { include: { owner: true } },
+  consultation: true,
+  surgeryVitals: { orderBy: { recordedAt: 'asc' as const } },
+  surgeryPreMeds: { orderBy: { createdAt: 'asc' as const } },
+  hospitalization: { select: { id: true, status: true } },
+};
 
 // GET /surgeries - List surgeries
 router.get('/', authenticate, async (req, res) => {
@@ -26,10 +34,7 @@ router.get('/', authenticate, async (req, res) => {
 
   const surgeries = await prisma.surgery.findMany({
     where,
-    include: {
-      pet: { include: { owner: true } },
-      consultation: true,
-    },
+    include: surgeriesInclude,
     orderBy: { scheduledDate: 'asc' },
   });
 
@@ -47,14 +52,31 @@ router.get('/today', authenticate, async (req, res) => {
     where: {
       scheduledDate: { gte: today, lt: tomorrow },
     },
-    include: {
-      pet: { include: { owner: true } },
-      consultation: true,
-    },
-    orderBy: { scheduledDate: 'asc' },
+    include: surgeriesInclude,
+    orderBy: [{ scheduledTime: 'asc' }],
   });
 
   res.json({ status: 'success', data: { surgeries } });
+});
+
+// GET /surgeries/board - Board summary (counts by status)
+router.get('/board', authenticate, async (req, res) => {
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const tomorrow = new Date(today);
+  tomorrow.setDate(tomorrow.getDate() + 1);
+
+  const [programadas, enPreparacion, enCurso, completadas] = await Promise.all([
+    prisma.surgery.count({ where: { status: 'PROGRAMADA', scheduledDate: { gte: today, lt: tomorrow } } }),
+    prisma.surgery.count({ where: { status: 'EN_PREPARACION', scheduledDate: { gte: today, lt: tomorrow } } }),
+    prisma.surgery.count({ where: { status: 'EN_CURSO' } }),
+    prisma.surgery.count({ where: { status: 'COMPLETADA', scheduledDate: { gte: today, lt: tomorrow } } }),
+  ]);
+
+  res.json({
+    status: 'success',
+    data: { stats: { programadas, enPreparacion, enCurso, completadas, total: programadas + enPreparacion + enCurso + completadas } },
+  });
 });
 
 // POST /surgeries - Schedule surgery
@@ -63,7 +85,7 @@ router.post('/', authenticate, isMedico, async (req, res) => {
     petId: z.string().cuid(),
     consultationId: z.string().cuid(),
     type: z.string().min(1),
-    scheduledDate: z.string(), // Date string
+    scheduledDate: z.string(),
     scheduledTime: z.string().regex(/^\d{2}:\d{2}$/),
     estimatedDuration: z.number().int().positive().optional(),
     preOpNotes: z.string().optional(),
@@ -72,7 +94,6 @@ router.post('/', authenticate, isMedico, async (req, res) => {
 
   const data = schema.parse(req.body);
 
-  // Verify consultation exists
   const consultation = await prisma.consultation.findUnique({ 
     where: { id: data.consultationId } 
   });
@@ -91,17 +112,63 @@ router.post('/', authenticate, isMedico, async (req, res) => {
       prioridad: data.prioridad,
       status: 'PROGRAMADA',
     },
-    include: {
-      pet: { include: { owner: true } },
-      consultation: true,
-    },
+    include: surgeriesInclude,
   });
+
+  // Update pet and visit status
+  await prisma.pet.update({
+    where: { id: data.petId },
+    data: { estado: 'CIRUGIA_PROGRAMADA' },
+  });
+
+  // Update visit if exists
+  const visit = await prisma.visit.findFirst({
+    where: { petId: data.petId, status: { in: ['EN_CONSULTA', 'EN_ESPERA'] } },
+    orderBy: { arrivalTime: 'desc' },
+  });
+  if (visit) {
+    await prisma.visit.update({
+      where: { id: visit.id },
+      data: { status: 'CIRUGIA_PROGRAMADA' },
+    });
+  }
 
   res.status(201).json({ status: 'success', data: { surgery } });
 });
 
+// PUT /surgeries/:id/prepare - Pre-op checklist
+router.put('/:id/prepare', authenticate, async (req, res) => {
+  const id = req.params.id as string;
+  const schema = z.object({
+    sedationAuthorized: z.boolean().optional(),
+    consentSigned: z.boolean().optional(),
+    consentSignedBy: z.string().optional(),
+    fastingConfirmed: z.boolean().optional(),
+    preOpStudies: z.any().optional(),
+    preOpNotes: z.string().optional(),
+  });
+
+  const data = schema.parse(req.body);
+
+  const surgery = await prisma.surgery.findUnique({ where: { id } });
+  if (!surgery) throw new AppError('Surgery not found', 404);
+
+  const updateData: any = { ...data, status: 'EN_PREPARACION' };
+  if (data.consentSigned) {
+    updateData.consentSignedAt = new Date();
+  }
+
+  const updated = await prisma.surgery.update({
+    where: { id },
+    data: updateData,
+    include: surgeriesInclude,
+  });
+
+  res.json({ status: 'success', data: { surgery: updated } });
+});
+
 // PUT /surgeries/:id/start - Start surgery
-router.put('/:id/start', authenticate, isMedico, async (req, res) => {
+router.put('/:id/start', authenticate, async (req, res) => {
   const id = req.params.id as string;
   const schema = z.object({
     anesthesiaType: z.string().optional(),
@@ -116,27 +183,41 @@ router.put('/:id/start', authenticate, isMedico, async (req, res) => {
       status: 'EN_CURSO',
       startTime: new Date(),
     },
+    include: surgeriesInclude,
   });
 
-  // Update pet status
+  // Update pet and visit status
   await prisma.pet.update({
     where: { id: surgery.petId },
     data: { estado: 'EN_CIRUGIA' },
   });
 
+  const visit = await prisma.visit.findFirst({
+    where: { petId: surgery.petId, status: { in: ['CIRUGIA_PROGRAMADA', 'EN_CONSULTA'] } },
+    orderBy: { arrivalTime: 'desc' },
+  });
+  if (visit) {
+    await prisma.visit.update({
+      where: { id: visit.id },
+      data: { status: 'EN_CIRUGIA' },
+    });
+  }
+
   res.json({ status: 'success', data: { surgery } });
 });
 
 // PUT /surgeries/:id/complete - Complete surgery
-router.put('/:id/complete', authenticate, isMedico, async (req, res) => {
+router.put('/:id/complete', authenticate, async (req, res) => {
   const id = req.params.id as string;
   const schema = z.object({
     procedure: z.string().min(1),
     complications: z.string().optional(),
     postOpNotes: z.string().optional(),
+    postOpCare: z.string().optional(),
     prognosis: z.enum(['EXCELENTE', 'BUENO', 'RESERVADO', 'GRAVE']).optional(),
     hospitalizationRequired: z.boolean().default(false),
-    followUpDate: z.string().datetime().optional(),
+    hospitalizationType: z.string().optional(),
+    followUpDate: z.string().optional(),
   });
 
   const data = schema.parse(req.body);
@@ -147,6 +228,7 @@ router.put('/:id/complete', authenticate, isMedico, async (req, res) => {
       procedure: data.procedure,
       complications: data.complications,
       postOpNotes: data.postOpNotes,
+      postOpCare: data.postOpCare,
       prognosis: data.prognosis,
       hospitalizationRequired: data.hospitalizationRequired,
       followUpDate: data.followUpDate ? new Date(data.followUpDate) : null,
@@ -155,13 +237,9 @@ router.put('/:id/complete', authenticate, isMedico, async (req, res) => {
     },
   });
 
-  // Update pet status based on hospitalization
-  const newStatus = data.hospitalizationRequired ? 'HOSPITALIZADO' : 'LISTO_PARA_ALTA';
-  const petUpdate: any = { estado: newStatus };
-
-  // Auto-sync esterilizado if surgery is sterilization/castration
-  const surgeryFull = await prisma.surgery.findUnique({ where: { id } });
-  const tipo = (surgeryFull?.type || '').toLowerCase();
+  // Auto-sync esterilizado
+  const tipo = (surgery.type || '').toLowerCase();
+  const petUpdate: any = {};
   if (
     tipo.includes('esteriliz') ||
     tipo.includes('castrac') ||
@@ -171,12 +249,182 @@ router.put('/:id/complete', authenticate, isMedico, async (req, res) => {
     petUpdate.esterilizado = true;
   }
 
+  if (data.hospitalizationRequired) {
+    // Auto-create hospitalization linked to surgery
+    await prisma.hospitalization.create({
+      data: {
+        petId: surgery.petId,
+        surgeryId: surgery.id,
+        admittedById: req.user!.userId,
+        reason: `Post-quirúrgico: ${surgery.type} — ${data.procedure}`,
+        type: (data.hospitalizationType as any) || 'GENERAL',
+        frecuenciaMonitoreo: '1h',
+        cuidadosEspeciales: data.postOpCare || '',
+        status: 'ACTIVA',
+      },
+    });
+    petUpdate.estado = 'HOSPITALIZADO';
+
+    // Update visit
+    const visit = await prisma.visit.findFirst({
+      where: { petId: surgery.petId, status: { in: ['EN_CIRUGIA', 'CIRUGIA_PROGRAMADA'] } },
+      orderBy: { arrivalTime: 'desc' },
+    });
+    if (visit) {
+      await prisma.visit.update({
+        where: { id: visit.id },
+        data: { status: 'HOSPITALIZADO' },
+      });
+    }
+  } else {
+    petUpdate.estado = 'LISTO_PARA_ALTA';
+
+    const visit = await prisma.visit.findFirst({
+      where: { petId: surgery.petId, status: { in: ['EN_CIRUGIA', 'CIRUGIA_PROGRAMADA'] } },
+      orderBy: { arrivalTime: 'desc' },
+    });
+    if (visit) {
+      await prisma.visit.update({
+        where: { id: visit.id },
+        data: { status: 'LISTO_PARA_ALTA' },
+      });
+    }
+  }
+
   await prisma.pet.update({
     where: { id: surgery.petId },
     data: petUpdate,
   });
 
+  const updatedSurgery = await prisma.surgery.findUnique({
+    where: { id },
+    include: surgeriesInclude,
+  });
+
+  res.json({ status: 'success', data: { surgery: updatedSurgery } });
+});
+
+// PUT /surgeries/:id/cancel - Cancel surgery
+router.put('/:id/cancel', authenticate, async (req, res) => {
+  const id = req.params.id as string;
+  const schema = z.object({
+    reason: z.string().optional(),
+  });
+  const data = schema.parse(req.body);
+
+  const surgery = await prisma.surgery.update({
+    where: { id },
+    data: {
+      status: 'CANCELADA',
+      postOpNotes: data.reason ? `CANCELADA: ${data.reason}` : undefined,
+    },
+  });
+
+  // Restore pet status
+  await prisma.pet.update({
+    where: { id: surgery.petId },
+    data: { estado: 'EN_CONSULTA' },
+  });
+
   res.json({ status: 'success', data: { surgery } });
+});
+
+// ============================================================================
+// SURGERY VITALS (intra-operative monitoring)
+// ============================================================================
+
+// POST /surgeries/:id/vitals - Record vitals during surgery
+router.post('/:id/vitals', authenticate, async (req, res) => {
+  const surgeryId = req.params.id as string;
+  const schema = z.object({
+    frecuenciaCardiaca: z.number().int().optional(),
+    frecuenciaRespiratoria: z.number().int().optional(),
+    temperatura: z.number().optional(),
+    presionArterial: z.string().optional(),
+    saturacionOxigeno: z.number().optional(),
+    etCO2: z.number().optional(),
+    capnografia: z.string().optional(),
+    planoAnestesico: z.string().optional(),
+    observaciones: z.string().optional(),
+  });
+
+  const data = schema.parse(req.body);
+
+  const surgery = await prisma.surgery.findUnique({ where: { id: surgeryId } });
+  if (!surgery) throw new AppError('Surgery not found', 404);
+
+  const vitals = await prisma.surgeryVitals.create({
+    data: { surgeryId, ...data },
+  });
+
+  res.status(201).json({ status: 'success', data: { vitals } });
+});
+
+// GET /surgeries/:id/vitals - Get surgery vitals
+router.get('/:id/vitals', authenticate, async (req, res) => {
+  const surgeryId = req.params.id as string;
+
+  const vitals = await prisma.surgeryVitals.findMany({
+    where: { surgeryId },
+    orderBy: { recordedAt: 'asc' },
+  });
+
+  res.json({ status: 'success', data: { vitals } });
+});
+
+// ============================================================================
+// PRE-MEDICATION
+// ============================================================================
+
+// POST /surgeries/:id/pre-meds - Add pre-medication
+router.post('/:id/pre-meds', authenticate, async (req, res) => {
+  const surgeryId = req.params.id as string;
+  const schema = z.object({
+    medicamento: z.string().min(1),
+    dosis: z.string().min(1),
+    via: z.string().min(1),
+    horaAplicacion: z.string().optional(),
+    observaciones: z.string().optional(),
+  });
+
+  const data = schema.parse(req.body);
+
+  const surgery = await prisma.surgery.findUnique({ where: { id: surgeryId } });
+  if (!surgery) throw new AppError('Surgery not found', 404);
+
+  const preMed = await prisma.surgeryPreMedication.create({
+    data: {
+      surgeryId,
+      medicamento: data.medicamento,
+      dosis: data.dosis,
+      via: data.via,
+      horaAplicacion: data.horaAplicacion ? new Date(data.horaAplicacion) : null,
+      observaciones: data.observaciones,
+    },
+  });
+
+  res.status(201).json({ status: 'success', data: { preMed } });
+});
+
+// GET /surgeries/:id/pre-meds - Get pre-medications
+router.get('/:id/pre-meds', authenticate, async (req, res) => {
+  const surgeryId = req.params.id as string;
+
+  const preMeds = await prisma.surgeryPreMedication.findMany({
+    where: { surgeryId },
+    orderBy: { createdAt: 'asc' },
+  });
+
+  res.json({ status: 'success', data: { preMeds } });
+});
+
+// DELETE /surgeries/:id/pre-meds/:preMedId - Remove pre-medication
+router.delete('/:id/pre-meds/:preMedId', authenticate, async (req, res) => {
+  const preMedId = req.params.preMedId as string;
+
+  await prisma.surgeryPreMedication.delete({ where: { id: preMedId } });
+
+  res.json({ status: 'success', message: 'Pre-medication removed' });
 });
 
 // GET /surgeries/:id - Get surgery details
@@ -185,13 +433,35 @@ router.get('/:id', authenticate, async (req, res) => {
 
   const surgery = await prisma.surgery.findUnique({
     where: { id },
-    include: {
-      pet: { include: { owner: true } },
-      consultation: true,
-    },
+    include: surgeriesInclude,
   });
 
   if (!surgery) throw new AppError('Surgery not found', 404);
+
+  res.json({ status: 'success', data: { surgery } });
+});
+
+// PUT /surgeries/:id - Update surgery details
+router.put('/:id', authenticate, async (req, res) => {
+  const id = req.params.id as string;
+  const schema = z.object({
+    type: z.string().optional(),
+    scheduledDate: z.string().optional(),
+    scheduledTime: z.string().optional(),
+    estimatedDuration: z.number().int().positive().optional(),
+    preOpNotes: z.string().optional(),
+    prioridad: z.enum(['ALTA', 'MEDIA', 'BAJA']).optional(),
+  });
+
+  const data = schema.parse(req.body);
+  const updateData: any = { ...data };
+  if (data.scheduledDate) updateData.scheduledDate = new Date(data.scheduledDate);
+
+  const surgery = await prisma.surgery.update({
+    where: { id },
+    data: updateData,
+    include: surgeriesInclude,
+  });
 
   res.json({ status: 'success', data: { surgery } });
 });

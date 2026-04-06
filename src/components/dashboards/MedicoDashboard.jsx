@@ -6,6 +6,7 @@ import farmaciaService from '../../services/farmacia.service';
 import recepcionService from '../../services/recepcion.service';
 import { laboratorioService, citaSeguimientoService } from '../../services/medico.service';
 import bancoSangreService from '../../services/bancoSangre.service';
+import quirofanoService from '../../services/quirofano.service';
 import ExamenFisico from '../medico/ExamenFisico';
 import PreventiveMedicinePanel from '../medico/PreventiveMedicinePanel';
 import DoseCalculator from '../DoseCalculator';
@@ -50,6 +51,7 @@ function MedicoDashboard() {
   const [showPrescriptionModal, setShowPrescriptionModal] = useState(false);
   const [showLabOrderModal, setShowLabOrderModal] = useState(false);
   const [showHospitalizationModal, setShowHospitalizationModal] = useState(false);
+  const [showSurgeryModal, setShowSurgeryModal] = useState(false);
   const [showHistoryModal, setShowHistoryModal] = useState(false);
   const [showFollowUpModal, setShowFollowUpModal] = useState(false);
   const [showPreventiveMedicine, setShowPreventiveMedicine] = useState(false); // Medicina Preventiva
@@ -241,6 +243,11 @@ function MedicoDashboard() {
     cuidadosEspeciales: '',
     estimacionDias: '',
     dietaInstrucciones: ''
+  });
+
+  const [surgeryForm, setSurgeryForm] = useState({
+    type: '', scheduledDate: '', scheduledTime: '10:00',
+    estimatedDuration: '', preOpNotes: '', prioridad: 'MEDIA',
   });
 
   // Derived state - Usando datos de la API
@@ -1833,6 +1840,13 @@ function MedicoDashboard() {
               <button className="action-btn hospital" onClick={() => setShowHospitalizationModal(true)}>
                 🏥 {t('medico.hospitalize', 'Hospitalizar')}
               </button>
+              <button className="action-btn" style={{ background: '#8e44ad', color: 'white' }} onClick={() => {
+                const tomorrow = new Date(); tomorrow.setDate(tomorrow.getDate() + 1);
+                setSurgeryForm(f => ({ ...f, scheduledDate: tomorrow.toISOString().split('T')[0] }));
+                setShowSurgeryModal(true);
+              }}>
+                🔪 Programar Cirugía
+              </button>
               <button className="action-btn" style={{ background: '#dc3545', color: 'white' }} onClick={() => setShowTransfusionRequestModal(true)}>
                 🩸 Solicitar Transfusión
               </button>
@@ -2537,6 +2551,81 @@ function MedicoDashboard() {
               <button className="btn-secondary" onClick={() => setShowHospitalizationModal(false)}>{t('common.cancel', 'Cancelar')}</button>
               <button className="btn-warning" onClick={handleCreateHospitalization} disabled={!hospitalizationForm.motivo || !hospitalizationForm.type}>
                 🏥 Confirmar Hospitalización
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Surgery Scheduling Modal */}
+      {showSurgeryModal && (
+        <div className="modal-overlay" onClick={() => setShowSurgeryModal(false)}>
+          <div className="modal-content" onClick={e => e.stopPropagation()}>
+            <h3>🔪 Programar Cirugía</h3>
+            <div className="form-group">
+              <label>Tipo de Cirugía *</label>
+              <input type="text" className="form-control" placeholder="Ej: Esterilización, Tumor, Fractura..."
+                value={surgeryForm.type} onChange={e => setSurgeryForm(f => ({ ...f, type: e.target.value }))} />
+            </div>
+            <div className="form-row" style={{ display: 'flex', gap: '12px' }}>
+              <div className="form-group" style={{ flex: 1 }}>
+                <label>Fecha *</label>
+                <input type="date" className="form-control" value={surgeryForm.scheduledDate}
+                  onChange={e => setSurgeryForm(f => ({ ...f, scheduledDate: e.target.value }))} />
+              </div>
+              <div className="form-group" style={{ flex: 1 }}>
+                <label>Hora *</label>
+                <input type="time" className="form-control" value={surgeryForm.scheduledTime}
+                  onChange={e => setSurgeryForm(f => ({ ...f, scheduledTime: e.target.value }))} />
+              </div>
+            </div>
+            <div className="form-row" style={{ display: 'flex', gap: '12px' }}>
+              <div className="form-group" style={{ flex: 1 }}>
+                <label>Duración Estimada (min)</label>
+                <input type="number" className="form-control" placeholder="60"
+                  value={surgeryForm.estimatedDuration} onChange={e => setSurgeryForm(f => ({ ...f, estimatedDuration: e.target.value }))} />
+              </div>
+              <div className="form-group" style={{ flex: 1 }}>
+                <label>Prioridad</label>
+                <select className="form-control" value={surgeryForm.prioridad}
+                  onChange={e => setSurgeryForm(f => ({ ...f, prioridad: e.target.value }))}>
+                  <option value="BAJA">Baja</option>
+                  <option value="MEDIA">Media</option>
+                  <option value="ALTA">Alta</option>
+                </select>
+              </div>
+            </div>
+            <div className="form-group">
+              <label>Notas Pre-Operatorias</label>
+              <textarea className="form-control" rows={3} placeholder="Indicaciones pre-op, ayuno, estudios previos..."
+                value={surgeryForm.preOpNotes} onChange={e => setSurgeryForm(f => ({ ...f, preOpNotes: e.target.value }))} />
+            </div>
+            <div className="modal-actions">
+              <button className="btn-secondary" onClick={() => setShowSurgeryModal(false)}>Cancelar</button>
+              <button className="btn-warning" style={{ background: '#8e44ad' }} disabled={!surgeryForm.type || !surgeryForm.scheduledDate}
+                onClick={async () => {
+                  try {
+                    setLocalLoading(true);
+                    await quirofanoService.schedule({
+                      petId: selectedPatient.petId || selectedPatient.pet?.id,
+                      consultationId: activeConsultation.id,
+                      type: surgeryForm.type,
+                      scheduledDate: surgeryForm.scheduledDate,
+                      scheduledTime: surgeryForm.scheduledTime,
+                      estimatedDuration: surgeryForm.estimatedDuration ? parseInt(surgeryForm.estimatedDuration) : undefined,
+                      preOpNotes: surgeryForm.preOpNotes || undefined,
+                      prioridad: surgeryForm.prioridad,
+                    });
+                    setShowSurgeryModal(false);
+                    setSurgeryForm({ type: '', scheduledDate: '', scheduledTime: '10:00', estimatedDuration: '', preOpNotes: '', prioridad: 'MEDIA' });
+                    alert('✅ Cirugía programada exitosamente');
+                  } catch (err) {
+                    alert('Error: ' + (err?.response?.data?.message || err.message));
+                  } finally {
+                    setLocalLoading(false);
+                  }
+                }}>
+                🔪 Programar
               </button>
             </div>
           </div>

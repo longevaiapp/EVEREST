@@ -82,6 +82,7 @@ enum UserRole {
   FARMACIA
   ESTILISTA
   HOSPITALIZACION
+  QUIROFANO
   RECOLECTOR
   OPERADOR_CREMATORIO
   ENTREGA
@@ -1100,11 +1101,48 @@ model Surgery {
   updatedAt DateTime @updatedAt
 
   // Relaciones
-  hospitalization Hospitalization?
+  hospitalization    Hospitalization?
+  surgeryVitals      SurgeryVitals[]
+  surgeryPreMeds     SurgeryPreMedication[]
 
   @@index([petId])
   @@index([scheduledDate])
   @@index([status])
+}
+
+model SurgeryVitals {
+  id         String   @id @default(cuid())
+  surgeryId  String
+  surgery    Surgery  @relation(fields: [surgeryId], references: [id], onDelete: Cascade)
+  recordedAt DateTime @default(now())
+
+  frecuenciaCardiaca     Int?
+  frecuenciaRespiratoria Int?
+  temperatura            Float?
+  presionArterial        String?
+  saturacionOxigeno      Float?
+  etCO2                  Float?
+  capnografia            String?
+  planoAnestesico        String?
+  observaciones          String? @db.Text
+
+  @@index([surgeryId])
+  @@index([recordedAt])
+}
+
+model SurgeryPreMedication {
+  id            String   @id @default(cuid())
+  surgeryId     String
+  surgery       Surgery  @relation(fields: [surgeryId], references: [id], onDelete: Cascade)
+  medicamento   String
+  dosis         String
+  via           String
+  horaAplicacion DateTime?
+  observaciones String?  @db.Text
+
+  createdAt DateTime @default(now())
+
+  @@index([surgeryId])
 }
 
 enum SurgeryStatus {

@@ -1,0 +1,423 @@
+/* QuirofanoDashboard.css */
+.quirofano-dashboard {
+  min-height: 100vh;
+  background: #0a0f1c;
+  color: #e2e8f0;
+  font-family: 'Inter', -apple-system, sans-serif;
+}
+
+/* ─── HEADER ─── */
+.quirofano-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 24px;
+  background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+  border-bottom: 1px solid #2d3748;
+}
+.quirofano-header .header-left h1 {
+  margin: 0;
+  font-size: 1.5rem;
+  color: #fff;
+}
+.quirofano-header .header-date {
+  font-size: 0.85rem;
+  color: #a0aec0;
+  text-transform: capitalize;
+}
+.header-stats {
+  display: flex;
+  gap: 12px;
+}
+.stat-pill {
+  padding: 6px 14px;
+  border-radius: 20px;
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+.refresh-btn {
+  background: transparent;
+  border: 1px solid #4a5568;
+  border-radius: 8px;
+  padding: 8px 12px;
+  font-size: 1.1rem;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+.refresh-btn:hover { background: #2d3748; }
+
+/* ─── LAYOUT ─── */
+.quirofano-layout {
+  display: grid;
+  grid-template-columns: 320px 1fr;
+  height: calc(100vh - 80px);
+}
+
+/* ─── LEFT PANEL ─── */
+.surgery-list-panel {
+  background: #111827;
+  border-right: 1px solid #2d3748;
+  overflow-y: auto;
+  padding: 12px;
+}
+.surgery-group { margin-bottom: 16px; }
+.group-title {
+  font-size: 0.8rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  padding: 6px 10px;
+  border-radius: 6px;
+  margin-bottom: 8px;
+}
+.group-title.en-curso { background: #e74c3c20; color: #e74c3c; }
+.group-title.en-preparacion { background: #f39c1220; color: #f39c12; }
+.group-title.programadas { background: #3498db20; color: #3498db; }
+.group-title.completadas { background: #27ae6020; color: #27ae60; }
+
+.surgery-card {
+  background: #1a202c;
+  border-radius: 8px;
+  padding: 10px 12px;
+  margin-bottom: 8px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.surgery-card:hover { background: #2d3748; }
+.surgery-card.selected { background: #2a4365; box-shadow: 0 0 0 2px #63b3ed; }
+
+.surgery-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 6px;
+}
+.surgery-time { font-weight: 700; font-size: 0.95rem; color: #fff; }
+.surgery-status-badge {
+  font-size: 0.7rem;
+  padding: 2px 8px;
+  border-radius: 10px;
+  color: #fff;
+  font-weight: 600;
+}
+.surgery-status-badge.large { font-size: 0.85rem; padding: 4px 12px; }
+
+.surgery-card-body {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.surgery-card-body strong { color: #e2e8f0; font-size: 0.95rem; }
+.surgery-type { color: #a0aec0; font-size: 0.8rem; }
+.surgery-pet-info { color: #718096; font-size: 0.75rem; }
+.priority-badge { font-size: 0.7rem; font-weight: 700; }
+.priority-badge.alta { color: #e74c3c; }
+.priority-badge.baja { color: #27ae60; }
+
+.loading-spinner { text-align: center; padding: 40px; color: #718096; }
+.empty-state {
+  text-align: center;
+  padding: 60px 20px;
+  color: #4a5568;
+}
+.empty-state .empty-icon { font-size: 3rem; display: block; margin-bottom: 12px; }
+
+/* ─── DETAIL PANEL ─── */
+.surgery-detail-panel {
+  overflow-y: auto;
+  padding: 20px 24px;
+}
+.empty-detail {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  color: #4a5568;
+}
+.empty-detail .empty-icon { font-size: 4rem; margin-bottom: 16px; }
+.empty-detail h2 { color: #718096; margin-bottom: 8px; }
+
+/* Detail Header */
+.detail-header { margin-bottom: 20px; padding-bottom: 16px; }
+.patient-info-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 8px;
+}
+.patient-info-row h2 { margin: 0; color: #fff; font-size: 1.4rem; }
+.patient-meta, .surgery-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+  font-size: 0.85rem;
+  color: #a0aec0;
+}
+.surgery-meta { margin-top: 6px; }
+
+/* Action Buttons */
+.surgery-actions {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-bottom: 20px;
+}
+.action-btn {
+  padding: 8px 16px;
+  border: none;
+  border-radius: 8px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+  color: #fff;
+}
+.action-btn.prepare { background: #f39c12; }
+.action-btn.start { background: #e74c3c; }
+.action-btn.vitals { background: #3498db; }
+.action-btn.complete { background: #27ae60; }
+.action-btn.premed { background: #9b59b6; }
+.action-btn.cancel { background: #95a5a6; }
+.action-btn:hover { opacity: 0.9; transform: translateY(-1px); }
+
+/* Collapsible Sections */
+.collapsible-section {
+  background: #1a202c;
+  border: 1px solid #2d3748;
+  border-radius: 10px;
+  margin-bottom: 16px;
+  overflow: hidden;
+}
+.section-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 16px;
+  cursor: pointer;
+  background: #1e293b;
+  transition: background 0.2s;
+}
+.section-header:hover { background: #2d3748; }
+.section-header h3 { margin: 0; font-size: 1rem; }
+.section-body { padding: 16px; }
+
+/* Checklist */
+.checklist-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-bottom: 12px;
+}
+.checklist-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 0.9rem;
+  cursor: pointer;
+}
+.checklist-item input[type="checkbox"] {
+  width: 18px;
+  height: 18px;
+  accent-color: #27ae60;
+}
+.checklist-item small { color: #718096; }
+
+.notes-block {
+  background: #2d3748;
+  padding: 10px 14px;
+  border-radius: 6px;
+  font-size: 0.85rem;
+  margin-top: 8px;
+}
+.notes-block.alert { background: #e74c3c20; border-left: 3px solid #e74c3c; }
+
+/* Pre-med */
+.premed-section { margin-top: 16px; }
+.premed-section h4 { margin: 0 0 8px; font-size: 0.9rem; }
+.empty-text { color: #718096; font-size: 0.85rem; font-style: italic; }
+
+.mini-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.85rem;
+}
+.mini-table th {
+  text-align: left;
+  padding: 6px 8px;
+  border-bottom: 1px solid #4a5568;
+  color: #a0aec0;
+  font-weight: 600;
+  font-size: 0.75rem;
+  text-transform: uppercase;
+}
+.mini-table td {
+  padding: 6px 8px;
+  border-bottom: 1px solid #2d3748;
+}
+.remove-btn {
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  font-size: 0.9rem;
+  padding: 2px 6px;
+  border-radius: 4px;
+}
+.remove-btn:hover { background: #e74c3c30; }
+
+/* Trans-op info */
+.trans-info-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+  gap: 12px;
+  margin-bottom: 16px;
+}
+.info-item label {
+  display: block;
+  font-size: 0.75rem;
+  color: #718096;
+  text-transform: uppercase;
+  margin-bottom: 2px;
+}
+.info-item span { font-size: 0.95rem; color: #e2e8f0; font-weight: 500; }
+.info-item.full { grid-column: 1 / -1; }
+
+/* Vitals */
+.vitals-timeline h4 { margin: 0 0 10px; font-size: 0.9rem; }
+.vitals-table-wrapper { overflow-x: auto; }
+.vitals-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.8rem;
+}
+.vitals-table th {
+  text-align: center;
+  padding: 6px 8px;
+  border-bottom: 2px solid #4a5568;
+  color: #a0aec0;
+  font-weight: 700;
+  font-size: 0.75rem;
+}
+.vitals-table td {
+  text-align: center;
+  padding: 6px 8px;
+  border-bottom: 1px solid #2d3748;
+}
+
+/* Post-op */
+.post-op-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 12px;
+}
+.prognosis-badge { font-weight: 700; }
+.hosp-link { color: #63b3ed; }
+
+/* ─── MODALS ─── */
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.7);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+.modal-content {
+  background: #1a202c;
+  border: 1px solid #4a5568;
+  border-radius: 12px;
+  padding: 24px;
+  width: 90%;
+  max-width: 480px;
+  max-height: 85vh;
+  overflow-y: auto;
+}
+.modal-content.wide { max-width: 640px; }
+.modal-content h3 { margin: 0 0 16px; color: #fff; }
+
+.form-group {
+  margin-bottom: 14px;
+}
+.form-group label {
+  display: block;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: #a0aec0;
+  margin-bottom: 4px;
+}
+.form-group input,
+.form-group textarea,
+.form-group select {
+  width: 100%;
+  padding: 8px 12px;
+  background: #2d3748;
+  border: 1px solid #4a5568;
+  border-radius: 6px;
+  color: #e2e8f0;
+  font-size: 0.9rem;
+  box-sizing: border-box;
+}
+.form-group textarea { resize: vertical; }
+
+.form-row {
+  display: flex;
+  gap: 12px;
+}
+.form-row .form-group { flex: 1; }
+
+.vitals-form-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+.vitals-form-grid .full-width { grid-column: 1 / -1; }
+
+.hospitalization-toggle {
+  background: #2d3748;
+  padding: 12px 16px;
+  border-radius: 8px;
+  margin-bottom: 14px;
+}
+
+.modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: 16px;
+}
+.btn-cancel {
+  padding: 8px 20px;
+  background: transparent;
+  border: 1px solid #4a5568;
+  border-radius: 8px;
+  color: #a0aec0;
+  cursor: pointer;
+  font-weight: 600;
+}
+.btn-confirm {
+  padding: 8px 20px;
+  border: none;
+  border-radius: 8px;
+  color: #fff;
+  font-weight: 600;
+  cursor: pointer;
+  background: #3498db;
+}
+.btn-confirm.start { background: #e74c3c; }
+.btn-confirm.complete { background: #27ae60; }
+.btn-confirm.cancel { background: #e74c3c; }
+.btn-confirm:hover { opacity: 0.9; }
+
+/* ─── RESPONSIVE ─── */
+@media (max-width: 768px) {
+  .quirofano-layout {
+    grid-template-columns: 1fr;
+  }
+  .surgery-list-panel {
+    max-height: 300px;
+    border-right: none;
+    border-bottom: 1px solid #2d3748;
+  }
+  .header-stats { display: none; }
+  .vitals-form-grid { grid-template-columns: 1fr; }
+}

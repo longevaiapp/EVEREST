@@ -282,6 +282,13 @@ router.get('/', authenticate, async (req: Request, res: Response) => {
           },
         },
         therapyItems: { include: { medication: true } },
+        surgery: {
+          select: {
+            id: true, type: true, procedure: true, prognosis: true,
+            complications: true, startTime: true, endTime: true,
+            anesthesiaType: true, postOpCare: true,
+          },
+        },
         monitorings: {
           orderBy: { recordedAt: 'desc' },
           take: 1,
@@ -336,6 +343,7 @@ router.get('/', authenticate, async (req: Request, res: Response) => {
         frecuenciaRespiratoria: h.monitorings[0].frecuenciaRespiratoria,
         recordedAt: h.monitorings[0].recordedAt,
       } : null,
+      surgery: h.surgery || null,
     }));
 
     res.json(transformed);

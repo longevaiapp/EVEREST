@@ -616,6 +616,13 @@ function HospitalizacionDashboard() {
                   <strong>Dx:</strong> {sel.diagnosis || '-'} <span className="hd-sep">|</span>
                   <strong>Motivo:</strong> {sel.reason || '-'}
                 </div>
+                {sel.surgery && (
+                  <div className="hd-care-alert" style={{ background: '#8e44ad20', borderLeftColor: '#8e44ad' }}>
+                    🔪 <strong>Post-quirúrgico:</strong> {sel.surgery.type} — {sel.surgery.procedure || ''}
+                    {sel.surgery.prognosis && <> | Pronóstico: <strong>{sel.surgery.prognosis}</strong></>}
+                    {sel.surgery.complications && <> | ⚠️ {sel.surgery.complications}</>}
+                  </div>
+                )}
                 {sel.cuidadosEspeciales && (
                   <div className="hd-care-alert">⚠️ {sel.cuidadosEspeciales}</div>
                 )}
