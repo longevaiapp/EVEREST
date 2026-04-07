@@ -19,6 +19,7 @@ const demoUsers = [
   { email: 'crematorio@vetos.com', nombre: 'Crematorio', rol: 'OPERADOR_CREMATORIO', avatar: '🔥' },
   { email: 'entregas@vetos.com', nombre: 'Entregas', rol: 'ENTREGA', avatar: '📦' },
   { email: 'bancosangre@vetos.com', nombre: 'Banco Sangre', rol: 'BANCO_SANGRE', avatar: '🩸' },
+  { email: 'quirofano@vetos.com', nombre: 'Quirófano', rol: 'QUIROFANO', avatar: '🔪' },
 ];
 
 function Login() {
@@ -72,6 +73,7 @@ function Login() {
       OPERADOR_CREMATORIO: '/crematorio',
       ENTREGA: '/crematorio',
       BANCO_SANGRE: '/banco-sangre',
+      QUIROFANO: '/quirofano',
     };
     navigate(routes[rol] || '/');
   };
