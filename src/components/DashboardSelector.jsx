@@ -1,3 +1,4 @@
+import { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { useAuth } from '../context/AuthContext';
@@ -52,21 +53,22 @@ function DashboardSelector() {
   const { t } = useTranslation();
   const { user, logout } = useAuth();
 
-  if (!user) return null;
-
   // Get accessible dashboards: from user's dashboardAccess or role defaults
-  const accessKeys = user.dashboardAccess || DEFAULT_ACCESS[user.rol] || [];
-  
-  // If user only has access to 1 dashboard, navigate directly
-  if (accessKeys.length === 1) {
-    const dash = ALL_DASHBOARDS.find(d => d.key === accessKeys[0]);
-    if (dash) {
-      navigate(dash.route, { replace: true });
-      return null;
-    }
-  }
-
+  const accessKeys = user?.dashboardAccess || DEFAULT_ACCESS[user?.rol] || [];
   const accessibleDashboards = ALL_DASHBOARDS.filter(d => accessKeys.includes(d.key));
+
+  // If user only has access to 1 dashboard, navigate directly
+  useEffect(() => {
+    if (user && accessKeys.length === 1) {
+      const dash = ALL_DASHBOARDS.find(d => d.key === accessKeys[0]);
+      if (dash) {
+        navigate(dash.route, { replace: true });
+      }
+    }
+  }, [user, accessKeys, navigate]);
+
+  if (!user) return null;
+  if (accessKeys.length === 1) return null; // will redirect via useEffect
 
   return (
     <div className="selector-container">
