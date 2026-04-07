@@ -9,6 +9,20 @@ import { authenticate, isMedico } from '../middleware/auth';
 
 const router = Router();
 
+// Helper: get date boundaries matching MySQL @db.Date storage (always UTC midnight)
+// Computes local date string, then creates UTC midnight boundaries
+function getLocalDayBounds(date: Date = new Date()) {
+  // Get local date components
+  const y = date.getFullYear();
+  const m = String(date.getMonth() + 1).padStart(2, '0');
+  const d = String(date.getDate()).padStart(2, '0');
+  // Create UTC midnight for local "today" and "tomorrow"
+  const today = new Date(`${y}-${m}-${d}T00:00:00.000Z`);
+  const tomorrow = new Date(today);
+  tomorrow.setUTCDate(tomorrow.getUTCDate() + 1);
+  return { today, tomorrow };
+}
+
 const surgeriesInclude = {
   pet: { include: { owner: true } },
   consultation: true,
@@ -26,9 +40,10 @@ router.get('/', authenticate, async (req, res) => {
   if (surgeonId) where.surgeonId = surgeonId;
   
   if (fecha) {
-    const date = new Date((fecha as string) + 'T00:00:00');
-    const nextDay = new Date((fecha as string) + 'T23:59:59');
-    where.scheduledDate = { gte: date, lte: nextDay };
+    const date = new Date((fecha as string) + 'T00:00:00.000Z');
+    const nextDay = new Date(date);
+    nextDay.setUTCDate(nextDay.getUTCDate() + 1);
+    where.scheduledDate = { gte: date, lt: nextDay };
   }
 
   const surgeries = await prisma.surgery.findMany({
@@ -42,10 +57,7 @@ router.get('/', authenticate, async (req, res) => {
 
 // GET /surgeries/today - Today's + active surgeries
 router.get('/today', authenticate, async (req, res) => {
-  const today = new Date();
-  today.setUTCHours(0, 0, 0, 0);
-  const tomorrow = new Date(today);
-  tomorrow.setUTCDate(tomorrow.getUTCDate() + 1);
+  const { today, tomorrow } = getLocalDayBounds();
 
   const surgeries = await prisma.surgery.findMany({
     where: {
@@ -67,10 +79,7 @@ router.get('/today', authenticate, async (req, res) => {
 
 // GET /surgeries/board - Board summary (counts by status)
 router.get('/board', authenticate, async (req, res) => {
-  const today = new Date();
-  today.setUTCHours(0, 0, 0, 0);
-  const tomorrow = new Date(today);
-  tomorrow.setUTCDate(tomorrow.getUTCDate() + 1);
+  const { today, tomorrow } = getLocalDayBounds();
 
   const [programadas, enPreparacion, enCurso, completadas] = await Promise.all([
     prisma.surgery.count({ where: { status: 'PROGRAMADA', scheduledDate: { gte: today } } }),
@@ -111,7 +120,7 @@ router.post('/', authenticate, isMedico, async (req, res) => {
       consultationId: data.consultationId,
       surgeonId: req.user!.userId,
       type: data.type,
-      scheduledDate: new Date(data.scheduledDate + 'T12:00:00'),
+      scheduledDate: new Date(data.scheduledDate + 'T00:00:00.000Z'),
       scheduledTime: data.scheduledTime,
       estimatedDuration: data.estimatedDuration,
       preOpNotes: data.preOpNotes,
@@ -461,7 +470,7 @@ router.put('/:id', authenticate, async (req, res) => {
 
   const data = schema.parse(req.body);
   const updateData: any = { ...data };
-  if (data.scheduledDate) updateData.scheduledDate = new Date(data.scheduledDate + 'T12:00:00');
+  if (data.scheduledDate) updateData.scheduledDate = new Date(data.scheduledDate + 'T00:00:00.000Z');
 
   const surgery = await prisma.surgery.update({
     where: { id },
