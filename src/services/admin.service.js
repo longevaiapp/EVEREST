@@ -8,6 +8,48 @@ import api from './api';
  * Handles all API calls for the Admin module
  */
 const adminService = {
+  // ==================== USER MANAGEMENT ====================
+
+  /**
+   * Get all users
+   */
+  getUsers: async () => {
+    const response = await api.get('/admin/users');
+    return response.data || response;
+  },
+
+  /**
+   * Create a new user
+   */
+  createUser: async (data) => {
+    const response = await api.post('/admin/users', data);
+    return response.data || response;
+  },
+
+  /**
+   * Update user
+   */
+  updateUser: async (id, data) => {
+    const response = await api.put(`/admin/users/${id}`, data);
+    return response.data || response;
+  },
+
+  /**
+   * Update user dashboard permissions
+   */
+  updatePermissions: async (id, dashboardAccess) => {
+    const response = await api.put(`/admin/users/${id}/permissions`, { dashboardAccess });
+    return response.data || response;
+  },
+
+  /**
+   * Deactivate user
+   */
+  deactivateUser: async (id) => {
+    const response = await api.delete(`/admin/users/${id}`);
+    return response.data || response;
+  },
+
   // ==================== BUSINESS INFO ====================
 
   /**

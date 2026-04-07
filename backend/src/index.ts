@@ -37,8 +37,7 @@ import groomingRoutes from "./routes/grooming.routes";
 import businessInfoRoutes from "./routes/businessInfo.routes";
 import preventiveMedicineRoutes from "./routes/preventiveMedicine.routes";
 import cremationRoutes from "./routes/cremation.routes";
-import bloodBankRoutes from "./routes/bloodBank.routes";
-
+import bloodBankRoutes from "./routes/bloodBank.routes";import adminRoutes from './routes/admin.routes';
 const app = express();
 const PORT = process.env.PORT || 3001;
 
@@ -147,6 +146,7 @@ app.use(`${API_PREFIX}/tasks`, taskRoutes);
 app.use(`${API_PREFIX}/notifications`, notificationRoutes);
 app.use(`${API_PREFIX}/dashboard`, dashboardRoutes);
 app.use(`${API_PREFIX}/medico`, medicoRoutes);
+app.use(`${API_PREFIX}/admin`, adminRoutes);
 app.use(`${API_PREFIX}/grooming`, groomingRoutes);
 app.use(`${API_PREFIX}/business-info`, businessInfoRoutes);
 app.use(`${API_PREFIX}/preventive-medicine`, preventiveMedicineRoutes);

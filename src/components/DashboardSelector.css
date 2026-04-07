@@ -1,0 +1,124 @@
+.selector-container {
+  min-height: 100vh;
+  background: linear-gradient(135deg, #f0f4f8 0%, #d9e2ec 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2rem;
+}
+
+.selector-content {
+  max-width: 900px;
+  width: 100%;
+  text-align: center;
+}
+
+.selector-header {
+  margin-bottom: 2.5rem;
+}
+
+.selector-logo {
+  width: 80px;
+  height: 80px;
+  object-fit: contain;
+  margin-bottom: 1rem;
+}
+
+.selector-header h1 {
+  font-size: 1.75rem;
+  color: #1a2332;
+  margin: 0 0 0.5rem;
+  font-weight: 700;
+}
+
+.selector-welcome {
+  color: #627d98;
+  font-size: 1rem;
+  margin: 0;
+}
+
+.selector-welcome strong {
+  color: #334e68;
+}
+
+.selector-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 1.25rem;
+  margin-bottom: 2rem;
+}
+
+.selector-card {
+  background: #fff;
+  border: 2px solid #e4e7eb;
+  border-radius: 16px;
+  padding: 2rem 1.5rem;
+  cursor: pointer;
+  transition: all 0.25s ease;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1rem;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+}
+
+.selector-card:hover {
+  border-color: var(--card-color, #2196f3);
+  box-shadow: 0 8px 24px rgba(0,0,0,0.1);
+  transform: translateY(-4px);
+}
+
+.selector-card:active {
+  transform: translateY(-1px);
+}
+
+.selector-card-icon {
+  font-size: 3rem;
+  line-height: 1;
+}
+
+.selector-card-label {
+  font-size: 1.05rem;
+  font-weight: 600;
+  color: #334e68;
+}
+
+.selector-card:hover .selector-card-label {
+  color: var(--card-color, #2196f3);
+}
+
+.selector-logout {
+  background: none;
+  border: 1px solid #bcccdc;
+  color: #627d98;
+  padding: 0.6rem 1.5rem;
+  border-radius: 8px;
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.selector-logout:hover {
+  background: #f44336;
+  color: #fff;
+  border-color: #f44336;
+}
+
+@media (max-width: 600px) {
+  .selector-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 0.75rem;
+  }
+  
+  .selector-card {
+    padding: 1.25rem 1rem;
+  }
+  
+  .selector-card-icon {
+    font-size: 2.25rem;
+  }
+  
+  .selector-card-label {
+    font-size: 0.9rem;
+  }
+}

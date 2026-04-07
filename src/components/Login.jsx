@@ -41,8 +41,8 @@ function Login() {
     }
 
     try {
-      const user = await login(email, password);
-      navigateByRole(user.rol);
+      await login(email, password);
+      navigateByRole();
     } catch (err) {
       setLocalError(err.message || t('auth.loginError'));
     }
@@ -53,29 +53,15 @@ function Login() {
     clearError();
 
     try {
-      const user = await login(demoUser.email, 'password123');
-      navigateByRole(user.rol);
+      await login(demoUser.email, 'password123');
+      navigateByRole();
     } catch (err) {
       setLocalError(err.message || t('auth.loginError'));
     }
   };
 
-  const navigateByRole = (rol) => {
-    const routes = {
-      ADMIN: '/admin',
-      RECEPCION: '/recepcion',
-      MEDICO: '/medico',
-      HOSPITALIZACION: '/hospitalizacion',
-      ESTILISTA: '/estilista',
-      LABORATORIO: '/laboratorio',
-      FARMACIA: '/farmacia',
-      RECOLECTOR: '/crematorio',
-      OPERADOR_CREMATORIO: '/crematorio',
-      ENTREGA: '/crematorio',
-      BANCO_SANGRE: '/banco-sangre',
-      QUIROFANO: '/quirofano',
-    };
-    navigate(routes[rol] || '/');
+  const navigateByRole = () => {
+    navigate('/dashboard');
   };
 
   return (

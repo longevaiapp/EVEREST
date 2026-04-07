@@ -65,7 +65,23 @@
     "ESTILISTA": "Stylist",
     "RECOLECTOR": "Collector",
     "OPERADOR_CREMATORIO": "Crematory",
-    "ENTREGA": "Delivery"
+    "ENTREGA": "Delivery",
+    "BANCO_SANGRE": "Blood Bank",
+    "QUIROFANO": "Operating Room"
+  },
+  "dashboards": {
+    "selectTitle": "Select a module",
+    "welcome": "Welcome",
+    "recepcion": "Reception",
+    "medico": "Doctor",
+    "farmacia": "Pharmacy",
+    "laboratorio": "Laboratory",
+    "estilista": "Stylist",
+    "hospitalizacion": "Hospitalization",
+    "quirofano": "Operating Room",
+    "crematorio": "Crematory",
+    "bancoSangre": "Blood Bank",
+    "admin": "Administration"
   },
   "notifications": {
     "NUEVA_TAREA": "New Task",

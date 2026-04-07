@@ -3,9 +3,15 @@ import { useTranslation } from 'react-i18next';
 import { useApp } from '../../context/AppContext';
 import { useAuth } from '../../context/AuthContext';
 import { useToast } from '../Toast';
-import { mockUsers } from '../../data/mockUsers';
 import adminService from '../../services/admin.service';
+import { ALL_DASHBOARDS, DEFAULT_ACCESS } from '../DashboardSelector';
 import './AdminDashboard.css';
+
+const ALL_ROLES = [
+  'ADMIN', 'RECEPCION', 'MEDICO', 'LABORATORIO', 'FARMACIA',
+  'ESTILISTA', 'HOSPITALIZACION', 'QUIROFANO', 'RECOLECTOR',
+  'OPERADOR_CREMATORIO', 'ENTREGA', 'BANCO_SANGRE'
+];
 
 function AdminDashboard() {
   const { t } = useTranslation();
@@ -19,6 +25,15 @@ function AdminDashboard() {
   const [showEditUserModal, setShowEditUserModal] = useState(false);
   const [selectedUser, setSelectedUser] = useState(null);
   const [showConfigModal, setShowConfigModal] = useState(false);
+  
+  // Real users from API
+  const [users, setUsers] = useState([]);
+  const [usersLoading, setUsersLoading] = useState(false);
+  const [newUserForm, setNewUserForm] = useState({
+    email: '', password: '', nombre: '', rol: 'RECEPCION', especialidad: '', telefono: '', dashboardAccess: [],
+  });
+  const [editUserForm, setEditUserForm] = useState({});
+  const [permissionsUser, setPermissionsUser] = useState(null); // user being edited for permissions
   
   // Business Info State
   const [businessLoading, setBusinessLoading] = useState(false);
@@ -63,40 +78,111 @@ function AdminDashboard() {
     tarifaSNAP: '',
   });
 
-  // Datos de usuarios (usando mockUsers)
-  const allUsers = mockUsers;
-  
-  // Filtros de usuarios
-  const usersByRole = {
-    RECEPCION: allUsers.filter(u => u.rol === 'RECEPCION'),
-    MEDICO: allUsers.filter(u => u.rol === 'MEDICO'),
-    FARMACIA: allUsers.filter(u => u.rol === 'FARMACIA'),
-    ADMIN: allUsers.filter(u => u.rol === 'ADMIN'),
-  };
+  // Load real users from API
+  const loadUsers = useCallback(async () => {
+    setUsersLoading(true);
+    try {
+      const result = await adminService.getUsers();
+      setUsers(result.users || []);
+    } catch (err) {
+      console.error('Error loading users:', err);
+    } finally {
+      setUsersLoading(false);
+    }
+  }, []);
 
-  // Búsqueda de usuarios
-  const filteredUsers = allUsers.filter(user =>
-    user.nombre.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    user.username.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    user.rol.toLowerCase().includes(searchQuery.toLowerCase())
+  useEffect(() => {
+    loadUsers();
+  }, [loadUsers]);
+
+  // Filtered users for search
+  const filteredUsers = users.filter(u =>
+    u.nombre.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    u.email.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    u.rol.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
-  // Estadísticas del sistema
+  // Stats from real data
   const stats = {
-    totalUsers: allUsers.length,
+    totalUsers: users.length,
+    activeUsers: users.filter(u => u.activo).length,
     totalPatients: systemState.pacientes.length,
     pendingTasks: Object.values(systemState.tareasPendientes).reduce((acc, arr) => acc + arr.length, 0),
-    todayAppointments: systemState.citas.length,
   };
 
-  const handleEditUser = (user) => {
-    setSelectedUser(user);
+  // User CRUD handlers
+  const handleCreateUser = async (e) => {
+    e.preventDefault();
+    try {
+      await adminService.createUser(newUserForm);
+      toast?.success?.('Usuario creado') || alert('Usuario creado');
+      setShowNewUserModal(false);
+      setNewUserForm({ email: '', password: '', nombre: '', rol: 'RECEPCION', especialidad: '', telefono: '', dashboardAccess: [] });
+      loadUsers();
+    } catch (err) {
+      toast?.error?.(err.response?.data?.message || err.message) || alert(err.message);
+    }
+  };
+
+  const handleEditUser = (u) => {
+    setSelectedUser(u);
+    setEditUserForm({
+      nombre: u.nombre,
+      email: u.email,
+      rol: u.rol,
+      especialidad: u.especialidad || '',
+      telefono: u.telefono || '',
+      activo: u.activo,
+    });
     setShowEditUserModal(true);
   };
 
-  const handleDeleteUser = (user) => {
-    if (window.confirm(`Are you sure you want to delete user ${user.nombre}?`)) {
-      alert('User deleted (demo function)');
+  const handleUpdateUser = async (e) => {
+    e.preventDefault();
+    try {
+      await adminService.updateUser(selectedUser.id, editUserForm);
+      toast?.success?.('Usuario actualizado') || alert('Usuario actualizado');
+      setShowEditUserModal(false);
+      loadUsers();
+    } catch (err) {
+      toast?.error?.(err.response?.data?.message || err.message) || alert(err.message);
+    }
+  };
+
+  const handleDeleteUser = async (u) => {
+    if (!window.confirm(`¿Desactivar usuario ${u.nombre}?`)) return;
+    try {
+      await adminService.deactivateUser(u.id);
+      toast?.success?.('Usuario desactivado');
+      loadUsers();
+    } catch (err) {
+      toast?.error?.(err.response?.data?.message || err.message) || alert(err.message);
+    }
+  };
+
+  const handleOpenPermissions = (u) => {
+    setPermissionsUser({
+      ...u,
+      dashboardAccess: u.dashboardAccess || DEFAULT_ACCESS[u.rol] || [],
+    });
+  };
+
+  const handleToggleDashboard = (key) => {
+    setPermissionsUser(prev => {
+      const current = prev.dashboardAccess || [];
+      const next = current.includes(key) ? current.filter(k => k !== key) : [...current, key];
+      return { ...prev, dashboardAccess: next };
+    });
+  };
+
+  const handleSavePermissions = async () => {
+    try {
+      await adminService.updatePermissions(permissionsUser.id, permissionsUser.dashboardAccess);
+      toast?.success?.('Permisos actualizados');
+      setPermissionsUser(null);
+      loadUsers();
+    } catch (err) {
+      toast?.error?.(err.response?.data?.message || err.message) || alert(err.message);
     }
   };
 
@@ -242,7 +328,7 @@ function AdminDashboard() {
           >
             <span className="nav-icon">👥</span>
             <span>{t('admin.users')}</span>
-            <span className="nav-badge">{allUsers.length}</span>
+            <span className="nav-badge">{users.length}</span>
           </button>
           
           <button 
@@ -314,117 +400,52 @@ function AdminDashboard() {
                 <div className="stat-icon" style={{background: '#2196f3'}}>👥</div>
                 <div className="stat-content">
                   <h3>{stats.totalUsers}</h3>
-                  <p>System Users</p>
+                  <p>Usuarios totales</p>
                 </div>
               </div>
               <div className="stat-card">
-                <div className="stat-icon" style={{background: '#4caf50'}}>🐾</div>
+                <div className="stat-icon" style={{background: '#4caf50'}}>✅</div>
+                <div className="stat-content">
+                  <h3>{stats.activeUsers}</h3>
+                  <p>Usuarios activos</p>
+                </div>
+              </div>
+              <div className="stat-card">
+                <div className="stat-icon" style={{background: '#ff9800'}}>🐾</div>
                 <div className="stat-content">
                   <h3>{stats.totalPatients}</h3>
-                  <p>Registered Patients</p>
+                  <p>Pacientes registrados</p>
                 </div>
               </div>
               <div className="stat-card">
-                <div className="stat-icon" style={{background: '#ff9800'}}>📋</div>
+                <div className="stat-icon" style={{background: '#9c27b0'}}>📋</div>
                 <div className="stat-content">
                   <h3>{stats.pendingTasks}</h3>
-                  <p>Pending Tasks</p>
-                </div>
-              </div>
-              <div className="stat-card">
-                <div className="stat-icon" style={{background: '#9c27b0'}}>📅</div>
-                <div className="stat-content">
-                  <h3>{stats.todayAppointments}</h3>
-                  <p>Today's Appointments</p>
+                  <p>Tareas pendientes</p>
                 </div>
               </div>
             </div>
 
             <div className="dashboard-content">
               <div className="content-section">
-                <h2>Users by Role</h2>
+                <h2>Usuarios por Rol</h2>
                 <div className="roles-grid">
-                  <div className="role-card recepcion">
-                    <div className="role-icon">👩‍💼</div>
-                    <h3>Reception</h3>
-                    <p className="role-count">{usersByRole.RECEPCION.length}</p>
-                    <div className="role-users">
-                      {usersByRole.RECEPCION.map(u => (
-                        <div key={u.id} className="user-mini">{u.nombre}</div>
-                      ))}
-                    </div>
-                  </div>
-
-                  <div className="role-card medico">
-                    <div className="role-icon">👨‍⚕️</div>
-                    <h3>Doctors</h3>
-                    <p className="role-count">{usersByRole.MEDICO.length}</p>
-                    <div className="role-users">
-                      {usersByRole.MEDICO.map(u => (
-                        <div key={u.id} className="user-mini">{u.nombre}</div>
-                      ))}
-                    </div>
-                  </div>
-
-                  <div className="role-card farmacia">
-                    <div className="role-icon">👩‍🔬</div>
-                    <h3>Pharmacy</h3>
-                    <p className="role-count">{usersByRole.FARMACIA.length}</p>
-                    <div className="role-users">
-                      {usersByRole.FARMACIA.map(u => (
-                        <div key={u.id} className="user-mini">{u.nombre}</div>
-                      ))}
-                    </div>
-                  </div>
-
-                  <div className="role-card admin">
-                    <div className="role-icon">👨‍💼</div>
-                    <h3>Administrators</h3>
-                    <p className="role-count">{usersByRole.ADMIN.length}</p>
-                    <div className="role-users">
-                      {usersByRole.ADMIN.map(u => (
-                        <div key={u.id} className="user-mini">{u.nombre}</div>
-                      ))}
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              <div className="content-section">
-                <h2>System Activity</h2>
-                <div className="activity-list">
-                  <div className="activity-item">
-                    <div className="activity-icon success">✅</div>
-                    <div className="activity-content">
-                      <strong>New consultation completed</strong>
-                      <p>Dr. Carlos Martínez completed consultation for Max</p>
-                      <span className="activity-time">15 min ago</span>
-                    </div>
-                  </div>
-                  <div className="activity-item">
-                    <div className="activity-icon info">👤</div>
-                    <div className="activity-content">
-                      <strong>New patient registered</strong>
-                      <p>María González registered Luna (Siamese Cat)</p>
-                      <span className="activity-time">32 min ago</span>
-                    </div>
-                  </div>
-                  <div className="activity-item">
-                    <div className="activity-icon warning">💊</div>
-                    <div className="activity-content">
-                      <strong>Low stock alert</strong>
-                      <p>Tramadol 50mg requires restocking</p>
-                      <span className="activity-time">1 hour ago</span>
-                    </div>
-                  </div>
-                  <div className="activity-item">
-                    <div className="activity-icon success">📦</div>
-                    <div className="activity-content">
-                      <strong>Medications dispensed</strong>
-                      <p>Ana López dispensed medications for Bobby</p>
-                      <span className="activity-time">2 hours ago</span>
-                    </div>
-                  </div>
+                  {ALL_ROLES.map(role => {
+                    const roleUsers = users.filter(u => u.rol === role);
+                    if (roleUsers.length === 0) return null;
+                    return (
+                      <div key={role} className={`role-card ${role.toLowerCase()}`}>
+                        <div className="role-icon">{ALL_DASHBOARDS.find(d => d.key === (DEFAULT_ACCESS[role]?.[0]))?.icon || '👤'}</div>
+                        <h3>{t(`roles.${role}`, role)}</h3>
+                        <p className="role-count">{roleUsers.length}</p>
+                        <div className="role-users">
+                          {roleUsers.map(u => (
+                            <div key={u.id} className="user-mini">{u.nombre}</div>
+                          ))}
+                        </div>
+                      </div>
+                    );
+                  })}
                 </div>
               </div>
             </div>
@@ -436,96 +457,218 @@ function AdminDashboard() {
           <div className="dashboard-content">
             <div className="content-section full-width">
               <div className="section-header">
-                <h2>User Management</h2>
+                <h2>👥 Usuarios y Permisos</h2>
                 <div className="section-actions">
                   <div className="search-bar">
                     <input
                       type="text"
                       className="search-input"
-                      placeholder="Search user by name, username or role..."
+                      placeholder="Buscar por nombre, email o rol..."
                       value={searchQuery}
                       onChange={(e) => setSearchQuery(e.target.value)}
                     />
                     {searchQuery && (
-                      <button className="btn-clear" onClick={() => setSearchQuery('')}>
-                        ✕
-                      </button>
+                      <button className="btn-clear" onClick={() => setSearchQuery('')}>✕</button>
                     )}
                   </div>
-                  <button 
-                    className="btn-primary"
-                    onClick={() => setShowNewUserModal(true)}
-                  >
-                    + New User
+                  <button className="btn-primary" onClick={() => setShowNewUserModal(true)}>
+                    + Nuevo Usuario
                   </button>
                 </div>
               </div>
 
-              <div className="table-container">
-                <table className="data-table">
-                  <thead>
-                    <tr>
-                      <th>ID</th>
-                      <th>User</th>
-                      <th>Name</th>
-                      <th>Role</th>
-                      <th>Specialty</th>
-                      <th>Status</th>
-                      <th>Actions</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {filteredUsers.length === 0 ? (
+              {usersLoading ? (
+                <div className="loading-state"><div className="spinner"></div><p>Cargando usuarios...</p></div>
+              ) : (
+                <div className="table-container">
+                  <table className="data-table">
+                    <thead>
                       <tr>
-                        <td colSpan="7" className="empty-row">
-                          {searchQuery ? 'No users found' : 'No registered users'}
-                        </td>
+                        <th>Usuario</th>
+                        <th>Email</th>
+                        <th>Rol</th>
+                        <th>Dashboards</th>
+                        <th>Estado</th>
+                        <th>Acciones</th>
                       </tr>
-                    ) : (
-                      filteredUsers.map(user => (
-                        <tr key={user.id}>
-                          <td>{user.id}</td>
-                          <td>
-                            <div className="user-cell">
-                              <span className="user-avatar">{user.avatar}</span>
-                              <strong>{user.username}</strong>
-                            </div>
-                          </td>
-                          <td>{user.nombre}</td>
-                          <td>
-                            <span className={`role-badge ${user.rol.toLowerCase()}`}>
-                              {user.rol}
-                            </span>
-                          </td>
-                          <td>{user.especialidad || '-'}</td>
-                          <td>
-                            <span className="status-badge success">Active</span>
-                          </td>
-                          <td>
-                            <div className="table-actions">
-                              <button
-                                className="btn-icon"
-                                title="Edit"
-                                onClick={() => handleEditUser(user)}
-                              >
-                                ✏️
-                              </button>
-                              <button
-                                className="btn-icon danger"
-                                title="Delete"
-                                onClick={() => handleDeleteUser(user)}
-                              >
-                                🗑️
-                              </button>
-                            </div>
-                          </td>
-                        </tr>
-                      ))
-                    )}
-                  </tbody>
-                </table>
-              </div>
+                    </thead>
+                    <tbody>
+                      {filteredUsers.length === 0 ? (
+                        <tr><td colSpan="6" className="empty-row">No se encontraron usuarios</td></tr>
+                      ) : (
+                        filteredUsers.map(u => (
+                          <tr key={u.id} className={!u.activo ? 'inactive-row' : ''}>
+                            <td>
+                              <div className="user-cell">
+                                <strong>{u.nombre}</strong>
+                                {u.especialidad && <small className="text-muted">{u.especialidad}</small>}
+                              </div>
+                            </td>
+                            <td>{u.email}</td>
+                            <td>
+                              <span className={`role-badge ${u.rol.toLowerCase()}`}>
+                                {t(`roles.${u.rol}`, u.rol)}
+                              </span>
+                            </td>
+                            <td>
+                              <div className="dashboard-pills">
+                                {(u.dashboardAccess || DEFAULT_ACCESS[u.rol] || []).map(key => (
+                                  <span key={key} className="dash-pill">{ALL_DASHBOARDS.find(d => d.key === key)?.icon} {key}</span>
+                                ))}
+                              </div>
+                            </td>
+                            <td>
+                              <span className={`status-badge ${u.activo ? 'success' : 'danger'}`}>
+                                {u.activo ? 'Activo' : 'Inactivo'}
+                              </span>
+                            </td>
+                            <td>
+                              <div className="table-actions">
+                                <button className="btn-icon" title="Permisos" onClick={() => handleOpenPermissions(u)}>🔑</button>
+                                <button className="btn-icon" title="Editar" onClick={() => handleEditUser(u)}>✏️</button>
+                                {u.activo && (
+                                  <button className="btn-icon danger" title="Desactivar" onClick={() => handleDeleteUser(u)}>🗑️</button>
+                                )}
+                              </div>
+                            </td>
+                          </tr>
+                        ))
+                      )}
+                    </tbody>
+                  </table>
+                </div>
+              )}
             </div>
+
+            {/* Permissions Panel */}
+            {permissionsUser && (
+              <div className="modal-overlay" onClick={() => setPermissionsUser(null)}>
+                <div className="modal permissions-modal" onClick={e => e.stopPropagation()}>
+                  <div className="modal-header">
+                    <h3>🔑 Permisos de Dashboard — {permissionsUser.nombre}</h3>
+                    <button className="btn-close" onClick={() => setPermissionsUser(null)}>✕</button>
+                  </div>
+                  <div className="modal-body">
+                    <p className="permissions-hint">Selecciona los módulos a los que este usuario tendrá acceso:</p>
+                    <div className="permissions-grid">
+                      {ALL_DASHBOARDS.map(dash => {
+                        const active = permissionsUser.dashboardAccess?.includes(dash.key);
+                        return (
+                          <button
+                            key={dash.key}
+                            className={`permission-card ${active ? 'active' : ''}`}
+                            onClick={() => handleToggleDashboard(dash.key)}
+                            style={{ '--perm-color': dash.color }}
+                          >
+                            <span className="perm-icon">{dash.icon}</span>
+                            <span className="perm-label">{t(`dashboards.${dash.key === 'banco-sangre' ? 'bancoSangre' : dash.key}`, dash.key)}</span>
+                            <span className="perm-check">{active ? '✓' : ''}</span>
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+                  <div className="modal-footer">
+                    <button className="btn-secondary" onClick={() => setPermissionsUser(null)}>Cancelar</button>
+                    <button className="btn-primary" onClick={handleSavePermissions}>Guardar Permisos</button>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* New User Modal */}
+            {showNewUserModal && (
+              <div className="modal-overlay" onClick={() => setShowNewUserModal(false)}>
+                <div className="modal" onClick={e => e.stopPropagation()}>
+                  <div className="modal-header">
+                    <h3>Nuevo Usuario</h3>
+                    <button className="btn-close" onClick={() => setShowNewUserModal(false)}>✕</button>
+                  </div>
+                  <form onSubmit={handleCreateUser}>
+                    <div className="modal-body">
+                      <div className="form-group">
+                        <label>Nombre *</label>
+                        <input type="text" className="form-control" required value={newUserForm.nombre} onChange={e => setNewUserForm(p => ({...p, nombre: e.target.value}))} />
+                      </div>
+                      <div className="form-group">
+                        <label>Email *</label>
+                        <input type="email" className="form-control" required value={newUserForm.email} onChange={e => setNewUserForm(p => ({...p, email: e.target.value}))} />
+                      </div>
+                      <div className="form-group">
+                        <label>Contraseña *</label>
+                        <input type="password" className="form-control" required minLength={6} value={newUserForm.password} onChange={e => setNewUserForm(p => ({...p, password: e.target.value}))} />
+                      </div>
+                      <div className="form-group">
+                        <label>Rol *</label>
+                        <select className="form-control" value={newUserForm.rol} onChange={e => setNewUserForm(p => ({...p, rol: e.target.value}))}>
+                          {ALL_ROLES.map(r => <option key={r} value={r}>{t(`roles.${r}`, r)}</option>)}
+                        </select>
+                      </div>
+                      <div className="form-group">
+                        <label>Especialidad</label>
+                        <input type="text" className="form-control" value={newUserForm.especialidad} onChange={e => setNewUserForm(p => ({...p, especialidad: e.target.value}))} />
+                      </div>
+                      <div className="form-group">
+                        <label>Teléfono</label>
+                        <input type="text" className="form-control" value={newUserForm.telefono} onChange={e => setNewUserForm(p => ({...p, telefono: e.target.value}))} />
+                      </div>
+                    </div>
+                    <div className="modal-footer">
+                      <button type="button" className="btn-secondary" onClick={() => setShowNewUserModal(false)}>Cancelar</button>
+                      <button type="submit" className="btn-primary">Crear Usuario</button>
+                    </div>
+                  </form>
+                </div>
+              </div>
+            )}
+
+            {/* Edit User Modal */}
+            {showEditUserModal && selectedUser && (
+              <div className="modal-overlay" onClick={() => setShowEditUserModal(false)}>
+                <div className="modal" onClick={e => e.stopPropagation()}>
+                  <div className="modal-header">
+                    <h3>Editar Usuario</h3>
+                    <button className="btn-close" onClick={() => setShowEditUserModal(false)}>✕</button>
+                  </div>
+                  <form onSubmit={handleUpdateUser}>
+                    <div className="modal-body">
+                      <div className="form-group">
+                        <label>Nombre *</label>
+                        <input type="text" className="form-control" required value={editUserForm.nombre} onChange={e => setEditUserForm(p => ({...p, nombre: e.target.value}))} />
+                      </div>
+                      <div className="form-group">
+                        <label>Email *</label>
+                        <input type="email" className="form-control" required value={editUserForm.email} onChange={e => setEditUserForm(p => ({...p, email: e.target.value}))} />
+                      </div>
+                      <div className="form-group">
+                        <label>Rol *</label>
+                        <select className="form-control" value={editUserForm.rol} onChange={e => setEditUserForm(p => ({...p, rol: e.target.value}))}>
+                          {ALL_ROLES.map(r => <option key={r} value={r}>{t(`roles.${r}`, r)}</option>)}
+                        </select>
+                      </div>
+                      <div className="form-group">
+                        <label>Especialidad</label>
+                        <input type="text" className="form-control" value={editUserForm.especialidad} onChange={e => setEditUserForm(p => ({...p, especialidad: e.target.value}))} />
+                      </div>
+                      <div className="form-group">
+                        <label>Teléfono</label>
+                        <input type="text" className="form-control" value={editUserForm.telefono} onChange={e => setEditUserForm(p => ({...p, telefono: e.target.value}))} />
+                      </div>
+                      <div className="form-group">
+                        <label className="checkbox-label">
+                          <input type="checkbox" checked={editUserForm.activo} onChange={e => setEditUserForm(p => ({...p, activo: e.target.checked}))} />
+                          Usuario activo
+                        </label>
+                      </div>
+                    </div>
+                    <div className="modal-footer">
+                      <button type="button" className="btn-secondary" onClick={() => setShowEditUserModal(false)}>Cancelar</button>
+                      <button type="submit" className="btn-primary">Guardar Cambios</button>
+                    </div>
+                  </form>
+                </div>
+              </div>
+            )}
           </div>
         )}
 

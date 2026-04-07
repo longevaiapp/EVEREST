@@ -15,6 +15,7 @@ import HospitalizacionDashboard from './components/dashboards/HospitalizacionDas
 import CrematorioDashboard from './components/dashboards/CrematorioDashboard';
 import BancoSangreDashboard from './components/dashboards/BancoSangreDashboard';
 import QuirofanoDashboard from './components/dashboards/QuirofanoDashboard';
+import DashboardSelector from './components/DashboardSelector';
 import CatalogoUrnas from './components/CatalogoUrnas';
 import CatalogoAliado from './components/CatalogoAliado';
 import RegistroCliente from './components/RegistroCliente';
@@ -32,28 +33,13 @@ function AuthenticatedLayout({ children }) {
   );
 }
 
-// Componente para redirigir al dashboard según rol
+// Componente para redirigir al dashboard selector
 function RoleBasedRedirect() {
   const { user } = useAuth();
 
   if (!user) return <Navigate to="/login" replace />;
 
-  const routes = {
-    ADMIN: '/admin',
-    RECEPCION: '/recepcion',
-    MEDICO: '/medico',
-    HOSPITALIZACION: '/hospitalizacion',
-    LABORATORIO: '/laboratorio',
-    FARMACIA: '/farmacia',
-    ESTILISTA: '/estilista',
-    RECOLECTOR: '/crematorio',
-    OPERADOR_CREMATORIO: '/crematorio',
-    ENTREGA: '/crematorio',
-    BANCO_SANGRE: '/banco-sangre',
-    QUIROFANO: '/quirofano',
-  };
-
-  return <Navigate to={routes[user.rol] || '/login'} replace />;
+  return <Navigate to="/dashboard" replace />;
 }
 
 function App() {
@@ -69,6 +55,13 @@ function App() {
               {/* Rutas públicas - Crematorio */}
               <Route path="/crematorio/catalogo" element={<CatalogoUrnas />} />
               <Route path="/crematorio/aliado" element={<CatalogoAliado />} />
+
+              {/* Dashboard Selector */}
+              <Route path="/dashboard" element={
+                <ProtectedRoute>
+                  <DashboardSelector />
+                </ProtectedRoute>
+              } />
 
               {/* Rutas protegidas */}
               <Route path="/recepcion" element={

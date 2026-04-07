@@ -65,7 +65,23 @@
     "ESTILISTA": "Estilista",
     "RECOLECTOR": "Recolector",
     "OPERADOR_CREMATORIO": "Crematorio",
-    "ENTREGA": "Entregas"
+    "ENTREGA": "Entregas",
+    "BANCO_SANGRE": "Banco de Sangre",
+    "QUIROFANO": "Quirófano"
+  },
+  "dashboards": {
+    "selectTitle": "Selecciona un módulo",
+    "welcome": "Bienvenido",
+    "recepcion": "Recepción",
+    "medico": "Médico",
+    "farmacia": "Farmacia",
+    "laboratorio": "Laboratorio",
+    "estilista": "Estilista",
+    "hospitalizacion": "Hospitalización",
+    "quirofano": "Quirófano",
+    "crematorio": "Crematorio",
+    "bancoSangre": "Banco de Sangre",
+    "admin": "Administración"
   },
   "notifications": {
     "NUEVA_TAREA": "Nueva Tarea",

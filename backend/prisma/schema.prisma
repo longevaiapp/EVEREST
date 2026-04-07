@@ -25,6 +25,7 @@ model User {
   especialidad String? // Solo para médicos
   telefono     String?
   activo       Boolean  @default(true)
+  dashboardAccess String? @db.Text // JSON array of dashboard keys e.g. ["recepcion","medico"]
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 

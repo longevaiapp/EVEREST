@@ -33,17 +33,7 @@ const ProtectedRoute = ({ children, roles, redirectTo = '/login' }) => {
 
   // Si se especificaron roles y el usuario no tiene ninguno, redirigir
   if (roles && !hasRole(roles)) {
-    // Redirigir al dashboard correspondiente según su rol
-    const dashboardRoutes = {
-      ADMIN: '/admin',
-      RECEPCION: '/recepcion',
-      MEDICO: '/medico',
-      LABORATORIO: '/laboratorio',
-      FARMACIA: '/farmacia',
-    };
-
-    const userDashboard = dashboardRoutes[user?.rol] || '/';
-    return <Navigate to={userDashboard} replace />;
+    return <Navigate to="/dashboard" replace />;
   }
 
   return children;

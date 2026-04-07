@@ -23,7 +23,7 @@ const registerSchema = z.object({
   email: z.string().email('Invalid email format'),
   password: z.string().min(6, 'Password must be at least 6 characters'),
   nombre: z.string().min(2, 'Name must be at least 2 characters'),
-  rol: z.enum(['ADMIN', 'RECEPCION', 'MEDICO', 'LABORATORIO', 'FARMACIA']),
+  rol: z.enum(['ADMIN', 'RECEPCION', 'MEDICO', 'LABORATORIO', 'FARMACIA', 'ESTILISTA', 'HOSPITALIZACION', 'QUIROFANO', 'RECOLECTOR', 'OPERADOR_CREMATORIO', 'ENTREGA', 'BANCO_SANGRE']),
   especialidad: z.string().optional(),
   telefono: z.string().optional(),
 });
@@ -65,6 +65,7 @@ router.post('/login', async (req, res) => {
         nombre: user.nombre,
         rol: user.rol,
         especialidad: user.especialidad,
+        dashboardAccess: user.dashboardAccess ? JSON.parse(user.dashboardAccess) : null,
       },
       token,
     },
@@ -117,6 +118,7 @@ router.get('/me', authenticate, async (req, res) => {
       rol: true,
       especialidad: true,
       telefono: true,
+      dashboardAccess: true,
       createdAt: true,
     },
   });
@@ -127,7 +129,12 @@ router.get('/me', authenticate, async (req, res) => {
 
   res.json({
     status: 'success',
-    data: { user },
+    data: {
+      user: {
+        ...user,
+        dashboardAccess: user.dashboardAccess ? JSON.parse(user.dashboardAccess) : null,
+      },
+    },
   });
 });
 
