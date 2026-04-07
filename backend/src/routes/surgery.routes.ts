@@ -41,7 +41,7 @@ router.get('/', authenticate, async (req, res) => {
   res.json({ status: 'success', data: { surgeries } });
 });
 
-// GET /surgeries/today - Today's surgeries
+// GET /surgeries/today - Today's + active surgeries
 router.get('/today', authenticate, async (req, res) => {
   const today = new Date();
   today.setHours(0, 0, 0, 0);
@@ -50,10 +50,17 @@ router.get('/today', authenticate, async (req, res) => {
 
   const surgeries = await prisma.surgery.findMany({
     where: {
-      scheduledDate: { gte: today, lt: tomorrow },
+      OR: [
+        // Today's surgeries (any status)
+        { scheduledDate: { gte: today, lt: tomorrow } },
+        // Active surgeries regardless of date
+        { status: { in: ['EN_CURSO', 'EN_PREPARACION'] } },
+        // Upcoming programmed surgeries
+        { status: 'PROGRAMADA', scheduledDate: { gte: today } },
+      ],
     },
     include: surgeriesInclude,
-    orderBy: [{ scheduledTime: 'asc' }],
+    orderBy: [{ scheduledDate: 'asc' }, { scheduledTime: 'asc' }],
   });
 
   res.json({ status: 'success', data: { surgeries } });
@@ -67,8 +74,8 @@ router.get('/board', authenticate, async (req, res) => {
   tomorrow.setDate(tomorrow.getDate() + 1);
 
   const [programadas, enPreparacion, enCurso, completadas] = await Promise.all([
-    prisma.surgery.count({ where: { status: 'PROGRAMADA', scheduledDate: { gte: today, lt: tomorrow } } }),
-    prisma.surgery.count({ where: { status: 'EN_PREPARACION', scheduledDate: { gte: today, lt: tomorrow } } }),
+    prisma.surgery.count({ where: { status: 'PROGRAMADA', scheduledDate: { gte: today } } }),
+    prisma.surgery.count({ where: { status: 'EN_PREPARACION' } }),
     prisma.surgery.count({ where: { status: 'EN_CURSO' } }),
     prisma.surgery.count({ where: { status: 'COMPLETADA', scheduledDate: { gte: today, lt: tomorrow } } }),
   ]);

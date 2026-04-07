@@ -1841,8 +1841,8 @@ function MedicoDashboard() {
                 🏥 {t('medico.hospitalize', 'Hospitalizar')}
               </button>
               <button className="action-btn" style={{ background: '#8e44ad', color: 'white' }} onClick={() => {
-                const tomorrow = new Date(); tomorrow.setDate(tomorrow.getDate() + 1);
-                setSurgeryForm(f => ({ ...f, scheduledDate: tomorrow.toISOString().split('T')[0] }));
+                const today = new Date();
+                setSurgeryForm(f => ({ ...f, scheduledDate: today.toISOString().split('T')[0] }));
                 setShowSurgeryModal(true);
               }}>
                 🔪 Programar Cirugía
