@@ -26,10 +26,9 @@ router.get('/', authenticate, async (req, res) => {
   if (surgeonId) where.surgeonId = surgeonId;
   
   if (fecha) {
-    const date = new Date(fecha as string);
-    const nextDay = new Date(date);
-    nextDay.setDate(nextDay.getDate() + 1);
-    where.scheduledDate = { gte: date, lt: nextDay };
+    const date = new Date((fecha as string) + 'T00:00:00');
+    const nextDay = new Date((fecha as string) + 'T23:59:59');
+    where.scheduledDate = { gte: date, lte: nextDay };
   }
 
   const surgeries = await prisma.surgery.findMany({
@@ -44,9 +43,9 @@ router.get('/', authenticate, async (req, res) => {
 // GET /surgeries/today - Today's + active surgeries
 router.get('/today', authenticate, async (req, res) => {
   const today = new Date();
-  today.setHours(0, 0, 0, 0);
+  today.setUTCHours(0, 0, 0, 0);
   const tomorrow = new Date(today);
-  tomorrow.setDate(tomorrow.getDate() + 1);
+  tomorrow.setUTCDate(tomorrow.getUTCDate() + 1);
 
   const surgeries = await prisma.surgery.findMany({
     where: {
@@ -69,9 +68,9 @@ router.get('/today', authenticate, async (req, res) => {
 // GET /surgeries/board - Board summary (counts by status)
 router.get('/board', authenticate, async (req, res) => {
   const today = new Date();
-  today.setHours(0, 0, 0, 0);
+  today.setUTCHours(0, 0, 0, 0);
   const tomorrow = new Date(today);
-  tomorrow.setDate(tomorrow.getDate() + 1);
+  tomorrow.setUTCDate(tomorrow.getUTCDate() + 1);
 
   const [programadas, enPreparacion, enCurso, completadas] = await Promise.all([
     prisma.surgery.count({ where: { status: 'PROGRAMADA', scheduledDate: { gte: today } } }),
@@ -112,7 +111,7 @@ router.post('/', authenticate, isMedico, async (req, res) => {
       consultationId: data.consultationId,
       surgeonId: req.user!.userId,
       type: data.type,
-      scheduledDate: new Date(data.scheduledDate),
+      scheduledDate: new Date(data.scheduledDate + 'T12:00:00'),
       scheduledTime: data.scheduledTime,
       estimatedDuration: data.estimatedDuration,
       preOpNotes: data.preOpNotes,
@@ -462,7 +461,7 @@ router.put('/:id', authenticate, async (req, res) => {
 
   const data = schema.parse(req.body);
   const updateData: any = { ...data };
-  if (data.scheduledDate) updateData.scheduledDate = new Date(data.scheduledDate);
+  if (data.scheduledDate) updateData.scheduledDate = new Date(data.scheduledDate + 'T12:00:00');
 
   const surgery = await prisma.surgery.update({
     where: { id },
