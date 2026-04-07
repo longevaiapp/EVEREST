@@ -2607,7 +2607,7 @@ function MedicoDashboard() {
                   try {
                     setLocalLoading(true);
                     await quirofanoService.schedule({
-                      petId: selectedPatient.petId || selectedPatient.pet?.id,
+                      petId: selectedPatient.id,
                       consultationId: activeConsultation.id,
                       type: surgeryForm.type,
                       scheduledDate: surgeryForm.scheduledDate,
