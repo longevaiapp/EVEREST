@@ -214,7 +214,7 @@ router.put('/:id/complete', authenticate, async (req, res) => {
     complications: z.string().optional(),
     postOpNotes: z.string().optional(),
     postOpCare: z.string().optional(),
-    prognosis: z.enum(['EXCELENTE', 'BUENO', 'RESERVADO', 'GRAVE']).optional(),
+    prognosis: z.union([z.enum(['EXCELENTE', 'BUENO', 'RESERVADO', 'GRAVE']), z.literal('')]).optional().transform(v => v === '' ? undefined : v),
     hospitalizationRequired: z.boolean().default(false),
     hospitalizationType: z.string().optional(),
     followUpDate: z.string().optional(),

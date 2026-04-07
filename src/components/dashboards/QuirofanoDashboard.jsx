@@ -153,7 +153,9 @@ export default function QuirofanoDashboard() {
       return;
     }
     try {
-      await completeSurgery(selectedSurgery.id, completeForm);
+      const payload = { ...completeForm };
+      if (!payload.prognosis) delete payload.prognosis;
+      await completeSurgery(selectedSurgery.id, payload);
       setShowCompleteModal(false);
       setCompleteForm({
         procedure: '', complications: '', postOpNotes: '', postOpCare: '',
