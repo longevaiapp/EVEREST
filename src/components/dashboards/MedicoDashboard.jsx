@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect, useRef } from 'react';
+import { useState, useCallback, useEffect, useRef, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useAuth } from '../../context/AuthContext';
 import useMedico from '../../hooks/useMedico';
@@ -1287,6 +1287,31 @@ function MedicoDashboard() {
     return labels[status] || status;
   };
 
+  // Memoizar props de ExamenFisico para evitar re-renders innecesarios
+  const triageDataMemo = useMemo(() => ({
+    peso: selectedPatient?.peso,
+    temperatura: selectedPatient?.temperatura
+  }), [selectedPatient?.peso, selectedPatient?.temperatura]);
+
+  const handleExamenFisicoSave = useCallback(async (examData) => {
+    setLocalLoading(true);
+    try {
+      await actualizarConsulta(activeConsultation.id, {
+        physicalExam: JSON.stringify(examData),
+        ...(examData.general?.temperatura && { vitalTemperature: parseFloat(examData.general.temperatura) }),
+        ...(examData.general?.frecuenciaCardiaca && { vitalHeartRate: parseInt(examData.general.frecuenciaCardiaca) }),
+        ...(examData.general?.frecuenciaRespiratoria && { vitalRespiratoryRate: parseInt(examData.general.frecuenciaRespiratoria) }),
+        ...(examData.general?.peso && { vitalWeight: parseFloat(examData.general.peso) }),
+        ...(examData.general?.hidratacion && { vitalHydration: examData.general.hidratacion }),
+      });
+      setExamenFisicoData(examData);
+    } catch (err) {
+      setLocalError(err.message || 'Error guardando examen físico');
+    } finally {
+      setLocalLoading(false);
+    }
+  }, [activeConsultation?.id, actualizarConsulta]);
+
   if (loading) {
     return (
       <div className="dashboard medico-dashboard">
@@ -1788,31 +1813,9 @@ function MedicoDashboard() {
               <ExamenFisico
                 consultationId={activeConsultation?.id}
                 initialData={examenFisicoData}
-                triageData={{
-                  peso: selectedPatient?.peso,
-                  temperatura: selectedPatient?.temperatura
-                }}
+                triageData={triageDataMemo}
                 loading={localLoading}
-                onSave={async (examData) => {
-                  setLocalLoading(true);
-                  try {
-                    // Guardar el examen físico en el campo physicalExam como JSON
-                    await actualizarConsulta(activeConsultation.id, {
-                      physicalExam: JSON.stringify(examData),
-                      // También extraer signos vitales del examen general para campos individuales
-                      ...(examData.general?.temperatura && { vitalTemperature: parseFloat(examData.general.temperatura) }),
-                      ...(examData.general?.frecuenciaCardiaca && { vitalHeartRate: parseInt(examData.general.frecuenciaCardiaca) }),
-                      ...(examData.general?.frecuenciaRespiratoria && { vitalRespiratoryRate: parseInt(examData.general.frecuenciaRespiratoria) }),
-                      ...(examData.general?.peso && { vitalWeight: parseFloat(examData.general.peso) }),
-                      ...(examData.general?.hidratacion && { vitalHydration: examData.general.hidratacion }),
-                    });
-                    setExamenFisicoData(examData);
-                  } catch (err) {
-                    setLocalError(err.message || 'Error guardando examen físico');
-                  } finally {
-                    setLocalLoading(false);
-                  }
-                }}
+                onSave={handleExamenFisicoSave}
               />
             </div>
 

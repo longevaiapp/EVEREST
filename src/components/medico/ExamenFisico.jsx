@@ -1,6 +1,6 @@
 // src/components/medico/ExamenFisico.jsx
 // Componente de Examen Físico Veterinario Completo
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback, useEffect, useRef } from 'react';
 import './ExamenFisico.css';
 
 // Estado inicial del examen físico general
@@ -257,6 +257,73 @@ const OPTIONS = {
   lateralidad: ['D', 'I', 'Ambos']
 };
 
+// Componentes extraídos fuera del cuerpo de ExamenFisico para evitar
+// recreación en cada render (causa pérdida de foco en inputs)
+const Checkbox = ({ checked, onChange, label, className = '' }) => (
+  <label className={`exam-checkbox ${checked ? 'checked' : ''} ${className}`}>
+    <input type="checkbox" checked={checked} onChange={onChange} />
+    <span className="checkmark">✓</span>
+    <span className="label">{label}</span>
+  </label>
+);
+
+const Radio = ({ checked, onChange, label, name }) => (
+  <label className={`exam-radio ${checked ? 'checked' : ''}`}>
+    <input type="radio" name={name} checked={checked} onChange={onChange} />
+    <span className="radiomark"></span>
+    <span className="label">{label}</span>
+  </label>
+);
+
+const CheckboxGroup = ({ options, values, onChange, columns = 4 }) => (
+  <div className={`checkbox-group cols-${columns}`}>
+    {options.map(opt => (
+      <Checkbox
+        key={opt}
+        checked={values?.includes(opt)}
+        onChange={() => onChange(opt)}
+        label={opt}
+      />
+    ))}
+  </div>
+);
+
+const RadioGroup = ({ options, value, onChange, name, columns = 4 }) => (
+  <div className={`radio-group cols-${columns}`}>
+    {options.map(opt => (
+      <Radio
+        key={opt}
+        name={name}
+        checked={value === opt}
+        onChange={() => onChange(opt)}
+        label={typeof opt === 'number' ? opt : opt}
+      />
+    ))}
+  </div>
+);
+
+const BCSSelector = ({ value, onChange }) => (
+  <div className="bcs-selector">
+    <div className="bcs-labels">
+      <span>Muy delgado</span>
+      <span>Ideal</span>
+      <span>Obeso</span>
+    </div>
+    <div className="bcs-buttons">
+      {[1, 2, 3, 4, 5, 6, 7, 8, 9].map(n => (
+        <button
+          key={n}
+          type="button"
+          className={`bcs-btn ${value === n ? 'selected' : ''} ${n <= 3 ? 'under' : n <= 5 ? 'ideal' : n <= 7 ? 'over' : 'obese'}`}
+          onClick={() => onChange(n)}
+        >
+          {n}
+        </button>
+      ))}
+    </div>
+  </div>
+);
+
 function ExamenFisico({ onSave, initialData, consultationId, loading, triageData }) {
   const [activeTab, setActiveTab] = useState('general');
   const [expandedSections, setExpandedSections] = useState({});
@@ -332,89 +399,26 @@ function ExamenFisico({ onSave, initialData, consultationId, loading, triageData
     setHasChanges(false);
   }, [generalExam, neuroExam, dermaExam, oftalmoExam, ortoExam, onSave]);
 
-  // Componente de Checkbox
-  const Checkbox = ({ checked, onChange, label, className = '' }) => (
-    <label className={`exam-checkbox ${checked ? 'checked' : ''} ${className}`}>
-      <input type="checkbox" checked={checked} onChange={onChange} />
-      <span className="checkmark">✓</span>
-      <span className="label">{label}</span>
-    </label>
-  );
+  // Ref para que Section acceda al estado actual sin recrearse
+  const sectionStateRef = useRef({});
+  sectionStateRef.current = { expandedSections, toggleSection };
 
-  // Componente de Radio
-  const Radio = ({ checked, onChange, label, name }) => (
-    <label className={`exam-radio ${checked ? 'checked' : ''}`}>
-      <input type="radio" name={name} checked={checked} onChange={onChange} />
-      <span className="radiomark"></span>
-      <span className="label">{label}</span>
-    </label>
-  );
-
-  // Componente de Sección colapsable
-  const Section = ({ title, icon, name, children }) => (
-    <div className={`exam-section ${expandedSections[name] !== false ? 'expanded' : 'collapsed'}`}>
-      <div className="section-header" onClick={() => toggleSection(name)}>
-        <span className="section-icon">{icon}</span>
-        <span className="section-title">{title}</span>
-        <span className="section-toggle">{expandedSections[name] !== false ? '▼' : '▶'}</span>
+  // Section estable via useRef - no se recrea en cada render
+  const Section = useRef(function Section({ title, icon, name, children }) {
+    const { expandedSections, toggleSection } = sectionStateRef.current;
+    return (
+      <div className={`exam-section ${expandedSections[name] !== false ? 'expanded' : 'collapsed'}`}>
+        <div className="section-header" onClick={() => toggleSection(name)}>
+          <span className="section-icon">{icon}</span>
+          <span className="section-title">{title}</span>
+          <span className="section-toggle">{expandedSections[name] !== false ? '▼' : '▶'}</span>
+        </div>
+        {expandedSections[name] !== false && (
+          <div className="section-content">{children}</div>
+        )}
       </div>
-      {expandedSections[name] !== false && (
-        <div className="section-content">{children}</div>
-      )}
-    </div>
-  );
-
-  // Checkbox Group
-  const CheckboxGroup = ({ options, values, onChange, columns = 4 }) => (
-    <div className={`checkbox-group cols-${columns}`}>
-      {options.map(opt => (
-        <Checkbox
-          key={opt}
-          checked={values?.includes(opt)}
-          onChange={() => onChange(opt)}
-          label={opt}
-        />
-      ))}
-    </div>
-  );
-
-  // Radio Group
-  const RadioGroup = ({ options, value, onChange, name, columns = 4 }) => (
-    <div className={`radio-group cols-${columns}`}>
-      {options.map(opt => (
-        <Radio
-          key={opt}
-          name={name}
-          checked={value === opt}
-          onChange={() => onChange(opt)}
-          label={typeof opt === 'number' ? opt : opt}
-        />
-      ))}
-    </div>
-  );
-
-  // BCS Selector (1-9 visual)
-  const BCSSelector = ({ value, onChange }) => (
-    <div className="bcs-selector">
-      <div className="bcs-labels">
-        <span>Muy delgado</span>
-        <span>Ideal</span>
-        <span>Obeso</span>
-      </div>
-      <div className="bcs-buttons">
-        {[1, 2, 3, 4, 5, 6, 7, 8, 9].map(n => (
-          <button
-            key={n}
-            type="button"
-            className={`bcs-btn ${value === n ? 'selected' : ''} ${n <= 3 ? 'under' : n <= 5 ? 'ideal' : n <= 7 ? 'over' : 'obese'}`}
-            onClick={() => onChange(n)}
-          >
-            {n}
-          </button>
-        ))}
-      </div>
-    </div>
-  );
+    );
+  }).current;
 
   return (
     <div className="examen-fisico">
