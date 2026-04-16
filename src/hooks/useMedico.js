@@ -42,21 +42,27 @@ export const useMedico = () => {
     } catch { return null; }
   });
 
-  // Wrappers que persisten en sessionStorage
+  // Wrappers que persisten en sessionStorage (soportan functional updates)
   const setActiveConsultation = useCallback((value) => {
-    setActiveConsultationRaw(value);
-    try {
-      if (value) sessionStorage.setItem('everest_activeConsultation', JSON.stringify(value));
-      else sessionStorage.removeItem('everest_activeConsultation');
-    } catch {}
+    setActiveConsultationRaw(prev => {
+      const newVal = typeof value === 'function' ? value(prev) : value;
+      try {
+        if (newVal) sessionStorage.setItem('everest_activeConsultation', JSON.stringify(newVal));
+        else sessionStorage.removeItem('everest_activeConsultation');
+      } catch {}
+      return newVal;
+    });
   }, []);
 
   const setSelectedPatient = useCallback((value) => {
-    setSelectedPatientRaw(value);
-    try {
-      if (value) sessionStorage.setItem('everest_selectedPatient', JSON.stringify(value));
-      else sessionStorage.removeItem('everest_selectedPatient');
-    } catch {}
+    setSelectedPatientRaw(prev => {
+      const newVal = typeof value === 'function' ? value(prev) : value;
+      try {
+        if (newVal) sessionStorage.setItem('everest_selectedPatient', JSON.stringify(newVal));
+        else sessionStorage.removeItem('everest_selectedPatient');
+      } catch {}
+      return newVal;
+    });
   }, []);
   
   // UI State

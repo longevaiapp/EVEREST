@@ -37,11 +37,13 @@ function MedicoDashboard() {
     crearOrdenLab,
     hospitalizarPaciente,
     clearError,
+    activeConsultation,
+    selectedPatient,
+    setActiveConsultation,
+    setSelectedPatient,
   } = useMedico();
 
   // State Management
-  const [selectedPatient, setSelectedPatient] = useState(null);
-  const [activeConsultation, setActiveConsultation] = useState(null);
   const [localLoading, setLocalLoading] = useState(false);
   const [localError, setLocalError] = useState(null);
   
