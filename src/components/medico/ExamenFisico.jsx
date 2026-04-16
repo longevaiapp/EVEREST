@@ -1917,42 +1917,306 @@ function ExamenFisico({ onSave, initialData, consultationId, loading, triageData
           )}
 
           {/* Exámenes Especializados */}
-          {(neuroExam.estadoMental || neuroExam.localizacion.length > 0 || 
-            dermaExam.condicionPiel.length > 0 || dermaExam.impresion.length > 0 ||
-            oftalmoExam.impresion.length > 0 || ortoExam.impresion.length > 0) && (
+          {/* Neurológico */}
+          {(neuroExam.estadoMental || neuroExam.postura?.length > 0 || neuroExam.marcha?.length > 0 ||
+            neuroExam.propiocepcion || neuroExam.reflejosToracicos || neuroExam.reflejosPelvicos ||
+            neuroExam.tonoMuscular || neuroExam.sensibilidadSuperficial || neuroExam.sensibilidadProfunda ||
+            neuroExam.controlEsfinteres?.length > 0 || neuroExam.localizacion?.length > 0 || neuroExam.observaciones) && (
             <div className="summary-section specialized">
-              <h4>🔬 Exámenes Especializados</h4>
-              <div className="specialized-tags">
-                {neuroExam.localizacion.length > 0 && (
-                  <div className="specialized-item">
-                    <span className="spec-label">🧠 Neuro:</span>
-                    {neuroExam.localizacion.map(item => (
-                      <span key={item} className="summary-tag neuro">{item}</span>
-                    ))}
+              <h4>🧠 Examen Neurológico</h4>
+              <div className="summary-systems">
+                {neuroExam.estadoMental && (
+                  <div className="system-finding">
+                    <span className="system-name">Estado Mental:</span>
+                    <span className="summary-tag neuro">{neuroExam.estadoMental}</span>
                   </div>
                 )}
-                {dermaExam.impresion.length > 0 && (
-                  <div className="specialized-item">
-                    <span className="spec-label">🔬 Derma:</span>
-                    {dermaExam.impresion.map(item => (
-                      <span key={item} className="summary-tag derma">{item}</span>
-                    ))}
+                {neuroExam.postura?.length > 0 && (
+                  <div className="system-finding">
+                    <span className="system-name">Postura:</span>
+                    <div className="system-values">{neuroExam.postura.map(i => <span key={i} className="summary-tag neuro">{i}</span>)}</div>
                   </div>
                 )}
-                {oftalmoExam.impresion.length > 0 && (
-                  <div className="specialized-item">
-                    <span className="spec-label">👁️ Oftalmo:</span>
-                    {oftalmoExam.impresion.map(item => (
-                      <span key={item} className="summary-tag oftalmo">{item}</span>
-                    ))}
+                {neuroExam.marcha?.length > 0 && (
+                  <div className="system-finding">
+                    <span className="system-name">Marcha:</span>
+                    <div className="system-values">{neuroExam.marcha.map(i => <span key={i} className="summary-tag neuro">{i}</span>)}</div>
                   </div>
                 )}
-                {ortoExam.impresion.length > 0 && (
-                  <div className="specialized-item">
-                    <span className="spec-label">🦴 Orto:</span>
-                    {ortoExam.impresion.map(item => (
-                      <span key={item} className="summary-tag orto">{item}</span>
-                    ))}
+                {neuroExam.propiocepcion && (
+                  <div className="system-finding">
+                    <span className="system-name">Propiocepción:</span>
+                    <span className="summary-tag neuro">{neuroExam.propiocepcion}</span>
+                  </div>
+                )}
+                {neuroExam.reflejosToracicos && (
+                  <div className="system-finding">
+                    <span className="system-name">Reflejos Torácicos:</span>
+                    <span className={`summary-tag ${neuroExam.reflejosToracicos !== 'Normal' ? 'warning' : 'normal'}`}>{neuroExam.reflejosToracicos}</span>
+                  </div>
+                )}
+                {neuroExam.reflejosPelvicos && (
+                  <div className="system-finding">
+                    <span className="system-name">Reflejos Pélvicos:</span>
+                    <span className={`summary-tag ${neuroExam.reflejosPelvicos !== 'Normal' ? 'warning' : 'normal'}`}>{neuroExam.reflejosPelvicos}</span>
+                  </div>
+                )}
+                {neuroExam.tonoMuscular && (
+                  <div className="system-finding">
+                    <span className="system-name">Tono Muscular:</span>
+                    <span className={`summary-tag ${neuroExam.tonoMuscular !== 'Normal' ? 'warning' : 'normal'}`}>{neuroExam.tonoMuscular}</span>
+                  </div>
+                )}
+                {(neuroExam.sensibilidadSuperficial || neuroExam.sensibilidadProfunda) && (
+                  <div className="system-finding">
+                    <span className="system-name">Sensibilidad:</span>
+                    <div className="system-values">
+                      {neuroExam.sensibilidadSuperficial && <span className={`summary-tag ${neuroExam.sensibilidadSuperficial === 'Ausente' ? 'alert' : 'normal'}`}>Superficial: {neuroExam.sensibilidadSuperficial}</span>}
+                      {neuroExam.sensibilidadProfunda && <span className={`summary-tag ${neuroExam.sensibilidadProfunda === 'Ausente' ? 'alert' : 'normal'}`}>Profunda: {neuroExam.sensibilidadProfunda}</span>}
+                    </div>
+                  </div>
+                )}
+                {neuroExam.controlEsfinteres?.length > 0 && (
+                  <div className="system-finding">
+                    <span className="system-name">Esfínteres:</span>
+                    <div className="system-values">{neuroExam.controlEsfinteres.map(i => <span key={i} className="summary-tag neuro">{i}</span>)}</div>
+                  </div>
+                )}
+                {neuroExam.localizacion?.length > 0 && (
+                  <div className="system-finding">
+                    <span className="system-name">Localización:</span>
+                    <div className="system-values">{neuroExam.localizacion.map(i => <span key={i} className="summary-tag alert">{i}</span>)}</div>
+                  </div>
+                )}
+                {neuroExam.observaciones && (
+                  <div className="system-finding">
+                    <span className="system-name">Observaciones:</span>
+                    <span className="summary-tag">{neuroExam.observaciones}</span>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+
+          {/* Dermatológico */}
+          {(dermaExam.condicionPiel?.length > 0 || dermaExam.pelaje?.length > 0 || dermaExam.distribucionLesiones?.length > 0 ||
+            dermaExam.lesionesPrimarias?.length > 0 || dermaExam.lesionesSecundarias?.length > 0 || dermaExam.prurito ||
+            dermaExam.olorCutaneo || dermaExam.parasitos?.length > 0 || dermaExam.oidos?.length > 0 ||
+            dermaExam.unasAlmohadillas?.length > 0 || dermaExam.pruebasRealizadas?.length > 0 ||
+            dermaExam.impresion?.length > 0 || dermaExam.observaciones) && (
+            <div className="summary-section specialized">
+              <h4>🔬 Examen Dermatológico</h4>
+              <div className="summary-systems">
+                {dermaExam.condicionPiel?.length > 0 && (
+                  <div className="system-finding">
+                    <span className="system-name">Condición:</span>
+                    <div className="system-values">{dermaExam.condicionPiel.map(i => <span key={i} className="summary-tag derma">{i}</span>)}</div>
+                  </div>
+                )}
+                {dermaExam.pelaje?.length > 0 && (
+                  <div className="system-finding">
+                    <span className="system-name">Pelaje:</span>
+                    <div className="system-values">{dermaExam.pelaje.map(i => <span key={i} className="summary-tag derma">{i}</span>)}</div>
+                  </div>
+                )}
+                {dermaExam.distribucionLesiones?.length > 0 && (
+                  <div className="system-finding">
+                    <span className="system-name">Distribución:</span>
+                    <div className="system-values">{dermaExam.distribucionLesiones.map(i => <span key={i} className="summary-tag derma">{i}</span>)}</div>
+                  </div>
+                )}
+                {dermaExam.lesionesPrimarias?.length > 0 && (
+                  <div className="system-finding">
+                    <span className="system-name">Lesiones Primarias:</span>
+                    <div className="system-values">{dermaExam.lesionesPrimarias.map(i => <span key={i} className="summary-tag warning">{i}</span>)}</div>
+                  </div>
+                )}
+                {dermaExam.lesionesSecundarias?.length > 0 && (
+                  <div className="system-finding">
+                    <span className="system-name">Lesiones Secundarias:</span>
+                    <div className="system-values">{dermaExam.lesionesSecundarias.map(i => <span key={i} className="summary-tag warning">{i}</span>)}</div>
+                  </div>
+                )}
+                {dermaExam.prurito && (
+                  <div className="system-finding">
+                    <span className="system-name">Prurito:</span>
+                    <span className={`summary-tag ${dermaExam.prurito === 'Severo' ? 'alert' : dermaExam.prurito === 'Moderado' ? 'warning' : 'normal'}`}>{dermaExam.prurito}</span>
+                  </div>
+                )}
+                {dermaExam.parasitos?.length > 0 && (
+                  <div className="system-finding">
+                    <span className="system-name">Parásitos:</span>
+                    <div className="system-values">{dermaExam.parasitos.map(i => <span key={i} className="summary-tag derma">{i}</span>)}</div>
+                  </div>
+                )}
+                {dermaExam.pruebasRealizadas?.length > 0 && (
+                  <div className="system-finding">
+                    <span className="system-name">Pruebas:</span>
+                    <div className="system-values">{dermaExam.pruebasRealizadas.map(i => <span key={i} className="summary-tag">{i}</span>)}</div>
+                  </div>
+                )}
+                {dermaExam.impresion?.length > 0 && (
+                  <div className="system-finding">
+                    <span className="system-name">Impresión:</span>
+                    <div className="system-values">{dermaExam.impresion.map(i => <span key={i} className="summary-tag alert">{i}</span>)}</div>
+                  </div>
+                )}
+                {dermaExam.observaciones && (
+                  <div className="system-finding">
+                    <span className="system-name">Observaciones:</span>
+                    <span className="summary-tag">{dermaExam.observaciones}</span>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+
+          {/* Oftalmológico */}
+          {(oftalmoExam.observacionGeneral?.length > 0 || oftalmoExam.parpadosOD?.length > 0 || oftalmoExam.parpadosOI?.length > 0 ||
+            oftalmoExam.conjuntivaOD?.length > 0 || oftalmoExam.conjuntivaOI?.length > 0 ||
+            oftalmoExam.corneaOD?.length > 0 || oftalmoExam.corneaOI?.length > 0 ||
+            oftalmoExam.irisPupilaOD?.length > 0 || oftalmoExam.irisPupilaOI?.length > 0 ||
+            oftalmoExam.cristalinoOD?.length > 0 || oftalmoExam.cristalinoOI?.length > 0 ||
+            oftalmoExam.presionIntraocularOD || oftalmoExam.presionIntraocularOI ||
+            oftalmoExam.fondoOjoOD?.length > 0 || oftalmoExam.fondoOjoOI?.length > 0 ||
+            oftalmoExam.pruebasComplementarias?.length > 0 || oftalmoExam.impresion?.length > 0 || oftalmoExam.observaciones) && (
+            <div className="summary-section specialized">
+              <h4>👁️ Examen Oftalmológico</h4>
+              <div className="summary-systems">
+                {oftalmoExam.observacionGeneral?.length > 0 && (
+                  <div className="system-finding">
+                    <span className="system-name">General:</span>
+                    <div className="system-values">{oftalmoExam.observacionGeneral.map(i => <span key={i} className="summary-tag oftalmo">{i}</span>)}</div>
+                  </div>
+                )}
+                {(oftalmoExam.parpadosOD?.length > 0 || oftalmoExam.parpadosOI?.length > 0) && (
+                  <div className="system-finding">
+                    <span className="system-name">Párpados:</span>
+                    <div className="system-values">
+                      {oftalmoExam.parpadosOD?.length > 0 && <span className="summary-tag oftalmo">OD: {oftalmoExam.parpadosOD.join(', ')}</span>}
+                      {oftalmoExam.parpadosOI?.length > 0 && <span className="summary-tag oftalmo">OI: {oftalmoExam.parpadosOI.join(', ')}</span>}
+                    </div>
+                  </div>
+                )}
+                {(oftalmoExam.conjuntivaOD?.length > 0 || oftalmoExam.conjuntivaOI?.length > 0) && (
+                  <div className="system-finding">
+                    <span className="system-name">Conjuntiva:</span>
+                    <div className="system-values">
+                      {oftalmoExam.conjuntivaOD?.length > 0 && <span className="summary-tag oftalmo">OD: {oftalmoExam.conjuntivaOD.join(', ')}</span>}
+                      {oftalmoExam.conjuntivaOI?.length > 0 && <span className="summary-tag oftalmo">OI: {oftalmoExam.conjuntivaOI.join(', ')}</span>}
+                    </div>
+                  </div>
+                )}
+                {(oftalmoExam.corneaOD?.length > 0 || oftalmoExam.corneaOI?.length > 0) && (
+                  <div className="system-finding">
+                    <span className="system-name">Córnea:</span>
+                    <div className="system-values">
+                      {oftalmoExam.corneaOD?.length > 0 && <span className="summary-tag oftalmo">OD: {oftalmoExam.corneaOD.join(', ')}</span>}
+                      {oftalmoExam.corneaOI?.length > 0 && <span className="summary-tag oftalmo">OI: {oftalmoExam.corneaOI.join(', ')}</span>}
+                    </div>
+                  </div>
+                )}
+                {(oftalmoExam.presionIntraocularOD || oftalmoExam.presionIntraocularOI) && (
+                  <div className="system-finding">
+                    <span className="system-name">PIO:</span>
+                    <div className="system-values">
+                      {oftalmoExam.presionIntraocularOD && <span className={`summary-tag ${oftalmoExam.presionIntraocularOD.includes('Aumentada') ? 'alert' : 'normal'}`}>OD: {oftalmoExam.presionIntraocularOD}{oftalmoExam.pioValorOD ? ` (${oftalmoExam.pioValorOD} mmHg)` : ''}</span>}
+                      {oftalmoExam.presionIntraocularOI && <span className={`summary-tag ${oftalmoExam.presionIntraocularOI.includes('Aumentada') ? 'alert' : 'normal'}`}>OI: {oftalmoExam.presionIntraocularOI}{oftalmoExam.pioValorOI ? ` (${oftalmoExam.pioValorOI} mmHg)` : ''}</span>}
+                    </div>
+                  </div>
+                )}
+                {oftalmoExam.pruebasComplementarias?.length > 0 && (
+                  <div className="system-finding">
+                    <span className="system-name">Pruebas:</span>
+                    <div className="system-values">{oftalmoExam.pruebasComplementarias.map(i => <span key={i} className="summary-tag">{i}</span>)}</div>
+                  </div>
+                )}
+                {oftalmoExam.impresion?.length > 0 && (
+                  <div className="system-finding">
+                    <span className="system-name">Impresión:</span>
+                    <div className="system-values">{oftalmoExam.impresion.map(i => <span key={i} className="summary-tag alert">{i}</span>)}</div>
+                  </div>
+                )}
+                {oftalmoExam.observaciones && (
+                  <div className="system-finding">
+                    <span className="system-name">Observaciones:</span>
+                    <span className="summary-tag">{oftalmoExam.observaciones}</span>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+
+          {/* Ortopédico */}
+          {(ortoExam.observacionGeneral?.length > 0 || ortoExam.marcha?.length > 0 || ortoExam.palpacionGeneral?.length > 0 ||
+            ortoExam.hombroD?.length > 0 || ortoExam.hombroI?.length > 0 || ortoExam.codoD?.length > 0 || ortoExam.codoI?.length > 0 ||
+            ortoExam.carpoD?.length > 0 || ortoExam.carpoI?.length > 0 ||
+            ortoExam.caderaD?.length > 0 || ortoExam.caderaI?.length > 0 || ortoExam.rodillaD?.length > 0 || ortoExam.rodillaI?.length > 0 ||
+            ortoExam.tarsoD?.length > 0 || ortoExam.tarsoI?.length > 0 ||
+            ortoExam.columna?.length > 0 || ortoExam.masaMuscular || ortoExam.impresion?.length > 0 || ortoExam.observaciones) && (
+            <div className="summary-section specialized">
+              <h4>🦴 Examen Ortopédico</h4>
+              <div className="summary-systems">
+                {ortoExam.observacionGeneral?.length > 0 && (
+                  <div className="system-finding">
+                    <span className="system-name">Observación:</span>
+                    <div className="system-values">{ortoExam.observacionGeneral.map(i => <span key={i} className="summary-tag orto">{i}</span>)}</div>
+                  </div>
+                )}
+                {ortoExam.marcha?.length > 0 && (
+                  <div className="system-finding">
+                    <span className="system-name">Marcha:</span>
+                    <div className="system-values">{ortoExam.marcha.map(i => <span key={i} className="summary-tag orto">{i}</span>)}</div>
+                  </div>
+                )}
+                {(ortoExam.hombroD?.length > 0 || ortoExam.hombroI?.length > 0 || ortoExam.codoD?.length > 0 || ortoExam.codoI?.length > 0 || ortoExam.carpoD?.length > 0 || ortoExam.carpoI?.length > 0) && (
+                  <div className="system-finding">
+                    <span className="system-name">Ext. Torácicas:</span>
+                    <div className="system-values">
+                      {ortoExam.hombroD?.length > 0 && <span className="summary-tag orto">Hombro D: {ortoExam.hombroD.join(', ')}</span>}
+                      {ortoExam.hombroI?.length > 0 && <span className="summary-tag orto">Hombro I: {ortoExam.hombroI.join(', ')}</span>}
+                      {ortoExam.codoD?.length > 0 && <span className="summary-tag orto">Codo D: {ortoExam.codoD.join(', ')}</span>}
+                      {ortoExam.codoI?.length > 0 && <span className="summary-tag orto">Codo I: {ortoExam.codoI.join(', ')}</span>}
+                      {ortoExam.carpoD?.length > 0 && <span className="summary-tag orto">Carpo D: {ortoExam.carpoD.join(', ')}</span>}
+                      {ortoExam.carpoI?.length > 0 && <span className="summary-tag orto">Carpo I: {ortoExam.carpoI.join(', ')}</span>}
+                    </div>
+                  </div>
+                )}
+                {(ortoExam.caderaD?.length > 0 || ortoExam.caderaI?.length > 0 || ortoExam.rodillaD?.length > 0 || ortoExam.rodillaI?.length > 0 || ortoExam.tarsoD?.length > 0 || ortoExam.tarsoI?.length > 0) && (
+                  <div className="system-finding">
+                    <span className="system-name">Ext. Pélvicas:</span>
+                    <div className="system-values">
+                      {ortoExam.caderaD?.length > 0 && <span className="summary-tag orto">Cadera D: {ortoExam.caderaD.join(', ')}</span>}
+                      {ortoExam.caderaI?.length > 0 && <span className="summary-tag orto">Cadera I: {ortoExam.caderaI.join(', ')}</span>}
+                      {ortoExam.rodillaD?.length > 0 && <span className="summary-tag orto">Rodilla D: {ortoExam.rodillaD.join(', ')}</span>}
+                      {ortoExam.rodillaI?.length > 0 && <span className="summary-tag orto">Rodilla I: {ortoExam.rodillaI.join(', ')}</span>}
+                      {ortoExam.tarsoD?.length > 0 && <span className="summary-tag orto">Tarso D: {ortoExam.tarsoD.join(', ')}</span>}
+                      {ortoExam.tarsoI?.length > 0 && <span className="summary-tag orto">Tarso I: {ortoExam.tarsoI.join(', ')}</span>}
+                    </div>
+                  </div>
+                )}
+                {ortoExam.columna?.length > 0 && (
+                  <div className="system-finding">
+                    <span className="system-name">Columna:</span>
+                    <div className="system-values">{ortoExam.columna.map(i => <span key={i} className="summary-tag orto">{i}</span>)}</div>
+                  </div>
+                )}
+                {ortoExam.masaMuscular && (
+                  <div className="system-finding">
+                    <span className="system-name">Masa Muscular:</span>
+                    <span className={`summary-tag ${ortoExam.masaMuscular.includes('Atrofia') ? 'warning' : 'normal'}`}>{ortoExam.masaMuscular}{ortoExam.masaMuscularLado ? ` (${ortoExam.masaMuscularLado})` : ''}</span>
+                  </div>
+                )}
+                {ortoExam.impresion?.length > 0 && (
+                  <div className="system-finding">
+                    <span className="system-name">Impresión:</span>
+                    <div className="system-values">{ortoExam.impresion.map(i => <span key={i} className="summary-tag alert">{i}</span>)}</div>
+                  </div>
+                )}
+                {ortoExam.observaciones && (
+                  <div className="system-finding">
+                    <span className="system-name">Observaciones:</span>
+                    <span className="summary-tag">{ortoExam.observaciones}</span>
                   </div>
                 )}
               </div>
