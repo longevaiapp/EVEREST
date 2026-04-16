@@ -93,6 +93,24 @@ function MedicoDashboard() {
   // Estado para el examen físico estructurado
   const [examenFisicoData, setExamenFisicoData] = useState(null);
 
+  // Restaurar datos de consulta activa al recargar la página
+  useEffect(() => {
+    if (activeConsultation?.id && !examenFisicoData) {
+      (async () => {
+        try {
+          const { consultaService } = await import('../../services/medico.service');
+          const consultaData = await consultaService.getById(activeConsultation.id);
+          if (consultaData?.physicalExam) {
+            const examData = JSON.parse(consultaData.physicalExam);
+            setExamenFisicoData(examData);
+          }
+        } catch (e) {
+          console.error('[MedicoDashboard] Error restoring exam data:', e);
+        }
+      })();
+    }
+  }, []); // Solo al montar
+
   const [vitalsForm, setVitalsForm] = useState({
     temperatura: '',
     frecuenciaCardiaca: '',

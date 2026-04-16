@@ -28,9 +28,36 @@ export const useMedico = () => {
     citasProgramadas: 0,
   });
   
-  // Consulta activa
-  const [activeConsultation, setActiveConsultation] = useState(null);
-  const [selectedPatient, setSelectedPatient] = useState(null);
+  // Consulta activa (restaurar de sessionStorage si existe)
+  const [activeConsultation, setActiveConsultationRaw] = useState(() => {
+    try {
+      const saved = sessionStorage.getItem('everest_activeConsultation');
+      return saved ? JSON.parse(saved) : null;
+    } catch { return null; }
+  });
+  const [selectedPatient, setSelectedPatientRaw] = useState(() => {
+    try {
+      const saved = sessionStorage.getItem('everest_selectedPatient');
+      return saved ? JSON.parse(saved) : null;
+    } catch { return null; }
+  });
+
+  // Wrappers que persisten en sessionStorage
+  const setActiveConsultation = useCallback((value) => {
+    setActiveConsultationRaw(value);
+    try {
+      if (value) sessionStorage.setItem('everest_activeConsultation', JSON.stringify(value));
+      else sessionStorage.removeItem('everest_activeConsultation');
+    } catch {}
+  }, []);
+
+  const setSelectedPatient = useCallback((value) => {
+    setSelectedPatientRaw(value);
+    try {
+      if (value) sessionStorage.setItem('everest_selectedPatient', JSON.stringify(value));
+      else sessionStorage.removeItem('everest_selectedPatient');
+    } catch {}
+  }, []);
   
   // UI State
   const [loading, setLoading] = useState(false);
