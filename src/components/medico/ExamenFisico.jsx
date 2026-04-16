@@ -554,7 +554,7 @@ function ExamenFisico({ onSave, initialData, consultationId, loading, triageData
                   <CheckboxGroup
                     options={OPTIONS.pulso}
                     values={generalExam.pulso}
-                    onChange={(v) => setValue(setGeneralExam, 'pulso', v)}
+                    onChange={(v) => toggleArrayValue(setGeneralExam, 'pulso', v)}
                     name="pulso"
                     columns={4}
                   />
@@ -578,7 +578,7 @@ function ExamenFisico({ onSave, initialData, consultationId, loading, triageData
                 <CheckboxGroup
                   options={OPTIONS.mucosas}
                   values={generalExam.mucosas}
-                  onChange={(v) => setValue(setGeneralExam, 'mucosas', v)}
+                  onChange={(v) => toggleArrayValue(setGeneralExam, 'mucosas', v)}
                   name="mucosas"
                   columns={3}
                 />
@@ -1973,6 +1973,7 @@ function ExamenFisico({ onSave, initialData, consultationId, loading, triageData
       {/* Botón de guardar */}
       <div className="exam-actions">
         <button 
+          type="button"
           className={`btn-save-exam ${hasChanges ? 'has-changes' : ''}`}
           onClick={handleSave}
           disabled={loading}
