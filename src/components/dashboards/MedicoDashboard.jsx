@@ -2836,6 +2836,143 @@ function MedicoDashboard() {
                               </div>
                             </div>
                           )}
+
+                          {/* Examen Físico */}
+                          {c.physicalExam && (() => {
+                            try {
+                              const exam = typeof c.physicalExam === 'string' ? JSON.parse(c.physicalExam) : c.physicalExam;
+                              const gen = exam.general || {};
+                              const neuro = exam.neurologico || {};
+                              const derma = exam.dermatologico || {};
+                              const oftalmo = exam.oftalmologico || {};
+                              const orto = exam.ortopedico || {};
+                              
+                              const hasGeneral = gen.peso || gen.condicionCorporal || gen.temperatura || gen.frecuenciaCardiaca || gen.estadoMental?.length > 0;
+                              const hasNeuro = neuro.estadoMental || neuro.postura?.length > 0 || neuro.marcha?.length > 0 || neuro.localizacion?.length > 0 || neuro.reflejosToracicos || neuro.tonoMuscular;
+                              const hasDerma = derma.condicionPiel?.length > 0 || derma.pelaje?.length > 0 || derma.lesionesPrimarias?.length > 0 || derma.impresion?.length > 0;
+                              const hasOftalmo = oftalmo.observacionGeneral?.length > 0 || oftalmo.corneaOD?.length > 0 || oftalmo.impresion?.length > 0;
+                              const hasOrto = orto.observacionGeneral?.length > 0 || orto.marcha?.length > 0 || orto.impresion?.length > 0;
+                              
+                              if (!hasGeneral && !hasNeuro && !hasDerma && !hasOftalmo && !hasOrto) return null;
+                              
+                              const renderTags = (arr, color = '#6366f1') => arr?.filter(Boolean).map((item, i) => (
+                                <span key={i} style={{ background: `${color}18`, color, padding: '0.15rem 0.45rem', borderRadius: '4px', fontSize: '0.78rem', display: 'inline-block' }}>{item}</span>
+                              ));
+                              
+                              const renderField = (label, value, color = '#4338ca') => value ? (
+                                <div style={{ display: 'flex', gap: '0.4rem', alignItems: 'center', flexWrap: 'wrap' }}>
+                                  <span style={{ color: '#64748b', fontSize: '0.78rem', fontWeight: 600 }}>{label}:</span>
+                                  {Array.isArray(value) && value.length > 0 
+                                    ? renderTags(value, color)
+                                    : <span style={{ color, fontSize: '0.82rem', fontWeight: 500 }}>{value}</span>
+                                  }
+                                </div>
+                              ) : null;
+                              
+                              return (
+                                <div style={{ marginTop: '0.75rem', background: '#f0f9ff', padding: '0.6rem 0.8rem', borderRadius: '6px', border: '1px solid #bae6fd' }}>
+                                  <strong style={{ color: '#0369a1', fontSize: '0.75rem', display: 'block', marginBottom: '0.5rem' }}>🩺 Examen Físico Estructurado</strong>
+                                  
+                                  {hasGeneral && (
+                                    <div style={{ background: '#fff', padding: '0.5rem 0.6rem', borderRadius: '5px', marginBottom: '0.4rem', border: '1px solid #e0f2fe' }}>
+                                      <strong style={{ color: '#0c4a6e', fontSize: '0.72rem', display: 'block', marginBottom: '0.35rem' }}>📋 Examen General</strong>
+                                      <div style={{ display: 'flex', flexDirection: 'column', gap: '0.3rem' }}>
+                                        {gen.peso && renderField('Peso', `${gen.peso} kg`)}
+                                        {gen.condicionCorporal && renderField('BCS', `${gen.condicionCorporal}/9`)}
+                                        {gen.estadoMental?.length > 0 && renderField('Estado Mental', gen.estadoMental, '#b45309')}
+                                        {gen.temperatura && renderField('Temperatura', `${gen.temperatura}°C ${gen.temperaturaEstado ? `(${gen.temperaturaEstado})` : ''}`)}
+                                        {gen.frecuenciaCardiaca && renderField('FC', `${gen.frecuenciaCardiaca} lpm ${gen.frecuenciaCardiacaEstado ? `(${gen.frecuenciaCardiacaEstado})` : ''}`)}
+                                        {gen.frecuenciaRespiratoria && renderField('FR', `${gen.frecuenciaRespiratoria} rpm ${gen.frecuenciaRespiratoriaEstado ? `(${gen.frecuenciaRespiratoriaEstado})` : ''}`)}
+                                        {gen.pulso?.length > 0 && renderField('Pulso', gen.pulso)}
+                                        {gen.tiempoLlenadoCapilar && renderField('TLC', gen.tiempoLlenadoCapilar)}
+                                        {gen.mucosas?.length > 0 && renderField('Mucosas', gen.mucosas)}
+                                        {gen.hidratacion && renderField('Hidratación', gen.hidratacion)}
+                                        {gen.ojos?.length > 0 && gen.ojos.some(o => o !== 'Normales') && renderField('Ojos', gen.ojos, '#dc2626')}
+                                        {gen.oidos?.length > 0 && gen.oidos.some(o => o !== 'Normales') && renderField('Oídos', gen.oidos, '#dc2626')}
+                                        {gen.corazon?.length > 0 && gen.corazon.some(o => o !== 'Ruidos normales') && renderField('Corazón', gen.corazon, '#dc2626')}
+                                        {gen.pulmones?.length > 0 && gen.pulmones.some(o => o !== 'Campos limpios') && renderField('Pulmones', gen.pulmones, '#dc2626')}
+                                        {gen.abdomen?.length > 0 && gen.abdomen.some(o => o !== 'Normal') && renderField('Abdomen', gen.abdomen, '#ea580c')}
+                                        {gen.neurologico?.length > 0 && gen.neurologico.some(o => o !== 'Normal') && renderField('Neurológico', gen.neurologico, '#dc2626')}
+                                        {gen.piel?.length > 0 && gen.piel.some(o => o !== 'Piel normal') && renderField('Piel', gen.piel, '#ea580c')}
+                                        {gen.observaciones && renderField('Observaciones', gen.observaciones, '#475569')}
+                                      </div>
+                                    </div>
+                                  )}
+                                  
+                                  {hasNeuro && (
+                                    <div style={{ background: '#fff', padding: '0.5rem 0.6rem', borderRadius: '5px', marginBottom: '0.4rem', border: '1px solid #e0e7ff' }}>
+                                      <strong style={{ color: '#3730a3', fontSize: '0.72rem', display: 'block', marginBottom: '0.35rem' }}>🧠 Neurológico</strong>
+                                      <div style={{ display: 'flex', flexDirection: 'column', gap: '0.3rem' }}>
+                                        {neuro.estadoMental && renderField('Estado Mental', neuro.estadoMental, '#4338ca')}
+                                        {neuro.postura?.length > 0 && renderField('Postura', neuro.postura, '#4338ca')}
+                                        {neuro.marcha?.length > 0 && renderField('Marcha', neuro.marcha, '#4338ca')}
+                                        {neuro.propiocepcion && renderField('Propiocepción', neuro.propiocepcion, '#4338ca')}
+                                        {neuro.reflejosToracicos && renderField('Refl. Torácicos', neuro.reflejosToracicos, neuro.reflejosToracicos !== 'Normal' ? '#dc2626' : '#166534')}
+                                        {neuro.reflejosPelvicos && renderField('Refl. Pélvicos', neuro.reflejosPelvicos, neuro.reflejosPelvicos !== 'Normal' ? '#dc2626' : '#166534')}
+                                        {neuro.tonoMuscular && renderField('Tono Muscular', neuro.tonoMuscular, '#4338ca')}
+                                        {neuro.sensibilidadSuperficial && renderField('Sensib. Superficial', neuro.sensibilidadSuperficial, neuro.sensibilidadSuperficial === 'Ausente' ? '#dc2626' : '#166534')}
+                                        {neuro.sensibilidadProfunda && renderField('Sensib. Profunda', neuro.sensibilidadProfunda, neuro.sensibilidadProfunda === 'Ausente' ? '#dc2626' : '#166534')}
+                                        {neuro.controlEsfinteres?.length > 0 && renderField('Esfínteres', neuro.controlEsfinteres, '#4338ca')}
+                                        {neuro.localizacion?.length > 0 && renderField('Localización', neuro.localizacion, '#dc2626')}
+                                        {neuro.observaciones && renderField('Observaciones', neuro.observaciones, '#475569')}
+                                      </div>
+                                    </div>
+                                  )}
+                                  
+                                  {hasDerma && (
+                                    <div style={{ background: '#fff', padding: '0.5rem 0.6rem', borderRadius: '5px', marginBottom: '0.4rem', border: '1px solid #fce7f3' }}>
+                                      <strong style={{ color: '#9d174d', fontSize: '0.72rem', display: 'block', marginBottom: '0.35rem' }}>🔬 Dermatológico</strong>
+                                      <div style={{ display: 'flex', flexDirection: 'column', gap: '0.3rem' }}>
+                                        {derma.condicionPiel?.length > 0 && renderField('Condición', derma.condicionPiel, '#be185d')}
+                                        {derma.pelaje?.length > 0 && renderField('Pelaje', derma.pelaje, '#be185d')}
+                                        {derma.distribucionLesiones?.length > 0 && renderField('Distribución', derma.distribucionLesiones, '#be185d')}
+                                        {derma.lesionesPrimarias?.length > 0 && renderField('Lesiones 1°', derma.lesionesPrimarias, '#dc2626')}
+                                        {derma.lesionesSecundarias?.length > 0 && renderField('Lesiones 2°', derma.lesionesSecundarias, '#ea580c')}
+                                        {derma.prurito && renderField('Prurito', derma.prurito, derma.prurito === 'Severo' ? '#dc2626' : '#be185d')}
+                                        {derma.parasitos?.length > 0 && renderField('Parásitos', derma.parasitos, '#dc2626')}
+                                        {derma.impresion?.length > 0 && renderField('Impresión', derma.impresion, '#9d174d')}
+                                        {derma.observaciones && renderField('Observaciones', derma.observaciones, '#475569')}
+                                      </div>
+                                    </div>
+                                  )}
+                                  
+                                  {hasOftalmo && (
+                                    <div style={{ background: '#fff', padding: '0.5rem 0.6rem', borderRadius: '5px', marginBottom: '0.4rem', border: '1px solid #dbeafe' }}>
+                                      <strong style={{ color: '#1e40af', fontSize: '0.72rem', display: 'block', marginBottom: '0.35rem' }}>👁️ Oftalmológico</strong>
+                                      <div style={{ display: 'flex', flexDirection: 'column', gap: '0.3rem' }}>
+                                        {oftalmo.observacionGeneral?.length > 0 && renderField('General', oftalmo.observacionGeneral, '#1e40af')}
+                                        {(oftalmo.parpadosOD?.length > 0 || oftalmo.parpadosOI?.length > 0) && renderField('Párpados', [...(oftalmo.parpadosOD?.map(v => `OD: ${v}`) || []), ...(oftalmo.parpadosOI?.map(v => `OI: ${v}`) || [])], '#1e40af')}
+                                        {(oftalmo.conjuntivaOD?.length > 0 || oftalmo.conjuntivaOI?.length > 0) && renderField('Conjuntiva', [...(oftalmo.conjuntivaOD?.map(v => `OD: ${v}`) || []), ...(oftalmo.conjuntivaOI?.map(v => `OI: ${v}`) || [])], '#1e40af')}
+                                        {(oftalmo.corneaOD?.length > 0 || oftalmo.corneaOI?.length > 0) && renderField('Córnea', [...(oftalmo.corneaOD?.map(v => `OD: ${v}`) || []), ...(oftalmo.corneaOI?.map(v => `OI: ${v}`) || [])], '#1e40af')}
+                                        {(oftalmo.presionIntraocularOD || oftalmo.presionIntraocularOI) && renderField('PIO', [oftalmo.presionIntraocularOD && `OD: ${oftalmo.presionIntraocularOD}${oftalmo.pioValorOD ? ` (${oftalmo.pioValorOD} mmHg)` : ''}`, oftalmo.presionIntraocularOI && `OI: ${oftalmo.presionIntraocularOI}${oftalmo.pioValorOI ? ` (${oftalmo.pioValorOI} mmHg)` : ''}`].filter(Boolean), '#1e40af')}
+                                        {oftalmo.pruebasComplementarias?.length > 0 && renderField('Pruebas', oftalmo.pruebasComplementarias, '#1e40af')}
+                                        {oftalmo.impresion?.length > 0 && renderField('Impresión', oftalmo.impresion, '#dc2626')}
+                                        {oftalmo.observaciones && renderField('Observaciones', oftalmo.observaciones, '#475569')}
+                                      </div>
+                                    </div>
+                                  )}
+                                  
+                                  {hasOrto && (
+                                    <div style={{ background: '#fff', padding: '0.5rem 0.6rem', borderRadius: '5px', marginBottom: '0.4rem', border: '1px solid #fef3c7' }}>
+                                      <strong style={{ color: '#92400e', fontSize: '0.72rem', display: 'block', marginBottom: '0.35rem' }}>🦴 Ortopédico</strong>
+                                      <div style={{ display: 'flex', flexDirection: 'column', gap: '0.3rem' }}>
+                                        {orto.observacionGeneral?.length > 0 && renderField('Observación', orto.observacionGeneral, '#92400e')}
+                                        {orto.marcha?.length > 0 && renderField('Marcha', orto.marcha, '#92400e')}
+                                        {orto.columna?.length > 0 && renderField('Columna', orto.columna, '#92400e')}
+                                        {orto.masaMuscular && renderField('Masa Muscular', `${orto.masaMuscular}${orto.masaMuscularLado ? ` (${orto.masaMuscularLado})` : ''}`, '#92400e')}
+                                        {(orto.hombroD?.length > 0 || orto.hombroI?.length > 0) && renderField('Hombro', [...(orto.hombroD?.map(v => `D: ${v}`) || []), ...(orto.hombroI?.map(v => `I: ${v}`) || [])], '#92400e')}
+                                        {(orto.codoD?.length > 0 || orto.codoI?.length > 0) && renderField('Codo', [...(orto.codoD?.map(v => `D: ${v}`) || []), ...(orto.codoI?.map(v => `I: ${v}`) || [])], '#92400e')}
+                                        {(orto.caderaD?.length > 0 || orto.caderaI?.length > 0) && renderField('Cadera', [...(orto.caderaD?.map(v => `D: ${v}`) || []), ...(orto.caderaI?.map(v => `I: ${v}`) || [])], '#92400e')}
+                                        {(orto.rodillaD?.length > 0 || orto.rodillaI?.length > 0) && renderField('Rodilla', [...(orto.rodillaD?.map(v => `D: ${v}`) || []), ...(orto.rodillaI?.map(v => `I: ${v}`) || [])], '#92400e')}
+                                        {orto.impresion?.length > 0 && renderField('Impresión', orto.impresion, '#dc2626')}
+                                        {orto.observaciones && renderField('Observaciones', orto.observaciones, '#475569')}
+                                      </div>
+                                    </div>
+                                  )}
+                                </div>
+                              );
+                            } catch { return null; }
+                          })()}
                         </div>
                       ))}
                     </div>
