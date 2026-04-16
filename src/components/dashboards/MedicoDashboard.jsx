@@ -1843,17 +1843,17 @@ function MedicoDashboard() {
               <button className="action-btn hospital" onClick={() => setShowHospitalizationModal(true)}>
                 🏥 {t('medico.hospitalize', 'Hospitalizar')}
               </button>
-              <button className="action-btn" style={{ background: '#8e44ad', color: 'white' }} onClick={() => {
+              <button className="action-btn surgery" onClick={() => {
                 const today = new Date();
                 setSurgeryForm(f => ({ ...f, scheduledDate: today.toISOString().split('T')[0] }));
                 setShowSurgeryModal(true);
               }}>
                 🔪 Programar Cirugía
               </button>
-              <button className="action-btn" style={{ background: '#dc3545', color: 'white' }} onClick={() => setShowTransfusionRequestModal(true)}>
+              <button className="action-btn transfusion" onClick={() => setShowTransfusionRequestModal(true)}>
                 🩸 Solicitar Transfusión
               </button>
-              <button className="action-btn" style={{ background: '#6f42c1', color: 'white' }} onClick={handleRegisterDonor} title="Registrar a este paciente como donador potencial de sangre">
+              <button className="action-btn donor" onClick={handleRegisterDonor} title="Registrar a este paciente como donador potencial de sangre">
                 🐾 Registrar Donador
               </button>
               <button className="action-btn followup" onClick={() => {
