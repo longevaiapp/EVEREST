@@ -510,9 +510,13 @@ router.get('/board/:area', authenticate, async (req: Request, res: Response) => 
       const activities: Record<string, any[]> = {};
 
       hosp.therapyItems.forEach((item: any) => {
+        // Track which slots already have administration records
+        const adminSlots = new Set<string>();
+
         item.administrations.forEach((admin: any) => {
           const time = new Date(admin.scheduledTime);
           const slot = `${time.getHours().toString().padStart(2, '0')}:${(Math.floor(time.getMinutes() / 30) * 30).toString().padStart(2, '0')}`;
+          adminSlots.add(slot);
           if (!activities[slot]) activities[slot] = [];
           activities[slot].push({
             type: 'medication',
@@ -524,6 +528,38 @@ router.get('/board/:area', authenticate, async (req: Request, res: Response) => 
             scheduledTime: admin.scheduledTime,
             administeredAt: admin.administeredAt,
           });
+        });
+
+        // Also show medications from scheduledTimes when no administration records exist
+        const scheduledTimes: string[] = item.scheduledTimes || [];
+        let times = scheduledTimes;
+
+        // If no scheduledTimes, derive from frequency
+        if (times.length === 0) {
+          const freqMatch = item.frequency?.match(/(\d+)/);
+          if (freqMatch) {
+            const hoursInterval = parseInt(freqMatch[1]);
+            times = [];
+            for (let h = 0; h < 24; h += hoursInterval) {
+              times.push(`${h.toString().padStart(2, '0')}:00`);
+            }
+          }
+        }
+
+        // Add entries for scheduled times that don't already have an administration record
+        times.forEach((timeStr: string) => {
+          const [hours, minutes] = timeStr.split(':').map(Number);
+          const slot = `${hours.toString().padStart(2, '0')}:${(Math.floor((minutes || 0) / 30) * 30).toString().padStart(2, '0')}`;
+          if (!adminSlots.has(slot)) {
+            if (!activities[slot]) activities[slot] = [];
+            activities[slot].push({
+              type: 'medication',
+              name: item.medicationName,
+              dose: item.dose,
+              route: item.route,
+              status: 'PENDIENTE',
+            });
+          }
         });
       });
 
