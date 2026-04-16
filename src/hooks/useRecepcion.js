@@ -2,7 +2,7 @@
 // Hook personalizado para el módulo de Recepción
 // Maneja estado, llamadas API y lógica de negocio
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { ownerService, petService, visitService, appointmentService } from '../services/recepcion.service';
 
 export const useRecepcion = () => {
@@ -100,21 +100,28 @@ export const useRecepcion = () => {
   }, [loadInitialData]);
 
   // Refresh automático cada 30 segundos para visitas y citas
+  const loadVisitsRef = useRef(loadTodayVisits);
+  const loadAppointmentsRef = useRef(loadTodayAppointments);
+  useEffect(() => { loadVisitsRef.current = loadTodayVisits; }, [loadTodayVisits]);
+  useEffect(() => { loadAppointmentsRef.current = loadTodayAppointments; }, [loadTodayAppointments]);
+
   useEffect(() => {
     const interval = setInterval(() => {
-      loadTodayVisits();
-      loadTodayAppointments();
+      loadVisitsRef.current();
+      loadAppointmentsRef.current();
     }, 30000);
 
     return () => clearInterval(interval);
-  }, [loadTodayVisits, loadTodayAppointments]);
+  }, []);
 
   // ============================================================================
   // OWNER (PROPIETARIO) OPERATIONS
   // ============================================================================
 
   const searchOwnerByPhone = useCallback(async (phone) => {
-    if (!phone || phone.length < 8) {
+    // Validar formato: solo dígitos, mínimo 8 caracteres
+    const cleaned = phone?.replace(/\D/g, '') || '';
+    if (cleaned.length < 8) {
       setFoundOwner(null);
       setOwnerPets([]);
       return null;
@@ -235,14 +242,12 @@ export const useRecepcion = () => {
     try {
       console.log('[useRecepcion] searchPets - buscando:', searchTerm);
       const result = await petService.getAll({ search: searchTerm, limit: 20 });
-      console.log('[useRecepcion] searchPets - resultado completo:', result);
       // El resultado puede ser { pets, pagination } o directamente un array
       const pets = result?.pets || result || [];
-      console.log('[useRecepcion] searchPets - pets extraídos:', pets.length);
       return pets;
     } catch (err) {
       console.error('[useRecepcion] searchPets - error:', err);
-      return [];
+      throw new Error(err.message || 'Error buscando mascotas');
     }
   }, []);
 

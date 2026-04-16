@@ -155,7 +155,11 @@ export const petService = {
     };
 
     console.log('[petService] CREATE - fotoUrl length:', mappedData.fotoUrl?.length || 0);
-    console.log('[petService] CREATE - fotoUrl first 100 chars:', mappedData.fotoUrl?.substring(0, 100));
+
+    // Validar tamaño de foto (max 2MB en base64 ~ 2.7M chars)
+    if (mappedData.fotoUrl && mappedData.fotoUrl.length > 2_700_000) {
+      throw new Error('La foto es demasiado grande. Máximo 2MB.');
+    }
     
     const response = await api.post('/pets', mappedData);
     return response.data?.pet;
@@ -433,12 +437,15 @@ export const appointmentService = {
 
 function mapEspecie(especie) {
   const map = {
-    'Perro': 'PERRO',
-    'Gato': 'GATO',
-    'Ave': 'AVE',
-    'Roedor': 'ROEDOR',
-    'Reptil': 'REPTIL',
-    'Otro': 'OTRO',
+    // Spanish
+    'Perro': 'PERRO', 'Gato': 'GATO', 'Ave': 'AVE',
+    'Roedor': 'ROEDOR', 'Reptil': 'REPTIL', 'Otro': 'OTRO',
+    // English
+    'Dog': 'PERRO', 'Cat': 'GATO', 'Bird': 'AVE',
+    'Rodent': 'ROEDOR', 'Reptile': 'REPTIL', 'Other': 'OTRO',
+    // Already mapped
+    'PERRO': 'PERRO', 'GATO': 'GATO', 'AVE': 'AVE',
+    'ROEDOR': 'ROEDOR', 'REPTIL': 'REPTIL', 'OTRO': 'OTRO',
   };
   return map[especie] || 'OTRO';
 }

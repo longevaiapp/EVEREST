@@ -596,8 +596,13 @@ function RecepcionDashboard() {
     setFoundClient(null);
     setShowClientPets(false);
     
-    if (!clientSearchPhone.trim()) {
+    const cleaned = clientSearchPhone.trim().replace(/\D/g, '');
+    if (!cleaned) {
       setClientSearchError('Please enter a phone number');
+      return;
+    }
+    if (cleaned.length < 8 || cleaned.length > 15) {
+      setClientSearchError('Phone number must be 8-15 digits');
       return;
     }
 
@@ -774,8 +779,13 @@ function RecepcionDashboard() {
   const handleSearchPets = async (query) => {
     setPetSearchQuery(query);
     if (query.length >= 2) {
-      const results = await searchPets(query);
-      setPetSearchResults(results);
+      try {
+        const results = await searchPets(query);
+        setPetSearchResults(results);
+      } catch (err) {
+        setPetSearchResults([]);
+        alert('⚠️ Error searching: ' + (err.message || 'Please try again'));
+      }
     } else {
       setPetSearchResults([]);
     }
@@ -2057,7 +2067,13 @@ function RecepcionDashboard() {
                       </div>
                       <div className="appointment-actions">
                         <button className="btn-icon" title={t('recepcion.actions.call')} onClick={() => handleCallPatient(cita.telefono || '555-0000')}>📞</button>
-                        <button className="btn-icon" title={t('recepcion.actions.viewRecord')} onClick={() => alert(t('recepcion.actions.viewRecord'))}>📄</button>
+                        <button className="btn-icon" title={t('recepcion.actions.viewRecord')} onClick={() => {
+                          if (cita.pacienteId) {
+                            handleViewExpediente({ id: cita.pacienteId, petId: cita.pacienteId, nombre: cita.pacienteNombre || cita.paciente });
+                          } else {
+                            alert('⚠️ No patient linked to this appointment');
+                          }
+                        }}>📄</button>
                         {/* Botón Check-in: Solo para citas confirmadas que aún no tienen check-in */}
                         {cita.confirmada && !cita.cancelada && cita.pacienteId && (
                           <button 
@@ -2955,8 +2971,8 @@ function RecepcionDashboard() {
                     🖨️ Imprimir Receta Externa
                   </button>
                 )}
-                <button type="submit" className="btn-success">
-                  ✅ {t('recepcion.discharge.completeDischarge')}
+                <button type="submit" className="btn-success" disabled={visitCosts.loading}>
+                  {visitCosts.loading ? '⏳ Cargando costos...' : `✅ ${t('recepcion.discharge.completeDischarge')}`}
                 </button>
               </div>
             </form>
@@ -3991,35 +4007,43 @@ function RecepcionDashboard() {
                     : 'Grooming Services: Basic grooming';
 
                   // Paso 1: Crear CITA con tipo ESTETICA
+                  let appointment, visit;
                   console.log('[Grooming] Creando cita de tipo ESTETICA...');
-                  await createAppointment({
-                    petId: newAppointmentData.pacienteId,
-                    fecha: groomingData.serviceDate,
-                    hora: groomingData.dropoffTime,
-                    tipo: 'ESTETICA',
-                    motivo: serviceDescription
-                  });
-                  console.log('[Grooming] Cita creada exitosamente');
+                  try {
+                    appointment = await createAppointment({
+                      petId: newAppointmentData.pacienteId,
+                      fecha: groomingData.serviceDate,
+                      hora: groomingData.dropoffTime,
+                      tipo: 'ESTETICA',
+                      motivo: serviceDescription
+                    });
+                  } catch (err) {
+                    throw new Error('Error creando la cita: ' + (err.message || 'Intente de nuevo'));
+                  }
 
-                  // Paso 2: Crear la VISITA (check-in automático)
+                  // Paso 2: Crear la VISITA (check-in automático hacia Estética)
                   console.log('[Grooming] Creando visita de tipo ESTETICA...');
-                  const visit = await checkInPet(newAppointmentData.pacienteId, 'ESTETICA');
-                  console.log('[Grooming] Visita creada:', visit);
-
-                  if (!visit || !visit.id) {
-                    throw new Error('Failed to create visit');
+                  try {
+                    visit = await checkInPet(newAppointmentData.pacienteId, 'ESTETICA');
+                    if (!visit || !visit.id) {
+                      throw new Error('No se recibió ID de visita');
+                    }
+                  } catch (err) {
+                    throw new Error('Error en check-in: ' + (err.message || 'Intente de nuevo'));
                   }
 
                   // Paso 3: Crear el GROOMING SERVICE con todos los datos del formulario
                   console.log('[Grooming] Creando grooming service...');
-                  const groomingServiceData = {
-                    visitId: visit.id,
-                    petId: newAppointmentData.pacienteId,
-                    ...groomingData
-                  };
-
-                  await groomingService.create(groomingServiceData);
-                  console.log('[Grooming] Grooming service creado exitosamente');
+                  try {
+                    const groomingServiceData = {
+                      visitId: visit.id,
+                      petId: newAppointmentData.pacienteId,
+                      ...groomingData
+                    };
+                    await groomingService.create(groomingServiceData);
+                  } catch (err) {
+                    throw new Error('Error creando servicio de estética: ' + (err.message || 'La visita fue creada pero el servicio falló'));
+                  }
 
                   await refreshData();
                   alert(`✅ Grooming service created successfully!\nPatient: ${newAppointmentData.pacienteNombre}\nDate: ${groomingData.serviceDate}\nDrop-off: ${groomingData.dropoffTime}\nPickup: ${groomingData.pickupTime}\nServices: ${services.join(', ') || 'Basic grooming'}\n\n✂️ The patient is now in the Grooming Queue!`);
