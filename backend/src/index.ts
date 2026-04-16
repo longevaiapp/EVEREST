@@ -38,6 +38,7 @@ import businessInfoRoutes from "./routes/businessInfo.routes";
 import preventiveMedicineRoutes from "./routes/preventiveMedicine.routes";
 import cremationRoutes from "./routes/cremation.routes";
 import bloodBankRoutes from "./routes/bloodBank.routes";import adminRoutes from './routes/admin.routes';
+import publicRegistrationRoutes from './routes/publicRegistration.routes';
 const app = express();
 const PORT = process.env.PORT || 3001;
 
@@ -152,6 +153,7 @@ app.use(`${API_PREFIX}/business-info`, businessInfoRoutes);
 app.use(`${API_PREFIX}/preventive-medicine`, preventiveMedicineRoutes);
 app.use(`${API_PREFIX}/cremation`, cremationRoutes);
 app.use(`${API_PREFIX}/blood-bank`, bloodBankRoutes);
+app.use(`${API_PREFIX}/public`, publicRegistrationRoutes);
 
 // ===========================================================================
 // ERROR HANDLING

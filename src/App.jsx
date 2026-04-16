@@ -145,9 +145,7 @@ function App() {
               } />
 
               <Route path="/registro-cliente" element={
-                <ProtectedRoute roles={['RECEPCION', 'ADMIN']}>
-                  <RegistroCliente />
-                </ProtectedRoute>
+                <RegistroCliente />
               } />
 
               {/* Ruta raíz - redirige según rol */}
