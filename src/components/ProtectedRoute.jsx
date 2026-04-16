@@ -12,8 +12,24 @@ import { useAuth } from '../context/AuthContext';
  * @param {string|string[]} [props.roles] - Rol o roles permitidos (opcional)
  * @param {string} [props.redirectTo] - Ruta a la que redirigir si no tiene acceso (default: /login)
  */
+// Map route roles to dashboardAccess keys
+const ROLE_TO_DASHBOARD = {
+  RECEPCION: 'recepcion',
+  MEDICO: 'medico',
+  FARMACIA: 'farmacia',
+  LABORATORIO: 'laboratorio',
+  ESTILISTA: 'estilista',
+  HOSPITALIZACION: 'hospitalizacion',
+  QUIROFANO: 'quirofano',
+  ADMIN: 'admin',
+  RECOLECTOR: 'crematorio',
+  OPERADOR_CREMATORIO: 'crematorio',
+  ENTREGA: 'crematorio',
+  BANCO_SANGRE: 'banco-sangre',
+};
+
 const ProtectedRoute = ({ children, roles, redirectTo = '/login' }) => {
-  const { isAuthenticated, loading, hasRole, user } = useAuth();
+  const { isAuthenticated, loading, user } = useAuth();
   const location = useLocation();
 
   // Mostrar loading mientras se verifica autenticación
@@ -31,9 +47,17 @@ const ProtectedRoute = ({ children, roles, redirectTo = '/login' }) => {
     return <Navigate to={redirectTo} state={{ from: location }} replace />;
   }
 
-  // Si se especificaron roles y el usuario no tiene ninguno, redirigir
-  if (roles && !hasRole(roles)) {
-    return <Navigate to="/dashboard" replace />;
+  // Si se especificaron roles, check dashboardAccess first, then role
+  if (roles) {
+    const dashboardAccess = user?.dashboardAccess || [];
+    // Convert required roles to dashboard keys and check access
+    const requiredKeys = roles.map(r => ROLE_TO_DASHBOARD[r]).filter(Boolean);
+    const hasAccess = requiredKeys.some(k => dashboardAccess.includes(k));
+    // Fallback to traditional role check
+    const hasRole = roles.includes(user?.rol);
+    if (!hasAccess && !hasRole) {
+      return <Navigate to="/dashboard" replace />;
+    }
   }
 
   return children;
