@@ -21,6 +21,7 @@ export const useMedico = () => {
   // Datos principales
   const [visits, setVisits] = useState([]);
   const [appointments, setAppointments] = useState([]);
+  const [hospitalized, setHospitalized] = useState([]);
   const [resumen, setResumen] = useState({
     enEspera: 0,
     enConsulta: 0,
@@ -92,6 +93,14 @@ export const useMedico = () => {
         enEstudios: 0,
         citasProgramadas: 0,
       });
+
+      // Cargar hospitalizados
+      try {
+        const hosp = await hospitalizacionService.getHospitalizados();
+        setHospitalized(hosp);
+      } catch (e) {
+        console.error('[useMedico] Error loading hospitalized:', e);
+      }
     } catch (err) {
       console.error('[useMedico] Error loading dashboard data:', err);
       setError('Error cargando datos del dashboard');
@@ -308,8 +317,7 @@ export const useMedico = () => {
       const payload = data ? { consultationId: consultationIdOrData, ...data } : consultationIdOrData;
       console.log('[useMedico.hospitalizarPaciente] payload final:', payload);
       const hospitalizacion = await hospitalizacionService.hospitalizar(payload);
-      setActiveConsultation(null);
-      setSelectedPatient(null);
+      // Keep consultation open - doctor can continue documenting
       await loadDashboardData();
       return hospitalizacion;
     } catch (err) {
@@ -435,6 +443,7 @@ export const useMedico = () => {
     petId: a.pet?.id,
     pacienteNombre: a.pet?.nombre,
     propietario: a.pet?.owner?.nombre,
+    telefono: a.pet?.owner?.telefono,
     hora: a.hora,
     tipo: a.tipo,
     motivo: a.motivo,
@@ -447,7 +456,10 @@ export const useMedico = () => {
       especie: a.pet.especie,
       raza: a.pet.raza,
       fotoUrl: a.pet.fotoUrl, // Foto del paciente
-      propietario: a.pet.owner,
+      propietario: a.pet.owner?.nombre,
+      telefono: a.pet.owner?.telefono,
+      email: a.pet.owner?.email,
+      owner: a.pet.owner,
     } : null,
   }));
 
@@ -470,6 +482,7 @@ export const useMedico = () => {
     patientsInConsultation,
     patientsInStudies,
     todayAppointments,
+    hospitalized,
     
     // Actions
     loadDashboardData,

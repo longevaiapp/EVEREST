@@ -3,7 +3,6 @@ import { useTranslation } from 'react-i18next';
 import { useAuth } from '../../context/AuthContext';
 import useMedico from '../../hooks/useMedico';
 import farmaciaService from '../../services/farmacia.service';
-import recepcionService from '../../services/recepcion.service';
 import { laboratorioService, citaSeguimientoService } from '../../services/medico.service';
 import bancoSangreService from '../../services/bancoSangre.service';
 import quirofanoService from '../../services/quirofano.service';
@@ -25,6 +24,7 @@ function MedicoDashboard() {
     patientsInConsultation,
     patientsInStudies,
     todayAppointments,
+    hospitalized: hospitalizedFromHook,
     loadDashboardData,
     getPaciente,
     getHistorial,
@@ -273,7 +273,7 @@ function MedicoDashboard() {
   // Derived state - Usando datos de la API
   const myPatients = patientsInConsultation || [];
   const inStudies = patientsInStudies || [];
-  const hospitalized = []; // TODO: Agregar endpoint de hospitalizados
+  const hospitalized = hospitalizedFromHook || [];
   const myTasks = []; // TODO: Agregar endpoint de tareas
 
   // Estados combinados de loading y error
@@ -430,7 +430,16 @@ function MedicoDashboard() {
 
   const handleSelectPatient = useCallback(async (patient) => {
     console.log('[handleSelectPatient] patient:', patient);
-    setSelectedPatient(patient);
+    const normalizedOwnerName = typeof patient?.propietario === 'string'
+      ? patient.propietario
+      : patient?.propietario?.nombre;
+    const normalizedPhone = patient?.telefono || patient?.propietario?.telefono;
+
+    setSelectedPatient({
+      ...patient,
+      propietario: normalizedOwnerName,
+      telefono: normalizedPhone,
+    });
     setLocalError(null);
     
     // Si el paciente ya tiene una consulta activa (viene de patientsInConsultation), establecerla
@@ -457,6 +466,14 @@ function MedicoDashboard() {
           setSelectedPatient(prev => ({
             ...prev,
             ...pacienteCompleto,
+            propietario: pacienteCompleto.owner?.nombre || prev?.propietario,
+            telefono: pacienteCompleto.owner?.telefono || prev?.telefono,
+            email: pacienteCompleto.owner?.email || prev?.email,
+            direccion: pacienteCompleto.owner?.direccion || prev?.direccion,
+            motivo: prev?.motivo || pacienteCompleto.motivo || pacienteCompleto.motivoConsulta,
+            prioridad: prev?.prioridad || pacienteCompleto.prioridad,
+            temperatura: prev?.temperatura ?? pacienteCompleto.temperatura,
+            antecedentes: prev?.antecedentes || pacienteCompleto.antecedentes,
             // Mantener datos de la visita actual
             visitId: patient.visitId,
             consultationId: patient.consultationId,
@@ -859,8 +876,8 @@ function MedicoDashboard() {
         estimacionDias: '',
         dietaInstrucciones: ''
       });
-      setActiveConsultation(null);
-      setSelectedPatient(null);
+      // Keep consultation open so doctor can continue documenting
+      // Doctor will close consultation manually when ready
     } catch (err) {
       setLocalError(err.message || t('medico.errors.hospitalize', 'Error hospitalizing patient'));
     } finally {
@@ -1455,7 +1472,7 @@ function MedicoDashboard() {
                         )}
                         {patient?.nombre || 'Paciente'}
                       </div>
-                      <div className="patient-details-small">{cita.tipo} • {patient?.propietario?.nombre || 'Owner'}</div>
+                      <div className="patient-details-small">{cita.tipo} • {(typeof patient?.propietario === 'string' ? patient.propietario : patient?.propietario?.nombre) || 'Owner'}</div>
                       <div className="appointment-reason">{cita.motivo}</div>
                     </div>
                     <span className={`status-badge ${getStatusBadgeClass(cita.estado || 'PENDIENTE')}`}>
@@ -3198,13 +3215,13 @@ function MedicoDashboard() {
                 // Get pet ID from selectedPatient
                 const petId = selectedPatient.petId || selectedPatient.id;
                 
-                await recepcionService.appointments.create({
+                await citaSeguimientoService.crear({
                   petId: petId,
                   fecha: followUpForm.fecha,
                   hora: followUpForm.hora,
                   tipo: followUpForm.tipo,
                   motivo: followUpForm.motivo,
-                  notas: `Cita de seguimiento agendada por Dr. ${user?.nombre || user?.name || 'Médico'}`
+                  notas: `Cita de seguimiento agendada por Dr. ${user?.nombre || user?.name || 'Médico'}`,
                 });
 
                 alert(`✅ Cita de seguimiento agendada\nFecha: ${followUpForm.fecha}\nHora: ${followUpForm.hora}`);
@@ -3252,8 +3269,6 @@ function MedicoDashboard() {
                 >
                   <option value="SEGUIMIENTO">Seguimiento</option>
                   <option value="CONSULTA_GENERAL">Consulta General</option>
-                  <option value="VACUNACION">Vacunación</option>
-                  <option value="CIRUGIA">Cirugía</option>
                 </select>
               </div>
 

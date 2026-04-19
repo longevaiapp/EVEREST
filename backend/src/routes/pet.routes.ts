@@ -61,6 +61,86 @@ const createPetSchema = z.object({
 
 const updatePetSchema = createPetSchema.partial().omit({ ownerId: true });
 
+function normalizePetPayload(payload: any) {
+  const data = { ...payload };
+
+  const booleanFields = [
+    'desparasitacionExterna',
+    'desparasitacionInterna',
+    'vacunasActualizadas',
+    'esterilizado',
+    'otrasCirugias',
+    'conviveOtrasMascotas',
+    'actividadFisica',
+    'saleViaPublica',
+  ];
+
+  const trueValues = new Set(['si', 'sí', 'yes', 'true', '1', 'on']);
+  const falseValues = new Set(['no', 'false', '0', 'off']);
+
+  for (const field of booleanFields) {
+    const value = data[field];
+    if (typeof value === 'string') {
+      const normalized = value.trim().toLowerCase();
+      if (trueValues.has(normalized)) data[field] = true;
+      else if (falseValues.has(normalized)) data[field] = false;
+      else if (normalized === '') data[field] = null;
+    }
+  }
+
+  const numberFields = ['peso', 'cantidadPartos'];
+  for (const field of numberFields) {
+    const value = data[field];
+    if (typeof value === 'string') {
+      const trimmed = value.trim();
+      if (trimmed === '') {
+        data[field] = null;
+      } else {
+        const parsed = field === 'cantidadPartos' ? parseInt(trimmed, 10) : parseFloat(trimmed);
+        data[field] = Number.isNaN(parsed) ? null : parsed;
+      }
+    }
+  }
+
+  const nullableStringFields = [
+    'raza', 'color', 'snapTest', 'analisisClinicos', 'antecedentes', 'vacunasTexto',
+    'detalleCirugias', 'alimento', 'porcionesPorDia', 'otrosAlimentos',
+    'frecuenciaOtrosAlimentos', 'alergias', 'enfermedadesCronicas', 'cualesMascotas',
+    'frecuenciaActividad', 'frecuenciaSalida', 'otrosDatos', 'fotoUrl'
+  ];
+
+  for (const field of nullableStringFields) {
+    const value = data[field];
+    if (typeof value === 'string' && value.trim() === '') {
+      data[field] = null;
+    }
+  }
+
+  const dateFields = [
+    'fechaNacimiento',
+    'ultimaDesparasitacionExterna',
+    'ultimaDesparasitacionInterna',
+    'ultimaVacuna',
+    'ultimoCelo',
+    'ultimoParto',
+  ];
+
+  for (const field of dateFields) {
+    const value = data[field];
+    if (typeof value === 'string') {
+      const trimmed = value.trim();
+      if (!trimmed) {
+        data[field] = null;
+        continue;
+      }
+      const asDate = new Date(trimmed);
+      data[field] = Number.isNaN(asDate.getTime()) ? null : asDate.toISOString();
+    }
+  }
+
+  return data;
+}
+
 // Helper to generate ficha number
 async function generateFichaNumber(): Promise<string> {
   const lastPet = await prisma.pet.findFirst({
@@ -458,7 +538,7 @@ router.get('/:id', authenticate, async (req, res) => {
 
 // POST /pets - Create new pet
 router.post('/', authenticate, isRecepcion, async (req, res) => {
-  const data = createPetSchema.parse(req.body);
+  const data = createPetSchema.parse(normalizePetPayload(req.body));
 
   // Verify owner exists
   const owner = await prisma.owner.findUnique({
@@ -496,7 +576,7 @@ router.post('/', authenticate, isRecepcion, async (req, res) => {
 // PUT /pets/:id - Update pet
 router.put('/:id', authenticate, async (req, res) => {
   const id = req.params.id as string;
-  const data = updatePetSchema.parse(req.body);
+  const data = updatePetSchema.parse(normalizePetPayload(req.body));
 
   const pet = await prisma.pet.update({
     where: { id },

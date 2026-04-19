@@ -12,7 +12,7 @@ const router = Router();
 // Validation schemas
 const createOwnerSchema = z.object({
   nombre: z.string().min(2, 'Name must be at least 2 characters'),
-  telefono: z.string().min(10, 'Phone must be at least 10 digits'),
+  telefono: z.string().trim().min(8, 'Phone must be at least 8 digits').max(20, 'Phone is too long'),
   email: z.string().email().optional().nullable(),
   direccion: z.string().optional().nullable(),
   ciudad: z.string().optional().nullable(),
@@ -123,13 +123,16 @@ router.get('/:id', authenticate, async (req, res) => {
 router.post('/', authenticate, isRecepcion, async (req, res) => {
   const data = createOwnerSchema.parse(req.body);
 
-  // Check if phone already exists
+  // Check if phone already exists - return existing owner instead of error
   const existing = await prisma.owner.findUnique({
     where: { telefono: data.telefono },
   });
 
   if (existing) {
-    throw new AppError('Phone number already registered', 409);
+    return res.status(200).json({
+      status: 'success',
+      data: { owner: existing },
+    });
   }
 
   const owner = await prisma.owner.create({

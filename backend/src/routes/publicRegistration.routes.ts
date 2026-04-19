@@ -89,30 +89,35 @@ router.post('/register', rateLimit, async (req, res) => {
   });
 
   const data = schema.parse(req.body);
-
+  const data = schema.parse(req.body);
+  const normalizedPhone = String(data.owner.telefono || '').replace(/[^\d+]/g, '').trim();
+  const normalizedSexo = String(data.pet.sexo || '').trim().toLowerCase();
   // Map species
   const especieMap: Record<string, string> = {
     'Perro': 'PERRO', 'Gato': 'GATO', 'Ave': 'AVE', 'Roedor': 'ROEDOR', 'Reptil': 'REPTIL',
     'Dog': 'PERRO', 'Cat': 'GATO', 'Bird': 'AVE', 'Rodent': 'ROEDOR', 'Reptile': 'REPTIL',
+    'Canino': 'PERRO', 'Felino': 'GATO',
     'PERRO': 'PERRO', 'GATO': 'GATO', 'AVE': 'AVE', 'ROEDOR': 'ROEDOR', 'REPTIL': 'REPTIL',
   };
   const especie = (especieMap[data.pet.especie] || 'OTRO') as Species;
   const sexo = (['MACHO', 'HEMBRA'].includes(data.pet.sexo?.toUpperCase()) 
-    ? data.pet.sexo.toUpperCase() 
-    : (data.pet.sexo === 'Male' ? 'MACHO' : 'HEMBRA')) as Sexo;
-
+  const sexo = (
+    normalizedSexo === 'macho' || normalizedSexo === 'male'
+      ? 'MACHO'
+      : 'HEMBRA'
+  ) as Sexo;
   // Use a transaction so it's all-or-nothing
   const result = await prisma.$transaction(async (tx) => {
     // 1. Create or find owner by phone
     let owner = await tx.owner.findFirst({
-      where: { telefono: data.owner.telefono },
+      where: { telefono: normalizedPhone || data.owner.telefono },
     });
 
     if (!owner) {
       owner = await tx.owner.create({
         data: {
           nombre: data.owner.nombre,
-          telefono: data.owner.telefono,
+          telefono: normalizedPhone || data.owner.telefono,
           email: data.owner.email || null,
           direccion: data.owner.direccion || null,
           ciudad: data.owner.ciudad || null,
