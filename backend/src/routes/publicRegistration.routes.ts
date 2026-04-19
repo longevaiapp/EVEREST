@@ -89,7 +89,6 @@ router.post('/register', rateLimit, async (req, res) => {
   });
 
   const data = schema.parse(req.body);
-  const data = schema.parse(req.body);
   const normalizedPhone = String(data.owner.telefono || '').replace(/[^\d+]/g, '').trim();
   const normalizedSexo = String(data.pet.sexo || '').trim().toLowerCase();
   // Map species
@@ -100,7 +99,6 @@ router.post('/register', rateLimit, async (req, res) => {
     'PERRO': 'PERRO', 'GATO': 'GATO', 'AVE': 'AVE', 'ROEDOR': 'ROEDOR', 'REPTIL': 'REPTIL',
   };
   const especie = (especieMap[data.pet.especie] || 'OTRO') as Species;
-  const sexo = (['MACHO', 'HEMBRA'].includes(data.pet.sexo?.toUpperCase()) 
   const sexo = (
     normalizedSexo === 'macho' || normalizedSexo === 'male'
       ? 'MACHO'
